@@ -120,7 +120,7 @@ struct SettingsView: View {
             HStack {
                 Image(systemName: "crown.fill")
                     .foregroundColor(.yellow)
-                Text("Hauptgang Pro")
+                Text("MainCourse Pro")
                     .fontWeight(.semibold)
             }
             Button {

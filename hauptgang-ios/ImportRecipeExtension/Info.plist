@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Import to Hauptgang</string>
+	<string>Import to MainCourse</string>
 	<key>CFBundleName</key>
 	<string>ImportRecipeExtension</string>
 	<key>CFBundlePackageType</key>

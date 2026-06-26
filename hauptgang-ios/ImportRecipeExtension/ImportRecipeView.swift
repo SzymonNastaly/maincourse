@@ -70,7 +70,7 @@ struct ImportRecipeView: View {
                 .foregroundColor(.green)
             Text("Import Started!")
                 .font(.headline)
-            Text("Open Hauptgang to see your recipe.")
+            Text("Open MainCourse to see your recipe.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
@@ -99,7 +99,7 @@ struct ImportRecipeView: View {
                 .foregroundColor(.orange)
             Text("Not Signed In")
                 .font(.headline)
-            Text("Please open Hauptgang and sign in first.")
+            Text("Please open MainCourse and sign in first.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
