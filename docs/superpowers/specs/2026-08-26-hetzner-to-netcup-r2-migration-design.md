@@ -85,10 +85,7 @@ Also extend `litestream.yml` to cover `production_queue.sqlite3` (addresses D2).
 
 **Format break:** 0.5.x cannot read 0.3.x generations, so the R2 replica starts as a fresh generation with no history. Until retention fills (72h), the fallbacks are the untouched Hetzner backup bucket and a manual volume tarball taken before the switch.
 
-### 1.5 Optional — off-Cloudflare backup copy
-Both buckets now sit in the same Cloudflare account as DNS, CDN, and TLS termination. A locked or compromised account would take out the site and the means to recover it together. Mitigation without adding a vendor: a scheduled `rclone copy` of the latest Litestream snapshot to a location outside Cloudflare (local machine or the Netcup box's own disk). Optional; drop if not wanted.
-
-### 1.6 Soak
+### 1.5 Soak
 Run on R2 for roughly a week before starting Phase 2. Confirm image serving, uploads, and at least one successful `litestream restore` drill.
 
 ---
