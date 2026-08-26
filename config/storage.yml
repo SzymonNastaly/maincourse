@@ -17,3 +17,16 @@ hetzner:
   secret_access_key: <%= Rails.application.credentials.dig(:hetzner, :secret_access_key) %>
   region: fsn1
   bucket: <%= Rails.application.credentials.dig(:hetzner, :bucket) || "hauptgang-production" %>
+
+# Cloudflare R2 (S3-compatible), EU jurisdiction.
+# request/response_checksum_* are REQUIRED: aws-sdk-s3 >= 1.178 sends CRC32
+# checksum headers by default and R2 rejects them.
+r2:
+  service: S3
+  endpoint: https://<%= Rails.application.credentials.dig(:r2, :account_id) %>.eu.r2.cloudflarestorage.com
+  access_key_id: <%= Rails.application.credentials.dig(:r2, :access_key_id) %>
+  secret_access_key: <%= Rails.application.credentials.dig(:r2, :secret_access_key) %>
+  region: auto
+  bucket: <%= Rails.application.credentials.dig(:r2, :bucket) || "hauptgang-production" %>
+  request_checksum_calculation: when_required
+  response_checksum_validation: when_required
