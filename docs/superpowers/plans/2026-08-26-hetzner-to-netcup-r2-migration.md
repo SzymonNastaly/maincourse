@@ -17,7 +17,7 @@
 - **Litestream 0.5.x config schema is not backward compatible:** `replicas:` (list) → `replica:` (single); `retention:` and `snapshot-interval:` move from the replica to a global snapshot config.
 - **R2 endpoint:** EU jurisdiction, `https://<account_id>.eu.r2.cloudflarestorage.com`. Jurisdiction is fixed at bucket creation and cannot be changed later.
 - **R2 region:** always `auto`.
-- **Active Storage checksum flags are mandatory:** `request_checksum_calculation: when_required` and `response_checksum_validation: when_required`. Without them, `aws-sdk-s3 1.217.0` sends CRC32 headers that R2 rejects and every upload fails.
+- **Active Storage checksum flags are retained as insurance, not as a fix:** `request_checksum_calculation: when_required` and `response_checksum_validation: when_required`. Defect D3 predicted that `aws-sdk-s3 1.217.0` CRC32 headers would be rejected by R2; tested 2026-08-26, it **did not reproduce** (small and 12 MB multipart uploads both succeed without the flags). Keep them for drift protection; do not blame D3 for an upload failure without re-testing.
 - **Build arch stays `amd64`** — Netcup target is x86. Do not change `builder.arch`.
 - **No Active Storage database rewrite.** Blob keys are opaque and preserved by `rclone copy`. Any task proposing a `blobs` table migration is wrong.
 - **Every rclone command against the `r2:` remote MUST pass `--s3-no-check-bucket`.** The R2 API token is bucket-scoped, so it is denied `ListBuckets`; without the flag rclone falls back to `CreateBucket` and fails with `403 AccessDenied`. For the same reason, never run a bare `rclone lsd r2:` -- always name a bucket.

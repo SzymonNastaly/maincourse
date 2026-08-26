@@ -34,8 +34,19 @@ These are latent bugs in the current setup, not migration work, but the migratio
 ### D2 — Incomplete backup coverage
 `config/litestream.yml` replicates only `production.sqlite3`. Production runs four SQLite databases (`config/database.yml`). `production_queue.sqlite3` holds Solid Queue state, including in-flight and scheduled jobs, and is currently **not backed up**.
 
-### D3 — R2 checksum incompatibility
-The project uses `aws-sdk-s3 1.217.0`, past the version where AWS enabled CRC32 request checksums by default. R2 rejects these headers; Active Storage uploads will fail immediately without the workaround flags in Section 1.
+### D3 — R2 checksum incompatibility (DID NOT REPRODUCE)
+Predicted: `aws-sdk-s3 1.217.0` is past the version where AWS enabled CRC32 request
+checksums by default, and R2 was reported to reject those headers.
+
+**Tested 2026-08-26 against the live EU bucket and it did not reproduce.** Uploads
+succeeded *without* `request_checksum_calculation` / `response_checksum_validation`,
+both for a small `put_object` and for a 12 MB multipart upload. R2 evidently now
+accepts CRC32 checksum headers.
+
+The two flags are **kept anyway** as cheap insurance against SDK or R2 behaviour
+drift — they are the documented workaround and cost nothing — but they are
+**not load-bearing today**. Do not cite D3 as a reason for an upload failure
+without re-testing first.
 
 ### Version pinning caution
 Litestream 0.5.0 shipped with restore bugs. Separately, AWS SDK Go v2 broke uploads to all S3-compatible providers via aws-chunked encoding, fixed in Litestream **0.5.4**. Pin ≥ 0.5.4.

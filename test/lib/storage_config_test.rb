@@ -23,8 +23,10 @@ class StorageConfigTest < ActiveSupport::TestCase
     assert_equal "auto", storage_config.dig("r2", "region")
   end
 
-  # Guards defect D3: aws-sdk-s3 >= 1.178 sends CRC32 checksum headers that
-  # R2 rejects. Without these two keys every Active Storage upload fails.
+  # Defect D3 predicted that aws-sdk-s3 >= 1.178 CRC32 checksum headers would be
+  # rejected by R2. Tested 2026-08-26: it did not reproduce -- uploads succeed
+  # without these keys, multipart included. They are kept as insurance against
+  # SDK/R2 behaviour drift, and this test pins them so the choice stays deliberate.
   test "r2 disables aws-sdk default checksum behaviour" do
     assert_equal "when_required", storage_config.dig("r2", "request_checksum_calculation")
     assert_equal "when_required", storage_config.dig("r2", "response_checksum_validation")
