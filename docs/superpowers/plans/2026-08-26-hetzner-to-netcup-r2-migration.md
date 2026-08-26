@@ -567,9 +567,26 @@ Expected: equal, or the restored count trailing by at most the last sync interva
 bin/kamal app exec --reuse "rm /tmp/restored.sqlite3"
 ```
 
-- [ ] **Step 5: Soak**
+- [ ] **Step 5: Phase 1 acceptance gate**
 
-**Stop here for roughly one week** before starting Phase 2. During the soak, confirm image serving and uploads continue working and that `rclone ls r2:hauptgang-backups` keeps advancing. Do not begin Task 9 until the soak is clean.
+There is no time-based soak. **Stop here and walk this checklist together.** Every line must pass before Task 9 begins.
+
+```bash
+# Blob parity still clean
+rclone check hetzner:hauptgang-production r2:hauptgang-production --one-way
+
+# Both databases replicating to R2 within the last 10 minutes
+rclone ls r2:hauptgang-backups --max-age 10m
+```
+
+- [ ] Existing recipe images render in the app
+- [ ] A new upload through the app succeeds, and appears via `rclone lsl r2:hauptgang-production --max-age 10m`
+- [ ] `rclone check` reports `0 differences found`
+- [ ] `rclone ls --max-age 10m` shows recent objects under **both** `production.sqlite3` and `production_queue.sqlite3`
+- [ ] The Task 8 restore drill passed `integrity_check` and matched live row counts
+- [ ] No new storage-related errors in Sentry
+
+Phase 2 does not start until this is signed off.
 
 ---
 
@@ -786,13 +803,25 @@ Expected: the supervisor started and the hourly recurring cleanup task is regist
 bin/kamal app exec --reuse "rm -f /tmp/xcheck.sqlite3"
 ```
 
-- [ ] **Step 6: Soak for two weeks**
+- [ ] **Step 6: Phase 2 acceptance gate**
 
-Leave the Hetzner VPS and both Hetzner buckets paid-for and idle. Do not start Phase 3 before the soak completes.
+There is no time-based soak. **Stop here and walk this checklist together.** Phase 3 is irreversible, so every line must pass first.
+
+- [ ] Row counts match the Task 1 Step 4 baseline, allowing for legitimate growth
+- [ ] `curl -sI https://cook.hauptgang.app/up` returns 200 with valid TLS
+- [ ] Login works against the new host
+- [ ] Recipe images render
+- [ ] An end-to-end recipe import succeeds
+- [ ] The iOS app works against production
+- [ ] Litestream on Netcup is replicating both databases to R2
+- [ ] Solid Queue is running and the hourly recurring cleanup task is registered
+- [ ] No new errors in Sentry attributable to the move
+
+Leave the Hetzner VPS and both Hetzner buckets paid-for and idle until this is signed off. Do not start Phase 3 before then.
 
 ---
 
-## Phase 3 — Cleanup (after the two-week soak)
+## Phase 3 — Cleanup (after the Phase 2 acceptance gate)
 
 ### Task 13: Remove Hetzner from the codebase
 
@@ -893,4 +922,4 @@ git commit -m "chore: remove migration baseline scratch notes"
 | 1 | Litestream 0.5.16 misbehaves | Revert Dockerfile + accessory pin, redeploy. Restore from `pre-litestream-upgrade.tar.gz` if needed. |
 | 2 | Cross-check mismatch (Task 11 Step 6) | Do not flip DNS. Restart Hetzner app; nothing has changed publicly. |
 | 2 | Site broken after DNS flip | Flip A record back to `49.13.125.220`, restart app and litestream there. |
-| 3 | — | No rollback. Only proceed after the two-week soak. |
+| 3 | — | No rollback. Only proceed after the Phase 2 acceptance gate is signed off. |

@@ -85,8 +85,17 @@ Also extend `litestream.yml` to cover `production_queue.sqlite3` (addresses D2).
 
 **Format break:** 0.5.x cannot read 0.3.x generations, so the R2 replica starts as a fresh generation with no history. Until retention fills (72h), the fallbacks are the untouched Hetzner backup bucket and a manual volume tarball taken before the switch.
 
-### 1.5 Soak
-Run on R2 for roughly a week before starting Phase 2. Confirm image serving, uploads, and at least one successful `litestream restore` drill.
+### 1.5 Phase 1 acceptance gate
+No time-based soak. Phase 1 ends when both of us have walked the following checks and agreed they pass:
+
+- Existing recipe images render in the app.
+- A new upload through the app succeeds and the object appears in the R2 blob bucket.
+- `rclone check` reports parity between the Hetzner and R2 blob buckets.
+- Litestream objects are advancing in R2 for **both** `production.sqlite3` and `production_queue.sqlite3`.
+- A `litestream restore` drill from R2 passes `PRAGMA integrity_check` and matches live row counts.
+- No new storage-related errors in Sentry.
+
+Phase 2 does not start until this is signed off.
 
 ---
 
@@ -108,11 +117,24 @@ Netcup x86 VPS. Debian, SSH key auth, root login disabled, firewall limited to 2
 7. Flip the Cloudflare origin A record. Because the hostname is proxied, this takes effect in seconds with no TTL wait.
 
 ### 2.4 Rollback
-Flip the origin back and `kamal app boot` on Hetzner. The Hetzner box is stopped, never destroyed. Keep it paid-for and idle for ~2 weeks.
+Flip the origin back and `kamal app boot` on Hetzner. The Hetzner box is stopped, never destroyed. Keep it paid-for and idle until the Phase 2 acceptance gate is signed off.
 
 ---
 
-## Phase 3 — Cleanup (after ~2 week soak)
+## Phase 3 — Cleanup (after the Phase 2 acceptance gate)
+
+### Phase 2 acceptance gate
+No time-based soak. Phase 2 ends when both of us have walked these checks and agreed they pass:
+
+- Row counts on Netcup match the pre-migration baseline, allowing for legitimate growth.
+- `https://cook.hauptgang.app/up` returns 200 with valid TLS.
+- Login, image serving, and an end-to-end recipe import all work against the new host.
+- The iOS app works against production.
+- Litestream is replicating from Netcup to R2 for both databases.
+- Solid Queue is running and the hourly recurring cleanup task is registered.
+- No new errors in Sentry attributable to the move.
+
+Decommissioning is irreversible, so nothing in Phase 3 starts until this is signed off.
 
 - Delete the `:hetzner` service from `config/storage.yml`
 - Delete the `hetzner:` credentials namespace
@@ -145,4 +167,4 @@ Flip the origin back and `kamal app boot` on Hetzner. The Hetzner box is stopped
 2. Active Storage images serve from R2 in production with no client-visible change.
 3. A `litestream restore` from R2 produces a primary DB matching the live one by row count.
 4. Host cutover completes within the downtime budget.
-5. A rollback path exists at every step, and the Hetzner box survives the full soak period.
+5. A rollback path exists at every step, and the Hetzner box survives until the Phase 2 gate is signed off.
