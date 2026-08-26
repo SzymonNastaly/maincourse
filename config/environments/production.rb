@@ -21,9 +21,9 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on Hetzner Object Storage (S3-compatible).
+  # Store uploaded files on Cloudflare R2 (S3-compatible, EU jurisdiction).
   # See config/storage.yml for configuration.
-  config.active_storage.service = :hetzner
+  config.active_storage.service = :r2
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
