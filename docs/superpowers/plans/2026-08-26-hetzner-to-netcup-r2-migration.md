@@ -20,6 +20,7 @@
 - **Active Storage checksum flags are mandatory:** `request_checksum_calculation: when_required` and `response_checksum_validation: when_required`. Without them, `aws-sdk-s3 1.217.0` sends CRC32 headers that R2 rejects and every upload fails.
 - **Build arch stays `amd64`** — Netcup target is x86. Do not change `builder.arch`.
 - **No Active Storage database rewrite.** Blob keys are opaque and preserved by `rclone copy`. Any task proposing a `blobs` table migration is wrong.
+- **Every rclone command against the `r2:` remote MUST pass `--s3-no-check-bucket`.** The R2 API token is bucket-scoped, so it is denied `ListBuckets`; without the flag rclone falls back to `CreateBucket` and fails with `403 AccessDenied`. For the same reason, never run a bare `rclone lsd r2:` -- always name a bucket.
 - **Do not delete any Hetzner resource** (VPS or either bucket) before Phase 3. They are the rollback.
 - **Style:** rubocop-rails-omakase. Run `bin/rubocop -a` before each commit that touches Ruby.
 
@@ -305,7 +306,8 @@ region = auto
 
 ```bash
 rclone lsd hetzner:
-rclone lsd r2:
+rclone lsd r2:hauptgang-production --s3-no-check-bucket
+rclone lsd r2:hauptgang-backups --s3-no-check-bucket
 ```
 
 Expected: `hauptgang-production` and `hauptgang-backups` visible on `r2:`.
@@ -313,7 +315,7 @@ Expected: `hauptgang-production` and `hauptgang-backups` visible on `r2:`.
 - [ ] **Step 3: Bulk copy the blobs**
 
 ```bash
-rclone copy hetzner:hauptgang-production r2:hauptgang-production \
+rclone copy hetzner:hauptgang-production r2:hauptgang-production --s3-no-check-bucket \
   --progress --transfers 16 --checkers 32
 ```
 
@@ -322,7 +324,7 @@ Use the object count from Task 1 Step 3 to sanity-check the duration. This is sa
 - [ ] **Step 4: Verify parity**
 
 ```bash
-rclone check hetzner:hauptgang-production r2:hauptgang-production --one-way
+rclone check hetzner:hauptgang-production r2:hauptgang-production --one-way --s3-no-check-bucket
 ```
 
 Expected: `0 differences found`. **This is the acceptance gate for the task** — do not proceed to Task 5 until it is clean.
@@ -341,8 +343,8 @@ rclone config holds live secrets and must not be committed. Confirm with `git st
 Uploads may have landed since Task 4. Re-run both commands and require a clean check:
 
 ```bash
-rclone copy hetzner:hauptgang-production r2:hauptgang-production --progress
-rclone check hetzner:hauptgang-production r2:hauptgang-production --one-way
+rclone copy hetzner:hauptgang-production r2:hauptgang-production --progress --s3-no-check-bucket
+rclone check hetzner:hauptgang-production r2:hauptgang-production --one-way --s3-no-check-bucket
 ```
 
 Expected: `0 differences found`
@@ -375,7 +377,7 @@ bin/kamal deploy
 Open the app and confirm recipe images render. Then upload a new image through the app and confirm it appears. Then confirm it landed in R2, not Hetzner:
 
 ```bash
-rclone lsl r2:hauptgang-production --max-age 10m
+rclone lsl r2:hauptgang-production --max-age 10m --s3-no-check-bucket
 ```
 
 Expected: the newly uploaded object is listed.
@@ -530,7 +532,7 @@ Expected: `v0.5.16` — **identical to Step 4.** If these differ, stop; D1 has b
 
 ```bash
 sleep 60
-rclone ls r2:hauptgang-backups
+rclone ls r2:hauptgang-backups --s3-no-check-bucket
 ```
 
 Expected: objects under both `production.sqlite3` and `production_queue.sqlite3`.
@@ -587,14 +589,14 @@ There is no time-based soak. **Stop here and walk this checklist together.** Eve
 
 ```bash
 # Blob parity still clean
-rclone check hetzner:hauptgang-production r2:hauptgang-production --one-way
+rclone check hetzner:hauptgang-production r2:hauptgang-production --one-way --s3-no-check-bucket
 
 # Both databases replicating to R2 within the last 10 minutes
-rclone ls r2:hauptgang-backups --max-age 10m
+rclone ls r2:hauptgang-backups --max-age 10m --s3-no-check-bucket
 ```
 
 - [ ] Existing recipe images render in the app
-- [ ] A new upload through the app succeeds, and appears via `rclone lsl r2:hauptgang-production --max-age 10m`
+- [ ] A new upload through the app succeeds, and appears via `rclone lsl r2:hauptgang-production --max-age 10m --s3-no-check-bucket`
 - [ ] `rclone check` reports `0 differences found`
 - [ ] `rclone ls --max-age 10m` shows recent objects under **both** `production.sqlite3` and `production_queue.sqlite3`
 - [ ] The Task 8 restore drill passed `integrity_check` and matched live row counts
@@ -790,7 +792,7 @@ Expected: matches Task 1 Step 4, allowing for legitimate growth.
 
 ```bash
 bin/kamal accessory exec litestream "litestream version"
-rclone ls r2:hauptgang-backups --max-age 10m
+rclone ls r2:hauptgang-backups --max-age 10m --s3-no-check-bucket
 ```
 
 Expected: `v0.5.16`, and objects modified within the last 10 minutes.
