@@ -55,3 +55,6 @@ test/recipe_corpus/snapshots/*
 !test/recipe_corpus/snapshots/static/
 test/recipe_corpus/snapshots/static/*
 !test/recipe_corpus/snapshots/static/.keep
+
+# Migration safety tarballs -- contain production data, never commit
+*.tar.gz

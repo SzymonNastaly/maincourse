@@ -105,7 +105,7 @@ builder:
 accessories:
   litestream:
     host: 49.13.125.220
-    image: litestream/litestream
+    image: litestream/litestream:0.5.16
     cmd: replicate -config /etc/litestream.yml
     options:
       user: 1000:1000
