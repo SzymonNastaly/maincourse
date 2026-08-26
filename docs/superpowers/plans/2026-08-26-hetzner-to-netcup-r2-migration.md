@@ -27,6 +27,20 @@
 
 These require account access and cannot be done by an agent. They are called out inline as **[HUMAN]**: creating R2 buckets and API tokens, ordering the Netcup VPS, editing the Cloudflare DNS record, and cancelling Hetzner services.
 
+## Local Prerequisites
+
+Install and verify before starting Task 1:
+
+```bash
+brew install rclone           # required by Task 1 Step 3 and all of Task 4
+rclone version                # expect v1.70.0 or later
+ssh-add ~/.ssh/id_ed25519     # the key is passphrase-protected; the agent must
+                              # hold it or every kamal command fails on publickey
+ssh-add -l                    # expect the key to be listed
+```
+
+`bin/kamal` and `sqlite3` are already present in this environment.
+
 ---
 
 ## Phase 0 — Reconnaissance (no production changes)
