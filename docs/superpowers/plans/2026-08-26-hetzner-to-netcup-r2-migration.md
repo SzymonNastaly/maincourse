@@ -454,7 +454,22 @@ litestream databases -config config/litestream.yml
 ```
 
 Expected: both database paths listed, no schema errors.
-**If `snapshot.retention`/`snapshot.interval` are rejected, consult `litestream.io/reference/config/` for the exact global-snapshot key names and correct them here** — the two-key structure above is the documented 0.5.x shape but the field names are the one item not verified against the running binary.
+**`litestream databases` is NOT a schema validator.** Verified 2026-08-26 against the real
+0.5.16 binary: the config parser silently ignores unknown keys (a bogus top-level key and a
+bogus key inside `snapshot:` both parsed without complaint), and the old 0.3.x `replicas:`
+list still parses — `replicas` is *deprecated in 0.5.x, not removed*. So a clean `databases`
+listing proves only that the file is valid YAML with a readable `dbs:` section.
+
+Key names were instead confirmed from `litestream.io/reference/config/`: the global block is
+`snapshot:` with sub-keys `interval` and `retention`, and the per-database key is singular
+`replica:`. Separately, `retention.enabled` (top-level, added v0.5.8, defaults to `true`)
+controls only whether Litestream performs the deletions; `snapshot.retention` remains the
+duration setting. The config above is correct.
+
+Consequence for Task 7: deploying 0.5.16 against the OLD config would not have crashed — it
+would have parsed, silently ignored the replica-level `retention`/`snapshot-interval`, and
+replicated with defaults. The rewrite is still required for the queue database (D2), but do
+not expect a loud failure as the signal that it was needed.
 
 - [ ] **Step 4: Commit**
 

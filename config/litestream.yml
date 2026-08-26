@@ -1,11 +1,33 @@
+# Litestream 0.5.x schema. Note vs 0.3.x:
+#   - `replicas:` (list) became `replica:` (single replica per db)
+#   - retention/snapshot settings moved from the replica to global `snapshot:`
+# 0.5.x auto-detects R2 from the endpoint and self-limits concurrency,
+# so force-path-style and concurrency do not need setting by hand.
+
+snapshot:
+  retention: 72h
+  interval: 24h
+
 dbs:
   - path: /rails/storage/production.sqlite3
-    replicas:
-      - type: s3
-        bucket: ${LITESTREAM_REPLICA_BUCKET}
-        path: production.sqlite3
-        endpoint: ${LITESTREAM_REPLICA_ENDPOINT}
-        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
-        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
-        retention: 72h
-        snapshot-interval: 24h
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_REPLICA_BUCKET}
+      path: production.sqlite3
+      endpoint: ${LITESTREAM_REPLICA_ENDPOINT}
+      region: auto
+      access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+      secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+
+  # Closes defect D2: Solid Queue state (in-flight and scheduled jobs) was
+  # previously not backed up at all. Cache and cable stay excluded as
+  # genuinely disposable.
+  - path: /rails/storage/production_queue.sqlite3
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_REPLICA_BUCKET}
+      path: production_queue.sqlite3
+      endpoint: ${LITESTREAM_REPLICA_ENDPOINT}
+      region: auto
+      access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+      secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
