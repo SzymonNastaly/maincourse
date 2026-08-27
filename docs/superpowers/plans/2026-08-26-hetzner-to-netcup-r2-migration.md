@@ -791,18 +791,55 @@ Add aralani's details to `docs/superpowers/plans/migration-baseline.md` and comm
 
 The Cloudflare origin still points at Hetzner throughout this task. Production is unaffected.
 
+**Completed 2026-08-27. Two corrections to the steps as written.**
+
+**(a) Do NOT run `bin/kamal setup` here — run `bin/kamal deploy`.** `setup` boots
+accessories, and the litestream accessory's `config/litestream.yml` replicates to
+fixed R2 paths (`production.sqlite3`, `production_queue.sqlite3`) that hold the only
+backup of production. Booting a second Litestream against a fresh, empty database
+would have had it push an empty lineage at those same paths. Best case it refuses on
+a lineage mismatch; worst case it overwrites production's backup. Not worth finding
+out during a dry run.
+
+Mitigation used: `servers.web` was pointed at aralani while
+`accessories.litestream.host` was left on `49.13.125.220`, and only `kamal deploy`
+was run. Verified afterwards that production stayed healthy (`/up` 200, container up
+10 hours, litestream up 39 minutes).
+
+Note that `kamal deploy` still runs `docker image prune` on **every** host in the
+config, Hetzner included. Harmless — it prunes only dangling images labelled
+`service=hauptgang` — but it means "the dry run cannot touch production" is not
+strictly true, and the health check above is not optional.
+
+**(b) The app restores itself from R2 on boot.** `bin/docker-entrypoint` runs
+`litestream restore -if-replica-exists` whenever `storage/production.sqlite3` is
+missing. A fresh volume therefore does not come up empty — the dry run logged
+`No database found, restoring from Litestream backup...` and came up with the full
+production dataset (`recipes=163 users=21 blobs=514`) on a box that had never held
+a database.
+
+This is a **full disaster-recovery drill passing unaided**, and stronger evidence
+than Task 8's manual restore: bare metal to complete production dataset, no operator
+steps. But it invalidates this task's stated premise of "the app is now running there
+with an empty database" — it never was.
+
+**Cleanup performed:** the dry-run container and the `hauptgang_storage` volume were
+removed from aralani afterwards. That instance held production credentials and shares
+the R2 blob bucket with production, so leaving it running was not acceptable. Only
+`kamal-proxy` remains, which the cutover reuses.
+
 **Files:**
 - Modify: `config/deploy.yml` (temporarily)
 
-- [ ] **Step 1: Point deploy.yml at Netcup**
+- [x] **Step 1: Point deploy.yml at Netcup**
 
 In `config/deploy.yml`, change `servers.web` and `accessories.litestream.host` from `49.13.125.220` to the Netcup IP. **Do not commit this yet** — it is a dry run.
 
-- [ ] **Step 2: Temporarily disable proxy SSL for IP testing**
+- [x] **Step 2: Temporarily disable proxy SSL for IP testing**
 
 Let's Encrypt cannot issue for a bare IP. Under `proxy:`, temporarily set `ssl: false` and comment out `host:`.
 
-- [ ] **Step 3: Run setup**
+- [x] **Step 3: Run setup**
 
 ```bash
 bin/kamal setup
@@ -810,7 +847,7 @@ bin/kamal setup
 
 Expected: image builds, pushes, and boots on Netcup. The app is now running there with an empty database.
 
-- [ ] **Step 4: Smoke-test by IP**
+- [x] **Step 4: Smoke-test by IP**
 
 ```bash
 curl -sI http://<netcup-ip>/up
@@ -818,11 +855,11 @@ curl -sI http://<netcup-ip>/up
 
 Expected: `HTTP/1.1 200 OK`
 
-- [ ] **Step 5: Restore the proxy settings**
+- [x] **Step 5: Restore the proxy settings**
 
 Revert Step 2 — set `ssl: true` and restore `host: cook.hauptgang.app`. Leave the new IPs in place.
 
-- [ ] **Step 6: Commit the host change**
+- [x] **Step 6: Commit the host change**
 
 ```bash
 git add config/deploy.yml
@@ -875,6 +912,31 @@ ssh root@<netcup-ip> "docker run --rm -v hauptgang_storage:/v alpine ls -la /v"
 ```
 
 Expected: all four `production*.sqlite3` files present.
+
+- [ ] **Step 4b: Confirm the tarball actually landed BEFORE booting**
+
+Added 2026-08-27 after the Task 10 dry run. `bin/docker-entrypoint` auto-restores
+from R2 when `storage/production.sqlite3` is missing. If the Step 4 restore silently
+failed, the app will **still boot successfully** — it will just rebuild from the R2
+replica instead, quietly losing every write since the last sync. The app looks
+healthy either way, so this failure is invisible without an explicit check.
+
+```bash
+ssh root@<netcup-ip> "docker run --rm -v hauptgang_storage:/v alpine ls -la /v"
+```
+
+Expected: all four `.sqlite3` files present, `production.sqlite3` matching the size
+on Hetzner. If it is missing, **stop** and redo Step 4 — do not boot.
+
+After booting, confirm the restore path did *not* fire:
+
+```bash
+ssh root@<netcup-ip> "docker logs \$(docker ps -q -f name=hauptgang-web) 2>&1 | grep -c 'No database found'"
+```
+
+Expected: `0`. Any other number means the tarball did not land and the database came
+from R2, not from the cutover — treat row counts as suspect and re-check against the
+baseline before flipping DNS.
 
 - [ ] **Step 5: Boot on Netcup**
 
