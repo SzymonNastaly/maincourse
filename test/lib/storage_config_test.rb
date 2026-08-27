@@ -31,4 +31,9 @@ class StorageConfigTest < ActiveSupport::TestCase
     assert_equal "when_required", storage_config.dig("r2", "request_checksum_calculation")
     assert_equal "when_required", storage_config.dig("r2", "response_checksum_validation")
   end
+
+  test "the hetzner service has been removed" do
+    refute storage_config.key?("hetzner"),
+      "the :hetzner service should be gone after migration cleanup"
+  end
 end

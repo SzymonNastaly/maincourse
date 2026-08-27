@@ -6,21 +6,14 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
-# Hetzner Object Storage (S3-compatible)
-# Available regions: fsn1 (Falkenstein), nbg1 (Nuremberg), hel1 (Helsinki)
-# Generate credentials in Hetzner Console → Object Storage → S3 Credentials
+# Cloudflare R2 (S3-compatible), EU jurisdiction. Jurisdiction is fixed at bucket
+# creation and cannot be changed later.
 # Store keys via: bin/rails credentials:edit
-hetzner:
-  service: S3
-  endpoint: https://fsn1.your-objectstorage.com
-  access_key_id: <%= Rails.application.credentials.dig(:hetzner, :access_key_id) %>
-  secret_access_key: <%= Rails.application.credentials.dig(:hetzner, :secret_access_key) %>
-  region: fsn1
-  bucket: <%= Rails.application.credentials.dig(:hetzner, :bucket) || "hauptgang-production" %>
-
-# Cloudflare R2 (S3-compatible), EU jurisdiction.
-# request/response_checksum_* are REQUIRED: aws-sdk-s3 >= 1.178 sends CRC32
-# checksum headers by default and R2 rejects them.
+#
+# request/response_checksum_* guard against aws-sdk-s3 >= 1.178 CRC32 checksum
+# headers. Tested against the live EU bucket 2026-08-26: uploads succeed without
+# them, multipart included, so they are insurance against SDK/R2 drift rather
+# than a current requirement. Do not blame them for an upload failure untested.
 r2:
   service: S3
   endpoint: https://<%= Rails.application.credentials.dig(:r2, :account_id) %>.eu.r2.cloudflarestorage.com
