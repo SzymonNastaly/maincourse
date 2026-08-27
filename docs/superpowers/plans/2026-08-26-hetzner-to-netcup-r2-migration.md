@@ -1102,7 +1102,7 @@ app, and no new Sentry errors. Phase 3 is authorised.
 - Modify: `docs/sqlite-backups-litestream.md`
 - Test: `test/lib/storage_config_test.rb`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `test/lib/storage_config_test.rb`:
 
@@ -1113,21 +1113,21 @@ Add to `test/lib/storage_config_test.rb`:
   end
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `bin/rails test test/lib/storage_config_test.rb`
 Expected: FAIL — `the :hetzner service should be gone after migration cleanup`
 
-- [ ] **Step 3: Delete the service**
+- [x] **Step 3: Delete the service**
 
 Remove the entire `hetzner:` block and its comment header from `config/storage.yml`.
 
-- [ ] **Step 4: Run it to verify it passes**
+- [x] **Step 4: Run it to verify it passes**
 
 Run: `bin/rails test test/lib/storage_config_test.rb`
 Expected: PASS, 5 assertions
 
-- [ ] **Step 5: Remove the credentials**
+- [x] **Step 5: Remove the credentials**
 
 ```bash
 bin/rails credentials:edit
@@ -1135,11 +1135,11 @@ bin/rails credentials:edit
 
 Delete the entire `hetzner:` block.
 
-- [ ] **Step 6: Update the backup documentation**
+- [x] **Step 6: Update the backup documentation**
 
 In `docs/sqlite-backups-litestream.md`, replace the Hetzner references. The line currently reading that it reuses `hetzner.access_key_id` / `hetzner.secret_access_key` with backup bucket `hauptgang-backups` in `fsn1` must now describe: Cloudflare R2 credentials at `r2.access_key_id` / `r2.secret_access_key`, bucket `hauptgang-backups`, EU jurisdiction, Litestream pinned at v0.5.16, and that both `production.sqlite3` and `production_queue.sqlite3` are replicated.
 
-- [ ] **Step 7: Run the full CI suite**
+- [x] **Step 7: Run the full CI suite**
 
 ```bash
 bin/ci
@@ -1147,7 +1147,7 @@ bin/ci
 
 Expected: all steps pass.
 
-- [ ] **Step 8: Commit and deploy**
+- [x] **Step 8: Commit and deploy**
 
 ```bash
 bin/rubocop -a
@@ -1155,6 +1155,28 @@ git add config/storage.yml config/credentials.yml.enc docs/sqlite-backups-litest
 git commit -m "chore: remove Hetzner object storage configuration"
 bin/kamal deploy
 ```
+
+**Task 13 completed 2026-08-27**, deployed as `fb9121a`. Verified after deploy:
+`/up` 200 with valid TLS, `recipes=163 users=21 blobs=514`, `ActiveStorage::Blob.service.name == :r2`,
+the newest blob resolves in R2, Litestream v0.5.16 replicating both databases with the
+highest R2 txid equal to the local max txid on each (`...000b`, `...05e6`).
+
+Three deviations from the plan as written:
+
+1. **Step 5 could not use interactive `credentials:edit`.** Driven non-interactively with
+   `EDITOR=<script>` so no secret was ever printed to the terminal. Remaining top-level keys
+   confirmed afterwards by name only.
+2. **Step 6 understated the doc rewrite.** `docs/sqlite-backups-litestream.md` was wrong in
+   more than its Hetzner references — it claimed only one database was backed up and described
+   the 0.3.x architecture. Rewritten to cover R2 EU, both databases, the three-places version
+   pin, and the two hazards this migration uncovered (`kamal restore` overwrites the live DB;
+   the entrypoint's auto-restore can silently mask a failed volume ship).
+3. **Step 7 `bin/ci` does not pass, for pre-existing reasons unrelated to this task.**
+   Ruby style, all three security audits, Rails tests, and seeds pass. Failing:
+   *Tests: System* (`selenium-manager` cannot resolve chromedriver — environment, not code)
+   and *Style: iOS Lint/Format* (line lengths, `aspectRatio` idiom, `wrapIfStatementBodies`
+   in committed Swift). Both are Swift/browser-only and cannot be affected by a change to
+   `config/storage.yml`, credentials, and a Markdown file. Not fixed here — out of scope.
 
 ### Task 14: Decommission Hetzner
 
