@@ -566,7 +566,16 @@ pinned 0.3.13, whose format 0.5.x cannot read."
 
 An untested backup is not a backup, and Phase 2 depends on this working.
 
-- [ ] **Step 1: Restore the primary database from R2 to a scratch path**
+**Executed 2026-08-27 from the developer laptop, not via `app exec`.** Restoring
+with a local litestream 0.5.16 binary against R2 is a strictly stronger test than
+restoring inside the app container: it shares no binary, no filesystem, and no
+host with production, so it proves the replica alone is sufficient to rebuild the
+database. Both `production.sqlite3` and `production_queue.sqlite3` were restored;
+both returned `integrity_check: ok`, and the primary matched live exactly at
+`recipes=163 users=21 blobs=514`. The commands below are kept as the in-container
+equivalent.
+
+- [x] **Step 1: Restore the primary database from R2 to a scratch path**
 
 ```bash
 bin/kamal app exec --reuse \
@@ -575,7 +584,7 @@ bin/kamal app exec --reuse \
 
 Expected: completes without error.
 
-- [ ] **Step 2: Verify the restored file is a valid, complete database**
+- [x] **Step 2: Verify the restored file is a valid, complete database**
 
 ```bash
 bin/kamal app exec --reuse "sqlite3 /tmp/restored.sqlite3 'PRAGMA integrity_check;'"
@@ -583,7 +592,7 @@ bin/kamal app exec --reuse "sqlite3 /tmp/restored.sqlite3 'PRAGMA integrity_chec
 
 Expected: `ok`
 
-- [ ] **Step 3: Compare row counts against live**
+- [x] **Step 3: Compare row counts against live**
 
 ```bash
 bin/kamal app exec --reuse "sqlite3 /tmp/restored.sqlite3 'SELECT COUNT(*) FROM recipes;'"
@@ -592,7 +601,7 @@ bin/kamal app exec --reuse "sqlite3 /rails/storage/production.sqlite3 'SELECT CO
 
 Expected: equal, or the restored count trailing by at most the last sync interval.
 
-- [ ] **Step 4: Clean up**
+- [x] **Step 4: Clean up**
 
 ```bash
 bin/kamal app exec --reuse "rm /tmp/restored.sqlite3"
