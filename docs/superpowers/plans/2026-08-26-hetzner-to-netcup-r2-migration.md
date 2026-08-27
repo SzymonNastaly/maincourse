@@ -870,6 +870,47 @@ git commit -m "feat: point Kamal at the Netcup VPS"
 
 Budget 5–10 minutes. Read every step before starting. Do not begin without the Cloudflare dashboard already open.
 
+**Executed 2026-08-27. Cutover succeeded.** Corrections made to the steps as written:
+
+**Pre-window, added:** the plan had no TLS story, and it needed one. Booting aralani
+with `ssl: true` while DNS still pointed at Hetzner means the Let's Encrypt HTTP-01
+challenge cannot reach it, so there would have been an HTTPS gap after the flip while
+ACME retried -- and repeated failures risk the LE rate limit, which could have left
+the site without a cert. Because both hosts ran the identical `kamal-proxy v0.9.2`,
+the fix was to copy the `certs/` directory (NOT `kamal-proxy.state`, which holds
+stale routing) from Hetzner's `kamal-proxy-config` volume to aralani's.
+
+Verified before the window using `curl --resolve cook.hauptgang.app:443:<aralani-ip>`,
+which tests the real hostname and cert without touching DNS: `status=200`,
+`ssl_verify_result=0`, and **no ACME attempt in the proxy log**. The flip was
+therefore seamless. Note that kamal-proxy will not serve TLS for a hostname with no
+deployed target, so this can only be verified after the app is booted there.
+
+**Step 1 premise was stale:** it claimed "Task 10 already repointed deploy.yml at
+Netcup." Task 10's cleanup reverted that, so `deploy.yml` pointed at Hetzner and
+`bin/kamal app boot` in Step 5 would have booted on the *old* host. Repointed
+explicitly before Step 5.
+
+**Step 2 did not do what its title said:** "force a final Litestream sync" was
+followed by a command that only stops the container. Replaced with an explicit
+verification that `txid.replica == txid.db` for **both** databases before stopping
+the accessory.
+
+**Step 5 used `--version=<sha>`** to boot the image already on the host rather than
+rebuilding inside the window (only docs had changed since it was built).
+
+**Missing step, added after the window:** the plan never boots the Litestream
+accessory on the new host. Between the DNS flip and that boot, production had **no
+backup replication at all**. `accessories.litestream.host` must be repointed and
+`bin/kamal accessory boot litestream` run. The `.{db}-litestream` state directories
+travel inside the volume tarball, so the replica lineage continues (production
+resumed at txid 2) instead of starting a fresh generation.
+
+**Result:** three independent paths agreed at `recipes=163 users=21 blobs=514` --
+the pre-stop Hetzner baseline, the shipped tarball, and a fresh restore from R2.
+Step 4b's guard returned `0`, proving the data came from the tarball. Downtime was
+roughly four minutes.
+
 - [ ] **Step 1: Stop the app on Hetzner**
 
 This ends all writes and eliminates split-brain risk. Downtime starts now.
