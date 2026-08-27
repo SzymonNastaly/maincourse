@@ -113,7 +113,15 @@ Phase 2 does not start until this is signed off.
 ## Phase 2 — Host to Netcup
 
 ### 2.1 Provision
-Netcup x86 VPS. Debian, SSH key auth, root login disabled, firewall limited to 22/80/443, Docker installed. Sizing note: the workload is SQLite + Puma + libvips variants + network-bound `ruby_llm` calls; 8 cores / 16 GB is generous, half that is sufficient.
+Netcup x86 VPS. Debian, SSH key auth, password auth disabled, firewall limited to 22/80/443, Docker installed. Sizing note: the workload is SQLite + Puma + libvips variants + network-bound `ruby_llm` calls; 8 cores / 16 GB is generous, half that is sufficient.
+
+**Provisioned at 4 cores / 8 GB / 256 GB** — the "half that is sufficient" case. Base setup gained a 4 GB swapfile because this box is also intended to host self-hosted apps later.
+
+### Out of scope for this migration: self-hosting other apps
+
+The box is also meant to run other open-source apps. Coolify, Dokploy, and Dokku were each evaluated and **rejected**: every one wants port 80 and its own abstraction, which would couple hauptgang's deploys to a platform's proxy config during a migration. Decision is **Caddy + docker compose**, with each app published to `127.0.0.1` only.
+
+**This is deferred until after the Phase 2 gate.** Phase 2 moves hauptgang with kamal-proxy owning 80/443 exactly as it does on Hetzner, preserving the one-variable-at-a-time rule and keeping rollback to a single DNS flip. Caddy goes in afterward, on a box already known to work.
 
 ### 2.2 Dry run (before the window)
 `kamal setup` against Netcup while the Cloudflare origin still points at Hetzner. The new box builds, boots, and is exercised by IP or a temporary hostname. Nothing is committed.
@@ -169,7 +177,7 @@ Decommissioning is irreversible, so nothing in Phase 3 starts until this is sign
 
 - **Size of `hauptgang-production`** — drives rclone timing and confirms the cost premise. Not yet known.
 - Cloudflare account: R2 enabled, EU jurisdiction available.
-- Netcup VPS not yet ordered.
+- ~~Netcup VPS not yet ordered.~~ Ordered 2026-08-27: `aralani`, `152.53.92.245`, 4 cores / 8 GB / 256 GB, prepaid one year.
 - Exact Litestream 0.5.x version to pin, and its config schema (see 1.4).
 
 ## Success Criteria

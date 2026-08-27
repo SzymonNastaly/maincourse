@@ -68,3 +68,19 @@ The storage half of this migration is a near-total cost elimination, not a reduc
 
 This also retroactively settles the R2-vs-Backblaze question: at this scale the
 price difference between them was zero either way.
+
+## Target host: aralani (ordered 2026-08-27)
+
+| | |
+|---|---|
+| IP | `152.53.92.245` |
+| Netcup hostname | `v2202608404929506553.quicksrv.de` |
+| Specs | 4 dedicated cores / 8 GB RAM / 256 GB, AMD64 |
+| Billing | prepaid, one year |
+| SSH host key (ED25519) | `SHA256:T5GIeGCOJViJD+5AI9X9BNQHPJki6yRFpqd/f40x1cw` |
+
+Half the size the design assumed (8/16). The spec already recorded that half is
+sufficient, so no re-architecture — but swap became part of the base setup because
+this box will later also host Caddy and self-hosted apps.
+
+Deliberately has **no DNS record**. See Task 9 Step 9.

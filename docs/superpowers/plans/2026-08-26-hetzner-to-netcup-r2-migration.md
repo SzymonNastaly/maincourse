@@ -632,38 +632,141 @@ Phase 2 does not start until this is signed off.
 
 ## Phase 2 — Host to Netcup
 
-### Task 9: Provision the Netcup VPS
+### Task 9: Provision and harden the Netcup VPS
 
-**[HUMAN]** — requires a Netcup account and payment.
+**Ordered 2026-08-27.** Host `aralani`, `152.53.92.245`
+(`v2202608404929506553.quicksrv.de`), **4 dedicated cores / 8 GB RAM / 256 GB**,
+AMD64, prepaid for one year.
 
-- [ ] **Step 1: Order the server**
+This is half the size the design assumed (8/16), which is fine: the spec already
+recorded that "half that is sufficient." It does change one thing — with Caddy and
+self-hosted apps arriving later on the same box, headroom is worth protecting, so
+swap is now part of the base setup rather than optional.
 
-Order a Netcup x86 VPS (VPS 2000 G11 class: 8 dedicated cores / 16 GB / NVMe). Do **not** order ARM — the plan and `builder.arch` assume x86. Choose Debian 12 or 13 as the OS image.
+Ships with **root only, password auth**. Every step below exists to change that.
 
-- [ ] **Step 2: Harden SSH**
+- [ ] **Step 1: Verify the host key on first connect [HUMAN]**
 
-```bash
-ssh-copy-id root@<netcup-ip>
+Netcup published these out-of-band; check the ED25519 line matches before trusting
+the host, otherwise the first connection is unauthenticated.
+
+```
+256 SHA256:T5GIeGCOJViJD+5AI9X9BNQHPJki6yRFpqd/f40x1cw (ED25519)
 ```
 
-Then on the server, in `/etc/ssh/sshd_config`, set `PasswordAuthentication no` and `PermitRootLogin prohibit-password`, then `systemctl restart sshd`.
-
-- [ ] **Step 3: Install Docker**
-
 ```bash
-ssh root@<netcup-ip> "curl -fsSL https://get.docker.com | sh"
-ssh root@<netcup-ip> "docker --version"
+ssh-keyscan -t ed25519 152.53.92.245 | ssh-keygen -lf -
 ```
 
-- [ ] **Step 4: Firewall to 22/80/443**
+Expected: prints `SHA256:T5GIeGCOJViJD+5AI9X9BNQHPJki6yRFpqd/f40x1cw`. If it does
+not match, **stop** — do not log in.
+
+- [ ] **Step 2: Install the SSH key [HUMAN]**
+
+Requires the root password, so this step is the operator's. It is the last time the
+password is used.
 
 ```bash
-ssh root@<netcup-ip> "apt-get install -y ufw && ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable"
+ssh-copy-id root@152.53.92.245
+ssh root@152.53.92.245 "echo key-auth-works"
 ```
 
-- [ ] **Step 5: Record the IP**
+Expected: the second command prints `key-auth-works` without prompting.
 
-Add the new IP to `docs/superpowers/plans/migration-baseline.md` under a `Netcup IP` heading, and commit.
+- [ ] **Step 3: Disable password authentication**
+
+```bash
+ssh root@152.53.92.245 "install -m 0644 /dev/stdin /etc/ssh/sshd_config.d/99-hardening.conf <<'EOF'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin prohibit-password
+EOF
+sshd -t && systemctl reload ssh"
+```
+
+A drop-in file is used rather than editing `sshd_config`, so a distro package
+upgrade cannot silently revert it. `sshd -t` validates before reload — a syntax
+error that reached a restart would lock the box out.
+
+**Keep the current SSH session open** until Step 4 confirms a fresh login works.
+
+Note on `prohibit-password`: the design said "root login disabled." Key-only root is
+the pragmatic reading, and a separate `deploy` user would not add a real boundary
+here — Kamal requires Docker socket access, and Docker group membership is
+root-equivalent by design. The meaningful win is killing password auth, which this
+step does.
+
+- [ ] **Step 4: Verify lockout did not happen, and that passwords are refused**
+
+In a **new** terminal:
+
+```bash
+ssh root@152.53.92.245 "echo still-in"
+ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no root@152.53.92.245 "echo SHOULD-NOT-APPEAR"
+```
+
+Expected: first prints `still-in`; second fails with `Permission denied (publickey)`.
+
+- [ ] **Step 5: Hostname, timezone, swap**
+
+```bash
+ssh root@152.53.92.245 "hostnamectl set-hostname aralani && timedatectl set-timezone Europe/Zurich"
+
+ssh root@152.53.92.245 "fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab"
+ssh root@152.53.92.245 "free -h && swapon --show"
+```
+
+Expected: 4 GB swap listed. With 8 GB RAM and several containers eventually sharing
+the box, swap converts a would-be OOM kill into slowness.
+
+- [ ] **Step 6: Automatic security updates**
+
+```bash
+ssh root@152.53.92.245 "apt-get update && apt-get install -y unattended-upgrades && systemctl enable --now unattended-upgrades"
+```
+
+- [ ] **Step 7: Install Docker**
+
+```bash
+ssh root@152.53.92.245 "curl -fsSL https://get.docker.com | sh"
+ssh root@152.53.92.245 "docker --version && systemctl is-enabled docker"
+```
+
+- [ ] **Step 8: Firewall**
+
+```bash
+ssh root@152.53.92.245 "apt-get install -y ufw && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw --force enable && ufw status verbose"
+```
+
+**Known gotcha, do not skip:** Docker inserts its own iptables rules ahead of ufw's,
+so a container started with `-p 5432:5432` is reachable from the internet **even
+though ufw says the port is denied**. ufw protects host services, not published
+container ports.
+
+This does not affect hauptgang — kamal-proxy publishes 80/443, which are open
+anyway. It matters when the Caddy phase arrives: every self-hosted app must publish
+to `127.0.0.1:<port>` rather than `0.0.0.0:<port>`, so Caddy is the only route in.
+Recorded here so it is not rediscovered the hard way later.
+
+- [ ] **Step 9: No DNS record for aralani**
+
+Deliberately none. SSH cannot pass through a Cloudflare-proxied record, so any
+hostname for SSH would have to be grey-clouded, which publishes the origin IP in
+DNS. Use an SSH alias instead:
+
+```
+# ~/.ssh/config
+Host aralani
+    HostName 152.53.92.245
+    User root
+```
+
+The only DNS change in this migration stays what the plan already says: flipping the
+proxied `cook.hauptgang.app` A record at cutover.
+
+- [ ] **Step 10: Record the host**
+
+Add aralani's details to `docs/superpowers/plans/migration-baseline.md` and commit.
 
 ### Task 10: Dry-run the deploy against Netcup
 
