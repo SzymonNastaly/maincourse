@@ -645,7 +645,26 @@ swap is now part of the base setup rather than optional.
 
 Ships with **root only, password auth**. Every step below exists to change that.
 
-- [ ] **Step 1: Verify the host key on first connect [HUMAN]**
+**Completed 2026-08-27.** Two deviations from the steps as written, both deliberate:
+
+1. The image is **Ubuntu 24.04.4 LTS**, not the Debian the plan assumed. No impact on
+   Docker or Kamal.
+2. The sshd drop-in is named **`01-hardening.conf`**, not `99-`. sshd uses the *first*
+   value obtained for each keyword, and Ubuntu's cloud-init can drop a
+   `50-cloud-init.conf` that re-enables `PasswordAuthentication`. At `99-` this file
+   would silently lose that race; at `01-` it wins. The drop-in directory was empty at
+   the time, so this is insurance against a future cloud-init run, not a fix.
+
+Also added beyond the written steps: `vm.swappiness=10` (prefer RAM, swap only under
+real pressure) and an explicit `/etc/apt/apt.conf.d/20auto-upgrades`, because
+installing `unattended-upgrades` does not by itself guarantee the periodic keys are set.
+
+Verified end state: password auth **refused** (`Permission denied (publickey)` on a live
+attempt, not just a config read), key auth working, `permitrootlogin without-password`,
+4 GB swap active and in fstab, `apt-daily-upgrade.timer` armed, Docker 29.7.2 +
+Compose v5.5.0 enabled and running, ufw active with only 22/80/443, 0 containers.
+
+- [x] **Step 1: Verify the host key on first connect [HUMAN]**
 
 Netcup published these out-of-band; check the ED25519 line matches before trusting
 the host, otherwise the first connection is unauthenticated.
@@ -661,7 +680,7 @@ ssh-keyscan -t ed25519 152.53.92.245 | ssh-keygen -lf -
 Expected: prints `SHA256:T5GIeGCOJViJD+5AI9X9BNQHPJki6yRFpqd/f40x1cw`. If it does
 not match, **stop** — do not log in.
 
-- [ ] **Step 2: Install the SSH key [HUMAN]**
+- [x] **Step 2: Install the SSH key [HUMAN]**
 
 Requires the root password, so this step is the operator's. It is the last time the
 password is used.
@@ -673,7 +692,7 @@ ssh root@152.53.92.245 "echo key-auth-works"
 
 Expected: the second command prints `key-auth-works` without prompting.
 
-- [ ] **Step 3: Disable password authentication**
+- [x] **Step 3: Disable password authentication**
 
 ```bash
 ssh root@152.53.92.245 "install -m 0644 /dev/stdin /etc/ssh/sshd_config.d/99-hardening.conf <<'EOF'
@@ -696,7 +715,7 @@ here — Kamal requires Docker socket access, and Docker group membership is
 root-equivalent by design. The meaningful win is killing password auth, which this
 step does.
 
-- [ ] **Step 4: Verify lockout did not happen, and that passwords are refused**
+- [x] **Step 4: Verify lockout did not happen, and that passwords are refused**
 
 In a **new** terminal:
 
@@ -707,7 +726,7 @@ ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no root@152.53.
 
 Expected: first prints `still-in`; second fails with `Permission denied (publickey)`.
 
-- [ ] **Step 5: Hostname, timezone, swap**
+- [x] **Step 5: Hostname, timezone, swap**
 
 ```bash
 ssh root@152.53.92.245 "hostnamectl set-hostname aralani && timedatectl set-timezone Europe/Zurich"
@@ -719,20 +738,20 @@ ssh root@152.53.92.245 "free -h && swapon --show"
 Expected: 4 GB swap listed. With 8 GB RAM and several containers eventually sharing
 the box, swap converts a would-be OOM kill into slowness.
 
-- [ ] **Step 6: Automatic security updates**
+- [x] **Step 6: Automatic security updates**
 
 ```bash
 ssh root@152.53.92.245 "apt-get update && apt-get install -y unattended-upgrades && systemctl enable --now unattended-upgrades"
 ```
 
-- [ ] **Step 7: Install Docker**
+- [x] **Step 7: Install Docker**
 
 ```bash
 ssh root@152.53.92.245 "curl -fsSL https://get.docker.com | sh"
 ssh root@152.53.92.245 "docker --version && systemctl is-enabled docker"
 ```
 
-- [ ] **Step 8: Firewall**
+- [x] **Step 8: Firewall**
 
 ```bash
 ssh root@152.53.92.245 "apt-get install -y ufw && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw --force enable && ufw status verbose"
@@ -748,7 +767,7 @@ anyway. It matters when the Caddy phase arrives: every self-hosted app must publ
 to `127.0.0.1:<port>` rather than `0.0.0.0:<port>`, so Caddy is the only route in.
 Recorded here so it is not rediscovered the hard way later.
 
-- [ ] **Step 9: No DNS record for aralani**
+- [x] **Step 9: No DNS record for aralani**
 
 Deliberately none. SSH cannot pass through a Cloudflare-proxied record, so any
 hostname for SSH would have to be grey-clouded, which publishes the origin IP in
@@ -764,7 +783,7 @@ Host aralani
 The only DNS change in this migration stays what the plan already says: flipping the
 proxied `cook.hauptgang.app` A record at cutover.
 
-- [ ] **Step 10: Record the host**
+- [x] **Step 10: Record the host**
 
 Add aralani's details to `docs/superpowers/plans/migration-baseline.md` and commit.
 
