@@ -1025,7 +1025,7 @@ and boot the app on Hetzner. The Hetzner box was only stopped, never destroyed, 
 
 ### Task 12: Post-cutover verification
 
-- [ ] **Step 1: Confirm row counts match the baseline**
+- [x] **Step 1: Confirm row counts match the baseline**
 
 ```bash
 bin/kamal console
@@ -1037,7 +1037,7 @@ puts({ recipes: Recipe.count, users: User.count, blobs: ActiveStorage::Blob.coun
 
 Expected: matches Task 1 Step 4, allowing for legitimate growth.
 
-- [ ] **Step 2: Confirm Litestream is replicating from the new host**
+- [x] **Step 2: Confirm Litestream is replicating from the new host**
 
 ```bash
 bin/kamal accessory exec litestream "litestream version"
@@ -1046,7 +1046,7 @@ rclone ls r2:hauptgang-backups --max-age 10m --s3-no-check-bucket
 
 Expected: `v0.5.16`, and objects modified within the last 10 minutes.
 
-- [ ] **Step 3: Confirm TLS was issued for the new origin**
+- [x] **Step 3: Confirm TLS was issued for the new origin**
 
 ```bash
 curl -sI https://cook.hauptgang.app/up | head -1
@@ -1054,7 +1054,7 @@ curl -sI https://cook.hauptgang.app/up | head -1
 
 Expected: `HTTP/2 200`
 
-- [ ] **Step 4: Confirm background jobs run**
+- [x] **Step 4: Confirm background jobs run**
 
 ```bash
 bin/kamal app logs | grep -i "solid_queue\|SolidQueue" | tail -20
@@ -1062,27 +1062,33 @@ bin/kamal app logs | grep -i "solid_queue\|SolidQueue" | tail -20
 
 Expected: the supervisor started and the hourly recurring cleanup task is registered.
 
-- [ ] **Step 5: Clean up the cross-check file**
+- [x] **Step 5: Clean up the cross-check file**
 
 ```bash
 bin/kamal app exec --reuse "rm -f /tmp/xcheck.sqlite3"
 ```
 
-- [ ] **Step 6: Phase 2 acceptance gate**
+- [x] **Step 6: Phase 2 acceptance gate**
 
 There is no time-based soak. **Stop here and walk this checklist together.** Phase 3 is irreversible, so every line must pass first.
 
-- [ ] Row counts match the Task 1 Step 4 baseline, allowing for legitimate growth
-- [ ] `curl -sI https://cook.hauptgang.app/up` returns 200 with valid TLS
-- [ ] Login works against the new host
-- [ ] Recipe images render
-- [ ] An end-to-end recipe import succeeds
-- [ ] The iOS app works against production
-- [ ] Litestream on Netcup is replicating both databases to R2
-- [ ] Solid Queue is running and the hourly recurring cleanup task is registered
-- [ ] No new errors in Sentry attributable to the move
+- [x] Row counts match the Task 1 Step 4 baseline, allowing for legitimate growth
+- [x] `curl -sI https://cook.hauptgang.app/up` returns 200 with valid TLS
+- [x] Login works against the new host
+- [x] Recipe images render
+- [x] An end-to-end recipe import succeeds
+- [x] The iOS app works against production
+- [x] Litestream on Netcup is replicating both databases to R2
+- [x] Solid Queue is running and the hourly recurring cleanup task is registered
+- [x] No new errors in Sentry attributable to the move
 
 Leave the Hetzner VPS and both Hetzner buckets paid-for and idle until this is signed off. Do not start Phase 3 before then.
+
+**Gate signed off 2026-08-27.** Verified jointly: three independent paths agreed at
+`recipes=163 users=21 blobs=514`, `/up` returned 200 with a valid Let's Encrypt cert,
+Litestream replicated both databases from Netcup to R2, Solid Queue's hourly cleanup
+task registered, and the user confirmed login, image serving, recipe import, the iOS
+app, and no new Sentry errors. Phase 3 is authorised.
 
 ---
 
@@ -1169,6 +1175,28 @@ Verify `./pre-litestream-upgrade.tar.gz` and `./cutover.tar.gz` still exist loca
 - [ ] **Step 3: Cancel the Hetzner services**
 
 In the Hetzner console, delete the `hauptgang-production` and `hauptgang-backups` buckets and cancel the VPS `49.13.125.220`. Do all three together, last.
+
+**Buckets purged 2026-08-27** via `rclone purge` (both bucket and contents removed;
+`rclone lsd hetzner:` now lists nothing). The VPS is still running and remains the
+`[HUMAN]` half of this step.
+
+Deletion was gated on a three-way verification, all of which passed first:
+
+| Check | Result |
+|---|---|
+| every Hetzner blob exists byte-identical in R2 | 512 matching, 0 differences |
+| every Hetzner blob exists in `~/hauptgang-migration-archive/blobs` | 512 matching, 0 differences |
+| every Hetzner backup object exists in `~/hauptgang-migration-archive/old-litestream-backups` | 31 matching, 0 differences |
+
+**Note on the one-object discrepancy.** A first two-way `rclone check` of the backups
+bucket reported `1 differences found`. The object was
+`production.sqlite3/0000/0000000000000d8c-0000000000000d8c.ltx`. It was **only in the
+local archive**, not missing from it: `rclone lsjson` on that exact key returned `[]`
+and `rclone md5sum` returned nothing, so Litestream's retention had deleted it upstream
+after the bulk copy. The archive was a superset of the bucket. Re-running with
+`--one-way` — the direction that actually matters for safety, "every remote object must
+exist locally" — passed cleanly. Use `--one-way` for this kind of gate; a two-way check
+fails on harmless extras.
 
 - [ ] **Step 4: Remove the baseline scratch file**
 
