@@ -9,6 +9,8 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     var deleteAccountCalled = false
     var deleteAccountResult: Result<Void, Error> = .success(())
     var currentUser: User?
+    var updateLifecycleResult: User?
+    private(set) var lastLifecycleValue: Bool?
 
     func login(email _: String, password _: String) async throws -> User {
         try self.loginResult.get()
@@ -26,6 +28,12 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     func updateName(_ name: String) async throws -> User {
         var user = try self.loginResult.get()
         user.name = name
+        return user
+    }
+
+    func updateLifecycleNotifications(_ enabled: Bool) async throws -> User {
+        self.lastLifecycleValue = enabled
+        guard let user = self.updateLifecycleResult else { throw APIError.invalidResponse }
         return user
     }
 

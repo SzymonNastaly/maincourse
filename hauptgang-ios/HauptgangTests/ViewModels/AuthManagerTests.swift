@@ -132,4 +132,22 @@ final class AuthManagerTests: XCTestCase {
         XCTAssertNotEqual(AuthManager.AuthState.unknown, AuthManager.AuthState.authenticated(user))
         XCTAssertNotEqual(AuthManager.AuthState.unauthenticated, AuthManager.AuthState.authenticated(user))
     }
+
+    // MARK: - Update Lifecycle Notifications Tests
+
+    func testUpdatingTheNotificationPreferenceUpdatesAuthState() async throws {
+        self.mockAuthService.currentUser = User(id: 1, email: "a@b.c", name: "A", lifecycleNotificationsEnabled: true)
+        self.mockAuthService.updateLifecycleResult = User(
+            id: 1, email: "a@b.c", name: "A", lifecycleNotificationsEnabled: false
+        )
+        await self.sut.checkAuthStatus()
+
+        try await self.sut.updateLifecycleNotifications(false)
+
+        XCTAssertEqual(self.mockAuthService.lastLifecycleValue, false)
+        guard case let .authenticated(user) = self.sut.authState else {
+            return XCTFail("expected an authenticated state")
+        }
+        XCTAssertFalse(user.lifecycleNotificationsEnabled)
+    }
 }

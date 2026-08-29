@@ -55,4 +55,13 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_includes json["errors"], "Email address has already been taken"
   end
+
+  test "signup returns the lifecycle notification preference" do
+    post api_v1_registration_url, params: {
+      name: "New", email: "new-pref@example.com", password: "password123", password_confirmation: "password123"
+    }, as: :json
+
+    assert_response :created
+    assert_equal true, response.parsed_body.dig("user", "lifecycle_notifications_enabled")
+  end
 end

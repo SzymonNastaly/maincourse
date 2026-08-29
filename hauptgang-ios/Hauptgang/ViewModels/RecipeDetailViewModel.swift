@@ -11,15 +11,18 @@ final class RecipeDetailViewModel {
 
     private let recipeService: RecipeServiceProtocol
     private let repository: RecipeRepositoryProtocol
+    private let viewTracker: RecipeViewTracker
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipeDetailViewModel")
     private var currentLoadID: UUID?
 
     init(
         recipeService: RecipeServiceProtocol = RecipeService.shared,
-        repository: RecipeRepositoryProtocol? = nil
+        repository: RecipeRepositoryProtocol? = nil,
+        viewTracker: RecipeViewTracker = .shared
     ) {
         self.recipeService = recipeService
         self.repository = repository ?? RecipeRepository()
+        self.viewTracker = viewTracker
     }
 
     /// Configure the repository with a model context
@@ -54,6 +57,12 @@ final class RecipeDetailViewModel {
             self.recipe = apiRecipe
             self.logger.info("Successfully loaded recipe from API: \(apiRecipe.name)")
 
+            // record() is a cheap, non-throwing in-memory + UserDefaults write on the
+            // tracker actor — awaited directly rather than detached into an unstructured
+            // Task, so it deterministically lands before this call returns without
+            // meaningfully delaying the screen the user is looking at.
+            await self.viewTracker.record(recipeId: id)
+
             do {
                 try self.repository.saveRecipeDetail(apiRecipe)
             } catch {
@@ -68,6 +77,10 @@ final class RecipeDetailViewModel {
             self.logger.error("Failed to load recipe detail: \(error.localizedDescription)")
             if self.recipe != nil {
                 self.logger.info("Showing cached recipe after fetch failure")
+                // The user is genuinely reading a cached recipe, so it still counts as a
+                // view even though the API fetch failed. See the comment above the success
+                // branch's record() call for why this is awaited inline rather than detached.
+                await self.viewTracker.record(recipeId: id)
             } else {
                 self.errorMessage = "Failed to load recipe. Tap to retry."
             }

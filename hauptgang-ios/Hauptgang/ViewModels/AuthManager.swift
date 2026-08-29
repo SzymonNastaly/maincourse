@@ -66,12 +66,19 @@ final class AuthManager: ObservableObject {
         self.authState = .authenticated(updated)
     }
 
+    /// Update the current user's lifecycle notification preference
+    func updateLifecycleNotifications(_ enabled: Bool) async throws {
+        let updated = try await authService.updateLifecycleNotifications(enabled)
+        self.authState = .authenticated(updated)
+    }
+
     /// Sign out and clear credentials
     func signOut() async {
         await CookbookContext.shared.reset()
         // Drop the device token server-side BEFORE clearing the API token.
         await PushNotificationService.shared.unregister()
         await PushNotificationService.shared.setAuthenticated(false)
+        await RecipeViewTracker.shared.reset()
         await self.authService.logout()
         self.authState = .unauthenticated
     }

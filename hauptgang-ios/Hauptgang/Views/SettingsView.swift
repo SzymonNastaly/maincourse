@@ -9,11 +9,14 @@ struct SettingsView: View {
     @State private var showingPaywall = false
     @State private var showingCustomerCenter = false
     @State private var showingEditName = false
+    @State private var isUpdatingNotifications = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
             List {
                 self.userSection
+                self.notificationsSection
                 self.cookbookSection
                 self.subscriptionSection
                 self.accountActionsSection
@@ -35,6 +38,16 @@ struct SettingsView: View {
             .sheet(isPresented: self.$showingEditName) {
                 EditNameView()
                     .environmentObject(self.authManager)
+            }
+            .alert("Error", isPresented: Binding(
+                get: { self.errorMessage != nil },
+                set: { if !$0 { self.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                if let errorMessage = self.errorMessage {
+                    Text(errorMessage)
+                }
             }
         }
     }
@@ -88,6 +101,42 @@ struct SettingsView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var notificationsSection: some View {
+        if let user = self.authManager.authState.user {
+            Section {
+                Toggle(isOn: Binding(
+                    get: { user.lifecycleNotificationsEnabled },
+                    set: { newValue in
+                        Task { await self.setLifecycleNotifications(newValue) }
+                    }
+                )) {
+                    HStack {
+                        Image(systemName: "bell.badge")
+                            .foregroundColor(.hauptgangPrimary)
+                        Text("Recipe reminders")
+                            .foregroundColor(.hauptgangTextPrimary)
+                    }
+                }
+                .disabled(self.isUpdatingNotifications)
+            } footer: {
+                Text("Occasional nudges about recipes you saved and shopping lists you left unfinished.")
+            }
+        }
+    }
+
+    private func setLifecycleNotifications(_ enabled: Bool) async {
+        self.isUpdatingNotifications = true
+        defer { isUpdatingNotifications = false }
+        do {
+            try await self.authManager.updateLifecycleNotifications(enabled)
+        } catch {
+            // The toggle reads from authManager, which is unchanged on failure, so it
+            // snaps back on its own.
+            self.errorMessage = (error as? APIError)?.errorDescription ?? "An unexpected error occurred. Please try again."
         }
     }
 
