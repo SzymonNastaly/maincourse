@@ -3,6 +3,11 @@ import SwiftUI
 /// Main tab view container for authenticated users.
 /// Renders tabs only; startup readiness and the splash overlay are owned by
 /// `AuthenticatedAppShell`.
+///
+/// Note: the Meal Plan tab is intentionally hidden. `MealPlanView` and its
+/// view model, service, repository, and API wiring are all still in place —
+/// only the tab entry point was removed, so it can be restored by adding the
+/// `SwiftUI.Tab` and enum case back.
 struct MainTabView: View {
     @Environment(AuthenticatedSessionViewModel.self) private var session
     @State private var selectedTab: Tab = .recipes
@@ -11,7 +16,6 @@ struct MainTabView: View {
     enum Tab: Hashable {
         case recipes
         case shoppingList
-        case mealPlan
         case settings
         case search
     }
@@ -27,10 +31,6 @@ struct MainTabView: View {
 
             SwiftUI.Tab("Shopping List", systemImage: "cart", value: Tab.shoppingList) {
                 ShoppingListView(viewModel: self.session.shoppingListViewModel)
-            }
-
-            SwiftUI.Tab("Meal Plan", systemImage: "calendar", value: Tab.mealPlan) {
-                MealPlanView()
             }
 
             SwiftUI.Tab("Settings", systemImage: "gearshape", value: Tab.settings) {

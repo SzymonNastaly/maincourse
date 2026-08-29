@@ -15,7 +15,7 @@ packages:
     from: 6.29.0
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa.git
-    from: 8.0.0
+    from: 9.0.0
 
 settings:
   SWIFT_VERSION: "5.9"

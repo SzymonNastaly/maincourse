@@ -69,24 +69,42 @@ resolve_simulator() {
     requested_id = ARGV[0]
     devices = []
     runtime = nil
+    pending_name = nil
     order = 0
+
+    def parse_version(runtime)
+      runtime.to_s.sub(/^iOS[ -]/, "").split(/[.-]/).map { |part| part.to_i }
+    end
 
     STDIN.each_line do |line|
       case line
+      # Older output: "com.apple.CoreSimulator.SimRuntime.iOS-18-2:"
       when /^com\.apple\.CoreSimulator\.SimRuntime\.([^:]+):$/
         runtime = Regexp.last_match(1)
+        pending_name = nil
+      # Current output: "  iOS 26.5:"
+      when /^\s*(iOS [0-9.]+):\s*$/
+        runtime = Regexp.last_match(1)
+        pending_name = nil
+      # Older output: "- iPhone 16 Pro (UDID)"
       when /^- (.+) \(([A-F0-9-]{36})\)$/
         name = Regexp.last_match(1)
         udid = Regexp.last_match(2)
+        pending_name = nil
         next unless name.include?("iPhone")
 
-        devices << {
-          name: name,
-          udid: udid,
-          runtime: runtime,
-          version: runtime.to_s.sub(/^iOS-/, "").split("-").map { |part| part.to_i },
-          order: order,
-        }
+        devices << { name: name, udid: udid, runtime: runtime, version: parse_version(runtime), order: order }
+        order += 1
+      # Current output: device name line, then "UDID: ..." on the next line
+      when /^\s*\S*\s*\[.\]\s+(.+?)\s+\((?:Shutdown|Booted|Booting|Shutting Down)\)\s*$/
+        pending_name = Regexp.last_match(1)
+      when /^\s*UDID:\s*([A-F0-9-]{36})\s*$/i
+        udid = Regexp.last_match(1)
+        name = pending_name
+        pending_name = nil
+        next if name.nil? || !name.include?("iPhone")
+
+        devices << { name: name, udid: udid, runtime: runtime, version: parse_version(runtime), order: order }
         order += 1
       end
     end
@@ -95,7 +113,7 @@ resolve_simulator() {
 
     selected =
       if !requested_id.nil? && !requested_id.empty?
-        devices.find { |device| device[:udid] == requested_id }
+        devices.find { |device| device[:udid].casecmp?(requested_id) }
       else
         devices.max_by { |device| [device[:version], -device[:order]] }
       end

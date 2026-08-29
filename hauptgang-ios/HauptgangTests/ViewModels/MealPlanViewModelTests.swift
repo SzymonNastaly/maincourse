@@ -96,7 +96,7 @@ struct MealPlanViewModelTests {
         let calendar = Calendar.current
         let expectedStart = try MealPlanViewModel.dateString(for: #require(calendar.date(
             byAdding: .day,
-            value: -2,
+            value: -1,
             to: Date()
         )))
         let expectedEnd = try MealPlanViewModel.dateString(for: #require(calendar.date(
@@ -105,7 +105,7 @@ struct MealPlanViewModelTests {
             to: Date()
         )))
 
-        #expect(vm.visibleDates.count == 11)
+        #expect(vm.visibleDates.count == 10)
         #expect(vm.visibleDates.first == expectedStart)
         #expect(vm.visibleDates.last == expectedEnd)
     }
