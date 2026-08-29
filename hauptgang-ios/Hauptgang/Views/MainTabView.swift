@@ -12,6 +12,8 @@ struct MainTabView: View {
     @Environment(AuthenticatedSessionViewModel.self) private var session
     @State private var selectedTab: Tab = .recipes
     @State private var searchQuery = ""
+    @State private var notificationRouter = NotificationRouter.shared
+    @State private var pendingRecipeId: Int?
 
     enum Tab: Hashable {
         case recipes
@@ -25,7 +27,8 @@ struct MainTabView: View {
             SwiftUI.Tab("Recipes", systemImage: "fork.knife", value: Tab.recipes) {
                 RecipesView(
                     recipeViewModel: self.session.recipeViewModel,
-                    suppressTransientUI: !self.session.canDismissStartupSplash
+                    suppressTransientUI: !self.session.canDismissStartupSplash,
+                    pendingRecipeId: self.$pendingRecipeId
                 )
             }
 
@@ -50,6 +53,32 @@ struct MainTabView: View {
         .modifier(TabSearchActivationModifier())
         .onChange(of: self.searchQuery) { _, newValue in
             Task { await self.session.recipeViewModel.search(query: newValue) }
+        }
+        .onChange(of: self.notificationRouter.pendingRoute, initial: true) { _, route in
+            guard route != nil else { return }
+            Task { await self.navigate(to: self.notificationRouter.consumeRoute()) }
+        }
+    }
+
+    /// Send the user where a tapped notification pointed. A recipe may live in a
+    /// cookbook that is not the active one, so switch first and let the recipe list
+    /// reload before pushing the detail screen.
+    private func navigate(to route: NotificationRoute?) async {
+        switch route {
+        case .shoppingList:
+            self.selectedTab = .shoppingList
+
+        case let .recipe(id, cookbookId):
+            if let cookbookId,
+               cookbookId != self.session.cookbookViewModel.activeCookbook?.id,
+               let cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == cookbookId }) {
+                await self.session.switchCookbook(cookbook)
+            }
+            self.selectedTab = .recipes
+            self.pendingRecipeId = id
+
+        case nil:
+            break
         }
     }
 }

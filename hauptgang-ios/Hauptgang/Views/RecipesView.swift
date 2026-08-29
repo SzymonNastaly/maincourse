@@ -34,6 +34,7 @@ struct RecipesView: View {
     @Environment(\.scenePhase) private var scenePhase
     let recipeViewModel: RecipeViewModel
     let suppressTransientUI: Bool
+    @Binding var pendingRecipeId: Int?
 
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
@@ -44,9 +45,24 @@ struct RecipesView: View {
     @State private var recipeToMove: MoveCandidate?
     @State private var clipboardContent: ClipboardContent?
 
+    init(
+        recipeViewModel: RecipeViewModel,
+        suppressTransientUI: Bool,
+        pendingRecipeId: Binding<Int?> = .constant(nil)
+    ) {
+        self.recipeViewModel = recipeViewModel
+        self.suppressTransientUI = suppressTransientUI
+        self._pendingRecipeId = pendingRecipeId
+    }
+
     var body: some View {
         NavigationStack(path: self.$navigationPath) {
             self.recipeContent
+        }
+        .onChange(of: self.pendingRecipeId, initial: true) { _, recipeId in
+            guard let recipeId else { return }
+            self.navigationPath.append(recipeId)
+            self.pendingRecipeId = nil
         }
         .offlineToast(
             isOffline: self.networkMonitor.isOffline,
