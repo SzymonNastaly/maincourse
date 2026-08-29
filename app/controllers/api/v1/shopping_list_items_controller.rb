@@ -45,7 +45,11 @@ module Api
 
         newly_checked = item.checked_at.present? && item.checked_at_was.nil?
         item.save!
-        record_cooked(item) if newly_checked
+        begin
+          record_cooked(item) if newly_checked
+        rescue StandardError => error
+          Rails.logger.error("Failed to record cooked engagement for item #{item.id}: #{error.message}")
+        end
         render json: ShoppingListItemSerializer.new(item).as_json
       rescue ArgumentError
         render json: { error: "Invalid checked_at format" }, status: :unprocessable_entity

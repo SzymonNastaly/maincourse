@@ -266,4 +266,21 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
       ).call
     end
   end
+
+  test "item upsert succeeds even if engagement recording fails" do
+    recipe = recipes(:one)
+
+    RecipeEngagement.stub :mark_added_to_list!, proc { raise StandardError, "Engagement failed" } do
+      result = ShoppingList::UpsertItems.new(
+        user: @user,
+        cookbook: @cookbook,
+        items: [ { client_id: "resilient-1", name: "Pancetta", source_recipe_id: recipe.id } ]
+      ).call
+
+      assert result.success?
+      assert_equal 1, result.items.size
+      assert_equal "Pancetta", result.items.first.name
+      assert_equal recipe.id, result.items.first.source_recipe_id
+    end
+  end
 end

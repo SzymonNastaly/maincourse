@@ -49,7 +49,11 @@ module ShoppingList
         Result.new(success?: false, items: [], errors: errors)
       else
         notify_collaborators(newly_added)
-        record_engagement(newly_added)
+        begin
+          record_engagement(newly_added)
+        rescue StandardError => error
+          Rails.logger.error("Failed to record list-add engagement: #{error.message}")
+        end
         Result.new(success?: true, items: created, errors: [])
       end
     end
