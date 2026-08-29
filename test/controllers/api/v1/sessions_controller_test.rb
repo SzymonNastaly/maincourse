@@ -85,4 +85,13 @@ class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  test "login returns the lifecycle notification preference" do
+    users(:one).update!(lifecycle_notifications_enabled: false)
+
+    post api_v1_session_url, params: { email: users(:one).email_address, password: "password" }, as: :json
+
+    assert_response :created
+    assert_equal false, response.parsed_body.dig("user", "lifecycle_notifications_enabled")
+  end
 end

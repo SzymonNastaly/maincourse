@@ -20,7 +20,12 @@ module Api
           render json: {
             token: raw_token,
             expires_at: token_record.expires_at,
-            user: { id: user.id, name: user.name, email: user.email_address }
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email_address,
+              lifecycle_notifications_enabled: user.lifecycle_notifications_enabled
+            }
           }, status: :created
         else
           render json: { error: "Invalid email or password" }, status: :unauthorized
