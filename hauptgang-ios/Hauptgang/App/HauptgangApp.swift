@@ -11,6 +11,7 @@ struct HauptgangApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var authManager = AuthManager()
     @StateObject private var subscriptionManager = SubscriptionManager()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
@@ -83,6 +84,13 @@ struct HauptgangApp: App {
                 }
                 .onOpenURL { url in
                     self.deepLinkRouter.handle(url)
+                }
+                .onChange(of: self.scenePhase) { _, newPhase in
+                    // Flush when the app is put away and again when it comes back: those are
+                    // the two moments a network is most likely to be available and the user
+                    // is not waiting on us.
+                    guard newPhase == .background || newPhase == .active else { return }
+                    Task { await RecipeViewTracker.shared.flush() }
                 }
         }
         .modelContainer(self.sharedModelContainer)

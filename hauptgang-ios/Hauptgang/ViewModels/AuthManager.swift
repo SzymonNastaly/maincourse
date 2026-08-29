@@ -72,6 +72,7 @@ final class AuthManager: ObservableObject {
         // Drop the device token server-side BEFORE clearing the API token.
         await PushNotificationService.shared.unregister()
         await PushNotificationService.shared.setAuthenticated(false)
+        await RecipeViewTracker.shared.reset()
         await self.authService.logout()
         self.authState = .unauthenticated
     }

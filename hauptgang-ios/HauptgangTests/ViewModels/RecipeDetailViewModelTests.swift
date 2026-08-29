@@ -157,6 +157,52 @@ final class RecipeDetailViewModelTests: XCTestCase {
         XCTAssertFalse(self.sut.isLoading)
     }
 
+    // MARK: - View Tracking Tests
+
+    func testOpeningARecipeRecordsAView() async throws {
+        let suiteName = "RecipeDetailViewModelTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let sink = MockRecipeViewSink()
+        let tracker = RecipeViewTracker(sink: sink, defaults: defaults)
+
+        let service = MockRecipeService()
+        service.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 7))
+        let viewModel = RecipeDetailViewModel(
+            recipeService: service,
+            repository: MockRecipeRepository(),
+            viewTracker: tracker
+        )
+
+        await viewModel.loadRecipe(id: 7)
+        await tracker.flush()
+
+        XCTAssertEqual(sink.batches.first?.map(\.recipeId), [7])
+    }
+
+    func testAFailedLoadDoesNotRecordAView() async throws {
+        let suiteName = "RecipeDetailViewModelTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let sink = MockRecipeViewSink()
+        let tracker = RecipeViewTracker(sink: sink, defaults: defaults)
+
+        let service = MockRecipeService()
+        service.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
+        let viewModel = RecipeDetailViewModel(
+            recipeService: service,
+            repository: MockRecipeRepository(),
+            viewTracker: tracker
+        )
+
+        await viewModel.loadRecipe(id: 7)
+        await tracker.flush()
+
+        XCTAssertTrue(sink.batches.isEmpty, "a recipe that failed to load was not read")
+    }
+
     // MARK: - Helpers
 
     private func createMockPersistedRecipe(id: Int, name: String) -> PersistedRecipe {

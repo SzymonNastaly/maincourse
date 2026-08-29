@@ -11,15 +11,18 @@ final class RecipeDetailViewModel {
 
     private let recipeService: RecipeServiceProtocol
     private let repository: RecipeRepositoryProtocol
+    private let viewTracker: RecipeViewTracker
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipeDetailViewModel")
     private var currentLoadID: UUID?
 
     init(
         recipeService: RecipeServiceProtocol = RecipeService.shared,
-        repository: RecipeRepositoryProtocol? = nil
+        repository: RecipeRepositoryProtocol? = nil,
+        viewTracker: RecipeViewTracker = .shared
     ) {
         self.recipeService = recipeService
         self.repository = repository ?? RecipeRepository()
+        self.viewTracker = viewTracker
     }
 
     /// Configure the repository with a model context
@@ -53,6 +56,12 @@ final class RecipeDetailViewModel {
 
             self.recipe = apiRecipe
             self.logger.info("Successfully loaded recipe from API: \(apiRecipe.name)")
+
+            // record() is a cheap, non-throwing in-memory + UserDefaults write on the
+            // tracker actor — awaited directly rather than detached into an unstructured
+            // Task, so it deterministically lands before this call returns without
+            // meaningfully delaying the screen the user is looking at.
+            await self.viewTracker.record(recipeId: id)
 
             do {
                 try self.repository.saveRecipeDetail(apiRecipe)
