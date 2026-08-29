@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       resource :account, only: [ :update, :destroy ]
       resource :onboarding_response, only: [ :create ]
       resources :device_tokens, only: [ :create, :destroy ], param: :token, constraints: { token: /[^\/]+/ }
+      resources :recipe_views, only: [ :create ]
       resources :shopping_list_items, only: [ :index, :create, :update, :destroy ] do
         collection do
           delete :destroy_all
