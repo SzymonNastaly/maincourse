@@ -103,9 +103,31 @@ class EvaluateLifecycleNotificationsJobTest < ActiveSupport::TestCase
     end
 
     in_window do
-      assert_difference "NotificationDelivery.count", 1 do
-        run_job
+      # Make StaleShoppingListCampaign genuinely eligible too, so there is a real second
+      # candidate for the loop to (wrongly) fall through to if the one-per-user guard
+      # were missing. ImportFollowUpCampaign runs first and will still win.
+      @cookbook.shopping_list_items.update_all(created_at: 5.days.ago, updated_at: 5.days.ago)
+      3.times do |i|
+        item = @cookbook.shopping_list_items.create!(client_id: "extra-item-#{i}", name: "Item #{i}")
+        item.update_columns(created_at: 5.days.ago, updated_at: 5.days.ago)
       end
+      assert Notifications::StaleShoppingListCampaign.eligible_for(@user).present?,
+        "expected the stale shopping list campaign to be genuinely eligible too"
+
+      push_count = 0
+      counting_push = lambda do |**_kwargs|
+        push_count += 1
+        Apns::Client::Result.new(ok?: true, status: 200, reason: nil)
+      end
+
+      Apns::Client.stub(:push, counting_push) do
+        assert_difference "NotificationDelivery.count", 1 do
+          EvaluateLifecycleNotificationsJob.perform_now
+        end
+      end
+
+      assert_equal 1, push_count
+      assert_equal "import_follow_up", NotificationDelivery.order(:id).last.campaign
     end
   end
 

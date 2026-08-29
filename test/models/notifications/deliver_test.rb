@@ -64,6 +64,47 @@ class Notifications::DeliverTest < ActiveSupport::TestCase
     assert_equal 0, @user.device_tokens.count
   end
 
+  test "records nothing and does not mark suggested when every push fails" do
+    rejected = Apns::Client::Result.new(ok?: false, status: 410, reason: "Unregistered")
+
+    stub_push(rejected) do |pushes|
+      delivery = Notifications::Deliver.new(user: @user, candidate: @candidate).call
+
+      assert_nil delivery
+      assert_equal 1, pushes.size
+    end
+
+    assert_equal 0, NotificationDelivery.where(user: @user).count
+    assert_equal 0, @user.device_tokens.count
+    assert_nil RecipeEngagement.find_by(user_id: @user.id, recipe_id: @recipe.id)
+  end
+
+  test "records the delivery and marks suggested when at least one push succeeds" do
+    delivery = nil
+
+    stub_push(ok_result) do |_pushes|
+      delivery = Notifications::Deliver.new(user: @user, candidate: @candidate).call
+    end
+
+    assert_not_nil delivery
+    assert NotificationDelivery.exists?(delivery.id)
+    engagement = RecipeEngagement.find_by(user_id: @user.id, recipe_id: @recipe.id)
+    assert_equal 1, engagement.suggested_count
+  end
+
+  test "returns nil and records nothing when the user has no active device tokens" do
+    @user.device_tokens.destroy_all
+
+    stub_push(ok_result) do |pushes|
+      delivery = Notifications::Deliver.new(user: @user, candidate: @candidate).call
+
+      assert_nil delivery
+      assert_equal 0, pushes.size
+    end
+
+    assert_equal 0, NotificationDelivery.where(user: @user).count
+  end
+
   test "discards a candidate whose cookbook the user is no longer a member of" do
     other_cookbook = cookbooks(:two_personal)
     candidate = Notifications::Candidate.new(
