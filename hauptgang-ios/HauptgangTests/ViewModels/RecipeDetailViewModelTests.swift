@@ -161,7 +161,7 @@ final class RecipeDetailViewModelTests: XCTestCase {
 
     func testOpeningARecipeRecordsAView() async throws {
         let suiteName = "RecipeDetailViewModelTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        nonisolated(unsafe) let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let sink = MockRecipeViewSink()
@@ -183,7 +183,7 @@ final class RecipeDetailViewModelTests: XCTestCase {
 
     func testAFailedLoadDoesNotRecordAView() async throws {
         let suiteName = "RecipeDetailViewModelTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        nonisolated(unsafe) let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let sink = MockRecipeViewSink()
