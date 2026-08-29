@@ -16,6 +16,12 @@ Hauptgang is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventi
 - **Tailwind CSS v4** via `tailwindcss-rails` gem
 - **Importmap** for JavaScript (no Node.js/npm required)
 
+## Scale
+
+This app is used by a handful of people. Prefer pragmatic, working, sensible solutions
+for that scale — avoid architecture, abstraction, or infrastructure justified only by
+large user counts.
+
 ## Essential Commands
 
 ```bash
