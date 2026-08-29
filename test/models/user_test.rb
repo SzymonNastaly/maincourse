@@ -47,6 +47,16 @@ class UserTest < ActiveSupport::TestCase
     recipe_ids.each { |id| assert_nil Recipe.find_by(id: id) }
   end
 
+  test "destroying user deletes their recipe engagements" do
+    user = users(:two)
+    recipe = recipes(:one)
+    engagement = RecipeEngagement.create!(user: user, recipe: recipe)
+
+    user.destroy!
+
+    assert_nil RecipeEngagement.find_by(id: engagement.id)
+  end
+
   test "destroying user as collaborator removes membership but keeps cookbook" do
     owner = users(:one)
     collaborator = users(:two)

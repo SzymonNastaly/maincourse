@@ -219,4 +219,15 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal delivery.id, NotificationDelivery.find(delivery.id).id
     assert_nil NotificationDelivery.find(delivery.id).recipe_id
   end
+
+  test "destroying a recipe deletes its recipe engagements" do
+    recipe = recipes(:one)
+    recipe.meal_plan_entries.destroy_all
+    engagement = RecipeEngagement.create!(user: users(:one), recipe: recipe)
+
+    recipe.destroy
+
+    assert_nil Recipe.find_by(id: recipe.id)
+    assert_nil RecipeEngagement.find_by(id: engagement.id)
+  end
 end
