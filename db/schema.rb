@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_065127) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_070104) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -169,6 +169,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_065127) do
     t.index ["recipient_id"], name: "index_pending_notifications_on_recipient_id"
   end
 
+  create_table "recipe_engagements", force: :cascade do |t|
+    t.datetime "added_to_list_at"
+    t.datetime "cooked_at"
+    t.datetime "created_at", null: false
+    t.datetime "last_suggested_at"
+    t.datetime "last_viewed_at"
+    t.integer "recipe_id", null: false
+    t.integer "suggested_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.integer "view_count", default: 0, null: false
+    t.index ["recipe_id"], name: "index_recipe_engagements_on_recipe_id"
+    t.index ["user_id", "last_viewed_at"], name: "index_recipe_engagements_on_user_id_and_last_viewed_at"
+    t.index ["user_id", "recipe_id"], name: "index_recipe_engagements_on_user_id_and_recipe_id", unique: true
+    t.index ["user_id"], name: "index_recipe_engagements_on_user_id"
+  end
+
   create_table "recipe_tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "recipe_id", null: false
@@ -270,6 +287,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_065127) do
   add_foreign_key "pending_notifications", "cookbooks", on_delete: :cascade
   add_foreign_key "pending_notifications", "users", column: "actor_id", on_delete: :cascade
   add_foreign_key "pending_notifications", "users", column: "recipient_id", on_delete: :cascade
+  add_foreign_key "recipe_engagements", "recipes"
+  add_foreign_key "recipe_engagements", "users"
   add_foreign_key "recipe_tags", "recipes", on_delete: :cascade
   add_foreign_key "recipe_tags", "tags"
   add_foreign_key "recipes", "cookbooks", on_delete: :cascade

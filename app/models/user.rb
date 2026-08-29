@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_many :cookbooks, through: :cookbook_memberships
   has_many :recipes, dependent: :nullify
   has_many :shopping_list_items, dependent: :nullify
+  has_many :recipe_engagements, dependent: :delete_all
 
   normalizes :email_address, with: ->(email) { email.strip.downcase }
   normalizes :name, with: ->(name) { name.to_s.strip }
