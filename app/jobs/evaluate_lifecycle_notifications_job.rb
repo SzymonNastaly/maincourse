@@ -33,9 +33,10 @@ class EvaluateLifecycleNotificationsJob < ApplicationJob
     return if recently_active?(user)
     return if recently_notified?(user)
 
-    # Deliver may discard a candidate whose cookbook the user is no longer a member of
-    # (see Notifications::Deliver). Treat that as if the campaign had returned nil and
-    # fall through to the next one.
+    # Deliver returns nil both when it discards a candidate whose cookbook the user is
+    # no longer a member of, and when the push itself failed to reach any device (see
+    # Notifications::Deliver). Either way, treat it as if the campaign had returned nil
+    # and fall through to the next one.
     CAMPAIGNS.each do |campaign|
       candidate = campaign.eligible_for(user)
       next if candidate.nil?
