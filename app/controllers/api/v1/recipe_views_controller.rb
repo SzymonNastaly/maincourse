@@ -20,7 +20,9 @@ module Api
       private
 
       def record(view)
-        recipe_id = view[:recipe_id] rescue return
+        return unless view.is_a?(ActionController::Parameters) || view.is_a?(Hash)
+
+        recipe_id = view[:recipe_id]
         return if recipe_id.blank?
 
         recipe = accessible_recipes.find_by(id: recipe_id)
