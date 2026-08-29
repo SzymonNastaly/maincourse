@@ -49,6 +49,7 @@ module ShoppingList
         Result.new(success?: false, items: [], errors: errors)
       else
         notify_collaborators(newly_added)
+        record_engagement(newly_added)
         Result.new(success?: true, items: created, errors: [])
       end
     end
@@ -89,6 +90,15 @@ module ShoppingList
       return source_recipe_id if @cookbook.recipes.exists?(id: source_recipe_id)
 
       nil
+    end
+
+    def record_engagement(items)
+      items.filter_map(&:source_recipe_id).uniq.each do |recipe_id|
+        recipe = Recipe.find_by(id: recipe_id)
+        next if recipe.nil?
+
+        RecipeEngagement.mark_added_to_list!(recipe: recipe)
+      end
     end
 
     def notify_collaborators(items)

@@ -242,4 +242,28 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     assert_nil result.items.first.checked_at
     assert_equal existing.id, result.items.first.id
   end
+
+  test "adding an item from a recipe records added_to_list_at" do
+    recipe = recipes(:one)
+
+    ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "eng-1", name: "Pancetta", source_recipe_id: recipe.id } ]
+    ).call
+
+    engagement = RecipeEngagement.find_by(user_id: @user.id, recipe_id: recipe.id)
+    assert_not_nil engagement
+    assert_not_nil engagement.added_to_list_at
+  end
+
+  test "adding an item without a source recipe records nothing" do
+    assert_no_difference "RecipeEngagement.count" do
+      ShoppingList::UpsertItems.new(
+        user: @user,
+        cookbook: @cookbook,
+        items: [ { client_id: "eng-2", name: "Salt" } ]
+      ).call
+    end
+  end
 end

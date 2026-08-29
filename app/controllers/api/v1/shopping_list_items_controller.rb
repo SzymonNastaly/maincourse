@@ -43,7 +43,9 @@ module Api
           item.created_at = Time.iso8601(params[:created_at])
         end
 
+        newly_checked = item.checked_at.present? && item.checked_at_was.nil?
         item.save!
+        record_cooked(item) if newly_checked
         render json: ShoppingListItemSerializer.new(item).as_json
       rescue ArgumentError
         render json: { error: "Invalid checked_at format" }, status: :unprocessable_entity
@@ -71,6 +73,18 @@ module Api
       end
 
       private
+
+      # Ingredients from a recipe added to the list and then checked off is the app's
+      # inference that the recipe was cooked. It misses cooking from ingredients
+      # already at home; that is accepted.
+      def record_cooked(item)
+        return if item.source_recipe_id.blank?
+
+        recipe = Recipe.find_by(id: item.source_recipe_id)
+        return if recipe.nil?
+
+        RecipeEngagement.mark_cooked!(recipe: recipe)
+      end
 
       def cleanup_stale_checked_items
         ShoppingListItem.cleanup_stale_checked_for(current_cookbook)
