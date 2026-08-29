@@ -368,4 +368,50 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_equal "Recipe not found", response.parsed_body["error"]
   end
+
+  test "checking off an item from a recipe records cooked_at" do
+    recipe = recipes(:one)
+    item = cookbooks(:one_personal).shopping_list_items.create!(
+      client_id: "cooked-1", name: "Pancetta", source_recipe_id: recipe.id, user: @user
+    )
+
+    patch api_v1_shopping_list_item_url(item),
+          params: { checked: true }, headers: @auth_headers, as: :json
+
+    assert_response :success
+    engagement = RecipeEngagement.find_by(user_id: @user.id, recipe_id: recipe.id)
+    assert_not_nil engagement
+    assert_not_nil engagement.cooked_at
+  end
+
+  test "unchecking an item does not record cooked_at" do
+    recipe = recipes(:one)
+    item = cookbooks(:one_personal).shopping_list_items.create!(
+      client_id: "cooked-2", name: "Pancetta", source_recipe_id: recipe.id,
+      user: @user, checked_at: Time.current
+    )
+
+    patch api_v1_shopping_list_item_url(item),
+          params: { checked: false }, headers: @auth_headers, as: :json
+
+    assert_response :success
+    assert_nil RecipeEngagement.find_by(user_id: @user.id, recipe_id: recipe.id)&.cooked_at
+  end
+
+  test "item update succeeds even if engagement recording fails" do
+    recipe = recipes(:one)
+    item = cookbooks(:one_personal).shopping_list_items.create!(
+      client_id: "cooked-resilient", name: "Pancetta", source_recipe_id: recipe.id, user: @user
+    )
+
+    RecipeEngagement.stub :mark_cooked!, proc { raise StandardError, "Engagement failed" } do
+      patch api_v1_shopping_list_item_url(item),
+            params: { checked: true }, headers: @auth_headers, as: :json
+
+      assert_response :success
+      assert_not_nil response.parsed_body["checked_at"]
+      item.reload
+      assert_not_nil item.checked_at
+    end
+  end
 end

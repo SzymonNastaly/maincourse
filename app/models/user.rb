@@ -9,6 +9,8 @@ class User < ApplicationRecord
   has_many :cookbooks, through: :cookbook_memberships
   has_many :recipes, dependent: :nullify
   has_many :shopping_list_items, dependent: :nullify
+  has_many :recipe_engagements, dependent: :delete_all
+  has_many :notification_deliveries, dependent: :delete_all
 
   normalizes :email_address, with: ->(email) { email.strip.downcase }
   normalizes :name, with: ->(name) { name.to_s.strip }
@@ -25,6 +27,17 @@ class User < ApplicationRecord
 
   def shared_cookbook
     cookbooks.shared.first
+  end
+
+  ACTIVITY_THROTTLE = 1.hour
+
+  # Records that the user did something in the app. Throttled so an active session
+  # does not write on every request. Returns true when it actually wrote.
+  def touch_last_active!
+    return false if last_active_at.present? && last_active_at > ACTIVITY_THROTTLE.ago
+
+    update_column(:last_active_at, Time.current)
+    true
   end
 
   def self.ransackable_attributes(_auth_object = nil)

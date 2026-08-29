@@ -242,4 +242,102 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     assert_nil result.items.first.checked_at
     assert_equal existing.id, result.items.first.id
   end
+
+  test "adding an item from a recipe records added_to_list_at" do
+    recipe = recipes(:one)
+
+    ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "eng-1", name: "Pancetta", source_recipe_id: recipe.id } ]
+    ).call
+
+    engagement = RecipeEngagement.find_by(user_id: @user.id, recipe_id: recipe.id)
+    assert_not_nil engagement
+    assert_not_nil engagement.added_to_list_at
+  end
+
+  test "adding an item without a source recipe records nothing" do
+    assert_no_difference "RecipeEngagement.count" do
+      ShoppingList::UpsertItems.new(
+        user: @user,
+        cookbook: @cookbook,
+        items: [ { client_id: "eng-2", name: "Salt" } ]
+      ).call
+    end
+  end
+
+  test "batch-creating an already-checked item records both added_to_list_at and cooked_at" do
+    recipe = recipes(:one)
+
+    ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "eng-cooked-new", name: "Pancetta", source_recipe_id: recipe.id, checked_at: Time.current } ]
+    ).call
+
+    engagement = RecipeEngagement.find_by(user_id: @user.id, recipe_id: recipe.id)
+    assert_not_nil engagement
+    assert_not_nil engagement.added_to_list_at
+    assert_not_nil engagement.cooked_at
+  end
+
+  test "checking off an existing item via upsert records cooked_at" do
+    recipe = recipes(:one)
+    existing = ShoppingListItem.create!(
+      cookbook: @cookbook,
+      user: @user,
+      client_id: "eng-cooked-existing",
+      name: "Pancetta",
+      source_recipe_id: recipe.id,
+      checked_at: nil
+    )
+
+    ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: existing.client_id, name: "Pancetta", source_recipe_id: recipe.id, checked_at: Time.current } ]
+    ).call
+
+    engagement = RecipeEngagement.find_by(user_id: @user.id, recipe_id: recipe.id)
+    assert_not_nil engagement
+    assert_not_nil engagement.cooked_at
+  end
+
+  test "re-sending an already-checked item does not error and does not blow up on nil transition" do
+    recipe = recipes(:one)
+    existing = ShoppingListItem.create!(
+      cookbook: @cookbook,
+      user: @user,
+      client_id: "eng-cooked-resend",
+      name: "Pancetta",
+      source_recipe_id: recipe.id,
+      checked_at: 1.day.ago
+    )
+
+    result = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: existing.client_id, name: "Pancetta", source_recipe_id: recipe.id, checked_at: Time.current } ]
+    ).call
+
+    assert result.success?
+  end
+
+  test "item upsert succeeds even if engagement recording fails" do
+    recipe = recipes(:one)
+
+    RecipeEngagement.stub :mark_added_to_list!, proc { raise StandardError, "Engagement failed" } do
+      result = ShoppingList::UpsertItems.new(
+        user: @user,
+        cookbook: @cookbook,
+        items: [ { client_id: "resilient-1", name: "Pancetta", source_recipe_id: recipe.id } ]
+      ).call
+
+      assert result.success?
+      assert_equal 1, result.items.size
+      assert_equal "Pancetta", result.items.first.name
+      assert_equal recipe.id, result.items.first.source_recipe_id
+    end
+  end
 end

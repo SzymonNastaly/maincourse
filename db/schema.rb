@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_072317) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -144,6 +144,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
     t.index ["selected_entry_id"], name: "index_meal_plans_on_selected_entry_id"
   end
 
+  create_table "notification_deliveries", force: :cascade do |t|
+    t.string "action_taken"
+    t.string "campaign", null: false
+    t.integer "cookbook_id"
+    t.datetime "created_at", null: false
+    t.datetime "opened_at"
+    t.integer "recipe_id"
+    t.datetime "sent_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["cookbook_id"], name: "index_notification_deliveries_on_cookbook_id"
+    t.index ["recipe_id"], name: "index_notification_deliveries_on_recipe_id"
+    t.index ["user_id", "sent_at"], name: "index_notification_deliveries_on_user_id_and_sent_at"
+    t.index ["user_id"], name: "index_notification_deliveries_on_user_id"
+  end
+
   create_table "onboarding_responses", force: :cascade do |t|
     t.json "answers", default: {}, null: false
     t.datetime "created_at", null: false
@@ -167,6 +183,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
     t.index ["cookbook_id", "recipient_id", "actor_id", "category"], name: "index_pending_notifications_on_bucket", unique: true
     t.index ["cookbook_id"], name: "index_pending_notifications_on_cookbook_id"
     t.index ["recipient_id"], name: "index_pending_notifications_on_recipient_id"
+  end
+
+  create_table "recipe_engagements", force: :cascade do |t|
+    t.datetime "added_to_list_at"
+    t.datetime "cooked_at"
+    t.datetime "created_at", null: false
+    t.datetime "last_suggested_at"
+    t.datetime "last_viewed_at"
+    t.integer "recipe_id", null: false
+    t.integer "suggested_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.integer "view_count", default: 0, null: false
+    t.index ["recipe_id"], name: "index_recipe_engagements_on_recipe_id"
+    t.index ["user_id", "last_viewed_at"], name: "index_recipe_engagements_on_user_id_and_last_viewed_at"
+    t.index ["user_id", "recipe_id"], name: "index_recipe_engagements_on_user_id_and_recipe_id", unique: true
+    t.index ["user_id"], name: "index_recipe_engagements_on_user_id"
   end
 
   create_table "recipe_tags", force: :cascade do |t|
@@ -239,9 +272,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
     t.boolean "admin", default: false, null: false
     t.datetime "created_at", null: false
     t.string "email_address", null: false
+    t.datetime "last_active_at"
+    t.boolean "lifecycle_notifications_enabled", default: true, null: false
     t.string "name"
     t.string "password_digest", null: false
     t.boolean "pro", default: false, null: false
+    t.string "time_zone", default: "UTC", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
@@ -263,10 +299,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
   add_foreign_key "meal_plans", "cookbooks", on_delete: :cascade
   add_foreign_key "meal_plans", "meal_plan_entries", column: "selected_entry_id", on_delete: :nullify
   add_foreign_key "meal_plans", "users", column: "selected_by_user_id", on_delete: :nullify
+  add_foreign_key "notification_deliveries", "cookbooks"
+  add_foreign_key "notification_deliveries", "recipes"
+  add_foreign_key "notification_deliveries", "users"
   add_foreign_key "onboarding_responses", "users", on_delete: :cascade
   add_foreign_key "pending_notifications", "cookbooks", on_delete: :cascade
   add_foreign_key "pending_notifications", "users", column: "actor_id", on_delete: :cascade
   add_foreign_key "pending_notifications", "users", column: "recipient_id", on_delete: :cascade
+  add_foreign_key "recipe_engagements", "recipes"
+  add_foreign_key "recipe_engagements", "users"
   add_foreign_key "recipe_tags", "recipes", on_delete: :cascade
   add_foreign_key "recipe_tags", "tags"
   add_foreign_key "recipes", "cookbooks", on_delete: :cascade

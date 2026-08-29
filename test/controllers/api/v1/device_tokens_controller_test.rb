@@ -58,4 +58,35 @@ class Api::V1::DeviceTokensControllerTest < ActionDispatch::IntegrationTest
     post api_v1_device_tokens_url, params: { token: "x" }, as: :json
     assert_response :unauthorized
   end
+
+  test "create stores a valid time zone on the user" do
+    post api_v1_device_tokens_url,
+         params: { token: "tz-token-1", environment: "sandbox", time_zone: "Europe/Zurich" },
+         headers: @auth_headers, as: :json
+
+    assert_response :created
+    assert_equal "Europe/Zurich", @user.reload.time_zone
+  end
+
+  test "create ignores an unknown time zone" do
+    @user.update_column(:time_zone, "Europe/Zurich")
+
+    post api_v1_device_tokens_url,
+         params: { token: "tz-token-2", environment: "sandbox", time_zone: "Mars/Olympus" },
+         headers: @auth_headers, as: :json
+
+    assert_response :created
+    assert_equal "Europe/Zurich", @user.reload.time_zone
+  end
+
+  test "create without a time zone leaves the existing value" do
+    @user.update_column(:time_zone, "Europe/Zurich")
+
+    post api_v1_device_tokens_url,
+         params: { token: "tz-token-3", environment: "sandbox" },
+         headers: @auth_headers, as: :json
+
+    assert_response :created
+    assert_equal "Europe/Zurich", @user.reload.time_zone
+  end
 end

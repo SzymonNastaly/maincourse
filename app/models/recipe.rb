@@ -10,6 +10,8 @@ class Recipe < ApplicationRecord
   has_many :shopping_list_items, foreign_key: :source_recipe_id, dependent: :nullify
   has_many :meal_plan_entries, dependent: :restrict_with_error
   has_many :ingredients, -> { order(:position) }, dependent: :destroy, inverse_of: :recipe
+  has_many :recipe_engagements, dependent: :delete_all
+  has_many :notification_deliveries, dependent: :nullify
 
   # Replace the ingredient rows from an array of raw strings.
   # Existing rows are wiped. `name` is left nil until ParseRecipeIngredientsJob

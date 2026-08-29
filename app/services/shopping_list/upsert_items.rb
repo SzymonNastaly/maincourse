@@ -14,6 +14,7 @@ module ShoppingList
       created = []
       errors = []
       newly_added = []
+      newly_checked = []
 
       ActiveRecord::Base.transaction do
         @items.each do |item_params|
@@ -35,6 +36,7 @@ module ShoppingList
           if item.persisted? && item.errors.empty?
             created << item
             newly_added << item if item.previously_new_record?
+            newly_checked << item if newly_checked?(item)
           else
             errors << { client_id: client_id, error: item.errors.full_messages.to_sentence }
           end
@@ -49,6 +51,12 @@ module ShoppingList
         Result.new(success?: false, items: [], errors: errors)
       else
         notify_collaborators(newly_added)
+        begin
+          record_engagement(newly_added)
+          record_cooked_engagement(newly_checked)
+        rescue StandardError => error
+          Rails.logger.error("Failed to record list-add engagement: #{error.message}")
+        end
         Result.new(success?: true, items: created, errors: [])
       end
     end
@@ -84,11 +92,38 @@ module ShoppingList
       item
     end
 
+    # True when this save transitioned checked_at from nil to present — including a
+    # newly-created item that arrives already checked (the offline-sync batch-create
+    # path). previous_changes is empty when nothing changed, so a re-sent
+    # already-checked item (no transition) is correctly excluded.
+    def newly_checked?(item)
+      change = item.previous_changes["checked_at"]
+      change.present? && change.first.nil? && item.checked_at.present?
+    end
+
     def resolve_source_recipe_id(source_recipe_id)
       return nil if source_recipe_id.blank?
       return source_recipe_id if @cookbook.recipes.exists?(id: source_recipe_id)
 
       nil
+    end
+
+    def record_engagement(items)
+      items.filter_map(&:source_recipe_id).uniq.each do |recipe_id|
+        recipe = Recipe.find_by(id: recipe_id)
+        next if recipe.nil?
+
+        RecipeEngagement.mark_added_to_list!(recipe: recipe)
+      end
+    end
+
+    def record_cooked_engagement(items)
+      items.filter_map(&:source_recipe_id).uniq.each do |recipe_id|
+        recipe = Recipe.find_by(id: recipe_id)
+        next if recipe.nil?
+
+        RecipeEngagement.mark_cooked!(recipe: recipe)
+      end
     end
 
     def notify_collaborators(items)
