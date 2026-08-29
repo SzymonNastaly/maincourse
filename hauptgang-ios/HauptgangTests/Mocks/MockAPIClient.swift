@@ -4,10 +4,20 @@ import Foundation
 /// Records outgoing requests and returns canned responses. Encodes the body with the
 /// same strategy as APIClient so tests can assert on the real wire format.
 actor MockAPIClient: APIClientProtocol {
-    struct Recorded {
+    struct Recorded: Sendable {
         let endpoint: String
         let method: HTTPMethod
-        let bodyJSON: [String: Any]?
+        let bodyData: Data?
+
+        /// Look up a top-level string in the recorded JSON body.
+        func bodyString(_ key: String) -> String? {
+            self.bodyObject()?[key] as? String
+        }
+
+        private func bodyObject() -> [String: Any]? {
+            guard let bodyData else { return nil }
+            return (try? JSONSerialization.jsonObject(with: bodyData)) as? [String: Any]
+        }
     }
 
     private(set) var recorded: [Recorded] = []
@@ -57,15 +67,13 @@ actor MockAPIClient: APIClientProtocol {
     }
 
     private func record(endpoint: String, method: HTTPMethod, body: Encodable?) {
-        var json: [String: Any]?
+        var bodyData: Data?
         if let body {
             let encoder = JSONEncoder()
             encoder.keyEncodingStrategy = .convertToSnakeCase
             encoder.dateEncodingStrategy = .iso8601
-            if let data = try? encoder.encode(body) {
-                json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-            }
+            bodyData = try? encoder.encode(body)
         }
-        self.recorded.append(Recorded(endpoint: endpoint, method: method, bodyJSON: json))
+        self.recorded.append(Recorded(endpoint: endpoint, method: method, bodyData: bodyData))
     }
 }

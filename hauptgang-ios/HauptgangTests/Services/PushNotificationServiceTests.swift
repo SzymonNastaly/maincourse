@@ -19,21 +19,23 @@ final class PushNotificationServiceTests: XCTestCase {
     func testRegistrationIncludesTheDeviceTimeZone() async throws {
         let api = MockAPIClient()
         await api.setResponse(#"{"id":1,"token":"abc","environment":"sandbox"}"#)
-        let service = PushNotificationService(api: api, defaults: self.defaults)
+        nonisolated(unsafe) let defaults = self.defaults!
+        let service = PushNotificationService(api: api, defaults: defaults)
 
         await service.setAuthenticated(true)
         await service.handleDeviceToken(Data([0xAB, 0xCD]))
 
         let recorded = await api.recorded
         let register = try XCTUnwrap(recorded.first(where: { $0.endpoint == "device_tokens" }))
-        XCTAssertEqual(register.bodyJSON?["time_zone"] as? String, TimeZone.current.identifier)
-        XCTAssertEqual(register.bodyJSON?["token"] as? String, "abcd")
+        XCTAssertEqual(register.bodyString("time_zone"), TimeZone.current.identifier)
+        XCTAssertEqual(register.bodyString("token"), "abcd")
     }
 
     func testTimeZoneChangeTriggersReRegistration() async throws {
         let api = MockAPIClient()
         await api.setResponse(#"{"id":1,"token":"abcd","environment":"sandbox"}"#)
-        let service = PushNotificationService(api: api, defaults: self.defaults)
+        nonisolated(unsafe) let defaults = self.defaults!
+        let service = PushNotificationService(api: api, defaults: defaults)
 
         await service.setAuthenticated(true)
         await service.handleDeviceToken(Data([0xAB, 0xCD]))
