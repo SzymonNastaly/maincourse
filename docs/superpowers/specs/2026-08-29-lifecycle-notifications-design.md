@@ -183,7 +183,8 @@ refinement if this proves too blunt.
 Eligible when, in a cookbook the user belongs to:
 - there are at least 3 unchecked `shopping_list_items`
 - the oldest unchecked item is at least 3 days old
-- no item in that cookbook was created, checked, or deleted in the last 3 days
+- no item in that cookbook was created, checked, or otherwise updated in the last 3
+  days (deletions leave no row, so `updated_at` is the available proxy)
 
 Body: `{n} items are still on your shopping list.` Deep-links to the shopping list.
 
