@@ -58,3 +58,9 @@ test/recipe_corpus/snapshots/static/*
 
 # Migration safety tarballs -- contain production data, never commit
 *.tar.gz
+
+# Codex CLI config (contains API keys)
+/.codex/
+
+# App Store Connect build artifacts (.ipa / .xcarchive)
+hauptgang-ios/.asc/
