@@ -17,6 +17,26 @@ class Api::V1::AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "New Name", @user.reload.name
   end
 
+  test "update toggles lifecycle notifications off" do
+    patch api_v1_account_url,
+          params: { user: { lifecycle_notifications_enabled: false } },
+          headers: @auth_headers, as: :json
+
+    assert_response :success
+    assert_not @user.reload.lifecycle_notifications_enabled
+    assert_equal false, response.parsed_body["user"]["lifecycle_notifications_enabled"]
+  end
+
+  test "update leaves the preference alone when not supplied" do
+    @user.update_column(:lifecycle_notifications_enabled, false)
+
+    patch api_v1_account_url, params: { user: { name: "Renamed" } },
+          headers: @auth_headers, as: :json
+
+    assert_response :success
+    assert_not @user.reload.lifecycle_notifications_enabled
+  end
+
   test "destroy deletes the account and cascades data" do
     user_id = @user.id
     personal_cookbook_id = @user.personal_cookbook.id
