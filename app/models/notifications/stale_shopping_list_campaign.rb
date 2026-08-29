@@ -5,10 +5,15 @@ module Notifications
     NAME = "stale_shopping_list".freeze
     MIN_ITEMS = 3
     STALENESS = 3.days
+    # Sending the notification does not change list state, so without a cooldown a
+    # dormant, abandoned list stays stale? forever and re-fires the same message
+    # indefinitely, starving lower-priority campaigns for that user.
+    RESUGGEST_AFTER = 14.days
 
     def self.eligible_for(user)
       user.cookbooks.each do |cookbook|
         next unless stale?(cookbook)
+        next if recently_notified?(user, cookbook)
 
         count = cookbook.shopping_list_items.unchecked.count
         return Candidate.new(
@@ -21,6 +26,12 @@ module Notifications
       end
 
       nil
+    end
+
+    def self.recently_notified?(user, cookbook)
+      user.notification_deliveries
+          .sent_since(RESUGGEST_AFTER.ago)
+          .exists?(campaign: NAME, cookbook_id: cookbook.id)
     end
 
     def self.stale?(cookbook)

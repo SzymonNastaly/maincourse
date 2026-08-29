@@ -53,4 +53,37 @@ class Notifications::StaleShoppingListCampaignTest < ActiveSupport::TestCase
 
     assert_nil Notifications::StaleShoppingListCampaign.eligible_for(@user)
   end
+
+  test "ignores a stale cookbook with a recent stale_shopping_list delivery" do
+    stale_items
+    travel_to 5.days.ago do
+      NotificationDelivery.create!(
+        user: @user, campaign: "stale_shopping_list", cookbook: @cookbook, sent_at: Time.current
+      )
+    end
+
+    assert_nil Notifications::StaleShoppingListCampaign.eligible_for(@user)
+  end
+
+  test "suggests again once the resuggest window has passed" do
+    stale_items
+    travel_to 15.days.ago do
+      NotificationDelivery.create!(
+        user: @user, campaign: "stale_shopping_list", cookbook: @cookbook, sent_at: Time.current
+      )
+    end
+
+    assert_not_nil Notifications::StaleShoppingListCampaign.eligible_for(@user)
+  end
+
+  test "ignores a delivery for a different campaign when checking cooldown" do
+    stale_items
+    travel_to 1.hour.ago do
+      NotificationDelivery.create!(
+        user: @user, campaign: "resurface", cookbook: @cookbook, sent_at: Time.current
+      )
+    end
+
+    assert_not_nil Notifications::StaleShoppingListCampaign.eligible_for(@user)
+  end
 end
