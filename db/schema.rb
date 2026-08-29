@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_065127) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -239,9 +239,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
     t.boolean "admin", default: false, null: false
     t.datetime "created_at", null: false
     t.string "email_address", null: false
+    t.datetime "last_active_at"
+    t.boolean "lifecycle_notifications_enabled", default: true, null: false
     t.string "name"
     t.string "password_digest", null: false
     t.boolean "pro", default: false, null: false
+    t.string "time_zone", default: "UTC", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end

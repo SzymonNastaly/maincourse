@@ -5,6 +5,7 @@ module Api
 
       before_action :authenticate_with_token!
       before_action :set_current_cookbook!
+      after_action :record_user_activity
 
       private
 
@@ -36,6 +37,10 @@ module Api
 
       def render_unauthorized
         render json: { error: "Unauthorized" }, status: :unauthorized
+      end
+
+      def record_user_activity
+        current_user.touch_last_active! if current_user && !current_user.destroyed?
       end
     end
   end

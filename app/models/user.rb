@@ -27,6 +27,17 @@ class User < ApplicationRecord
     cookbooks.shared.first
   end
 
+  ACTIVITY_THROTTLE = 1.hour
+
+  # Records that the user did something in the app. Throttled so an active session
+  # does not write on every request. Returns true when it actually wrote.
+  def touch_last_active!
+    return false if last_active_at.present? && last_active_at > ACTIVITY_THROTTLE.ago
+
+    update_column(:last_active_at, Time.current)
+    true
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[id email_address]
   end

@@ -87,4 +87,29 @@ class UserTest < ActiveSupport::TestCase
     assert Recipe.exists?(recipe.id), "Shared recipe should survive"
     assert_equal collaborator, shared.reload.owner
   end
+
+  test "touch_last_active! writes when never active" do
+    user = users(:one)
+    user.update_column(:last_active_at, nil)
+
+    assert user.touch_last_active!
+    assert_not_nil user.reload.last_active_at
+  end
+
+  test "touch_last_active! is throttled within the hour" do
+    user = users(:one)
+    recent = 10.minutes.ago
+    user.update_column(:last_active_at, recent)
+
+    assert_not user.touch_last_active!
+    assert_in_delta recent.to_i, user.reload.last_active_at.to_i, 1
+  end
+
+  test "touch_last_active! writes again after the throttle window" do
+    user = users(:one)
+    user.update_column(:last_active_at, 2.hours.ago)
+
+    assert user.touch_last_active!
+    assert_operator user.reload.last_active_at, :>, 5.minutes.ago
+  end
 end
