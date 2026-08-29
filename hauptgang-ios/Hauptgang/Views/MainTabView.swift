@@ -1,4 +1,7 @@
+import os
 import SwiftUI
+
+private let logger = Logger(subsystem: "app.hauptgang.ios", category: "MainTabView")
 
 /// Main tab view container for authenticated users.
 /// Renders tabs only; startup readiness and the splash overlay are owned by
@@ -69,9 +72,21 @@ struct MainTabView: View {
             self.selectedTab = .shoppingList
 
         case let .recipe(id, cookbookId):
-            if let cookbookId,
-               cookbookId != self.session.cookbookViewModel.activeCookbook?.id,
-               let cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == cookbookId }) {
+            if let cookbookId, cookbookId != self.session.cookbookViewModel.activeCookbook?.id {
+                var cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == cookbookId })
+                if cookbook == nil {
+                    // The client's cookbook list can be stale right after a notification
+                    // arrives (e.g. the cookbook was created or shared after the last
+                    // fetch). Refresh once and retry before giving up.
+                    await self.session.cookbookViewModel.refresh()
+                    cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == cookbookId })
+                }
+
+                guard let cookbook else {
+                    logger.error("Notification pointed at unknown cookbook \(cookbookId); dropping recipe push")
+                    return
+                }
+
                 await self.session.switchCookbook(cookbook)
             }
             self.selectedTab = .recipes

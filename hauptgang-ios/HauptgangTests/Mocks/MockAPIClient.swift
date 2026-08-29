@@ -14,6 +14,12 @@ actor MockAPIClient: APIClientProtocol {
             self.bodyObject()?[key] as? String
         }
 
+        /// Look up a top-level array of objects in the recorded JSON body, e.g.
+        /// `{"views": [{"recipe_id": 1, ...}]}` via `bodyArray("views")`.
+        func bodyArray(_ key: String) -> [[String: Any]]? {
+            self.bodyObject()?[key] as? [[String: Any]]
+        }
+
         private func bodyObject() -> [String: Any]? {
             guard let bodyData else { return nil }
             return (try? JSONSerialization.jsonObject(with: bodyData)) as? [String: Any]

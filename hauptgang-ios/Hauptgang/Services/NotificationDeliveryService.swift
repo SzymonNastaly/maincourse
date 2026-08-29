@@ -10,7 +10,7 @@ protocol NotificationDeliveryServiceProtocol: Sendable {
 ///
 /// Best-effort by design: this is analytics, and a failure here must never surface to
 /// the user or block the navigation the tap requested. Nothing retries.
-final class NotificationDeliveryService: NotificationDeliveryServiceProtocol, @unchecked Sendable {
+final class NotificationDeliveryService: NotificationDeliveryServiceProtocol, Sendable {
     static let shared = NotificationDeliveryService()
 
     private let api: any APIClientProtocol

@@ -147,6 +147,9 @@ struct RecipesView: View {
             }
         }
         .background(Color.hauptgangBackground.ignoresSafeArea())
+        .navigationDestination(for: Int.self) { recipeId in
+            RecipeDetailView(recipeId: recipeId)
+        }
         .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Recipes")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
@@ -245,9 +248,6 @@ struct RecipesView: View {
         .refreshable {
             await self.networkMonitor.refreshStatus()
             await self.session.refreshActiveCookbook()
-        }
-        .navigationDestination(for: Int.self) { recipeId in
-            RecipeDetailView(recipeId: recipeId)
         }
         .overlay(alignment: .bottom) {
             self.failedRecipeBanners

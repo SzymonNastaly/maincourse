@@ -77,6 +77,10 @@ final class RecipeDetailViewModel {
             self.logger.error("Failed to load recipe detail: \(error.localizedDescription)")
             if self.recipe != nil {
                 self.logger.info("Showing cached recipe after fetch failure")
+                // The user is genuinely reading a cached recipe, so it still counts as a
+                // view even though the API fetch failed. See the comment above the success
+                // branch's record() call for why this is awaited inline rather than detached.
+                await self.viewTracker.record(recipeId: id)
             } else {
                 self.errorMessage = "Failed to load recipe. Tap to retry."
             }

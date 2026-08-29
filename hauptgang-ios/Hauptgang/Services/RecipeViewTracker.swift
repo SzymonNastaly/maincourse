@@ -67,7 +67,8 @@ actor RecipeViewTracker {
     /// UI code that must not care whether this succeeded.
     func record(recipeId: Int, at viewedAt: Date = Date()) {
         var queue = self.loadQueue()
-        queue.append(RecipeView(recipeId: recipeId, viewedAt: viewedAt))
+        let nextSequence = (queue.map(\.sequence).max() ?? 0) + 1
+        queue.append(QueuedView(sequence: nextSequence, view: RecipeView(recipeId: recipeId, viewedAt: viewedAt)))
         if queue.count > Self.maxQueued {
             queue.removeFirst(queue.count - Self.maxQueued)
         }
@@ -84,15 +85,18 @@ actor RecipeViewTracker {
         defer { isFlushing = false }
 
         do {
-            try await self.sink.send(queue)
+            try await self.sink.send(queue.map(\.view))
         } catch {
             logger.error("Failed to flush \(queue.count) recipe views: \(error.localizedDescription)")
             return
         }
 
-        // Re-read rather than clearing outright: a view recorded while the request was
-        // in flight would otherwise be lost.
-        let remaining = Array(self.loadQueue().dropFirst(queue.count))
+        // Re-read and drop by sequence number rather than by count or content equality:
+        // the queue may have been trimmed (at maxQueued) or grown with a duplicate view
+        // (same recipe viewed twice) while this flush was in flight. A monotonic sequence
+        // number lets us remove exactly the entries that were actually sent.
+        let sentSequences = Set(queue.map(\.sequence))
+        let remaining = self.loadQueue().filter { !sentSequences.contains($0.sequence) }
         self.saveQueue(remaining)
         logger.info("Flushed \(queue.count) recipe views")
     }
@@ -104,10 +108,17 @@ actor RecipeViewTracker {
 
     // MARK: - Private
 
-    private func loadQueue() -> [RecipeView] {
+    /// A queued view tagged with a monotonic sequence number, so a flush can reconcile
+    /// the on-disk queue by identity instead of by position or content equality.
+    private struct QueuedView: Codable {
+        let sequence: Int
+        let view: RecipeView
+    }
+
+    private func loadQueue() -> [QueuedView] {
         guard let data = self.defaults.data(forKey: Self.queueKey) else { return [] }
         do {
-            return try JSONDecoder().decode([RecipeView].self, from: data)
+            return try JSONDecoder().decode([QueuedView].self, from: data)
         } catch {
             logger.error("Discarding unreadable recipe view queue: \(error.localizedDescription)")
             self.defaults.removeObject(forKey: Self.queueKey)
@@ -115,7 +126,7 @@ actor RecipeViewTracker {
         }
     }
 
-    private func saveQueue(_ queue: [RecipeView]) {
+    private func saveQueue(_ queue: [QueuedView]) {
         guard !queue.isEmpty else {
             self.defaults.removeObject(forKey: Self.queueKey)
             return
