@@ -19,7 +19,7 @@
 - **R2 region:** always `auto`.
 - **Active Storage checksum flags are retained as insurance, not as a fix:** `request_checksum_calculation: when_required` and `response_checksum_validation: when_required`. Defect D3 predicted that `aws-sdk-s3 1.217.0` CRC32 headers would be rejected by R2; tested 2026-08-26, it **did not reproduce** (small and 12 MB multipart uploads both succeed without the flags). Keep them for drift protection; do not blame D3 for an upload failure without re-testing.
 - **Build arch stays `amd64`** — Netcup target is x86. Do not change `builder.arch`.
-- **No Active Storage database rewrite.** Blob keys are opaque and preserved by `rclone copy`. Any task proposing a `blobs` table migration is wrong.
+- **One Active Storage column must be rewritten: `active_storage_blobs.service_name`.** Blob *keys* are opaque and preserved by `rclone copy`, so no key rewrite is required — but every blob row also records which service to read it from, and copying objects does not touch that column. `ActiveStorage::Blob#service` is `services.fetch(service_name)` (activestorage-8.1.3, `app/models/active_storage/blob.rb:348`), a hard fetch that raises `KeyError` the moment the named service leaves `config/storage.yml`. Correct sequencing: run `ActiveStorage::Blob.where(service_name: "hetzner").update_all(service_name: "r2")` right after the service flip in Task 5, and before Task 13 removes `:hetzner`. **This bullet originally asserted the opposite** — that any task proposing a `blobs` table migration was wrong — and that error is what broke image serving on 2026-08-27. See the defect note under Task 13.
 - **Every rclone command against the `r2:` remote MUST pass `--s3-no-check-bucket`.** The R2 API token is bucket-scoped, so it is denied `ListBuckets`; without the flag rclone falls back to `CreateBucket` and fails with `403 AccessDenied`. For the same reason, never run a bare `rclone lsd r2:` -- always name a bucket.
 - **Do not delete any Hetzner resource** (VPS or either bucket) before Phase 3. They are the rollback.
 - **Style:** rubocop-rails-omakase. Run `bin/rubocop -a` before each commit that touches Ruby.
@@ -1177,6 +1177,31 @@ Three deviations from the plan as written:
    and *Style: iOS Lint/Format* (line lengths, `aspectRatio` idiom, `wrapIfStatementBodies`
    in committed Swift). Both are Swift/browser-only and cannot be affected by a change to
    `config/storage.yml`, credentials, and a Markdown file. Not fixed here — out of scope.
+
+**Defect found 2026-08-28, one day after this task: removing `:hetzner` broke every
+pre-cutover image.** The plan asserted that no `blobs` table rewrite was needed. That was
+wrong. `rclone copy` preserved every key, but `active_storage_blobs.service_name` still read
+`"hetzner"` on all 512 blobs predating the R2 cutover — only the 2 uploaded after it read
+`"r2"`. Because `ActiveStorage::Blob#service` is `services.fetch(service_name)`, deleting the
+`hetzner:` block in Step 3 made every
+`/rails/active_storage/representations/redirect/...` request raise
+`KeyError: Missing configuration for the hetzner Active Storage service` and return 500. In the
+iOS app this showed as blank recipe cards for everything except the two newest recipes; on the
+web it is the same 500. The Hetzner buckets had been purged the same day, so there was no
+working path left either way.
+
+The post-deploy verification above did not catch it because both storage checks looked at the
+wrong thing: `ActiveStorage::Blob.service.name` reads the *default* service out of config, not
+any row's `service_name`, and "the newest blob resolves in R2" was true precisely because the
+newest blob was one of the two written after the cutover. A check that would have caught it is
+`ActiveStorage::Blob.group(:service_name).count`, which returned `{"hetzner" => 512, "r2" => 2}`.
+
+Fixed 2026-08-28 by running
+`ActiveStorage::Blob.where(service_name: "hetzner").update_all(service_name: "r2")` against
+production — 512 rows updated, leaving `{"r2" => 514}`. Safe because Task 4's `rclone check`
+had already proven all 512 objects present in R2 byte-identical under the same keys; only the
+column naming the service was stale. Verified by relaunching the iOS app against production and
+confirming previously blank cards render.
 
 ### Task 14: Decommission Hetzner
 

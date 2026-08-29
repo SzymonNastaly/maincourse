@@ -20,7 +20,7 @@
 1. **Target host:** Netcup x86 VPS (VPS 2000 G11 class). ARM was considered and rejected — the ARM line is frequently sold out, and x86 requires no Dockerfile arch work. `builder.arch` stays `amd64`.
 2. **Target storage:** Cloudflare R2, **EU jurisdiction** (`<account_id>.eu.r2.cloudflarestorage.com`), for **both** buckets. Jurisdiction is fixed at bucket creation and cannot be changed later.
 3. **Approach:** Two-phase — storage first (zero downtime), host second (short window). Only one variable changes at a time.
-4. **Blob migration:** `rclone copy` + hard cutover. Active Storage keys are opaque and preserved, so **no database rewrite is required**.
+4. **Blob migration:** `rclone copy` + hard cutover. Active Storage *keys* are opaque and preserved by the copy, so no key rewrite is required — but **`active_storage_blobs.service_name` must still be rewritten**. That column records which service to read each blob from, `rclone` does not touch it, and `ActiveStorage::Blob#service` is `services.fetch(service_name)` — a hard fetch with no fallback. This decision originally read "no database rewrite is required"; that was wrong, and it broke image serving for every pre-cutover blob on 2026-08-27. See the defect note under Task 13 of the plan.
 5. **Downtime budget:** ~5–10 minutes for the host cutover.
 6. **Litestream:** pin **≥ 0.5.4** on both the app image and the accessory.
 
