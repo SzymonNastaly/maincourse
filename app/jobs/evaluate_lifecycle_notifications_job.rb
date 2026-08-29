@@ -3,10 +3,13 @@
 class EvaluateLifecycleNotificationsJob < ApplicationJob
   queue_as :default
 
+  # In priority order. Notifications::ResurfaceCampaign is deliberately absent: it
+  # decides a recipe is forgotten from the absence of a view, and no client sends view
+  # pings yet, so every recipe looks forgotten. Add it here together with the iOS
+  # release that sends them, and set its VIEW_TRACKING_SINCE to that deploy date.
   CAMPAIGNS = [
     Notifications::ImportFollowUpCampaign,
-    Notifications::StaleShoppingListCampaign,
-    Notifications::ResurfaceCampaign
+    Notifications::StaleShoppingListCampaign
   ].freeze
 
   # The hour, in the user's own time zone, when someone is deciding what to cook and can

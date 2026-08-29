@@ -131,14 +131,37 @@ class EvaluateLifecycleNotificationsJobTest < ActiveSupport::TestCase
     end
   end
 
+  test "does not send the resurface campaign while view tracking has no client" do
+    # ResurfaceCampaign infers "forgotten" from the absence of a view ping, and nothing
+    # sends those yet, so it is deliberately out of CAMPAIGNS. Without that, this recipe
+    # would be a resurface candidate: old enough, after VIEW_TRACKING_SINCE, never viewed.
+    assert_not_includes EvaluateLifecycleNotificationsJob::CAMPAIGNS, Notifications::ResurfaceCampaign
+
+    travel_to(Time.utc(2026, 9, 15)) do
+      @recipe.update_column(:created_at, Time.utc(2026, 8, 30))
+      assert Notifications::ResurfaceCampaign.eligible_for(@user).present?,
+        "expected the recipe to be a genuine resurface candidate"
+    end
+
+    in_window do
+      assert_no_difference "NotificationDelivery.count" do
+        run_job
+      end
+    end
+  end
+
   test "one user raising does not stop the others" do
     other = users(:two)
-    other.update_columns(
-      lifecycle_notifications_enabled: true, time_zone: "Europe/Zurich", last_active_at: 10.days.ago
-    )
-    other.device_tokens.create!(token: "job-token-2", environment: "sandbox")
-    other_recipe = cookbooks(:two_personal).recipes.create!(name: "Soup", user: other, import_status: :completed)
-    other_recipe.update_column(:created_at, 3.days.ago)
+    # Anchor these ages to the same date the window helpers travel to, so the recipe
+    # lands inside the import follow-up window rather than wherever the wall clock is.
+    travel_to(Time.utc(2026, 9, 15)) do
+      other.update_columns(
+        lifecycle_notifications_enabled: true, time_zone: "Europe/Zurich", last_active_at: 10.days.ago
+      )
+      other.device_tokens.create!(token: "job-token-2", environment: "sandbox")
+      other_recipe = cookbooks(:two_personal).recipes.create!(name: "Soup", user: other, import_status: :completed)
+      other_recipe.update_column(:created_at, 3.days.ago)
+    end
 
     # Capture the real method before stubbing so the non-raising branch calls the
     # original implementation instead of recursing into the stub that replaces it.

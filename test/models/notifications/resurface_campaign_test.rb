@@ -38,6 +38,17 @@ class Notifications::ResurfaceCampaignTest < ActiveSupport::TestCase
     end
   end
 
+  test "ignores a recipe already cooked even though its shopping list items were cleaned up" do
+    # Checked items are destroyed an hour after checkoff, so where.missing(:shopping_list_items)
+    # cannot tell "never used" from "cooked and cleaned up". Only the engagement row can.
+    with_tracking_since(1.year.ago) do
+      recipe = forgotten_recipe
+      RecipeEngagement.mark_cooked!(recipe: recipe)
+
+      assert_nil Notifications::ResurfaceCampaign.eligible_for(@user)
+    end
+  end
+
   test "ignores a recipe saved before view tracking started" do
     # The window 20.days.ago..14.days.ago is non-empty, so a nil result here proves the
     # floor excluded the recipe rather than the age range doing it by accident.

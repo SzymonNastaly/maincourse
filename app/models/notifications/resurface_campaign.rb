@@ -9,6 +9,11 @@ module Notifications
     # Recipes saved before view tracking shipped have no view history, so they all look
     # "never opened". Without this floor the campaign would fire across a user's entire
     # existing library. Set to the deploy date of the iOS release that sends view pings.
+    #
+    # This campaign is deliberately NOT in EvaluateLifecycleNotificationsJob::CAMPAIGNS
+    # yet: no client sends view pings, so last_viewed_at is nil everywhere and every
+    # recipe looks forgotten. Enable it only together with that iOS release, and set the
+    # constant below to its deploy date at the same time.
     VIEW_TRACKING_SINCE = Time.utc(2026, 8, 29)
 
     def self.eligible_for(user)
@@ -38,7 +43,8 @@ module Notifications
       RecipeEngagement
         .where(user_id: user.id)
         .where(
-          "last_viewed_at IS NOT NULL OR added_to_list_at IS NOT NULL OR last_suggested_at > ?",
+          "last_viewed_at IS NOT NULL OR added_to_list_at IS NOT NULL OR " \
+          "cooked_at IS NOT NULL OR last_suggested_at > ?",
           RESUGGEST_AFTER.ago
         )
         .select(:recipe_id)
