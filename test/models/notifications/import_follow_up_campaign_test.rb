@@ -85,6 +85,22 @@ class Notifications::ImportFollowUpCampaignTest < ActiveSupport::TestCase
     assert_nil Notifications::ImportFollowUpCampaign.eligible_for(@user)
   end
 
+  test "ignores a recipe in a cookbook the user is no longer a member of" do
+    other_cookbook = cookbooks(:two_personal)
+    recipe = other_cookbook.recipes.create!(name: "Ramen", user: @user, import_status: :completed)
+    recipe.update_column(:created_at, 3.days.ago)
+
+    assert_nil Notifications::ImportFollowUpCampaign.eligible_for(@user)
+  end
+
+  test "still suggests a recipe in a cookbook the user is still a member of" do
+    recipe = saved_recipe
+
+    candidate = Notifications::ImportFollowUpCampaign.eligible_for(@user)
+
+    assert_equal recipe, candidate.recipe
+  end
+
   test "prefers the most recently saved eligible recipe" do
     saved_recipe(created_at: 6.days.ago, name: "Older")
     newer = saved_recipe(created_at: 2.days.ago, name: "Newer")

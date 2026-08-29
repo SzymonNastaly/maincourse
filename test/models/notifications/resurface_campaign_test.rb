@@ -92,6 +92,24 @@ class Notifications::ResurfaceCampaignTest < ActiveSupport::TestCase
     end
   end
 
+  test "ignores a recipe in a cookbook the user is no longer a member of" do
+    with_tracking_since(1.year.ago) do
+      other_cookbook = cookbooks(:two_personal)
+      recipe = other_cookbook.recipes.create!(name: "Goulash", user: @user, import_status: :completed)
+      recipe.update_column(:created_at, 30.days.ago)
+
+      assert_nil Notifications::ResurfaceCampaign.eligible_for(@user)
+    end
+  end
+
+  test "still suggests a recipe in a cookbook the user is still a member of" do
+    with_tracking_since(1.year.ago) do
+      recipe = forgotten_recipe
+
+      assert_equal recipe, Notifications::ResurfaceCampaign.eligible_for(@user).recipe
+    end
+  end
+
   test "rotates through the library oldest first" do
     with_tracking_since(1.year.ago) do
       oldest = forgotten_recipe(created_at: 90.days.ago, name: "Oldest")

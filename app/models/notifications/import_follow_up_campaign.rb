@@ -26,6 +26,7 @@ module Notifications
       user.recipes
           .completed
           .where(created_at: MAX_AGE.ago..MIN_AGE.ago)
+          .where(cookbook_id: user.cookbooks.select(:id))
           .where.missing(:shopping_list_items)
           .where.not(id: suggested_recipe_ids(user))
           .where.not(id: revisited_recipe_ids(user))

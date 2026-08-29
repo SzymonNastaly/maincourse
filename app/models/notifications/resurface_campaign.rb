@@ -28,6 +28,7 @@ module Notifications
       user.recipes
           .completed
           .where(created_at: VIEW_TRACKING_SINCE..MIN_AGE.ago)
+          .where(cookbook_id: user.cookbooks.select(:id))
           .where.missing(:shopping_list_items)
           .where.not(id: excluded_recipe_ids(user))
           .order(created_at: :asc)
