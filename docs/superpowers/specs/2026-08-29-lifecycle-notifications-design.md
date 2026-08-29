@@ -132,12 +132,20 @@ campaigns actually read, so a dedupe key is not worth the complexity.
 Hooked into the existing shopping-list flow:
 
 - On creating a `shopping_list_item` with a `source_recipe_id`, set
-  `added_to_list_at` on the acting user's engagement row (first write wins).
+  `added_to_list_at` (first write wins) on the engagement row of **every member of the
+  cookbook**, creating rows as needed.
 - On an item transitioning to checked (`checked_at` going from nil to set), set
-  `cooked_at` on the **acting** user's engagement row for `source_recipe_id`.
+  `cooked_at` on the engagement row of **every member of the cookbook** for
+  `source_recipe_id`.
 
-In a shared cookbook only the person who did the shopping is credited. That is a
-deliberate simplification; crediting every member would inflate the signal.
+A shared cookbook is treated as a household that cooks together, so one member
+shopping or checking off credits everyone. This is the deliberate worst-case
+assumption: it is better to consider a recipe used for someone who only ate it than to
+push them a reminder about a meal they had last week.
+
+The write fans out over `cookbook.cookbook_memberships`, so a member joining later
+gets no retroactive credit — acceptable, since they were not in the household when it
+was cooked.
 
 `cooked_at` is an inference, not a fact — it misses cooking from ingredients already
 at home. That is accepted for now; an explicit "cooked it" tap is a natural later
@@ -244,7 +252,8 @@ are today.
 
 - Model tests for `RecipeEngagement` upsert semantics (`max` on `last_viewed_at`,
   counter increments) and for the shopping-list hooks setting `added_to_list_at` /
-  `cooked_at`.
+  `cooked_at` — including the fan-out to every member of a shared cookbook, and that a
+  member who joins afterwards is not credited.
 - One test per campaign covering an eligible case and each exclusion, using
   `travel_to` for the time-based conditions.
 - Job tests for the suppression rules (send window, active-in-24h, 4-day cap,
