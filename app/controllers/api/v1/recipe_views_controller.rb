@@ -20,7 +20,7 @@ module Api
       private
 
       def record(view)
-        recipe_id = view[:recipe_id]
+        recipe_id = view[:recipe_id] rescue return
         return if recipe_id.blank?
 
         recipe = accessible_recipes.find_by(id: recipe_id)

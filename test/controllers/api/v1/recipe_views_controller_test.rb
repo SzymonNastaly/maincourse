@@ -59,4 +59,19 @@ class Api::V1::RecipeViewsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  test "create skips non-Hash elements and records valid ones" do
+    post api_v1_recipe_views_url,
+         params: { views: [
+           1,
+           { recipe_id: @recipe.id },
+           nil,
+           { recipe_id: @recipe.id }
+         ] },
+         headers: @auth_headers, as: :json
+
+    assert_response :no_content
+    engagement = RecipeEngagement.find_by(user_id: @user.id, recipe_id: @recipe.id)
+    assert_equal 2, engagement.view_count
+  end
 end
