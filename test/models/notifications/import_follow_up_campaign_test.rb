@@ -64,6 +64,20 @@ class Notifications::ImportFollowUpCampaignTest < ActiveSupport::TestCase
     assert_nil Notifications::ImportFollowUpCampaign.eligible_for(@user)
   end
 
+  test "ignores a recipe already cooked even though its shopping list items were cleaned up" do
+    recipe = saved_recipe
+    RecipeEngagement.mark_cooked!(recipe: recipe)
+
+    assert_nil Notifications::ImportFollowUpCampaign.eligible_for(@user)
+  end
+
+  test "ignores a recipe already added to the list even though the items were cleaned up" do
+    recipe = saved_recipe
+    RecipeEngagement.mark_added_to_list!(recipe: recipe)
+
+    assert_nil Notifications::ImportFollowUpCampaign.eligible_for(@user)
+  end
+
   test "ignores a recipe whose import failed" do
     recipe = saved_recipe
     recipe.update!(import_status: :failed)

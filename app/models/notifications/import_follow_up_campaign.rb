@@ -29,11 +29,22 @@ module Notifications
           .where.missing(:shopping_list_items)
           .where.not(id: suggested_recipe_ids(user))
           .where.not(id: revisited_recipe_ids(user))
+          .where.not(id: acted_on_recipe_ids(user))
           .order(created_at: :desc)
     end
 
     def self.suggested_recipe_ids(user)
       RecipeEngagement.where(user_id: user.id).where.not(last_suggested_at: nil).select(:recipe_id)
+    end
+
+    # Shopping list rows are not durable: ShoppingListItem.cleanup_stale_checked_for
+    # destroys checked items after an hour, so `where.missing(:shopping_list_items)`
+    # alone cannot tell "never added" from "added, checked off, and cleaned up". The
+    # engagement row survives that cleanup and is the durable signal.
+    def self.acted_on_recipe_ids(user)
+      RecipeEngagement.where(user_id: user.id)
+                      .where("added_to_list_at IS NOT NULL OR cooked_at IS NOT NULL")
+                      .select(:recipe_id)
     end
 
     # SQLite-specific date arithmetic; this app has no other adapter.
