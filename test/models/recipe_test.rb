@@ -201,4 +201,22 @@ class RecipeTest < ActiveSupport::TestCase
       assert_nil Recipe.find_by(id: id), "Recipe #{id} should be deleted via cookbook cascade"
     end
   end
+
+  test "destroying a recipe with notification deliveries nullifies the delivery's recipe_id" do
+    recipe = recipes(:one)
+    # Clear any meal plan entries that would restrict deletion
+    recipe.meal_plan_entries.destroy_all
+    delivery = NotificationDelivery.create!(
+      user: users(:one), campaign: "resurface", recipe: recipe, sent_at: 1.hour.ago
+    )
+
+    recipe.destroy
+
+    # Recipe should be destroyed
+    assert_nil Recipe.find_by(id: recipe.id)
+
+    # Delivery should still exist but with null recipe_id
+    assert_equal delivery.id, NotificationDelivery.find(delivery.id).id
+    assert_nil NotificationDelivery.find(delivery.id).recipe_id
+  end
 end

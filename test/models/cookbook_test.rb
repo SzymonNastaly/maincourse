@@ -99,4 +99,20 @@ class CookbookTest < ActiveSupport::TestCase
       assert_nil CookbookMembership.find_by(id: id)
     end
   end
+
+  test "destroying cookbook with notification deliveries nullifies the delivery's cookbook_id" do
+    cookbook = cookbooks(:one_personal)
+    delivery = NotificationDelivery.create!(
+      user: users(:one), campaign: "resurface", cookbook: cookbook, sent_at: 1.hour.ago
+    )
+
+    cookbook.destroy!
+
+    # Cookbook should be destroyed
+    assert_nil Cookbook.find_by(id: cookbook.id)
+
+    # Delivery should still exist but with null cookbook_id
+    assert_equal delivery.id, NotificationDelivery.find(delivery.id).id
+    assert_nil NotificationDelivery.find(delivery.id).cookbook_id
+  end
 end

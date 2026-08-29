@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_070104) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_072317) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -142,6 +142,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_070104) do
     t.index ["cookbook_id"], name: "index_meal_plans_on_cookbook_id"
     t.index ["selected_by_user_id"], name: "index_meal_plans_on_selected_by_user_id"
     t.index ["selected_entry_id"], name: "index_meal_plans_on_selected_entry_id"
+  end
+
+  create_table "notification_deliveries", force: :cascade do |t|
+    t.string "action_taken"
+    t.string "campaign", null: false
+    t.integer "cookbook_id"
+    t.datetime "created_at", null: false
+    t.datetime "opened_at"
+    t.integer "recipe_id"
+    t.datetime "sent_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["cookbook_id"], name: "index_notification_deliveries_on_cookbook_id"
+    t.index ["recipe_id"], name: "index_notification_deliveries_on_recipe_id"
+    t.index ["user_id", "sent_at"], name: "index_notification_deliveries_on_user_id_and_sent_at"
+    t.index ["user_id"], name: "index_notification_deliveries_on_user_id"
   end
 
   create_table "onboarding_responses", force: :cascade do |t|
@@ -283,6 +299,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_070104) do
   add_foreign_key "meal_plans", "cookbooks", on_delete: :cascade
   add_foreign_key "meal_plans", "meal_plan_entries", column: "selected_entry_id", on_delete: :nullify
   add_foreign_key "meal_plans", "users", column: "selected_by_user_id", on_delete: :nullify
+  add_foreign_key "notification_deliveries", "cookbooks"
+  add_foreign_key "notification_deliveries", "recipes"
+  add_foreign_key "notification_deliveries", "users"
   add_foreign_key "onboarding_responses", "users", on_delete: :cascade
   add_foreign_key "pending_notifications", "cookbooks", on_delete: :cascade
   add_foreign_key "pending_notifications", "users", column: "actor_id", on_delete: :cascade
