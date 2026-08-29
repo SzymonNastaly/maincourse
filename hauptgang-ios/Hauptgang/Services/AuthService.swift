@@ -79,6 +79,20 @@ final class AuthService: AuthServiceProtocol {
         return response.user
     }
 
+    func updateLifecycleNotifications(_ enabled: Bool) async throws -> User {
+        let request = AccountUpdateRequest(user: AccountUpdateBody(lifecycleNotificationsEnabled: enabled))
+
+        let response: AccountUpdateResponse = try await api.request(
+            endpoint: "account",
+            method: .patch,
+            body: request,
+            authenticated: true
+        )
+
+        try await self.keychain.saveUser(response.user)
+        return response.user
+    }
+
     // MARK: - Logout
 
     func logout() async {
@@ -157,7 +171,8 @@ private struct AccountUpdateRequest: Encodable {
 }
 
 private struct AccountUpdateBody: Encodable {
-    let name: String
+    var name: String?
+    var lifecycleNotificationsEnabled: Bool?
 }
 
 private struct AccountUpdateResponse: Decodable {

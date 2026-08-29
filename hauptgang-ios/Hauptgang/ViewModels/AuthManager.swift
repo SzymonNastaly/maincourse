@@ -66,6 +66,12 @@ final class AuthManager: ObservableObject {
         self.authState = .authenticated(updated)
     }
 
+    /// Update the current user's lifecycle notification preference
+    func updateLifecycleNotifications(_ enabled: Bool) async throws {
+        let updated = try await authService.updateLifecycleNotifications(enabled)
+        self.authState = .authenticated(updated)
+    }
+
     /// Sign out and clear credentials
     func signOut() async {
         await CookbookContext.shared.reset()
