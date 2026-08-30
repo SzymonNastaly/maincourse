@@ -6,7 +6,12 @@
 class InviteLink
   def self.url_for(token)
     if Rails.env.production?
-      "https://#{Rails.application.config.x.canonical_host}/invite/#{token}"
+      canonical_host = Rails.application.config.x.canonical_host
+      if canonical_host.blank?
+        raise "config.x.canonical_host is not set; cannot build a production invite link"
+      end
+
+      "https://#{canonical_host}/invite/#{token}"
     else
       "hauptgang://invite/#{token}"
     end
