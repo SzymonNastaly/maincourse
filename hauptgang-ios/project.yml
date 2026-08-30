@@ -20,7 +20,7 @@ packages:
 settings:
   SWIFT_VERSION: "5.9"
   MARKETING_VERSION: "1.0.4"
-  CURRENT_PROJECT_VERSION: "63"
+  CURRENT_PROJECT_VERSION: "64"
   # Enable Swift 6 strict concurrency checking for data race safety
   SWIFT_STRICT_CONCURRENCY: complete
   OTHER_SWIFT_FLAGS: "-Xfrontend -enable-upcoming-feature -Xfrontend InferSendableFromCaptures"
