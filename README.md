@@ -1,11 +1,11 @@
-# Hauptgang
+# MainCourse
 
 **Every recipe you love. In one place.**
 
-Hauptgang is a recipe manager for iPhone and iPad. Save recipes from websites, Instagram, TikTok, YouTube, or photos of cookbook pages — then plan your week and turn it into a single shopping list grouped by aisle.
+MainCourse is a recipe manager for iPhone and iPad. Save recipes from websites, Instagram, TikTok, YouTube, or photos of cookbook pages — then plan your week and turn it into a single shopping list grouped by aisle.
 
 <p align="center">
-  <img src="docs/images/hero-devices.png" alt="Hauptgang on iPad and iPhone" width="600" />
+  <img src="docs/images/hero-devices.png" alt="MainCourse on iPad and iPhone" width="600" />
 </p>
 
 Landing page: [getmaincourse.com](https://getmaincourse.com)
@@ -15,9 +15,9 @@ Landing page: [getmaincourse.com](https://getmaincourse.com)
 
 ### Capture recipes from anywhere
 
-- **Rescue from Instagram, TikTok, and YouTube.** Share a reel or video to Hauptgang and the server transcribes the audio, reads on-screen text, and turns it into a structured recipe you can actually cook from.
-- **Save from any website.** Paste a link from any recipe site and Hauptgang pulls in the ingredients, steps, and photo automatically — using JSON-LD when available, or an LLM as a fallback.
-- **Snap a photo of a cookbook page.** Point your camera at a handwritten card or an open cookbook. Hauptgang uses on-device OCR to turn the photo into an editable recipe in seconds.
+- **Rescue from Instagram, TikTok, and YouTube.** Share a reel or video to MainCourse and the server transcribes the audio, reads on-screen text, and turns it into a structured recipe you can actually cook from.
+- **Save from any website.** Paste a link from any recipe site and MainCourse pulls in the ingredients, steps, and photo automatically — using JSON-LD when available, or an LLM as a fallback.
+- **Snap a photo of a cookbook page.** Point your camera at a handwritten card or an open cookbook. MainCourse uses on-device OCR to turn the photo into an editable recipe in seconds.
 
 <p align="center">
   <img src="docs/images/socialimport.webp" alt="Importing a recipe from a social media video" width="300" />
@@ -27,7 +27,7 @@ Landing page: [getmaincourse.com](https://getmaincourse.com)
 
 ### Weekly plan and shopping list
 Drop recipes onto any day of the week and see your meals laid out in a clean calendar. Rearrange, repeat, or swap dishes in seconds.
-Hauptgang turns your meal plan into a single, consolidated shopping list
+MainCourse turns your meal plan into a single, consolidated shopping list
 <p align="center">
   <img src="docs/images/mealplan.webp" alt="Weekly meal plan view" width="240" />
   <img src="docs/images/shoppinglist.webp" alt="Shopping list grouped by aisle" width="240" />
@@ -37,10 +37,12 @@ Hauptgang turns your meal plan into a single, consolidated shopping list
 
 ## Architecture
 
-Hauptgang is split into two main pieces:
+MainCourse is split into two main pieces:
 
 - **Rails 8.1 API backend** (`app/`, `config/`, `db/`) — Ruby 3.4.7, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web admin views. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
 - **SwiftUI iOS app** (`hauptgang-ios/`) — Offline-first iPhone and iPad client. Generated with XcodeGen, uses RevenueCat for subscriptions.
+
+The app was originally called Hauptgang, so `hauptgang` still appears throughout the codebase — directory names, Swift module and target names, and the Rails app module. Only the user-facing branding changed.
 
 See [`architecture.md`](architecture.md) for a deeper look at how the pieces fit together, and [`written_proposal.md`](written_proposal.md) for the original project proposal. Feature-area guides live in [`docs/`](docs/).
 

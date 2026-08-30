@@ -42,17 +42,17 @@ Use raw `xcodebuildmcp` commands only when you need something `bin/ios-build` do
 
 ```bash
 # 1. Discover the generated project
-xcodebuildmcp simulator discover-projects --workspace-root /Users/szymonnastaly/projects/hauptgang/hauptgang-ios
+xcodebuildmcp simulator discover-projects --workspace-root /Users/szymonnastaly/projects/maincourse/hauptgang-ios
 
 # 2. Confirm the app scheme
-xcodebuildmcp simulator list-schemes --project-path /Users/szymonnastaly/projects/hauptgang/hauptgang-ios/Hauptgang.xcodeproj
+xcodebuildmcp simulator list-schemes --project-path /Users/szymonnastaly/projects/maincourse/hauptgang-ios/Hauptgang.xcodeproj
 
 # 3. List concrete simulator IDs
 xcodebuildmcp simulator list
 
 # 4. Compile-check on a specific simulator
 xcodebuildmcp simulator build \
-  --project-path /Users/szymonnastaly/projects/hauptgang/hauptgang-ios/Hauptgang.xcodeproj \
+  --project-path /Users/szymonnastaly/projects/maincourse/hauptgang-ios/Hauptgang.xcodeproj \
   --scheme Hauptgang \
   --simulator-id SIMULATOR_UUID
 ```
