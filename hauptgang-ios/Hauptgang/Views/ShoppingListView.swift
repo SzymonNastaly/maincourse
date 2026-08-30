@@ -9,6 +9,10 @@ struct ShoppingListView: View {
 
     let viewModel: ShoppingListViewModel
 
+    /// Mirrors `Notifications::StaleShoppingListCampaign::MIN_ITEMS` — the point at which
+    /// this list actually becomes eligible for a reminder.
+    static let notificationPromptThreshold = 3
+
     @State private var showRemoveAllConfirmation = false
     @State private var addItemText = ""
     @State private var checkedSectionExpanded = true
@@ -71,6 +75,12 @@ struct ShoppingListView: View {
         .task {
             self.viewModel.configure(modelContext: self.modelContext)
             await self.viewModel.refresh()
+            // On open rather than on each add: `keepFocusOnSubmit` leaves the keyboard up
+            // while someone types a list, and a permission dialog mid-typing is the
+            // worst possible moment to ask.
+            if self.viewModel.uncheckedItems.count >= Self.notificationPromptThreshold {
+                await PushNotificationService.shared.promptForAuthorization()
+            }
         }
         .onChange(of: self.authManager.authState) { _, newValue in
             if case .unauthenticated = newValue {

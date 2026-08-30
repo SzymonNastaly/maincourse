@@ -8,7 +8,9 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "PushNotif
 /// Coordinates APNs registration and uploads device tokens to the Rails backend.
 ///
 /// Flow:
-/// 1. App / RootView calls `requestAuthorizationIfNeeded()` after the user is authenticated.
+/// 1. A contextual moment (first recipes on screen, a filled shopping list, the Settings
+///    switch, cookbook sharing) calls `promptForAuthorization()`. Login calls
+///    `registerIfAuthorized()` instead, which never prompts.
 /// 2. On grant, `UIApplication.shared.registerForRemoteNotifications()` is called.
 /// 3. The AppDelegate forwards the resulting `Data` token to `handleDeviceToken(_:)`.
 /// 4. We POST `{token, environment}` to `/api/v1/device_tokens`, but only when the user
@@ -43,9 +45,29 @@ actor PushNotificationService {
 
     // MARK: - Public API
 
-    /// Ask iOS for notification authorization. Idempotent — safe to call on every launch.
-    /// On grant, kicks off remote-notification registration.
-    func requestAuthorizationIfNeeded() async {
+    /// Register for remote notifications, but only if the user has already granted
+    /// permission. Never prompts, so this is safe on every launch — and it is what keeps
+    /// the stored token and time zone current when either changes (device restore, OS
+    /// update, travel).
+    func registerIfAuthorized() async {
+        let status = await Self.authorizationStatus()
+        guard status == .authorized || status == .provisional else { return }
+
+        await MainActor.run {
+            UIApplication.shared.registerForRemoteNotifications()
+        }
+    }
+
+    /// Ask for notification permission. iOS shows the system prompt exactly once and
+    /// there is no second chance, so call this only from a moment where the user can see
+    /// what the notifications are for. Once the status is settled this degrades to plain
+    /// registration, which makes it safe to call from several such moments.
+    func promptForAuthorization() async {
+        guard await Self.authorizationStatus() == .notDetermined else {
+            await self.registerIfAuthorized()
+            return
+        }
+
         let center = UNUserNotificationCenter.current()
         do {
             let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
@@ -59,6 +81,12 @@ actor PushNotificationService {
         } catch {
             logger.error("requestAuthorization failed: \(error.localizedDescription)")
         }
+    }
+
+    /// Static, so it stays off the actor: `UNNotificationSettings` is not `Sendable` and
+    /// must not cross an isolation boundary. Only the status enum comes back.
+    private static func authorizationStatus() async -> UNAuthorizationStatus {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
     }
 
     /// Mark the user as authenticated (or not). When transitioning to authenticated,

@@ -106,7 +106,15 @@ struct ShoppingListReviewSheet: View {
             self.uncheckedItems,
             sourceRecipeId: self.recipeId
         )
+        let listIsWorthReminding =
+            self.shoppingListViewModel.uncheckedItems.count >= ShoppingListView.notificationPromptThreshold
         self.dismiss()
+
+        // Unlike the typed path, this is one deliberate button press with no keyboard in
+        // the way, so asking right after the sheet closes is fair game.
+        if listIsWorthReminding {
+            Task { await PushNotificationService.shared.promptForAuthorization() }
+        }
     }
 }
 

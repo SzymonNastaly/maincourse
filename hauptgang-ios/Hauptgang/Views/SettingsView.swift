@@ -136,7 +136,7 @@ struct SettingsView: View {
             // Switching this on while iOS notifications are off would otherwise be a
             // silent no-op.
             if enabled {
-                await PushNotificationService.shared.requestAuthorizationIfNeeded()
+                await PushNotificationService.shared.promptForAuthorization()
             }
         } catch {
             // The toggle reads from authManager, which is unchanged on failure, so it

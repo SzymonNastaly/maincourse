@@ -83,8 +83,12 @@ struct RecipesView: View {
                 if oldPhase == .background && newPhase == .active {
                     Task {
                         await self.session.refreshActiveCookbook()
+                        self.promptForNotificationsIfRecipesLoaded()
                     }
                 }
+            }
+            .onChange(of: self.recipeViewModel.recipes.count) { _, _ in
+                self.promptForNotificationsIfRecipesLoaded()
             }
             .onChange(of: self.selectedPhotoItem) { _, newItem in
                 guard let newItem else { return }
@@ -134,6 +138,18 @@ struct RecipesView: View {
                     Task { await self.recipeViewModel.importRecipeFromText(content.text) }
                 }
             }
+    }
+
+    /// A user looking at their own recipes can see what a reminder would be about, so
+    /// this is the best moment to ask. Gated on a non-empty list rather than on login:
+    /// someone reinstalling hits it seconds after signing in, while a brand-new account
+    /// stays silent until their first import shows up here.
+    private func promptForNotificationsIfRecipesLoaded() {
+        guard !self.recipeViewModel.recipes.isEmpty else { return }
+
+        Task {
+            await PushNotificationService.shared.promptForAuthorization()
+        }
     }
 
     private var recipeLayout: some View {

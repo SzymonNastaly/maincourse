@@ -179,7 +179,7 @@ struct CookbookSettingsView: View {
             let response = try await cookbookViewModel.createInvitation()
             self.inviteURL = response.inviteUrl
             self.showingInviteLink = true
-            await PushNotificationService.shared.requestAuthorizationIfNeeded()
+            await PushNotificationService.shared.promptForAuthorization()
         } catch {
             self.errorMessage = error.localizedDescription
         }

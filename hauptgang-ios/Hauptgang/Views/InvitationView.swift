@@ -256,7 +256,7 @@ struct InvitationView: View {
             if let cookbook = cookbookViewModel.cookbooks.first(where: { $0.id == response.cookbookId }) {
                 await self.session.switchCookbook(cookbook)
             }
-            await PushNotificationService.shared.requestAuthorizationIfNeeded()
+            await PushNotificationService.shared.promptForAuthorization()
             self.state = .accepted
         } catch {
             self.errorMessage = error.localizedDescription
