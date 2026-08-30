@@ -49,6 +49,10 @@ struct RootView: View {
                     await self.subscriptionManager.identify(userId: String(user.id))
                     await self.subscriptionManager.refreshStatus()
                     await PushNotificationService.shared.setAuthenticated(true)
+                    // Lifecycle notifications are on by default, so without this the
+                    // backend never gets a device token unless the user happens to
+                    // share a cookbook. Idempotent: iOS only prompts once.
+                    await PushNotificationService.shared.requestAuthorizationIfNeeded()
 
                     // Check for invitation stored while unauthenticated
                     if let storedToken = self.deepLinkRouter.consumeStoredToken() {

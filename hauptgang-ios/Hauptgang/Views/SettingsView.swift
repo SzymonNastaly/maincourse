@@ -133,6 +133,11 @@ struct SettingsView: View {
         defer { isUpdatingNotifications = false }
         do {
             try await self.authManager.updateLifecycleNotifications(enabled)
+            // Switching this on while iOS notifications are off would otherwise be a
+            // silent no-op.
+            if enabled {
+                await PushNotificationService.shared.requestAuthorizationIfNeeded()
+            }
         } catch {
             // The toggle reads from authManager, which is unchanged on failure, so it
             // snaps back on its own.
