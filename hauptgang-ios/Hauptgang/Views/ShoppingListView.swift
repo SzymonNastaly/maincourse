@@ -75,12 +75,12 @@ struct ShoppingListView: View {
         .task {
             self.viewModel.configure(modelContext: self.modelContext)
             await self.viewModel.refresh()
-            // On open rather than on each add: `keepFocusOnSubmit` leaves the keyboard up
-            // while someone types a list, and a permission dialog mid-typing is the
-            // worst possible moment to ask.
-            if self.viewModel.uncheckedItems.count >= Self.notificationPromptThreshold {
-                await PushNotificationService.shared.promptForAuthorization()
-            }
+            await self.promptIfListIsWorthReminding()
+        }
+        .onAppear {
+            // Returning to the tab counts as opening the list, and does not depend on
+            // whether `.task` re-runs for a TabView child.
+            Task { await self.promptIfListIsWorthReminding() }
         }
         .onChange(of: self.authManager.authState) { _, newValue in
             if case .unauthenticated = newValue {
@@ -89,7 +89,10 @@ struct ShoppingListView: View {
         }
         .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, _ in
             self.viewModel.resetForCookbookSwitch()
-            Task { await self.viewModel.refresh() }
+            Task {
+                await self.viewModel.refresh()
+                await self.promptIfListIsWorthReminding()
+            }
         }
         .onChange(of: self.viewModel.didReceiveForbidden) { _, forbidden in
             guard forbidden else { return }
@@ -99,6 +102,15 @@ struct ShoppingListView: View {
                 await self.viewModel.refresh()
             }
         }
+    }
+
+    /// Called on list open and after every refresh that isn't mid-typing — never from
+    /// `addCustomItem`. `keepFocusOnSubmit` leaves the keyboard up while someone types a
+    /// list, and a permission dialog on the third item is the worst moment to ask.
+    private func promptIfListIsWorthReminding() async {
+        guard self.viewModel.uncheckedItems.count >= Self.notificationPromptThreshold else { return }
+
+        await PushNotificationService.shared.promptForAuthorization()
     }
 
     private func selectCookbook(_ cookbook: Cookbook) {

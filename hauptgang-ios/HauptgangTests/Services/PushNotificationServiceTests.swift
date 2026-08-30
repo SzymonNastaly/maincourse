@@ -16,6 +16,97 @@ final class PushNotificationServiceTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Authorization gating
+
+    func testPromptAsksWhenTheStatusIsUndetermined() async {
+        let authorizer = MockNotificationAuthorizer(status: .notDetermined)
+        let service = self.makeService(authorizer: authorizer)
+
+        await service.promptForAuthorization()
+
+        let requests = await authorizer.requestCount
+        let registrations = await authorizer.registerCount
+        XCTAssertEqual(requests, 1)
+        XCTAssertEqual(registrations, 1)
+    }
+
+    func testPromptDoesNotRegisterWhenTheUserDeclines() async {
+        let authorizer = MockNotificationAuthorizer(status: .notDetermined, grants: false)
+        let service = self.makeService(authorizer: authorizer)
+
+        await service.promptForAuthorization()
+
+        let requests = await authorizer.requestCount
+        let registrations = await authorizer.registerCount
+        XCTAssertEqual(requests, 1)
+        XCTAssertEqual(registrations, 0)
+    }
+
+    func testPromptOnlyRegistersWhenPermissionIsAlreadyGranted() async {
+        let authorizer = MockNotificationAuthorizer(status: .authorized)
+        let service = self.makeService(authorizer: authorizer)
+
+        await service.promptForAuthorization()
+
+        // iOS shows the dialog once, so an already-answered status must never ask again.
+        let requests = await authorizer.requestCount
+        let registrations = await authorizer.registerCount
+        XCTAssertEqual(requests, 0)
+        XCTAssertEqual(registrations, 1)
+    }
+
+    func testPromptDoesNothingOnceTheUserHasDenied() async {
+        let authorizer = MockNotificationAuthorizer(status: .denied)
+        let service = self.makeService(authorizer: authorizer)
+
+        await service.promptForAuthorization()
+
+        let requests = await authorizer.requestCount
+        let registrations = await authorizer.registerCount
+        XCTAssertEqual(requests, 0)
+        XCTAssertEqual(registrations, 0)
+    }
+
+    func testRegisterIfAuthorizedNeverPrompts() async {
+        let authorizer = MockNotificationAuthorizer(status: .notDetermined)
+        let service = self.makeService(authorizer: authorizer)
+
+        await service.registerIfAuthorized()
+
+        // This runs on every login. It must never spend the one system prompt.
+        let requests = await authorizer.requestCount
+        let registrations = await authorizer.registerCount
+        XCTAssertEqual(requests, 0)
+        XCTAssertEqual(registrations, 0)
+    }
+
+    func testRegisterIfAuthorizedRegistersForAProvisionalStatus() async {
+        let authorizer = MockNotificationAuthorizer(status: .provisional)
+        let service = self.makeService(authorizer: authorizer)
+
+        await service.registerIfAuthorized()
+
+        let registrations = await authorizer.registerCount
+        XCTAssertEqual(registrations, 1)
+    }
+
+    func testAThrownRequestDoesNotRegister() async {
+        let authorizer = MockNotificationAuthorizer(status: .notDetermined, throwsOnRequest: true)
+        let service = self.makeService(authorizer: authorizer)
+
+        await service.promptForAuthorization()
+
+        let registrations = await authorizer.registerCount
+        XCTAssertEqual(registrations, 0)
+    }
+
+    private func makeService(authorizer: any NotificationAuthorizing) -> PushNotificationService {
+        nonisolated(unsafe) let defaults = self.defaults!
+        return PushNotificationService(api: MockAPIClient(), defaults: defaults, authorizer: authorizer)
+    }
+
+    // MARK: - Token registration
+
     func testRegistrationIncludesTheDeviceTimeZone() async throws {
         let api = MockAPIClient()
         await api.setResponse(#"{"id":1,"token":"abc","environment":"sandbox"}"#)

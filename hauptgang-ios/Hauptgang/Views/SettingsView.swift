@@ -1,5 +1,6 @@
 import RevenueCatUI
 import SwiftUI
+import UserNotifications
 
 /// Settings screen with user info and sign out
 struct SettingsView: View {
@@ -10,6 +11,7 @@ struct SettingsView: View {
     @State private var showingCustomerCenter = false
     @State private var showingEditName = false
     @State private var isUpdatingNotifications = false
+    @State private var showingNotificationSettingsAlert = false
     @State private var errorMessage: String?
 
     var body: some View {
@@ -38,6 +40,16 @@ struct SettingsView: View {
             .sheet(isPresented: self.$showingEditName) {
                 EditNameView()
                     .environmentObject(self.authManager)
+            }
+            .alert("Notifications are turned off", isPresented: self.$showingNotificationSettingsAlert) {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Not Now", role: .cancel) {}
+            } message: {
+                Text("Allow notifications for Hauptgang in the Settings app to receive reminders.")
             }
             .alert("Error", isPresented: Binding(
                 get: { self.errorMessage != nil },
@@ -133,10 +145,14 @@ struct SettingsView: View {
         defer { isUpdatingNotifications = false }
         do {
             try await self.authManager.updateLifecycleNotifications(enabled)
-            // Switching this on while iOS notifications are off would otherwise be a
-            // silent no-op.
-            if enabled {
-                await PushNotificationService.shared.promptForAuthorization()
+            guard enabled else { return }
+
+            await PushNotificationService.shared.promptForAuthorization()
+            // Someone who denied earlier gets no system dialog — iOS only ever shows it
+            // once — so the switch would sit there reading "on" while nothing arrives.
+            // The Settings app is the only route back.
+            if await PushNotificationService.shared.currentAuthorizationStatus() == .denied {
+                self.showingNotificationSettingsAlert = true
             }
         } catch {
             // The toggle reads from authManager, which is unchanged on failure, so it

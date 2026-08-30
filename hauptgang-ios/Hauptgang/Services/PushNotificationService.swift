@@ -22,6 +22,7 @@ actor PushNotificationService {
 
     private let api: any APIClientProtocol
     private let defaults: UserDefaults
+    private let authorizer: any NotificationAuthorizing
 
     private var pendingDeviceToken: String?
     private var isAuthenticated = false
@@ -38,9 +39,14 @@ actor PushNotificationService {
         #endif
     }
 
-    init(api: any APIClientProtocol = APIClient.shared, defaults: UserDefaults = .standard) {
+    init(
+        api: any APIClientProtocol = APIClient.shared,
+        defaults: UserDefaults = .standard,
+        authorizer: any NotificationAuthorizing = SystemNotificationAuthorizer()
+    ) {
         self.api = api
         self.defaults = defaults
+        self.authorizer = authorizer
     }
 
     // MARK: - Public API
@@ -50,12 +56,10 @@ actor PushNotificationService {
     /// the stored token and time zone current when either changes (device restore, OS
     /// update, travel).
     func registerIfAuthorized() async {
-        let status = await Self.authorizationStatus()
+        let status = await self.authorizer.authorizationStatus()
         guard status == .authorized || status == .provisional else { return }
 
-        await MainActor.run {
-            UIApplication.shared.registerForRemoteNotifications()
-        }
+        await self.authorizer.registerForRemoteNotifications()
     }
 
     /// Ask for notification permission. iOS shows the system prompt exactly once and
@@ -63,30 +67,27 @@ actor PushNotificationService {
     /// what the notifications are for. Once the status is settled this degrades to plain
     /// registration, which makes it safe to call from several such moments.
     func promptForAuthorization() async {
-        guard await Self.authorizationStatus() == .notDetermined else {
+        guard await self.authorizer.authorizationStatus() == .notDetermined else {
             await self.registerIfAuthorized()
             return
         }
 
-        let center = UNUserNotificationCenter.current()
         do {
-            let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
+            let granted = try await self.authorizer.requestAuthorization()
             guard granted else {
                 logger.info("Notification permission denied")
                 return
             }
-            await MainActor.run {
-                UIApplication.shared.registerForRemoteNotifications()
-            }
+            await self.authorizer.registerForRemoteNotifications()
         } catch {
             logger.error("requestAuthorization failed: \(error.localizedDescription)")
         }
     }
 
-    /// Static, so it stays off the actor: `UNNotificationSettings` is not `Sendable` and
-    /// must not cross an isolation boundary. Only the status enum comes back.
-    private static func authorizationStatus() async -> UNAuthorizationStatus {
-        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    /// Exposed so a caller can offer the iOS Settings deep link, which is the only route
+    /// back once the user has denied and the system prompt is spent.
+    func currentAuthorizationStatus() async -> UNAuthorizationStatus {
+        await self.authorizer.authorizationStatus()
     }
 
     /// Mark the user as authenticated (or not). When transitioning to authenticated,

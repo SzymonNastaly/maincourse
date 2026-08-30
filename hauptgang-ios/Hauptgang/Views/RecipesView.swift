@@ -83,12 +83,18 @@ struct RecipesView: View {
                 if oldPhase == .background && newPhase == .active {
                     Task {
                         await self.session.refreshActiveCookbook()
-                        self.promptForNotificationsIfRecipesLoaded()
+                        self.promptForNotificationsIfRecipesVisible()
                     }
                 }
             }
-            .onChange(of: self.recipeViewModel.recipes.count) { _, _ in
-                self.promptForNotificationsIfRecipesLoaded()
+            // Both conditions need their own observer. The recipes arrive during the
+            // startup cache load, while the splash still covers this view, and the count
+            // does not change again when the splash lifts.
+            .onChange(of: self.recipeViewModel.recipes.count, initial: true) { _, _ in
+                self.promptForNotificationsIfRecipesVisible()
+            }
+            .onChange(of: self.suppressTransientUI, initial: true) { _, _ in
+                self.promptForNotificationsIfRecipesVisible()
             }
             .onChange(of: self.selectedPhotoItem) { _, newItem in
                 guard let newItem else { return }
@@ -144,8 +150,12 @@ struct RecipesView: View {
     /// this is the best moment to ask. Gated on a non-empty list rather than on login:
     /// someone reinstalling hits it seconds after signing in, while a brand-new account
     /// stays silent until their first import shows up here.
-    private func promptForNotificationsIfRecipesLoaded() {
-        guard !self.recipeViewModel.recipes.isEmpty else { return }
+    ///
+    /// `suppressTransientUI` is what makes "looking at" true. Without it the recipes
+    /// arrive under the startup splash and the one system prompt iOS grants gets spent
+    /// on a logo — worst for exactly the reinstalling user this exists to catch.
+    private func promptForNotificationsIfRecipesVisible() {
+        guard !self.suppressTransientUI, !self.recipeViewModel.recipes.isEmpty else { return }
 
         Task {
             await PushNotificationService.shared.promptForAuthorization()
