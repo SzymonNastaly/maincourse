@@ -34,8 +34,11 @@ Rails.application.configure do
   # Skip http-to-https redirect for the default health check endpoint.
   config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
-  # Log to STDOUT with the current request id as a default log tag.
-  config.log_tags = [ :request_id ]
+  # Log to STDOUT with the current request id and request host as default log
+  # tags. The host tag lets `bin/logs` show how much traffic still arrives on
+  # the old domain during the getmaincourse.com transition (see config.hosts
+  # below).
+  config.log_tags = [ :request_id, ->(request) { request.host } ]
   config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!).
@@ -88,6 +91,7 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
+  # Enable DNS rebinding protection and other `Host` header attacks.
   # Both are served during the transition. cook.hauptgang.app is removed in
   # December 2026, before the domain expires — see
   # docs/superpowers/specs/2026-08-30-getmaincourse-domain-migration-design.md
@@ -95,10 +99,6 @@ Rails.application.configure do
     "app.getmaincourse.com",
     "cook.hauptgang.app"
   ]
-
-  # Tag logs with the request host so `bin/logs` shows how much traffic still
-  # arrives on the old domain.
-  config.log_tags = [ :request_id, ->(request) { request.host } ]
 
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
