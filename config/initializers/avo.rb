@@ -158,7 +158,7 @@ Avo.configure do |config|
 
   ## == Customization ==
   config.click_row_to_view_record = true
-  config.app_name = "Hauptgang"
+  config.app_name = "MainCourse"
   # config.density = :normal # :tight, :normal, :relaxed
   # config.timezone = 'UTC'
   # config.use_browser_timezone = true # set false to render dates/times in the app's configured zone for everyone; off automatically in the test environment
