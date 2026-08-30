@@ -61,7 +61,7 @@ final class DeepLinkRouter {
 
         // Universal link: https://app.getmaincourse.com/invite/{token}
         guard url.scheme == "https" || url.scheme == "http" else { return nil }
-        guard let host = url.host, Constants.DeepLinks.universalLinkHosts.contains(host) else { return nil }
+        guard let host = url.host, Constants.DeepLinks.universalLinkHosts.contains(host.lowercased()) else { return nil }
 
         let components = url.pathComponents
         // pathComponents: ["/", "invite", "{token}"]
