@@ -14,6 +14,21 @@ final class DeepLinkRouterTests: XCTestCase {
         XCTAssertEqual(DeepLinkRouter.extractInvitationToken(from: url), "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
     }
 
+    func testExtractToken_universalLink_newHost() throws {
+        let url = try XCTUnwrap(URL(string: "https://app.getmaincourse.com/invite/abc123"))
+        XCTAssertEqual(DeepLinkRouter.extractInvitationToken(from: url), "abc123")
+    }
+
+    func testExtractToken_universalLink_legacyHostStillAccepted() throws {
+        let url = try XCTUnwrap(URL(string: "https://cook.hauptgang.app/invite/abc123"))
+        XCTAssertEqual(DeepLinkRouter.extractInvitationToken(from: url), "abc123")
+    }
+
+    func testExtractToken_universalLink_newHost_wrongPath() throws {
+        let url = try XCTUnwrap(URL(string: "https://app.getmaincourse.com/recipes/abc123"))
+        XCTAssertNil(DeepLinkRouter.extractInvitationToken(from: url))
+    }
+
     func testExtractToken_universalLink_wrongHost() throws {
         let url = try XCTUnwrap(URL(string: "https://evil.com/invite/abc123"))
         XCTAssertNil(DeepLinkRouter.extractInvitationToken(from: url))
