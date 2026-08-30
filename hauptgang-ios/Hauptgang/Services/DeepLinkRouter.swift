@@ -43,7 +43,7 @@ final class DeepLinkRouter {
 
     /// Extract invitation token from a URL
     /// Supports:
-    /// - https://cook.hauptgang.app/invite/{token}
+    /// - https://app.getmaincourse.com/invite/{token}
     /// - hauptgang://invite/{token}
     nonisolated static func extractInvitationToken(from url: URL) -> String? {
         // Custom scheme: hauptgang://invite/{token}
@@ -59,9 +59,10 @@ final class DeepLinkRouter {
             return nil
         }
 
-        // Universal link: https://cook.hauptgang.app/invite/{token}
+        // Universal link: https://app.getmaincourse.com/invite/{token}
         guard url.scheme == "https" || url.scheme == "http" else { return nil }
-        guard url.host == "cook.hauptgang.app" else { return nil }
+        guard let host = url.host?.lowercased(),
+              Constants.DeepLinks.universalLinkHosts.contains(host) else { return nil }
 
         let components = url.pathComponents
         // pathComponents: ["/", "invite", "{token}"]

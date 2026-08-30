@@ -19,16 +19,19 @@ enum Constants {
             return url
         }()
         #else
-        /// Production URL - update when deploying
+        /// Production API domain. Both this and the legacy cook.hauptgang.app are
+        /// served until December 2026; this is the one new builds talk to.
+        private static let productionHost = "app.getmaincourse.com"
+
         static let host: URL = {
-            guard let url = URL(string: "https://cook.hauptgang.app") else {
+            guard let url = URL(string: "https://\(productionHost)") else {
                 preconditionFailure("Invalid API host URL")
             }
             return url
         }()
 
         static let baseURL: URL = {
-            guard let url = URL(string: "https://cook.hauptgang.app/api/v1") else {
+            guard let url = URL(string: "https://\(productionHost)/api/v1") else {
                 preconditionFailure("Invalid API base URL")
             }
             return url
@@ -48,6 +51,15 @@ enum Constants {
             }
             return URL(string: path, relativeTo: self.host)
         }
+    }
+
+    enum DeepLinks {
+        /// Hosts whose /invite/{token} links open this app. The legacy host stays
+        /// until the cook.hauptgang.app entitlement is dropped in December 2026.
+        static let universalLinkHosts: Set<String> = [
+            "app.getmaincourse.com",
+            "cook.hauptgang.app"
+        ]
     }
 
     enum RevenueCat {

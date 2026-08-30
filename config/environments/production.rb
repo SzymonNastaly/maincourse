@@ -34,8 +34,11 @@ Rails.application.configure do
   # Skip http-to-https redirect for the default health check endpoint.
   config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
-  # Log to STDOUT with the current request id as a default log tag.
-  config.log_tags = [ :request_id ]
+  # Log to STDOUT with the current request id and request host as default log
+  # tags. The host tag lets `bin/logs` show how much traffic still arrives on
+  # the old domain during the getmaincourse.com transition (see config.hosts
+  # below).
+  config.log_tags = [ :request_id, ->(request) { request.host } ]
   config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!).
@@ -62,8 +65,12 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
+  # Canonical host used to build outbound URLs. Accepted hosts (below) is a
+  # wider list during the domain transition; this is the one we advertise.
+  config.x.canonical_host = "app.getmaincourse.com"
+
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "cook.hauptgang.app" }
+  config.action_mailer.default_url_options = { host: config.x.canonical_host, protocol: "https" }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {
@@ -85,7 +92,11 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # Enable DNS rebinding protection and other `Host` header attacks.
+  # Both are served during the transition. cook.hauptgang.app is removed in
+  # December 2026, before the domain expires — see
+  # docs/superpowers/specs/2026-08-30-getmaincourse-domain-migration-design.md
   config.hosts = [
+    "app.getmaincourse.com",
     "cook.hauptgang.app"
   ]
 
