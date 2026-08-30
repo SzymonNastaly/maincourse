@@ -70,7 +70,7 @@ Rails.application.configure do
   config.x.canonical_host = "app.getmaincourse.com"
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: config.x.canonical_host }
+  config.action_mailer.default_url_options = { host: config.x.canonical_host, protocol: "https" }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {

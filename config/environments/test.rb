@@ -39,7 +39,8 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
 
-  # Canonical host used to build outbound URLs (see InviteLink, mailer).
+  # Canonical host used to build outbound URLs (see InviteLink). The mailer
+  # keeps example.com above; only production derives its host from this.
   config.x.canonical_host = "app.getmaincourse.com"
 
   # Print deprecation notices to the stderr.
