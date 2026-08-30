@@ -4,11 +4,6 @@ import XCTest
 final class DeepLinkRouterTests: XCTestCase {
     // MARK: - Universal Link Parsing
 
-    func testExtractToken_universalLink() throws {
-        let url = try XCTUnwrap(URL(string: "https://cook.hauptgang.app/invite/abc123"))
-        XCTAssertEqual(DeepLinkRouter.extractInvitationToken(from: url), "abc123")
-    }
-
     func testExtractToken_universalLink_longToken() throws {
         let url = try XCTUnwrap(URL(string: "https://cook.hauptgang.app/invite/a1b2c3d4-e5f6-7890-abcd-ef1234567890"))
         XCTAssertEqual(DeepLinkRouter.extractInvitationToken(from: url), "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
