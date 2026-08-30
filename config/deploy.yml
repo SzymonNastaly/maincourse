@@ -20,9 +20,14 @@ servers:
 #
 # Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
 #
+# app.getmaincourse.com is canonical; cook.hauptgang.app is served only until
+# the domain lapses in January 2027. See
+# docs/superpowers/specs/2026-08-30-getmaincourse-domain-migration-design.md
 proxy:
   ssl: true
-  host: cook.hauptgang.app
+  hosts:
+    - app.getmaincourse.com
+    - cook.hauptgang.app
 
 # Where you keep your container images.
 registry:
