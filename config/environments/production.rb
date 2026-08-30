@@ -62,8 +62,12 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
+  # Canonical host used to build outbound URLs. Accepted hosts (below) is a
+  # wider list during the domain transition; this is the one we advertise.
+  config.x.canonical_host = "app.getmaincourse.com"
+
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "cook.hauptgang.app" }
+  config.action_mailer.default_url_options = { host: config.x.canonical_host }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {
@@ -84,10 +88,17 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
+  # Both are served during the transition. cook.hauptgang.app is removed in
+  # December 2026, before the domain expires — see
+  # docs/superpowers/specs/2026-08-30-getmaincourse-domain-migration-design.md
   config.hosts = [
+    "app.getmaincourse.com",
     "cook.hauptgang.app"
   ]
+
+  # Tag logs with the request host so `bin/logs` shows how much traffic still
+  # arrives on the old domain.
+  config.log_tags = [ :request_id, ->(request) { request.host } ]
 
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }

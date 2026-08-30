@@ -26,7 +26,7 @@ module Api
         render json: {
           id: invitation.id,
           token: invitation.token,
-          invite_url: invite_url(invitation.token),
+          invite_url: InviteLink.url_for(invitation.token),
           expires_at: invitation.expires_at
         }, status: :created
       end
@@ -89,14 +89,6 @@ module Api
           expires_at: invitation.expires_at,
           status: invitation.status
         }
-      end
-
-      def invite_url(token)
-        if Rails.env.production?
-          "https://cook.hauptgang.app/invite/#{token}"
-        else
-          "hauptgang://invite/#{token}"
-        end
       end
     end
   end
