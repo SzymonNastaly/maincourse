@@ -85,7 +85,7 @@ GEM
       connection_pool (>= 2, < 4)
       net-http2 (>= 0.18.3, < 2)
     ast (2.4.3)
-    avo (3.32.4)
+    avo (4.1.15)
       actionview (>= 6.1)
       active_link_to
       activerecord (>= 6.1)
@@ -94,7 +94,7 @@ GEM
       avo-icons (>= 0.1.2)
       docile
       meta-tags
-      pagy (>= 7.0.0, < 43)
+      pagy (>= 43.0)
       prop_initializer (>= 0.3.0)
       turbo-rails (>= 2.0.0)
       turbo_power (>= 0.6.0)
@@ -288,7 +288,10 @@ GEM
     nokogiri (1.19.4-x86_64-linux-musl)
       racc (~> 1.4)
     ostruct (0.6.3)
-    pagy (9.4.0)
+    pagy (43.6.2)
+      json
+      uri
+      yaml
     parallel (2.1.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
@@ -507,6 +510,7 @@ GEM
     websocket-extensions (0.1.5)
     xpath (3.2.0)
       nokogiri (~> 1.8)
+    yaml (0.4.0)
     zeitwerk (2.8.3)
 
 PLATFORMS
@@ -522,7 +526,7 @@ PLATFORMS
 
 DEPENDENCIES
   apnotic
-  avo (~> 3.31)
+  avo (~> 4.0)
   aws-sdk-s3
   bcrypt (~> 3.1.22)
   bootsnap

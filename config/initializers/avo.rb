@@ -47,7 +47,7 @@ Avo.configure do |config|
   #   search: 'search?',
   # }
   # config.raise_error_on_missing_policy = false
-  # config.authorization_client = nil
+  config.authorization_client = nil
   # config.explicit_authorization = true
 
   ## == Localization ==
@@ -61,6 +61,12 @@ Avo.configure do |config|
   # }.freeze
   # config.model_resource_mapping = {}
   # config.default_view_type = :table
+  # Map tiles for the map view and the `location`/`area` fields. Defaults to
+  # OpenFreeMap (no account needed), or Mapbox when MAPBOX_ACCESS_TOKEN is set.
+  # `styles` accepts :open_free_map, :mapbox, or your own {light:, dark:} pair.
+  # config.map_view = {
+  #   styles: :open_free_map
+  # }
   # config.per_page = 24
   # config.per_page_steps = [12, 24, 48, 72]
   # config.via_per_page = 8
@@ -68,7 +74,7 @@ Avo.configure do |config|
   # config.pagination = -> do
   #   {
   #     type: :default,
-  #     size: 9, # `[1, 2, 2, 1]` for pagy < 9.0
+  #     slots: 9,
   #   }
   # end
 
@@ -78,9 +84,6 @@ Avo.configure do |config|
 
   ## == Number of search results to display ==
   # config.search_results_count = 8
-
-  ## == Associations lookup list limit ==
-  # config.associations_lookup_list_limit = 1000
 
   ## == Cache options ==
   ## Provide a lambda to customize the cache store used by Avo.
@@ -111,62 +114,111 @@ Avo.configure do |config|
   #   file_logger
   # }
 
+  ## == Keyboard shortcuts ==
+  # config.hotkeys = {
+  #   enabled: true,          # Master switch: set to false to disable all keyboard shortcuts
+  #   show_key_badges: true   # Set to false to hide inline kbd badge elements from the UI
+  # }
+
+  ## == Sidebar ==
+  # config.sidebar = {
+  #   # Show the navbar button that collapses the sidebar on desktop. On mobile
+  #   # the toggle is always visible regardless of this setting.
+  #   toggle_visible: true,
+  #
+  #   # Set to false to remove the drag-to-resize handle entirely. Drag-only
+  #   # resizing is a known WCAG SC 2.5.7 gap, so hosts with an AA/VPAT
+  #   # obligation can opt out.
+  #   resizable: true,
+  #
+  #   # Width the sidebar starts at on desktop, in pixels, before a user drags it.
+  #   # Clamped to 200..480. Only applies at >= lg — below that the sidebar is a
+  #   # full-height overlay and stays 256px so it cannot cover a phone screen.
+  #   default_width: 256
+  # }
+
+  ## == Back to top button ==
+  # config.back_to_top = {
+  #   enabled: true,   # Off by default; set to true to show the "Back to top" pill
+  #   threshold: 64    # Pixels scrolled down before an upward scroll reveals it
+  # }
+
+  ## == Associations ==
+  # config.associations = {
+  #   # Cap how many records a belongs_to/attach lookup lists before showing the
+  #   # "more records available" notice.
+  #   lookup_list_limit: 1000,
+  #   # Cold-start loading for association turbo frames (has_one, has_many, habtm),
+  #   # used when a field doesn't set its own `loading:`.
+  #   frames: {
+  #     loading: :lazy,             # :lazy (load on reveal) or :manual (placeholder + Load button)
+  #     auto_load_for: 15.minutes   # how long a manual frame is remembered once opened (0/nil to disable)
+  #   }
+  # }
+
   ## == Customization ==
   config.click_row_to_view_record = true
   config.app_name = "Hauptgang"
+  # config.density = :normal # :tight, :normal, :relaxed
   # config.timezone = 'UTC'
+  # config.use_browser_timezone = true # set false to render dates/times in the app's configured zone for everyone; off automatically in the test environment
   # config.currency = 'USD'
   # config.hide_layout_when_printing = false
-  # config.full_width_container = false
-  # config.full_width_index_view = false
+  # config.container_width = :lg # :full, :lg, :md, or :sm. Hash for per-view: { index: :full, single: :md }
+  # config.use_stacked_fields = false
+  # Set to false to disable Avo's Tailwind integration even when `tailwindcss-ruby` is installed.
+  # config.tailwindcss_integration_enabled = true
   # config.search_debounce = 300
   # config.view_component_path = "app/components"
   # config.display_license_request_timeout_error = true
-  # config.disabled_features = []
   # config.buttons_on_form_footers = true
   # config.field_wrapper_layout = true
   # config.resource_parent_controller = "Avo::ResourcesController"
   # config.first_sorting_option = :desc # :desc or :asc
-  # config.exclude_from_status = []
+  # config.exclude_from_status = ["license_key"]
   # config.model_generator_hook = true
 
-  ## == Branding ==
-  # config.branding = {
-  #   colors: {
-  #     background: "248 246 242",
-  #     100 => "#CEE7F8",
-  #     400 => "#399EE5",
-  #     500 => "#0886DE",
-  #     600 => "#066BB2",
-  #   },
+  ## == Appearance ==
+  # config.appearance = {
+  #   logo: "avo/logo.png",
+  #   logo_dark: "avo/logo-dark.png",
+  #   logomark: "avo/logomark.png",
+  #   logomark_dark: "avo/logomark-dark.png",
+  #   favicon: "avo/favicon.ico",
+  #   favicon_dark: "avo/favicon-dark.ico",
+  #   lock: [:scheme, :neutral, :accent]
+  #   neutrals: [:brand, :neutral, :slate, :olive],
+  #   accents: [:brand, :red, :blue, :sky, :purple],
+  #   mode: :static,
+  #   neutral: :brand,
+  #   accent: :brand,
+  #   scheme: :auto,
+  #   persistence: :database,
+  #   placeholder: "avo/placeholder.svg",
   #   chart_colors: ["#0B8AE2", "#34C683", "#2AB1EE", "#34C6A8"],
-  #   logo: "/avo-assets/logo.png",
-  #   logomark: "/avo-assets/logomark.png",
-  #   placeholder: "/avo-assets/placeholder.svg",
-  #   favicon: "/avo-assets/favicon.ico"
+  #   load_settings: -> { current_user&.avo_preferences&.dig("appearance")&.symbolize_keys || {} },
   # }
 
   ## == Breadcrumbs ==
-  # config.display_breadcrumbs = true
   # config.set_initial_breadcrumbs do
-  #   add_breadcrumb "Home", '/avo'
+  #   add_breadcrumb title: "Home", path: '/avo'
   # end
 
   ## == Menus ==
   # config.main_menu = -> {
-  #   section "Dashboards", icon: "avo/dashboards" do
+  #   section "Dashboards", icon: "tabler/outline/layout-dashboard" do
   #     all_dashboards
   #   end
 
-  #   section "Resources", icon: "avo/resources" do
+  #   section "Resources", icon: "tabler/outline/chart-bar-popular" do
   #     all_resources
   #   end
 
-  #   section "Tools", icon: "avo/tools" do
+  #   section "Tools", icon: "tabler/outline/tool" do
   #     all_tools
   #   end
   # }
   # config.profile_menu = -> {
-  #   link "Profile", path: "/avo/profile", icon: "heroicons/outline/user-circle"
+  #   link "Profile", path: "/avo/profile", icon: "tabler/outline/user-circle"
   # }
 end
