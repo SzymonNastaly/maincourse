@@ -4,6 +4,12 @@ import UniformTypeIdentifiers
 
 private let logger = Logger(subsystem: "app.hauptgang.ios.share-extension", category: "ShareImportExtractor")
 
+/// Apple documents `NSItemProvider` as safe to use from any thread, but the SDK does not
+/// declare it `Sendable`. Without this, handing the share sheet's attachments — created on
+/// the main actor — to the nonisolated extractor is a data-race warning, and an error under
+/// the Swift 6 language mode.
+extension NSItemProvider: @retroactive @unchecked Sendable {}
+
 protocol ShareItemProviding {
     var registeredTypeIdentifiers: [String] { get }
 
