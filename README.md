@@ -8,7 +8,7 @@ Hauptgang is a recipe manager for iPhone and iPad. Save recipes from websites, I
   <img src="docs/images/hero-devices.png" alt="Hauptgang on iPad and iPhone" width="600" />
 </p>
 
-Landing page: [hauptgang.app](https://hauptgang.app)
+Landing page: [getmaincourse.com](https://getmaincourse.com)
 
 
 ## What it does
