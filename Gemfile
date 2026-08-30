@@ -86,7 +86,8 @@ end
 group :test do
   # System testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
-  gem "selenium-webdriver"
+  # 4.45+ regressed: chromedriver launched without the Selenium Manager browser path
+  gem "selenium-webdriver", "< 4.45"
 
   # HTTP request stubbing for testing [https://github.com/bblimke/webmock]
   gem "webmock"
@@ -96,7 +97,7 @@ group :test do
 end
 
 # Admin dashboard [https://avohq.io]
-gem "avo", ">= 3.2.1"
+gem "avo", "~> 3.31"
 gem "ransack"
 
 gem "tailwindcss-rails", "~> 4.4"
