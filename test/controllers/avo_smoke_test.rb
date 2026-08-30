@@ -48,6 +48,16 @@ class AvoSmokeTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "recipe show renders ingredients as text, not object inspects" do
+    recipe = recipes(:one)
+    recipe.replace_ingredients_from_strings([ "200g spaghetti", "2 eggs" ])
+
+    get "/avo/resources/recipes/#{recipe.id}"
+    assert_response :success
+    assert_match "200g spaghetti", response.body
+    assert_no_match(/#<Ingredient:/, response.body)
+  end
+
   test "new record form loads" do
     get "/avo/resources/tags/new"
     assert_response :success

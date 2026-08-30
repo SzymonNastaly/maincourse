@@ -16,7 +16,7 @@ class Avo::Resources::Recipe < Avo::BaseResource
     field :prep_time, as: :number
     field :cook_time, as: :number
     field :servings, as: :number
-    field :ingredients, as: :textarea, readonly: true, format_using: -> { value&.join("\n") }
+    field :ingredients, as: :textarea, readonly: true, format_using: -> { value&.map(&:raw)&.join("\n") }
     field :instructions, as: :textarea, readonly: true, format_using: -> { value&.join("\n") }
     field :notes, as: :textarea
     field :cover_image, as: :file
