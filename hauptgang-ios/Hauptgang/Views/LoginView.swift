@@ -70,7 +70,7 @@ struct LoginView: View {
     private var logoHeader: some View {
         if self.isEmbeddedInOnboarding {
             Text(self.viewModel.isSignUp ? "Create your account" : "Welcome back")
-                .font(.system(.title, design: .serif))
+                .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(.mcInk)
                 .fixedSize(horizontal: false, vertical: true)
@@ -82,16 +82,19 @@ struct LoginView: View {
                     .scaledToFit()
                     .frame(width: 80, height: 80)
                     .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.panel)
+                            .stroke(Color.mcHairline, lineWidth: 1)
+                    )
 
                 (Text("Cook something ")
                     .foregroundColor(.mcInk)
                     + Text("delicious")
                     .foregroundColor(.mcAccent)
-                    .italic()
-                    .underline()
                     + Text(" today")
                     .foregroundColor(.mcInk))
-                    .font(.system(.title2, design: .serif))
+                    .font(.title2)
+                    .fontWeight(.semibold)
             }
         }
     }
@@ -110,9 +113,9 @@ struct LoginView: View {
                 self.passwordField
             }
             .background(Color.mcSurface)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                RoundedRectangle(cornerRadius: Theme.Radius.panel)
                     .stroke(Color.mcHairline, lineWidth: 1)
             )
 
@@ -223,7 +226,6 @@ struct LoginView: View {
         }
         .primaryButton()
         .disabled(!self.viewModel.isFormValid || self.viewModel.isLoading)
-        .opacity((!self.viewModel.isFormValid || self.viewModel.isLoading) ? 0.5 : 1.0)
     }
 
     private var modeToggle: some View {

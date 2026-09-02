@@ -136,7 +136,6 @@ struct OnboardingFlowView: View {
             }
             .primaryButton()
             .disabled(!self.viewModel.canAdvance)
-            .opacity(self.viewModel.canAdvance ? 1.0 : 0.5)
             .padding(.bottom, Theme.Spacing.md)
         }
     }
