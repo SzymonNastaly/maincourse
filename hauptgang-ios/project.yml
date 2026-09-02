@@ -80,6 +80,8 @@ targets:
       - path: Hauptgang/Models/User.swift
       - path: Hauptgang/Utilities/MainCourseTheme.swift
       - path: Hauptgang/Utilities/MainCourseStyles.swift
+      - path: Hauptgang/Resources/Fonts/IBMPlexMono-Regular.ttf
+      - path: Hauptgang/Resources/Fonts/IBMPlexMono-Medium.ttf
       - path: Hauptgang/Utilities/Constants.swift
       - path: Hauptgang/Models/ImportRecipeResponse.swift
       - path: Hauptgang/Services/RecipeImportService.swift

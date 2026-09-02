@@ -14,7 +14,7 @@ struct ImportRecipeView: View {
     var onOpenApp: (() -> Void)?
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: Theme.Spacing.lg) {
             switch self.state {
             case .extracting:
                 self.extractingView
@@ -29,86 +29,92 @@ struct ImportRecipeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
-        .background(Color(.systemBackground))
+        .padding(Theme.Spacing.lg)
+        .background(Color.mcCanvas)
     }
 
     private var extractingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Theme.Spacing.md) {
             ProgressView()
+                .tint(Color.mcAccent)
                 .scaleEffect(1.5)
             Text("Processing...")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.mcBody)
         }
     }
 
     private func importingView(url: URL?) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Theme.Spacing.md) {
             ProgressView()
+                .tint(Color.mcAccent)
                 .scaleEffect(1.5)
             Text("Importing Recipe")
                 .font(.headline)
+                .foregroundColor(Color.mcInk)
             if let url {
                 Text(url.host ?? url.absoluteString)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(.mcMono(.footnote))
+                    .foregroundColor(Color.mcBody)
                     .lineLimit(1)
                     .truncationMode(.middle)
             } else {
                 Text("From photo")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.mcBody)
             }
         }
     }
 
     private var successView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Theme.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 48))
-                .foregroundColor(.green)
+                .foregroundColor(Color.mcAccent)
             Text("Import Started!")
                 .font(.headline)
+                .foregroundColor(Color.mcInk)
             Text("Open MainCourse to see your recipe.")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.mcBody)
         }
     }
 
     private func failedView(message: String) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Theme.Spacing.md) {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 48))
-                .foregroundColor(.red)
+                .foregroundColor(Color.mcDanger)
             Text("Import Failed")
                 .font(.headline)
+                .foregroundColor(Color.mcInk)
             Text(message)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.mcBody)
                 .multilineTextAlignment(.center)
             Button("Close", action: self.onClose)
-                .buttonStyle(.borderedProminent)
+                .primaryButton()
         }
     }
 
     private var notAuthenticatedView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Theme.Spacing.md) {
             Image(systemName: "person.crop.circle.badge.exclamationmark")
                 .font(.system(size: 48))
-                .foregroundColor(.orange)
+                .foregroundColor(Color.mcAmber)
             Text("Not Signed In")
                 .font(.headline)
+                .foregroundColor(Color.mcInk)
             Text("Please open MainCourse and sign in first.")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.mcBody)
                 .multilineTextAlignment(.center)
-            HStack(spacing: 12) {
+            HStack(spacing: Theme.Spacing.sm) {
                 Button("Close", action: self.onClose)
-                    .buttonStyle(.bordered)
+                    .outlineButton()
                 if let onOpenApp {
                     Button("Open App", action: onOpenApp)
-                        .buttonStyle(.borderedProminent)
+                        .primaryButton()
                 }
             }
         }

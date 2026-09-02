@@ -42,6 +42,11 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>IBMPlexMono-Regular.ttf</string>
+		<string>IBMPlexMono-Medium.ttf</string>
+	</array>
 	<key>KeychainAccessGroup</key>
 	<string>$(AppIdentifierPrefix)app.hauptgang.shared</string>
 </dict>
