@@ -103,7 +103,7 @@ struct RecipeDetailContentView: View {
                                 .resizable()
                                 .scaledToFill()
                         } placeholder: {
-                            Color.gray.opacity(0.2)
+                            Color.mcSunken
                                 .overlay {
                                     ProgressView()
                                         .tint(.mcMuted)

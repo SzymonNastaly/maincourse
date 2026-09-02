@@ -19,7 +19,7 @@ struct ClipboardPreviewSheet: View {
                 Section {
                     Text(self.previewLines)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.mcBody)
                         .lineLimit(10)
                         .fixedSize(horizontal: false, vertical: true)
                 } footer: {
@@ -36,7 +36,7 @@ struct ClipboardPreviewSheet: View {
                     Button("Cancel") {
                         self.dismiss()
                     }
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.mcBody)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Import") {
