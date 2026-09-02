@@ -423,10 +423,10 @@ private struct ImportingOverlayBackground: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
             content
-                .glassEffect(.regular, in: .rect(cornerRadius: Theme.Radius.card))
+                .glassEffect(.regular, in: .rect(cornerRadius: Theme.Radius.panel))
         } else {
             content
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.Radius.panel))
         }
     }
 }

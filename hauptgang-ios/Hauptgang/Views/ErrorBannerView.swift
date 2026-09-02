@@ -22,7 +22,7 @@ struct ErrorBannerView: View {
             // Error icon
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.title3)
-                .foregroundColor(.white)
+                .foregroundColor(Color.mcDanger)
                 .frame(width: 24)
 
             // Error message text
@@ -31,30 +31,27 @@ struct ErrorBannerView: View {
                     Text(errorMessage)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.mcDanger)
                         .multilineTextAlignment(.leading)
                 } else {
                     // Fallback for recipes without error_message
                     Text("Import failed - page is not supported")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.mcDanger)
                 }
             }
 
             Spacer()
         }
         .padding(Theme.Spacing.md)
-        .background(
+        .background(Color.mcDangerTint)
+        .clipShape(.rect(cornerRadius: Theme.Radius.card))
+        .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.card)
-                .fill(Color.mcDanger)
-        )
-        .shadow(
-            color: Color.black.opacity(0.1),
-            radius: 4,
-            x: 0,
-            y: 2
-        )
+                .stroke(Color.mcDangerLine, lineWidth: 1)
+        }
+        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
         .offset(x: self.offset, y: self.verticalOffset)
         .opacity(self.dismissOpacity)
         .gesture(

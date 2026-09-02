@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Card-style recipe display matching web design
-/// Two visual modes: with image (gradient overlay) or without (solid background)
+/// Two visual modes: with image (gradient overlay) or without (deterministic placeholder gradient)
 struct RecipeCardView: View {
     @Environment(\.displayScale) private var displayScale
 
@@ -20,7 +20,7 @@ struct RecipeCardView: View {
                         maxPixelSize: max(proxy.size.width, proxy.size.height) * self.displayScale
                     )
                 } else {
-                    self.solidBackgroundView
+                    self.placeholderBackgroundView
                 }
 
                 // Content overlay
@@ -56,28 +56,28 @@ struct RecipeCardView: View {
                 }
             }
             .clipped()
-            .overlay {
-                // Gradient overlay for text readability
-                // Matches web: 60% opacity at bottom → 35% at 40% → transparent at 70%
-                LinearGradient(
-                    stops: [
-                        .init(color: .black.opacity(0.6), location: 0),
-                        .init(color: .black.opacity(0.35), location: 0.4),
-                        .init(color: .clear, location: 0.7)
-                    ],
-                    startPoint: .bottom,
-                    endPoint: .top
-                )
-            }
+            .overlay(self.textOverlayGradient)
     }
 
-    private var solidBackgroundView: some View {
-        RoundedRectangle(cornerRadius: Theme.Radius.card)
-            .fill(Color.mcSunken)
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.Radius.card)
-                    .stroke(Color.mcHairline, lineWidth: 1)
-            )
+    /// Same placeholder gradients as the web's `RecipesHelper::PLACEHOLDER_GRADIENTS`,
+    /// keyed by recipe id, under the same text-readability overlay as photos.
+    private var placeholderBackgroundView: some View {
+        RecipePlaceholderGradient.gradient(for: String(self.recipe.id))
+            .overlay(self.textOverlayGradient)
+    }
+
+    /// Gradient overlay for text readability
+    /// Matches web: 60% opacity at bottom → 35% at 40% → transparent at 70%
+    private var textOverlayGradient: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: .black.opacity(0.6), location: 0),
+                .init(color: .black.opacity(0.35), location: 0.4),
+                .init(color: .clear, location: 0.7)
+            ],
+            startPoint: .bottom,
+            endPoint: .top
+        )
     }
 
     // MARK: - Content View
@@ -88,9 +88,9 @@ struct RecipeCardView: View {
 
             // Recipe name
             Text(self.recipe.name)
-                .font(.system(.headline, design: .serif))
-                .fontWeight(.bold)
-                .foregroundColor(self.hasImage ? .white : .mcInk)
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
 
@@ -100,9 +100,9 @@ struct RecipeCardView: View {
                     Image(systemName: "clock")
                         .font(.caption2)
                     Text("\(totalTime)m")
-                        .font(.caption)
+                        .font(.mcMono(.caption))
                 }
-                .foregroundColor(self.hasImage ? .white.opacity(0.8) : .mcBody)
+                .foregroundColor(.white.opacity(0.85))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -137,10 +137,6 @@ struct RecipeCardView: View {
     }
 
     // MARK: - Helpers
-
-    private var hasImage: Bool {
-        self.recipe.cardCoverImageUrl != nil
-    }
 
     /// Combined prep + cook time
     private var totalTimeMinutes: Int? {
