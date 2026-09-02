@@ -17,7 +17,7 @@ struct PortionScalerView: View {
         VStack(spacing: Theme.Spacing.xs) {
             Image(systemName: "person.2")
                 .font(.system(size: 18))
-                .foregroundColor(.mcAccent)
+                .foregroundColor(.mcMuted)
                 .frame(height: 24)
 
             HStack(spacing: Theme.Spacing.sm) {
@@ -35,7 +35,7 @@ struct PortionScalerView: View {
                 .disabled(self.servings <= self.minServings)
 
                 Text("\(self.servings)")
-                    .font(.headline)
+                    .font(.mcMono(.headline, weight: .medium))
                     .foregroundColor(.mcInk)
                     .monospacedDigit()
                     .frame(minWidth: 24)
@@ -57,7 +57,7 @@ struct PortionScalerView: View {
 
             Text(self.servings == self.baseServings ? "Servings" : "Servings (×\(self.scaleLabel))")
                 .font(.caption)
-                .foregroundColor(.mcBody)
+                .foregroundColor(.mcMuted)
                 .frame(height: 18)
         }
         .frame(maxWidth: .infinity)

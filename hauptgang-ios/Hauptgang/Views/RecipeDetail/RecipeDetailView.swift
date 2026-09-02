@@ -196,7 +196,7 @@ private struct RecipeDetailLoadingView: View {
         VStack(spacing: Theme.Spacing.md) {
             ProgressView()
                 .scaleEffect(1.2)
-                .tint(.mcAccent)
+                .tint(Color.mcAccent)
 
             Text("Loading recipe...")
                 .font(.subheadline)
@@ -226,7 +226,7 @@ private struct RecipeDetailErrorView: View {
                     .font(.subheadline)
             }
             .buttonStyle(.bordered)
-            .tint(.mcAccent)
+            .tint(Color.mcAccent)
         }
         .padding(Theme.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

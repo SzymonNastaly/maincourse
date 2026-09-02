@@ -49,8 +49,8 @@ struct RecipeDetailContentView: View {
                     }
 
                     Text(self.recipe.name)
-                        .font(.system(.title2, design: .serif))
-                        .fontWeight(.bold)
+                        .font(.title2)
+                        .fontWeight(.semibold)
                         .foregroundColor(.mcInk)
 
                     if (self.recipe.prepTime ?? 0) > 0
@@ -168,7 +168,11 @@ struct RecipeDetailContentView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, Theme.Spacing.md)
         .background(Color.mcSunken)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.panel)
+                .stroke(Color.mcHairline, lineWidth: 1)
+        )
     }
 
     private var ingredientsSection: some View {
@@ -191,12 +195,11 @@ struct RecipeDetailContentView: View {
                 ForEach(Array(self.recipe.instructions.enumerated()), id: \.offset) { index, instruction in
                     HStack(alignment: .top, spacing: Theme.Spacing.md) {
                         Text("\(index + 1)")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .frame(width: 24, height: 24)
-                            .background(Color.mcAccent)
-                            .clipShape(Circle())
+                            .font(.mcMono(.caption, weight: .medium))
+                            .foregroundColor(Color.mcAccent)
+                            .frame(width: 22, height: 22)
+                            .background(Color.mcAccentTint, in: RoundedRectangle(cornerRadius: 6))
+                            .padding(.top, 1)
 
                         Text(instruction)
                             .font(.body)
@@ -258,19 +261,18 @@ struct RecipeDetailContentView: View {
             }
             .font(.subheadline)
             .fontWeight(.medium)
-            .foregroundColor(self.isCookingMode ? .white : Color.mcAccent)
+            .foregroundColor(self.isCookingMode ? Color.mcAccent : Color.mcInk)
             .padding(.horizontal, Theme.Spacing.md)
             .padding(.vertical, Theme.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(self.isCookingMode ? Color.mcAccent : Color.mcSunken)
+                    .fill(self.isCookingMode ? Color.mcAccentTint : Color.mcSurface)
             )
             .clipShape(Capsule())
             .overlay(
                 Capsule()
-                    .strokeBorder(Color.mcAccent.opacity(self.isCookingMode ? 0 : 0.3), lineWidth: 1)
+                    .strokeBorder(self.isCookingMode ? Color.mcAccentLine : Color.mcHairline, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.1), radius: 4, y: 2)
         }
         .buttonStyle(PressDownButtonStyle())
     }
@@ -279,17 +281,17 @@ struct RecipeDetailContentView: View {
         VStack(spacing: Theme.Spacing.xs) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundColor(.mcAccent)
+                .foregroundColor(.mcMuted)
                 .frame(height: 24)
 
             Text(value)
-                .font(.headline)
+                .font(.mcMono(.subheadline, weight: .medium))
                 .foregroundColor(.mcInk)
                 .frame(height: 28)
 
             Text(label)
                 .font(.caption)
-                .foregroundColor(.mcBody)
+                .foregroundColor(.mcMuted)
                 .frame(height: 18)
         }
         .frame(maxWidth: .infinity)
@@ -332,7 +334,7 @@ private struct IngredientRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.sm) {
             Circle()
-                .fill(Color.mcAccent)
+                .fill(Color.mcMuted)
                 .frame(width: 6, height: 6)
                 .padding(.top, 8)
 
@@ -359,10 +361,8 @@ private struct IngredientRow: View {
 
         (
             Text(quantityText.isEmpty ? "" : "\(quantityText) ")
-                .font(.body)
-                .fontWeight(.semibold)
-                .monospacedDigit()
-                .foregroundColor(.mcAccent)
+                .font(.mcMono(.body, weight: .medium))
+                .foregroundColor(.mcInk)
                 + Text(self.ingredient.name ?? self.ingredient.raw)
                 .font(.body)
                 .foregroundColor(.mcInk)
