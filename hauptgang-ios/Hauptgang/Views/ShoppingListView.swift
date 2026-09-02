@@ -188,17 +188,17 @@ struct ShoppingListView: View {
             Text("Remove All")
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(Color.mcBody)
+                .foregroundColor(Color.mcDanger)
                 .padding(.horizontal, Theme.Spacing.sm + 4)
                 .padding(.vertical, Theme.Spacing.xs + 2)
                 .background(
                     Capsule()
-                        .fill(Color.mcCanvas)
+                        .fill(Color.mcSurface)
                 )
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .strokeBorder(Color.mcMuted.opacity(0.4), lineWidth: 1)
+                        .strokeBorder(Color.mcHairline, lineWidth: 1)
                 )
         }
         .disabled(self.viewModel.isSyncing)

@@ -86,9 +86,10 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
         } header: {
             HStack {
                 Text("To Buy")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.mcBody)
+                    .font(.caption2.weight(.medium))
                     .textCase(.uppercase)
+                    .tracking(1.1)
+                    .foregroundStyle(Color.mcMuted)
                 Spacer()
                 self.uncheckedHeaderTrailing
             }
@@ -117,9 +118,10 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
             } label: {
                 HStack(spacing: Theme.Spacing.sm) {
                     Text("Already Got")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.mcBody)
+                        .font(.caption2.weight(.medium))
                         .textCase(.uppercase)
+                        .tracking(1.1)
+                        .foregroundStyle(Color.mcMuted)
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
@@ -165,12 +167,10 @@ private struct ShoppingListItemTile: View {
             .background(
                 RoundedRectangle(cornerRadius: Theme.Radius.card)
                     .fill(self.item.isChecked ? Color.mcSunken : Color.mcSurface)
-                    .shadow(
-                        color: Color.black.opacity(self.item.isChecked ? 0 : 0.06),
-                        radius: 4,
-                        x: 0,
-                        y: 2
-                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .stroke(Color.mcHairline, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
