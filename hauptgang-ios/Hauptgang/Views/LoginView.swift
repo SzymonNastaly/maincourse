@@ -81,11 +81,6 @@ struct LoginView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.Radius.panel)
-                            .stroke(Color.mcHairline, lineWidth: 1)
-                    )
 
                 (Text("Cook something ")
                     .foregroundColor(.mcInk)

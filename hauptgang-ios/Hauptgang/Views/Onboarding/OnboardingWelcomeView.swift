@@ -21,11 +21,6 @@ struct OnboardingWelcomeView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 96, height: 96)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.Radius.panel)
-                            .stroke(Color.mcHairline, lineWidth: 1)
-                    )
                     .opacity(self.logoVisible ? 1 : 0)
                     .scaleEffect(self.logoVisible ? 1 : 0.92)
                     .offset(y: self.logoVisible ? 0 : 8)
