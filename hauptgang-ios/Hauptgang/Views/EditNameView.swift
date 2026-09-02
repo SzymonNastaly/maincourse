@@ -33,6 +33,8 @@ struct EditNameView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.mcCanvas)
             .navigationTitle("Edit Name")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

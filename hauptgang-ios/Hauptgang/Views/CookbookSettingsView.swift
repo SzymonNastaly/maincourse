@@ -34,6 +34,8 @@ struct CookbookSettingsView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.mcCanvas)
         .navigationTitle("Cookbooks")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: self.$showingCreateSheet) {
@@ -258,6 +260,8 @@ private struct CreateCookbookSheet: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.mcCanvas)
     }
 
     private var isCreateDisabled: Bool {
@@ -328,7 +332,7 @@ private struct ShareLinkSheet: View {
                     .padding(.vertical, Theme.Spacing.md)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.mcAccent)
+            .tint(Color.mcAccent)
             .padding(.horizontal, Theme.Spacing.xl)
 
             Spacer()

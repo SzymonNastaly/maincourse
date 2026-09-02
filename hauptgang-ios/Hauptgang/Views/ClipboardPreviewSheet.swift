@@ -26,6 +26,8 @@ struct ClipboardPreviewSheet: View {
                     Text("A recipe will be created from the text in your clipboard.")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.mcCanvas)
             .scrollDisabled(true)
             .navigationTitle("Import from Clipboard?")
             .navigationBarTitleDisplayMode(.inline)

@@ -35,6 +35,8 @@ struct RecipeEditView: View {
             self.notesSection
             self.sourceSection
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.mcCanvas)
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Edit Recipe")
         .navigationBarTitleDisplayMode(.inline)
@@ -144,6 +146,10 @@ struct RecipeEditView: View {
                 Image(systemName: "photo")
                     .font(.system(size: 32))
                     .foregroundColor(Color.mcMuted)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .stroke(Color.mcHairline, lineWidth: 1)
             }
     }
 

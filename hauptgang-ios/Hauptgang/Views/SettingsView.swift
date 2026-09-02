@@ -16,56 +16,62 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                self.userSection
-                self.notificationsSection
-                self.cookbookSection
-                self.subscriptionSection
-                self.accountActionsSection
-            }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: self.$showingPaywall) {
-                PaywallView()
-                    .onPurchaseCompleted { _ in
-                        Task { await self.subscriptionManager.refreshStatus() }
+            self.settingsList
+                .navigationTitle("Settings")
+                .navigationBarTitleDisplayMode(.large)
+                .sheet(isPresented: self.$showingPaywall) {
+                    PaywallView()
+                        .onPurchaseCompleted { _ in
+                            Task { await self.subscriptionManager.refreshStatus() }
+                        }
+                        .onRestoreCompleted { _ in
+                            Task { await self.subscriptionManager.refreshStatus() }
+                        }
+                }
+                .sheet(isPresented: self.$showingCustomerCenter) {
+                    CustomerCenterView()
+                }
+                .sheet(isPresented: self.$showingEditName) {
+                    EditNameView()
+                        .environmentObject(self.authManager)
+                }
+                .alert("Notifications are turned off", isPresented: self.$showingNotificationSettingsAlert) {
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
                     }
-                    .onRestoreCompleted { _ in
-                        Task { await self.subscriptionManager.refreshStatus() }
+                    Button("Not Now", role: .cancel) {}
+                } message: {
+                    Text("Allow notifications for Hauptgang in the Settings app to receive reminders.")
+                }
+                .alert("Error", isPresented: Binding(
+                    get: { self.errorMessage != nil },
+                    set: {
+                        if !$0 {
+                            self.errorMessage = nil
+                        }
                     }
-            }
-            .sheet(isPresented: self.$showingCustomerCenter) {
-                CustomerCenterView()
-            }
-            .sheet(isPresented: self.$showingEditName) {
-                EditNameView()
-                    .environmentObject(self.authManager)
-            }
-            .alert("Notifications are turned off", isPresented: self.$showingNotificationSettingsAlert) {
-                Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
+                )) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    if let errorMessage = self.errorMessage {
+                        Text(errorMessage)
                     }
                 }
-                Button("Not Now", role: .cancel) {}
-            } message: {
-                Text("Allow notifications for Hauptgang in the Settings app to receive reminders.")
-            }
-            .alert("Error", isPresented: Binding(
-                get: { self.errorMessage != nil },
-                set: {
-                    if !$0 {
-                        self.errorMessage = nil
-                    }
-                }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                if let errorMessage = self.errorMessage {
-                    Text(errorMessage)
-                }
-            }
         }
+    }
+
+    private var settingsList: some View {
+        List {
+            self.userSection
+            self.notificationsSection
+            self.cookbookSection
+            self.subscriptionSection
+            self.accountActionsSection
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.mcCanvas)
     }
 
     @ViewBuilder
@@ -195,7 +201,7 @@ struct SettingsView: View {
     private var proSubscriptionContent: some View {
         HStack {
             Image(systemName: "crown.fill")
-                .foregroundColor(.yellow)
+                .foregroundColor(Color.mcAmber)
             Text("MainCourse Pro")
                 .fontWeight(.semibold)
         }
@@ -221,7 +227,7 @@ struct SettingsView: View {
         } label: {
             HStack {
                 Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
+                    .foregroundColor(Color.mcAmber)
                 Text("Upgrade to Pro")
             }
         }

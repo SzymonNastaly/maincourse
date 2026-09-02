@@ -30,9 +30,9 @@ struct ManageAccountView: View {
                 } label: {
                     HStack {
                         Image(systemName: "trash")
-                            .foregroundColor(.red)
+                            .foregroundColor(Color.mcDanger)
                         Text("Delete Account")
-                            .foregroundColor(.red)
+                            .foregroundColor(Color.mcDanger)
                     }
                 }
             } footer: {
@@ -45,6 +45,8 @@ struct ManageAccountView: View {
                 )
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.mcCanvas)
         .navigationTitle("Manage Account")
         .navigationBarTitleDisplayMode(.inline)
     }

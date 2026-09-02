@@ -21,7 +21,7 @@ struct DeleteAccountConfirmationView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                     Label("This cannot be undone", systemImage: "exclamationmark.triangle.fill")
                         .font(.headline)
-                        .foregroundColor(.red)
+                        .foregroundColor(Color.mcDanger)
                     Text(
                         "Deleting your account will permanently remove:"
                     )
@@ -68,6 +68,8 @@ struct DeleteAccountConfirmationView: View {
                 .disabled(!self.canDelete)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.mcCanvas)
         .navigationTitle("Delete Account")
         .navigationBarTitleDisplayMode(.inline)
         .interactiveDismissDisabled(self.isDeleting)

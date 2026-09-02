@@ -116,6 +116,8 @@ struct MealPlanDayRow: View {
                     }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.mcCanvas)
         .listStyle(.plain)
         .scrollDisabled(true)
         .frame(height: CGFloat(self.entries.count) * Self.entryRowHeight)
