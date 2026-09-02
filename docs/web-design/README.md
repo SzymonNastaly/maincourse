@@ -17,9 +17,10 @@ Canvas (all screens, pan/zoom): https://claude.ai/code/artifact/4ecaa114-9c92-4e
 
 1. **The existing Rails ERB views are not the reference.** They are old and were
    explicitly ruled out for the look. The old Hauptgang tokens (brown `#8B5E34`,
-   Lato, Merriweather — see `ios-legacy-tokens.md` in the `maincourse-design`
-   skill) are **superseded** by the palette below for web. The iOS app was used
-   for *functionality* only.
+   Lato, Merriweather) are **superseded** by the palette below for web. The iOS
+   app has since adopted the same tokens
+   (`hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift`); see the iOS
+   section of the `maincourse-design` skill.
 2. **Web patterns, not iOS patterns.** No bottom tab bar: the left rail collapses
    behind a menu button in a top app bar. Nav-stack pushes become a back
    affordance; action sheets become bottom sheets.

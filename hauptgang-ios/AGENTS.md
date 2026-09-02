@@ -116,7 +116,7 @@ The iOS app consumes the Rails JSON API at `/api/v1/`. When working on iOS featu
 - Use `#Preview` macro for SwiftUI previews
 - Keep views simple; move logic to ViewModels
 - Use `Constants` enum for magic strings/URLs
-- **Always use `Color.hauptgangPrimary` (explicit `Color.` prefix), never `.hauptgangPrimary`** — static member lookup without the type fails in `ShapeStyle` contexts (e.g. `foregroundStyle`, `background`, `tint`)
+- Always use the explicit `Color.` prefix for design tokens (`Color.mcAccent`, not `.mcAccent`) — bare member syntax fails to type-check in `ShapeStyle` contexts such as `foregroundStyle`, `fill`, `tint` and `background(_:in:)`. Tokens, `Font.mcMono` and `Theme.Radius` live in `Hauptgang/Utilities/MainCourseTheme.swift`; button and field styles in `Hauptgang/Utilities/MainCourseStyles.swift`. IBM Plex Mono is for numerics only; every other text uses a semantic San Francisco style. No `design: .serif`, no drop shadows on flat surfaces, no dark mode.
 
 ## Testing
 

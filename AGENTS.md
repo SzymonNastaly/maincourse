@@ -58,11 +58,13 @@ gap is expected, not a regression.
 
 ## Web UI
 
-The web app has its own design system — grey canvas, deep green accent, IBM Plex —
-with tokens in `app/assets/tailwind/application.css`. See `docs/web-ui.md` for how
-the app is assembled and the `maincourse-design` skill for the tokens themselves
-before touching views or styling. The old brown/Lato/Merriweather theme still
-describes **iOS only**; it survives as that skill's `ios-legacy-tokens.md`.
+The app has its own design system — grey canvas, deep green accent, IBM Plex —
+with web tokens in `app/assets/tailwind/application.css`. See `docs/web-ui.md` for
+how the web app is assembled and the `maincourse-design` skill for the tokens
+themselves before touching views or styling. The iOS app shares the same colour
+tokens and radii (`hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift`) while
+keeping native chrome; the skill's iOS section explains the mapping. The old
+brown/Lato/Merriweather theme is gone from both platforms.
 
 ## Documentation
 
