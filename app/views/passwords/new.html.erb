@@ -1,40 +1,25 @@
-<div class="w-full max-w-md">
-  <%# Auth Card %>
-  <div class="bg-surface-overlay dark:bg-gray-800 rounded-xl shadow-lg border border-border-subtle dark:border-gray-700 p-8">
-    <%# Header %>
-    <div class="text-center mb-8">
-      <h1 class="font-serif text-2xl font-bold text-text-primary dark:text-gray-100">
-        Reset your password
-      </h1>
-      <p class="text-sm text-text-secondary dark:text-gray-400 mt-1">
-        Enter your email and we'll send reset instructions
-      </p>
-    </div>
+<% page_title "Reset your password" %>
 
-    <%# Form %>
-    <%= form_with url: passwords_path, class: "space-y-4" do |form| %>
-      <div>
-        <label for="email_address" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Email
-        </label>
-        <%= form.email_field :email_address,
-            required: true,
-            autofocus: true,
-            autocomplete: "username",
-            placeholder: "you@example.com",
-            value: params[:email_address],
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
-      </div>
+<div class="mb-10 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
+</div>
 
-      <%= form.submit "Send reset instructions",
-          class: "w-full bg-brand-primary hover:bg-brand-primary-dark dark:bg-amber-700 dark:hover:bg-amber-800 text-white py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all cursor-pointer" %>
-    <% end %>
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Reset your password</h1>
+<p class="mb-7 text-[13px] leading-relaxed font-light text-muted">
+  Enter the email you signed up with and we'll send you a link to set a new password.
+</p>
+
+<%= form_with url: passwords_path, method: :post do |form| %>
+  <div class="mb-5">
+    <%= form.label :email_address, "Email", class: "mc-label" %>
+    <%= form.email_field :email_address, required: true, autofocus: true,
+                         autocomplete: "username", placeholder: "you@example.com", class: "mc-field" %>
   </div>
 
-  <%# Back to sign in link below card %>
-  <p class="text-center mt-6 text-sm text-text-secondary dark:text-gray-400">
-    Remember your password?
-    <%= link_to "Sign in", new_session_path,
-        class: "text-brand-primary dark:text-amber-500 font-medium hover:underline" %>
-  </p>
-</div>
+  <%= form.submit "Send reset link", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+<% end %>
+
+<p class="mt-8 text-center text-[12.5px] font-light text-muted">
+  <%= link_to "Back to sign in", new_session_path, class: "font-medium text-accent hover:text-accent-dark" %>
+</p>

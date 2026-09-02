@@ -1,7 +1,17 @@
-<% content_for :title, "Edit Recipe" %>
+<% page_title "Edit #{@recipe.name}" %>
 
-<div class="flex flex-col h-full">
-  <div class="flex-1 overflow-y-auto">
-    <%= render "form", recipe: @recipe %>
-  </div>
+<% content_for :mobile_header do %>
+  <%= render "layouts/back_bar", label: @recipe.name, path: recipe_path(@recipe) %>
+<% end %>
+
+<div class="hidden items-center gap-2.5 border-b border-line px-[30px] py-4 md:flex">
+  <%= link_to @recipe, class: "flex items-center gap-[7px] text-[12.5px] text-body hover:text-ink" do %>
+    <%= icon "arrow-left", size: 15, stroke: 2 %><span class="max-w-xs truncate"><%= @recipe.name %></span>
+  <% end %>
+</div>
+
+<div class="px-4 pt-5 pb-10 md:px-[30px] md:pt-[26px]">
+  <h1 class="mb-6 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]">Edit recipe</h1>
+
+  <%= render "recipes/form", recipe: @recipe %>
 </div>

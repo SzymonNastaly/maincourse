@@ -1,0 +1,86 @@
+<% owner = cookbook.owner?(Current.user) %>
+
+<div class="mc-panel" data-testid="shared-cookbook">
+  <div class="flex items-center gap-3 border-b border-line px-[15px] py-3.5">
+    <span class="flex size-[30px] shrink-0 items-center justify-center rounded-card bg-accent-tint">
+      <%= icon "users", size: 15, class: "text-accent" %>
+    </span>
+    <span class="min-w-0 grow">
+      <span class="block truncate text-[13.5px] font-medium tracking-[-0.15px]"><%= cookbook.name %></span>
+      <span class="mt-0.5 block text-[11.5px] font-light text-muted">
+        <%= pluralize(cookbook.recipes.count, "recipe") %> · <%= pluralize(memberships.size, "member") %>
+      </span>
+    </span>
+    <% if current_cookbook&.id == cookbook.id %>
+      <span class="rounded-[4px] bg-accent-tint px-2 py-[3px] text-[10.5px] font-medium text-accent">Active</span>
+    <% else %>
+      <%= button_to "Switch", active_cookbook_path(cookbook_id: cookbook.id), method: :patch,
+                    form_class: "inline-block", class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]" %>
+    <% end %>
+  </div>
+
+  <% memberships.each do |membership| %>
+    <div class="flex items-center gap-2.5 border-b border-line py-2.5 pr-[15px] pl-[57px]">
+      <% if membership.owner? %>
+        <%= icon "crown", size: 13, fill: "currentColor", class: "text-amber" %>
+      <% else %>
+        <%= icon "user", size: 13, stroke: 2, class: "text-muted" %>
+      <% end %>
+      <span class="grow truncate text-[12.5px]"><%= membership.user.email_address %></span>
+      <span class="text-[11px] font-light text-muted"><%= membership_role_label(membership) %></span>
+    </div>
+  <% end %>
+
+  <div class="flex flex-wrap items-center gap-2.5 px-[15px] py-3.5">
+    <% if owner %>
+      <%= button_to cookbook_invitation_path(cookbook), method: :post,
+                    form_class: "inline-block",
+                    class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]",
+                    data: { testid: "generate-invite" } do %>
+        <%= icon "link", size: 14, stroke: 2 %><span>Generate invite link</span>
+      <% end %>
+
+      <div class="grow"></div>
+
+      <%= button_to cookbook_path(cookbook), method: :delete,
+                    form_class: "inline-block",
+                    class: "mc-btn mc-btn-danger px-3 py-1.5 text-[12px]",
+                    data: { turbo_confirm: "All recipes in this cookbook will be permanently deleted. This cannot be undone." } do %>
+        <%= icon "trash-2", size: 14, stroke: 2 %><span>Delete cookbook</span>
+      <% end %>
+    <% else %>
+      <div class="grow"></div>
+
+      <%= button_to leave_cookbook_path(cookbook), method: :post,
+                    form_class: "inline-block",
+                    class: "mc-btn mc-btn-danger px-3 py-1.5 text-[12px]",
+                    data: { turbo_confirm: "Your recipes will stay in the shared cookbook. You can rejoin later with a new invitation." } do %>
+        <%= icon "log-out", size: 14, stroke: 2 %><span>Leave cookbook</span>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<% if invitation && owner %>
+  <div class="mt-5 rounded-panel border border-accent-line bg-accent-tint px-4 py-4" data-testid="invite-link">
+    <div class="mb-2.5 flex items-center gap-2">
+      <%= icon "link", size: 15, stroke: 2, class: "text-accent" %>
+      <span class="text-[13.5px] font-medium text-accent">Invite link created</span>
+    </div>
+
+    <div class="flex items-center gap-2.5" data-controller="clipboard"
+         data-clipboard-text-value="<%= invite_url(invitation.token) %>">
+      <div class="grow truncate rounded-card border border-accent-line bg-surface px-3 py-2.5 font-mono text-[11.5px] text-body">
+        <%= invite_url(invitation.token) %>
+      </div>
+      <button type="button" class="mc-btn mc-btn-primary px-3 py-2 text-[12px]" data-action="clipboard#copy">
+        <span data-clipboard-target="label">Copy link</span>
+      </button>
+    </div>
+
+    <p class="mt-2.5 text-[11.5px] font-light text-body">
+      Anyone with this link can join <%= cookbook.name %>. It expires
+      <%= distance_of_time_in_words_to_now(invitation.expires_at) %> from now.
+    </p>
+  </div>
+<% end %>

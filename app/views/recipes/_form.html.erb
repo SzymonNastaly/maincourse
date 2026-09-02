@@ -1,222 +1,141 @@
-<%= form_with(model: recipe, data: { controller: "recipe-form", recipe_form_ingredients_value: recipe.ingredients.map(&:raw).to_json, recipe_form_instructions_value: recipe.instructions.to_json }, multipart: true, class: "pb-20") do |form| %>
-
-  <%# Top Controls %>
-  <div class="h-14 flex items-center justify-between sticky top-0 bg-surface-base dark:bg-gray-950 z-30 border-b border-border-subtle dark:border-gray-800 px-4 md:px-6">
-    <%= link_to (recipe.persisted? ? recipe_path(recipe) : recipes_path), class: "flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" do %>
-      <%= lucide_icon "chevron-left", class: "size-5" %>
-      <span class="hidden sm:inline text-sm font-medium">Cancel</span>
-    <% end %>
-    <%= form.submit "Save Recipe", class: "flex items-center gap-2 bg-brand-primary hover:bg-brand-primary-dark dark:bg-amber-700 dark:hover:bg-amber-800 text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all cursor-pointer", data: { testid: "save-recipe-button" } %>
-  </div>
-
-  <%# Form Content - max width constrained %>
-  <div class="max-w-5xl mx-auto px-4 md:px-8 pt-8">
-
-  <%# Error Messages %>
+<%= form_with model: recipe, class: "max-w-[640px]", data: { controller: "recipe-form" } do |form| %>
   <% if recipe.errors.any? %>
-    <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200">
-      <h3 class="font-bold mb-2"><%= pluralize(recipe.errors.count, "error") %> prohibited this recipe from being saved:</h3>
-      <ul class="list-disc ml-6 text-sm space-y-1">
-        <% recipe.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+    <div class="mb-5 rounded-card border border-danger-line bg-danger-tint px-3 py-2.5 text-[12.5px] text-danger"
+         data-testid="form-errors">
+      <%= recipe.errors.full_messages.to_sentence %>
     </div>
   <% end %>
 
-  <%#
-    Grid Layout Strategy:
-    - Mobile: Single column, natural DOM order (Title → Image/Stats/Ingredients → Instructions/Notes)
-    - Desktop: 12-column grid with explicit placement
-      - Title: columns 6-12, row 1
-      - Left content: columns 1-5, rows 1-2 (spans both)
-      - Right content: columns 6-12, row 2
-  %>
-  <div class="grid grid-cols-1 md:grid-cols-12 gap-10">
+  <div class="mb-3.5">
+    <%= form.label :name, class: "mc-label" %>
+    <%= form.text_field :name, class: "mc-field", autofocus: recipe.new_record?, data: { testid: "recipe-name" } %>
+  </div>
 
-    <%# Title & Tags - First on mobile, top-right on desktop %>
-    <div class="md:col-span-7 md:col-start-6 md:row-start-1">
-      <%= render "recipes/form_title_section", form: form, recipe: recipe %>
-    </div>
-
-    <%# LEFT COLUMN: Image, Stats, Ingredients - Second on mobile, left side spanning both rows on desktop %>
-    <div class="md:col-span-5 md:col-start-1 md:row-start-1 md:row-span-2 space-y-8">
-
-      <%# Image Upload - uses <label> for native click-to-upload behavior %>
-      <%= form.label :cover_image,
-          class: "relative aspect-video bg-surface-raised dark:bg-gray-800 border-2 border-dashed border-border-subtle dark:border-gray-700 rounded-lg flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 hover:border-brand-primary/50 dark:hover:border-amber-700/50 hover:text-brand-primary dark:hover:text-amber-500 hover:bg-brand-primary/5 dark:hover:bg-amber-500/5 transition-all cursor-pointer group overflow-hidden" do %>
-
-        <%= form.file_field :cover_image,
-            accept: "image/*",
-            data: {
-              recipe_form_target: "imageInput",
-              action: "change->recipe-form#handleImageUpload"
-            },
-            class: "sr-only" %>
-
-        <div data-recipe-form-target="imagePreview" class="absolute inset-0">
-          <% if recipe.cover_image.attached? %>
-            <%= image_tag recipe.cover_image.variant(:hero),
-                alt: "Cover preview",
-                class: "w-full h-full object-cover" %>
-            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-medium">
-              Change Photo
-            </div>
-          <% end %>
-        </div>
-
+  <%# ---- Cover image ---------------------------------------------------- %>
+  <div class="mb-5">
+    <span class="mc-label">Cover photo</span>
+    <div class="flex items-center gap-3.5">
+      <div class="h-[72px] w-[104px] shrink-0 overflow-hidden rounded-card"
+           style="background: <%= recipe_placeholder_gradient(recipe) %>">
+        <%= image_tag recipe.cover_image.variant(:thumb),
+                      class: "size-full object-cover",
+                      alt: "",
+                      data: { recipe_form_target: "imagePreview" } if recipe.cover_image.attached? %>
         <% unless recipe.cover_image.attached? %>
-          <div class="w-12 h-12 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center mb-2 shadow-sm group-hover:scale-110 transition-transform">
-            <%= lucide_icon "camera", class: "size-5" %>
-          </div>
-          <span class="text-sm font-medium">Add Cover Photo</span>
+          <img class="hidden size-full object-cover" alt="" data-recipe-form-target="imagePreview">
         <% end %>
+      </div>
+
+      <label class="mc-btn mc-btn-outline cursor-pointer">
+        <%= icon "image", size: 14, stroke: 2 %>
+        <span><%= recipe.cover_image.attached? ? "Replace photo" : "Choose photo" %></span>
+        <%= form.file_field :cover_image, accept: "image/*", class: "sr-only",
+                            data: { action: "recipe-form#previewImage" } %>
+      </label>
+    </div>
+  </div>
+
+  <%# ---- Timings --------------------------------------------------------- %>
+  <div class="mb-5 grid grid-cols-3 gap-3">
+    <div>
+      <%= form.label :prep_time, "Prep (min)", class: "mc-label" %>
+      <%= form.number_field :prep_time, min: 0, class: "mc-field font-mono" %>
+    </div>
+    <div>
+      <%= form.label :cook_time, "Cook (min)", class: "mc-label" %>
+      <%= form.number_field :cook_time, min: 0, class: "mc-field font-mono" %>
+    </div>
+    <div>
+      <%= form.label :servings, class: "mc-label" %>
+      <%= form.number_field :servings, min: 1, max: 64, class: "mc-field font-mono" %>
+    </div>
+  </div>
+
+  <%# ---- Ingredients ------------------------------------------------------ %>
+  <div class="mb-5">
+    <div class="mb-2.5 flex items-center gap-2">
+      <span class="mc-section-label">Ingredients</span>
+      <div class="grow"></div>
+      <span class="text-[11px] font-light text-muted">One per line, e.g. “200 g plain flour”</span>
+    </div>
+
+    <div data-recipe-form-target="ingredientList">
+      <% ingredient_values = recipe.ingredients.any? ? recipe.ingredients.map(&:raw) : [ "" ] %>
+      <% ingredient_values.each do |value| %>
+        <%= render "recipes/form_row", field_name: "recipe[ingredients][]", value: value,
+                   placeholder: "200 g plain flour", multiline: false %>
       <% end %>
-
-      <%# Quick Stats %>
-      <div class="grid grid-cols-3 gap-4">
-        <div class="bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col items-center text-center group focus-within:border-brand-primary dark:focus-within:border-amber-600 transition-colors">
-          <span class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold mb-1">Prep</span>
-          <div class="flex items-center justify-center gap-1 text-text-primary dark:text-gray-100 font-medium">
-            <%= lucide_icon "clock", class: "size-3.5 text-brand-primary dark:text-amber-500" %>
-            <%= form.number_field :prep_time,
-                min: 0,
-                placeholder: "0",
-                class: "w-8 text-center bg-transparent focus:outline-none focus:text-brand-primary dark:focus:text-amber-500 p-0" %>
-            <span class="text-xs text-gray-400 dark:text-gray-500">m</span>
-          </div>
-        </div>
-
-        <div class="bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col items-center text-center group focus-within:border-brand-primary dark:focus-within:border-amber-600 transition-colors">
-          <span class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold mb-1">Cook</span>
-          <div class="flex items-center justify-center gap-1 text-text-primary dark:text-gray-100 font-medium">
-            <%= lucide_icon "flame", class: "size-3.5 text-brand-primary dark:text-amber-500" %>
-            <%= form.number_field :cook_time,
-                min: 0,
-                placeholder: "0",
-                class: "w-8 text-center bg-transparent focus:outline-none focus:text-brand-primary dark:focus:text-amber-500 p-0" %>
-            <span class="text-xs text-gray-400 dark:text-gray-500">m</span>
-          </div>
-        </div>
-
-        <div class="bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col items-center text-center group focus-within:border-brand-primary dark:focus-within:border-amber-600 transition-colors">
-          <span class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold mb-1">Serves</span>
-          <div class="flex items-center justify-center gap-1 text-text-primary dark:text-gray-100 font-medium">
-            <%= lucide_icon "users", class: "size-3.5 text-brand-primary dark:text-amber-500" %>
-            <%= form.number_field :servings,
-                min: 1,
-                placeholder: "2",
-                class: "w-8 text-center bg-transparent focus:outline-none focus:text-brand-primary dark:focus:text-amber-500 p-0" %>
-          </div>
-        </div>
-      </div>
-
-      <%# Ingredients %>
-      <div>
-        <div class="flex items-center justify-between mb-4">
-          <label class="font-serif font-bold text-lg text-text-primary dark:text-gray-100">Ingredients</label>
-        </div>
-        <div class="bg-surface-overlay dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-          <div data-recipe-form-target="ingredientsList"></div>
-          <button
-            type="button"
-            data-recipe-form-target="addIngredientButton"
-            data-action="click->recipe-form#addIngredient"
-            class="w-full py-3 flex items-center justify-center gap-2 text-xs font-bold text-brand-primary dark:text-amber-500 uppercase tracking-wider hover:bg-brand-primary/5 dark:hover:bg-amber-500/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-          >
-            <%= lucide_icon "plus", class: "size-3.5" %>
-            Add Ingredient
-          </button>
-        </div>
-      </div>
-
-      <%# Templates for dynamic fields (used by Stimulus controller) %>
-      <template data-recipe-form-target="ingredientTemplate">
-        <div class="group flex items-center border-b border-gray-100 dark:border-gray-800 last:border-0 p-1 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-          <input
-            type="text"
-            name="recipe[ingredients][]"
-            placeholder="e.g. 2 cups Flour"
-            data-action="keydown->recipe-form#handleIngredientKeydown input->recipe-form#handleIngredientInput"
-            class="flex-1 bg-transparent py-3 pl-3 text-sm text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none"
-          />
-          <button
-            type="button"
-            data-action="click->recipe-form#removeIngredient"
-            class="p-3 text-gray-300 dark:text-gray-700 hover:text-red-500 dark:hover:text-red-400 md:opacity-0 md:group-hover:opacity-100 transition-all"
-          >
-            <%= lucide_icon "trash-2", class: "size-3.5" %>
-          </button>
-        </div>
-      </template>
-
-      <template data-recipe-form-target="instructionTemplate">
-        <div class="relative z-10 group">
-          <div class="flex gap-4">
-            <div data-step-number class="shrink-0 w-8 h-8 rounded-full bg-surface-overlay dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-bold flex items-center justify-center shadow-sm group-focus-within:border-brand-primary dark:group-focus-within:border-amber-600 group-focus-within:text-brand-primary dark:group-focus-within:text-amber-500 group-focus-within:bg-amber-50 dark:group-focus-within:bg-gray-700 transition-all">
-              1
-            </div>
-            <div class="flex-1">
-              <textarea
-                name="recipe[instructions][]"
-                placeholder="Describe this step..."
-                class="w-full bg-transparent border-b border-gray-200 dark:border-gray-700 pb-2 text-gray-800 dark:text-gray-200 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-brand-primary dark:focus:border-amber-600 transition-colors resize-none h-auto min-h-[80px] leading-relaxed"
-                rows="3"
-              ></textarea>
-              <div class="flex justify-end md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                <button
-                  type="button"
-                  data-action="click->recipe-form#removeInstruction"
-                  class="text-xs text-red-400 hover:text-red-600 dark:hover:text-red-400 py-1"
-                >
-                  Remove Step
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-
     </div>
 
-    <%# RIGHT COLUMN: Instructions & Notes - Third on mobile, below title on desktop %>
-    <div class="md:col-span-7 md:col-start-6 md:row-start-2 space-y-8">
+    <button type="button" class="mc-btn mc-btn-outline mt-2 px-3 py-1.5 text-[12px]"
+            data-action="recipe-form#addIngredient" data-testid="add-ingredient">
+      <%= icon "plus", size: 13, stroke: 2.2 %><span>Add ingredient</span>
+    </button>
+  </div>
 
-      <%# Instructions %>
-      <div>
-        <div class="flex items-center justify-between mb-4">
-          <label class="font-serif font-bold text-lg text-text-primary dark:text-gray-100">Instructions</label>
-        </div>
-
-        <div class="space-y-6 relative">
-          <%# Vertical connecting line %>
-          <div class="absolute left-[15px] top-4 bottom-10 w-px bg-gray-200 dark:bg-gray-700 z-0"></div>
-
-          <div data-recipe-form-target="instructionsList"></div>
-
-          <button
-            type="button"
-            data-action="click->recipe-form#addInstruction"
-            class="ml-12 flex items-center gap-2 text-sm font-medium text-brand-primary dark:text-amber-500 hover:underline decoration-dashed underline-offset-4"
-          >
-            <%= lucide_icon "plus", class: "size-4" %>
-            Add Next Step
-          </button>
-        </div>
-      </div>
-
-      <%# Notes %>
-      <div class="pt-4">
-        <div class="flex items-center justify-between mb-4">
-          <label class="font-serif font-bold text-lg text-text-primary dark:text-gray-100">Notes</label>
-        </div>
-        <%= form.text_area :notes,
-            rows: 4,
-            placeholder: "Write your secret tips, substitutions, or memories here...",
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 transition-all resize-none leading-relaxed shadow-sm placeholder-gray-400 dark:placeholder-gray-600" %>
-      </div>
-
+  <%# ---- Method ---------------------------------------------------------- %>
+  <div class="mb-5">
+    <div class="mb-2.5">
+      <span class="mc-section-label">Method</span>
     </div>
+
+    <div data-recipe-form-target="instructionList">
+      <% instruction_values = recipe.instructions.presence || [ "" ] %>
+      <% instruction_values.each do |value| %>
+        <%= render "recipes/form_row", field_name: "recipe[instructions][]", value: value,
+                   placeholder: "Describe the step", multiline: true %>
+      <% end %>
+    </div>
+
+    <button type="button" class="mc-btn mc-btn-outline mt-2 px-3 py-1.5 text-[12px]"
+            data-action="recipe-form#addInstruction" data-testid="add-instruction">
+      <%= icon "plus", size: 13, stroke: 2.2 %><span>Add step</span>
+    </button>
   </div>
+
+  <%# ---- Collections ------------------------------------------------------ %>
+  <% if (tags = Tag.order(:name)).any? %>
+    <div class="mb-5">
+      <div class="mb-2.5"><span class="mc-section-label">Collections</span></div>
+      <div class="flex flex-wrap gap-1.5">
+        <%= hidden_field_tag "recipe[tag_ids][]", "", id: nil %>
+        <% tags.each do |tag| %>
+          <% checked = recipe.tag_ids.include?(tag.id) %>
+          <label class="cursor-pointer rounded-control border px-3 py-[5px] text-[12px] transition-colors has-checked:border-ink has-checked:bg-ink has-checked:font-medium has-checked:text-white <%= checked ? "" : "border-hairline text-body" %>">
+            <%= check_box_tag "recipe[tag_ids][]", tag.id, checked, id: nil, class: "sr-only" %>
+            <%= tag.name %>
+          </label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ---- Notes + source --------------------------------------------------- %>
+  <div class="mb-3.5">
+    <%= form.label :notes, class: "mc-label" %>
+    <%= form.text_area :notes, rows: 3, class: "mc-field" %>
   </div>
+
+  <div class="mb-6">
+    <%= form.label :source_url, "Source link", class: "mc-label" %>
+    <%= form.url_field :source_url, placeholder: "https://…", class: "mc-field font-mono text-[12px]" %>
+  </div>
+
+  <div class="flex items-center gap-2.5">
+    <%= form.submit(recipe.new_record? ? "Save recipe" : "Save changes",
+                    class: "mc-btn mc-btn-primary", data: { testid: "save-recipe" }) %>
+    <%= link_to "Cancel", recipe.new_record? ? recipes_path : recipe_path(recipe),
+                class: "mc-btn mc-btn-quiet" %>
+  </div>
+
+  <%# Templates for the dynamically added rows. %>
+  <template data-recipe-form-target="ingredientTemplate">
+    <%= render "recipes/form_row", field_name: "recipe[ingredients][]", value: "",
+               placeholder: "200 g plain flour", multiline: false %>
+  </template>
+
+  <template data-recipe-form-target="instructionTemplate">
+    <%= render "recipes/form_row", field_name: "recipe[instructions][]", value: "",
+               placeholder: "Describe the step", multiline: true %>
+  </template>
 <% end %>

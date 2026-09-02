@@ -1,77 +1,83 @@
-<% content_for :title, "Recipes" %>
+<% page_title @active_tag ? @active_tag.name : "Recipes" %>
+<%= turbo_stream_from current_cookbook %>
 
-<%# Wrap in view-switcher controller %>
-<div data-controller="view-switcher" class="flex flex-col h-full">
-  <%# Mobile Header (Mobile Only) %>
-  <%= render "recipes/mobile_header" %>
-
-  <%# Desktop Topbar %>
-  <%= render "recipes/topbar" %>
-
-  <%# Content Scroll Area %>
-  <div class="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth pb-8 md:pb-6">
-
-    <%# Mobile View Context (Mobile Only) %>
-    <div class="md:hidden mb-4">
-      <h2 class="font-serif text-xl font-bold text-text-primary dark:text-gray-100">
-        <% if params[:view] == "favorites" %>
-          Favorites
-        <% elsif @selected_tag.present? %>
-          <%= @selected_tag.name %>
-        <% else %>
-          All Recipes
-        <% end %>
-      </h2>
-      <p class="text-xs text-text-tertiary dark:text-gray-500 mt-0.5">
-        <%= @recipes&.count || 0 %> <%= @recipes&.count == 1 ? 'recipe' : 'recipes' %> found
-      </p>
+<%# ---- Desktop header ---------------------------------------------------- %>
+<div class="hidden items-start justify-between gap-5 px-[30px] pt-[26px] md:flex">
+  <div>
+    <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]"><%= @active_tag ? @active_tag.name : "All Recipes" %></h1>
+    <div class="text-[12.5px] font-light text-muted">
+      <%= mono @recipes.size, class: "text-[12px]" %>
+      <%= "recipe".pluralize(@recipes.size) %> in <%= current_cookbook.name %>
     </div>
-
-    <%# Flash Notice %>
-    <% if notice.present? %>
-      <div class="mb-6 flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-md">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span class="text-sm"><%= notice %></span>
-      </div>
-    <% end %>
-
-    <% if @recipes.any? %>
-
-      <%# GRID VIEW - Masonry Layout %>
-      <div data-view-switcher-target="gridView">
-        <div data-controller="masonry">
-          <%# Recipe Cards %>
-          <% @recipes.each do |recipe| %>
-            <div class="masonry-item px-3 mb-6">
-              <%= render "recipes/recipe_card", recipe: recipe %>
-            </div>
-          <% end %>
-        </div>
-      </div>
-
-      <%# LIST VIEW - Horizontal Cards %>
-      <div data-view-switcher-target="listView" class="hidden">
-        <div class="max-w-4xl mx-auto">
-          <%# Recipe List Items %>
-          <% @recipes.each do |recipe| %>
-            <%= render "recipes/recipe_list_item", recipe: recipe %>
-          <% end %>
-        </div>
-      </div>
-
-    <% else %>
-      <%# Empty State %>
-      <div class="h-full flex flex-col items-center justify-center text-center py-20 opacity-60">
-        <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-          <%= lucide_icon "search", class: "size-6 text-text-tertiary dark:text-gray-500" %>
-        </div>
-        <h3 class="text-lg font-bold text-text-primary dark:text-gray-100 mb-2">No recipes found</h3>
-        <p class="text-text-secondary dark:text-gray-400 max-w-xs mx-auto mb-4">
-          Start building your recipe collection by adding your first recipe.
-        </p>
-        <%= link_to "Create Your First Recipe", new_recipe_path, class: "text-brand-primary dark:text-amber-500 font-medium hover:underline", data: { testid: "new-recipe-link" } %>
-      </div>
-    <% end %>
   </div>
 
+  <div class="flex items-center gap-2.5 pt-1.5">
+    <%= render "recipes/search_field" %>
+    <%= render "recipes/add_button" %>
+  </div>
 </div>
+
+<%# ---- Mobile header ----------------------------------------------------- %>
+<div class="flex items-start justify-between gap-4 px-4 pt-[18px] md:hidden">
+  <div class="min-w-0">
+    <h1 class="mb-1 truncate text-[23px] font-semibold tracking-[-0.5px]"><%= @active_tag ? @active_tag.name : "All Recipes" %></h1>
+    <button type="button" class="flex items-center gap-1.5 text-muted"
+            data-controller="dialog-opener"
+            data-dialog-opener-target-value="cookbook-switcher"
+            data-action="dialog-opener#open">
+      <span class="text-[11.5px] font-light"><%= current_cookbook.name %> ·</span>
+      <%= mono @recipes.size, class: "text-[11px]" %>
+      <%= icon "chevron-down", size: 11, stroke: 2.4 %>
+    </button>
+  </div>
+
+  <button type="button"
+          class="flex size-10 shrink-0 items-center justify-center rounded-panel bg-accent text-white"
+          data-controller="dialog-opener"
+          data-dialog-opener-target-value="add-recipe"
+          data-action="dialog-opener#open"
+          aria-label="Add a recipe">
+    <%= icon "plus", size: 19, stroke: 2.4 %>
+  </button>
+</div>
+
+<div class="px-4 pt-4 md:hidden">
+  <%= render "recipes/search_field", mobile: true %>
+</div>
+
+<%# ---- Failed imports ---------------------------------------------------- %>
+<% if @failed_imports.any? %>
+  <div class="flex flex-col gap-2.5 px-4 pt-4 md:px-[30px]">
+    <% @failed_imports.each do |failed| %>
+      <%= render "recipes/failed_import", recipe: failed %>
+    <% end %>
+  </div>
+<% end %>
+
+<%# ---- Collections + sort ------------------------------------------------ %>
+<div class="px-4 py-3.5 md:border-b md:border-line md:px-[30px] md:pt-5 md:pb-4">
+  <%= render "recipes/filters" %>
+</div>
+
+<%# ---- Grid -------------------------------------------------------------- %>
+<div class="px-4 pb-8 md:px-[30px] md:pt-6">
+  <% if @recipes.any? %>
+    <div class="grid grid-cols-2 gap-x-3.5 gap-y-[18px] md:grid-cols-3 md:gap-x-5 md:gap-y-6">
+      <%= render partial: "recipes/card", collection: @recipes, as: :recipe %>
+    </div>
+  <% elsif @active_tag %>
+    <%= render "shared/empty_state",
+               icon: "utensils",
+               title: "Nothing in #{@active_tag.name} yet",
+               body: "Tag a recipe with #{@active_tag.name} and it will show up here.",
+               action: link_to("All recipes", recipes_path, class: "mc-btn mc-btn-outline") %>
+  <% else %>
+    <%= render "shared/empty_state",
+               icon: "utensils",
+               title: "No recipes yet",
+               body: "Paste a link, upload a photo of a cookbook page, or write one out yourself.",
+               action: render("recipes/add_button") %>
+  <% end %>
+</div>
+
+<%= render "recipes/add_dialog" %>

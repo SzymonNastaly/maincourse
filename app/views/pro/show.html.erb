@@ -1,0 +1,73 @@
+<% page_title "MainCourse Pro" %>
+
+<% content_for :mobile_header do %>
+  <%= render "layouts/back_bar", label: "Settings", path: edit_settings_path %>
+<% end %>
+
+<div class="hidden items-center gap-2.5 border-b border-line px-[30px] py-4 md:flex">
+  <%= link_to edit_settings_path, class: "flex items-center gap-[7px] text-[12.5px] text-body hover:text-ink" do %>
+    <%= icon "arrow-left", size: 15, stroke: 2 %><span>Settings</span>
+  <% end %>
+</div>
+
+<div class="px-4 pt-6 pb-12 md:px-[30px]">
+  <div class="max-w-[460px]">
+    <span class="mb-5 flex size-[46px] items-center justify-center rounded-[11px] bg-amber-tint">
+      <%= icon "crown", size: 22, fill: "currentColor", class: "text-amber" %>
+    </span>
+
+    <h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">MainCourse Pro</h1>
+    <p class="mb-6 text-[13px] leading-relaxed font-light text-muted">
+      Unlimited imports and a kitchen you can share with the people you cook for.
+    </p>
+
+    <div class="mb-6 border-y border-line py-2">
+      <% [
+           "Unlimited recipe imports",
+           "Shared cookbooks for your household",
+           "Shared shopping lists, synced live",
+           "Recipe reminders"
+         ].each do |feature| %>
+        <div class="flex items-center gap-2.5 py-[7px]">
+          <span class="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-accent-tint">
+            <%= icon "check", size: 11, stroke: 3, class: "text-accent" %>
+          </span>
+          <span class="text-[13px] text-body"><%= feature %></span>
+        </div>
+      <% end %>
+    </div>
+
+    <% if @user.pro? %>
+      <div class="rounded-panel border border-accent-line bg-accent-tint px-4 py-4">
+        <div class="mb-1.5 flex items-center gap-2">
+          <%= icon "circle-check", size: 15, stroke: 2, class: "text-accent" %>
+          <span class="text-[13.5px] font-medium text-accent">You're on Pro</span>
+        </div>
+        <p class="text-[11.5px] leading-relaxed font-light text-body">
+          Manage or cancel your subscription in the MainCourse iOS app, under Settings → Subscription.
+        </p>
+      </div>
+    <% else %>
+      <div class="mb-4 rounded-panel border border-hairline bg-sunken px-4 py-4">
+        <p class="mb-1.5 text-[13px] font-medium">Upgrade in the iOS app</p>
+        <p class="text-[11.5px] leading-relaxed font-light text-body">
+          Subscriptions are handled by the App Store, so Pro is purchased in the MainCourse
+          iOS app — open Settings → Subscription there. It unlocks on the web straight away.
+        </p>
+      </div>
+
+      <%= link_to @app_store_url, target: "_blank", rel: "noopener noreferrer",
+                  class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]",
+                  data: { testid: "app-store-link" } do %>
+        <%= icon "external-link", size: 15, stroke: 2.2 %>
+        <span>Get MainCourse for iOS</span>
+      <% end %>
+
+      <p class="mt-4 text-[11.5px] leading-relaxed font-light text-muted">
+        On the free plan you get <%= mono User::FREE_MONTHLY_IMPORT_LIMIT, class: "text-[11px]" %>
+        imports a month — <%= mono @remaining_imports.to_i, class: "text-[11px]" %> left this month.
+        Everything else works the same.
+      </p>
+    <% end %>
+  </div>
+</div>

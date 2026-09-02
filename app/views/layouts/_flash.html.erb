@@ -1,0 +1,18 @@
+<% if flash.any? %>
+  <div class="px-4 pt-4 md:px-[30px] md:pt-5" data-testid="flash">
+    <% flash.each do |kind, message| %>
+      <% next if message.blank? %>
+      <% styles = flash_styles(kind) %>
+      <div class="mb-2 flex items-start gap-2.5 rounded-card border px-3 py-2.5 text-[12.5px] <%= styles[:container] %>"
+           role="<%= kind.to_s == "alert" ? "alert" : "status" %>"
+           data-testid="flash-<%= kind %>"
+           data-controller="dismissable">
+        <%= icon styles[:icon], size: 15, stroke: 2, class: "mt-px" %>
+        <span class="grow"><%= message %></span>
+        <button type="button" class="opacity-60 hover:opacity-100" data-action="dismissable#dismiss" aria-label="Dismiss">
+          <%= icon "x", size: 14, stroke: 2.2 %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+<% end %>

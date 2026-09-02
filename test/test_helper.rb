@@ -4,6 +4,7 @@ require "rails/test_help"
 require "webmock/minitest"
 require "minitest/mock"
 require_relative "test_helpers/session_test_helper"
+require_relative "test_helpers/cookbook_test_helper"
 require_relative "test_helpers/llm_stub_helper"
 
 # Allow localhost connections for system tests (Selenium WebDriver, Capybara)

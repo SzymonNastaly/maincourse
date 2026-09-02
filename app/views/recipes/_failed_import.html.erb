@@ -1,0 +1,26 @@
+<div class="rounded-[7px] border border-danger-line bg-danger-tint px-3 py-3" data-testid="failed-import">
+  <div class="mb-1.5 flex items-center gap-2.5">
+    <%= icon "triangle-alert", size: 15, stroke: 2, class: "text-danger" %>
+    <span class="grow text-[12.5px] font-medium text-danger">Couldn’t read that page</span>
+  </div>
+
+  <p class="mb-2.5 text-[11.5px] leading-relaxed font-light text-body">
+    <%= recipe.error_message.presence || "The import failed. Paste the text or a photo instead." %>
+  </p>
+
+  <div class="flex gap-2">
+    <% if recipe.source_url.present? %>
+      <%= button_to import_recipes_path, params: { url: recipe.source_url },
+                    form_class: "inline-block",
+                    class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]" do %>
+        Try again
+      <% end %>
+    <% end %>
+
+    <%= button_to recipe_path(recipe), method: :delete,
+                  form_class: "inline-block",
+                  class: "mc-btn mc-btn-quiet px-3 py-1.5 text-[12px]" do %>
+      Dismiss
+    <% end %>
+  </div>
+</div>

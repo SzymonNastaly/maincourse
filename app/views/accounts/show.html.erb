@@ -1,0 +1,71 @@
+<% page_title "Manage account" %>
+
+<% content_for :mobile_header do %>
+  <%= render "layouts/back_bar", label: "Settings", path: edit_settings_path %>
+<% end %>
+
+<div class="hidden items-center gap-2.5 border-b border-line px-[30px] py-4 md:flex">
+  <%= link_to edit_settings_path, class: "flex items-center gap-[7px] text-[12.5px] text-body hover:text-ink" do %>
+    <%= icon "arrow-left", size: 15, stroke: 2 %><span>Settings</span>
+  <% end %>
+</div>
+
+<div class="px-4 pt-[18px] pb-10 md:px-[30px] md:pt-[26px]">
+  <h1 class="mb-5 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]">Manage account</h1>
+
+  <div class="max-w-[520px]">
+    <div class="mc-panel mb-6">
+      <div class="flex items-center gap-3 border-b border-line px-[15px] py-3.5">
+        <span class="flex size-[30px] shrink-0 items-center justify-center rounded-card bg-sunken">
+          <%= icon "mail", size: 15, class: "text-body" %>
+        </span>
+        <span class="min-w-0 grow">
+          <span class="block text-[13.5px] font-medium tracking-[-0.15px]">Email</span>
+          <span class="mt-0.5 block truncate text-[11.5px] font-light text-muted"><%= @user.email_address %></span>
+        </span>
+      </div>
+
+      <div class="flex items-center gap-3 px-[15px] py-3.5">
+        <span class="flex size-[30px] shrink-0 items-center justify-center rounded-card bg-sunken">
+          <%= icon "user", size: 15, class: "text-body" %>
+        </span>
+        <span class="min-w-0 grow">
+          <span class="block text-[13.5px] font-medium tracking-[-0.15px]">Password</span>
+          <span class="mt-0.5 block text-[11.5px] font-light text-muted">We'll email you a reset link.</span>
+        </span>
+        <%= button_to "Send reset link", passwords_path,
+                      params: { email_address: @user.email_address },
+                      form_class: "inline-block",
+                      class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]" %>
+      </div>
+    </div>
+
+    <%# ---- Danger zone -------------------------------------------------- %>
+    <div class="rounded-panel border border-danger-line bg-danger-tint px-4 py-4">
+      <div class="mb-2 flex items-center gap-2">
+        <%= icon "triangle-alert", size: 15, stroke: 2, class: "text-danger" %>
+        <span class="text-[13.5px] font-medium text-danger">Delete your account</span>
+      </div>
+
+      <ul class="mb-4 list-disc space-y-1 pl-5 text-[11.5px] leading-relaxed font-light text-body">
+        <li>Your personal cookbook and every recipe in it are removed.</li>
+        <li>Your shopping list and meal plans are removed.</li>
+        <li>Shared cookbooks you own transfer to another member.</li>
+        <li>An active subscription is not refunded — cancel it in the App Store.</li>
+      </ul>
+
+      <%= form_with url: account_path, method: :delete, class: "flex flex-col gap-2.5 sm:flex-row sm:items-end" do |form| %>
+        <div class="grow">
+          <%= label_tag :confirmation, "Type DELETE to confirm", class: "mc-label" %>
+          <%= text_field_tag :confirmation, nil, autocomplete: "off",
+                             class: "mc-field bg-surface font-mono",
+                             data: { testid: "delete-confirmation" } %>
+        </div>
+        <%= form.submit "Delete account",
+                        class: "mc-btn border border-danger bg-danger text-white hover:opacity-90",
+                        data: { turbo_confirm: "This permanently deletes your account. Continue?",
+                                testid: "delete-account" } %>
+      <% end %>
+    </div>
+  </div>
+</div>

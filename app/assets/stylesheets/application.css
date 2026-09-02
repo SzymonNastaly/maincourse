@@ -1,118 +1,103 @@
 /*
- * This is a manifest file that'll be compiled into application.css.
- *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
- *
- * Consider organizing styles into separate files for maintainability.
+ * Font faces and a handful of primitives that Tailwind utilities cannot express.
+ * Design tokens live in app/assets/tailwind/application.css.
  */
 
-/* Lato */
+/* IBM Plex Sans — 300 / 400 / 500 / 600 (+ 300/400 italic for tile details) */
 @font-face {
-  font-family: "Lato";
-  src: url("Lato-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Lato";
-  src: url("Lato-Italic.woff2") format("woff2");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Lato";
-  src: url("Lato-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Lato";
-  src: url("Lato-BoldItalic.woff2") format("woff2");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Lato";
-  src: url("Lato-Light.woff2") format("woff2");
+  font-family: "IBM Plex Sans";
+  src: url("IBMPlexSans-300.woff2") format("woff2");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Lato";
-  src: url("Lato-LightItalic.woff2") format("woff2");
+  font-family: "IBM Plex Sans";
+  src: url("IBMPlexSans-300-italic.woff2") format("woff2");
   font-weight: 300;
   font-style: italic;
   font-display: swap;
 }
 
-/* Merriweather */
 @font-face {
-  font-family: "Merriweather";
-  src: url("Merriweather24pt-Regular.woff2") format("woff2");
+  font-family: "IBM Plex Sans";
+  src: url("IBMPlexSans-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Merriweather";
-  src: url("Merriweather24pt-Italic.woff2") format("woff2");
+  font-family: "IBM Plex Sans";
+  src: url("IBMPlexSans-400-italic.woff2") format("woff2");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Merriweather";
-  src: url("Merriweather24pt-Bold.woff2") format("woff2");
-  font-weight: 700;
+  font-family: "IBM Plex Sans";
+  src: url("IBMPlexSans-500.woff2") format("woff2");
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Merriweather";
-  src: url("Merriweather24pt-BoldItalic.woff2") format("woff2");
-  font-weight: 700;
-  font-style: italic;
+  font-family: "IBM Plex Sans";
+  src: url("IBMPlexSans-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
   font-display: swap;
 }
 
-/* Masonry: Fix flash of unstyled content by hiding items until layout is ready. Only applies when JavaScript is enabled (progressive enhancement). */
-[data-controller="masonry"]:not(.masonry-loaded) .masonry-item {
-  opacity: 0;
+/* IBM Plex Mono — numerics only: times, servings, counts, IDs */
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("IBMPlexMono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
-[data-controller="masonry"].masonry-loaded .masonry-item {
-  opacity: 1;
-  transition: opacity 0.15s ease-in;
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("IBMPlexMono-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* Grain texture background for warm, tactile aesthetic */
-.grain-texture {
-  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
-}
-
-/* Hide number input arrows for cleaner UI while keeping native functionality */
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
+/* Hide number input arrows while keeping native behaviour. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* Dialogs are used for import, add-to-list, invites and destructive confirms. */
+dialog::backdrop {
+  background: rgb(20 23 28 / 0.42);
+}
+
+dialog[open] {
+  animation: dialog-in 120ms ease-out;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog[open] {
+    animation: none;
+  }
 }

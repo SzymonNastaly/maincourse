@@ -1,0 +1,12 @@
+<div class="flex items-baseline gap-2.5 border-b border-line py-[7px] md:py-2">
+  <div class="w-[54px] shrink-0 font-mono text-[11px] text-accent md:text-[11.5px]"
+       data-portion-scaler-target="quantity"
+       data-base-amount="<%= ingredient.amount %>"
+       data-base-amount-max="<%= ingredient.amount_max %>"
+       data-unit="<%= ingredient.unit %>"><%= format_quantity(ingredient) %></div>
+
+  <div class="text-[12.5px] leading-[1.4] text-ink md:text-[13px]">
+    <%# Unparsed rows have no structured name yet; fall back to the raw string. %>
+    <%= ingredient.name.presence || ingredient.raw %><%= ", #{ingredient.note}" if ingredient.note.present? %>
+  </div>
+</div>

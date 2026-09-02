@@ -1,39 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title><%= content_for(:title) || "Hauptgang" %></title>
+    <title><%= content_for(:title) ? "#{content_for(:title)} · MainCourse" : "MainCourse" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Hauptgang">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#EEF0F2">
+    <meta name="application-name" content="MainCourse">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= yield :head %>
 
-    <%= favicon_link_tag "icon.png" %>
+    <%= render "layouts/favicons" %>
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "application", "data-turbo-track": "reload" %>
+    <%# Named explicitly: Propshaft's :app would also pull in the Avo admin CSS. %>
+    <%= stylesheet_link_tag "application", "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <div class="min-h-screen w-full bg-surface-base dark:bg-gray-950 grain-texture flex flex-col items-center justify-center p-4">
-      <%# Flash messages %>
-      <% if flash[:alert].present? %>
-        <div class="mb-4 w-full max-w-md p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm" data-testid="flash-alert">
-          <%= flash[:alert] %>
-        </div>
-      <% end %>
+  <body class="bg-canvas font-sans text-ink antialiased">
+    <div class="flex min-h-dvh w-full flex-col items-center justify-center p-4">
+      <div class="w-full max-w-[420px]">
+        <% flash.each do |kind, message| %>
+          <% next if message.blank? %>
+          <% styles = flash_styles(kind) %>
+          <div class="mb-3 flex items-start gap-2.5 rounded-card border px-3 py-2.5 text-[12.5px] <%= styles[:container] %>"
+               data-testid="flash-<%= kind %>">
+            <%= icon styles[:icon], size: 15, stroke: 2, class: "mt-px" %>
+            <span><%= message %></span>
+          </div>
+        <% end %>
 
-      <% if flash[:notice].present? %>
-        <div class="mb-4 w-full max-w-md p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-200 text-sm" data-testid="flash-notice">
-          <%= flash[:notice] %>
+        <div class="rounded-panel border border-hairline bg-surface px-6 py-8 shadow-[0_10px_26px_-18px_rgba(20,23,28,0.4)] sm:px-9 sm:py-10">
+          <%= yield %>
         </div>
-      <% end %>
-
-      <%= yield %>
+      </div>
     </div>
   </body>
 </html>

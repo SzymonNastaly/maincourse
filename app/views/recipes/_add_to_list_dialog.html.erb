@@ -1,0 +1,57 @@
+<dialog id="add-to-list"
+        class="m-auto w-[min(440px,calc(100vw-32px))] rounded-[10px] border-0 bg-surface p-0 shadow-[0_24px_60px_-20px_rgba(20,23,28,0.5)]"
+        data-controller="dialog"
+        data-action="click->dialog#closeOnBackdrop">
+  <div class="flex items-center border-b border-line px-5 py-[17px]">
+    <h2 class="grow text-[16px] font-semibold tracking-[-0.3px]">Add to shopping list</h2>
+    <button type="button" class="text-muted hover:text-ink" data-action="dialog#close" aria-label="Close">
+      <%= icon "x", size: 17, stroke: 2.2 %>
+    </button>
+  </div>
+
+  <%= form_with url: recipe_shopping_list_items_path(recipe), method: :post,
+                data: { controller: "list-review" } do %>
+    <p class="px-5 pt-4 text-[11.5px] font-light text-muted">
+      Untick anything you already have.
+    </p>
+
+    <div class="max-h-[46vh] overflow-y-auto px-5 py-3">
+      <% ingredients.each do |ingredient| %>
+        <% name = ingredient.name.presence || ingredient.raw %>
+        <% details = [ format_quantity(ingredient).presence, ingredient.note.presence ].compact.join(", ") %>
+        <label class="flex cursor-pointer items-start gap-3 border-b border-line py-2.5 last:border-0"
+               data-list-review-target="row">
+          <input type="checkbox" checked
+                 class="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
+                 data-action="change->list-review#update"
+                 aria-label="Add <%= name %>">
+
+          <span class="min-w-0 grow">
+            <span class="block text-[13px] text-ink"><%= name %></span>
+            <span class="block text-[11px] font-light text-muted italic" data-detail-preview><%= details %></span>
+          </span>
+
+          <%= hidden_field_tag "items[][name]", name, id: nil %>
+          <%= hidden_field_tag "items[][details]", details, id: nil,
+                               data: {
+                                 portion_scaler_target: "detail",
+                                 base_amount: ingredient.amount,
+                                 base_amount_max: ingredient.amount_max,
+                                 unit: ingredient.unit,
+                                 note: ingredient.note
+                               } %>
+        </label>
+      <% end %>
+    </div>
+
+    <div class="flex items-center gap-2.5 border-t border-line px-5 py-4">
+      <button type="button" class="mc-btn mc-btn-quiet" data-action="dialog#close">Cancel</button>
+      <div class="grow"></div>
+      <button type="submit" class="mc-btn mc-btn-primary disabled:opacity-50"
+              data-list-review-target="submit"
+              data-testid="confirm-add-to-list">
+        Add <span data-list-review-target="count"><%= ingredients.size %></span>
+      </button>
+    </div>
+  <% end %>
+</dialog>

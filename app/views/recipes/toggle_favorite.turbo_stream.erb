@@ -1,5 +1,0 @@
-<%# Update the favorite button for this specific recipe %>
-<%= turbo_stream.replace "recipe_#{@recipe.id}_favorite" do %>
-  <%= render "recipes/favorite_button", recipe: @recipe, context: @context %>
-<% end %>
-

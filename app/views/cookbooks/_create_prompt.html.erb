@@ -1,0 +1,20 @@
+<div class="flex flex-col items-center gap-2.5 rounded-panel border-[1.5px] border-dashed border-hairline px-5 py-6 text-center">
+  <span class="flex size-10 items-center justify-center rounded-[9px] bg-accent-tint">
+    <%= icon "users", size: 19, class: "text-accent" %>
+  </span>
+  <div class="text-[14px] font-medium">Create a shared cookbook</div>
+  <p class="max-w-xs text-[12px] leading-relaxed font-light text-muted">
+    Share recipes and shopping lists with your partner or family.
+  </p>
+  <button type="button" class="mc-btn mc-btn-primary mt-1 px-3 py-1.5 text-[12px]"
+          data-controller="dialog-opener"
+          data-dialog-opener-target-value="create-cookbook"
+          data-action="dialog-opener#open"
+          data-testid="create-shared-cookbook">
+    <%= icon "plus", size: 13, stroke: 2.2 %><span>Create shared cookbook</span>
+  </button>
+</div>
+
+<p class="mt-5 text-[11.5px] leading-relaxed font-light text-muted">
+  Your existing recipes can move across when you create it, or stay where they are.
+</p>

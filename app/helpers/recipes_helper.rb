@@ -1,4 +1,68 @@
 module RecipesHelper
+  # "1h 25m · serves 4" — the mono meta line under a card title.
+  def recipe_meta(recipe)
+    total = recipe.prep_time.to_i + recipe.cook_time.to_i
+    parts = []
+    parts << format_duration(total) if total.positive?
+    parts << "serves #{recipe.servings}" if recipe.servings.to_i.positive?
+    parts.join(" · ")
+  end
+
+  # 85 => "1h 25m", 35 => "35m", 240 => "4h"
+  def format_duration(minutes)
+    minutes = minutes.to_i
+    return "" unless minutes.positive?
+
+    hours, remainder = minutes.divmod(60)
+    return "#{remainder}m" if hours.zero?
+    return "#{hours}h" if remainder.zero?
+
+    "#{hours}h #{remainder}m"
+  end
+
+  # Recipes without a cover image get one of the mockup's food gradients,
+  # picked deterministically so a recipe always looks the same.
+  PLACEHOLDER_GRADIENTS = [
+    "linear-gradient(150deg, #C9B08F 0%, #A2794F 100%)",
+    "linear-gradient(150deg, #BFCFA8 0%, #7E9560 100%)",
+    "linear-gradient(150deg, #DEC0A0 0%, #B8834F 100%)",
+    "linear-gradient(150deg, #C8BBA6 0%, #94795C 100%)",
+    "linear-gradient(150deg, #DCBCAD 0%, #A96450 100%)",
+    "linear-gradient(150deg, #D0CABB 0%, #99907C 100%)",
+    "linear-gradient(150deg, #DED6C2 0%, #ADA283 100%)",
+    "linear-gradient(150deg, #C6A8B4 0%, #8E5F72 100%)",
+    "linear-gradient(150deg, #E3CE9C 0%, #C09A44 100%)",
+    "linear-gradient(150deg, #B7C9A4 0%, #6F8757 100%)",
+    "linear-gradient(150deg, #D2AE9A 0%, #9C6248 100%)",
+    "linear-gradient(150deg, #E0CDAC 0%, #BE9A62 100%)"
+  ].freeze
+
+  def recipe_placeholder_gradient(recipe)
+    key = recipe.id || recipe.name.to_s
+    PLACEHOLDER_GRADIENTS[Digest::MD5.hexdigest(key.to_s).to_i(16) % PLACEHOLDER_GRADIENTS.size]
+  end
+
+  # A recipe's source_url is user-supplied (the form lets you type one), so only
+  # link it when it is really an http(s) URL — never `javascript:` and friends.
+  def safe_source_url(recipe)
+    return nil if recipe.source_url.blank?
+
+    uri = URI.parse(recipe.source_url)
+    return nil unless uri.is_a?(URI::HTTP) && uri.host.present?
+
+    uri.to_s
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  # The host shown next to the external-link icon on a recipe.
+  def source_domain(recipe)
+    url = safe_source_url(recipe)
+    return nil if url.nil?
+
+    URI.parse(url).host.sub(/\Awww\./, "")
+  end
+
   # Format an Ingredient's quantity for display.
   #
   # Examples:

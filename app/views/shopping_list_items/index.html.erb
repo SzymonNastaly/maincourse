@@ -1,0 +1,91 @@
+<% page_title "Shopping List" %>
+<%= turbo_stream_from current_cookbook %>
+
+<%# ---- Header ------------------------------------------------------------ %>
+<div class="hidden items-start justify-between gap-5 px-[30px] pt-[26px] md:flex">
+  <div>
+    <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]">Shopping List</h1>
+    <div class="text-[12.5px] font-light text-muted">
+      <%= mono @to_buy.size, class: "text-[12px]" %> to buy in <%= current_cookbook.name %>
+    </div>
+  </div>
+
+  <% if @to_buy.any? || @already_got.any? %>
+    <div class="pt-1.5"><%= render "shopping_list_items/remove_all_button" %></div>
+  <% end %>
+</div>
+
+<div class="flex items-start justify-between gap-4 px-4 pt-[18px] md:hidden">
+  <div class="min-w-0">
+    <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px]">Shopping List</h1>
+    <div class="truncate text-[11.5px] font-light text-muted">
+      <%= mono @to_buy.size, class: "text-[11px]" %> to buy · <%= current_cookbook.name %>
+    </div>
+  </div>
+
+  <% if @to_buy.any? || @already_got.any? %>
+    <%= button_to destroy_all_shopping_list_items_path, method: :delete,
+                  form_class: "shrink-0 pt-1.5",
+                  class: "text-[12px] font-medium text-danger",
+                  data: { turbo_confirm: "Remove everything from your shopping list, including ticked items?" } do %>
+      Remove all
+    <% end %>
+  <% end %>
+</div>
+
+<%# ---- Add bar ----------------------------------------------------------- %>
+<div class="px-4 pt-4 pb-[18px] md:px-[30px] md:pt-5">
+  <%= form_with url: shopping_list_items_path, method: :post, class: "flex gap-2" do |form| %>
+    <div class="flex grow items-center gap-2 rounded-card border border-hairline bg-sunken px-3 py-2.5 focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-tint md:bg-surface">
+      <%= icon "plus", size: 15, stroke: 2.2, class: "text-muted" %>
+      <%= text_field_tag "shopping_list_item[name]", nil,
+                         placeholder: "Add an item",
+                         autocomplete: "off",
+                         class: "w-full min-w-0 bg-transparent text-[12.5px] text-ink placeholder:font-light placeholder:text-muted focus:outline-none md:text-[13px]",
+                         "aria-label": "Add an item",
+                         data: { testid: "add-item" } %>
+    </div>
+    <%= form.submit "Add", class: "mc-btn mc-btn-primary" %>
+  <% end %>
+</div>
+
+<%# ---- Tiles ------------------------------------------------------------- %>
+<div class="px-4 pb-10 md:px-[30px]">
+  <% if @to_buy.any? || @already_got.any? %>
+    <div class="mb-3 flex items-center gap-2">
+      <span class="mc-section-label">To buy</span>
+      <div class="grow"></div>
+      <%= mono @to_buy.size, class: "text-[10.5px] text-muted" %>
+    </div>
+
+    <% if @to_buy.any? %>
+      <div class="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3.5">
+        <%= render partial: "shopping_list_items/tile", collection: @to_buy, as: :item %>
+      </div>
+    <% else %>
+      <p class="pb-2 text-[12.5px] font-light text-muted">Nothing left to buy.</p>
+    <% end %>
+
+    <% if @already_got.any? %>
+      <details class="mt-6" open>
+        <summary class="mb-3 flex cursor-pointer list-none items-center gap-2">
+          <span class="mc-section-label">Already got</span>
+          <div class="grow"></div>
+          <%= mono @already_got.size, class: "text-[10.5px] text-muted" %>
+          <%= icon "chevron-down", size: 12, stroke: 2.2, class: "text-muted" %>
+        </summary>
+
+        <div class="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3.5">
+          <%= render partial: "shopping_list_items/tile", collection: @already_got, as: :item %>
+        </div>
+
+        <p class="pt-3 text-[11px] font-light text-muted">Ticked items disappear an hour after you tick them.</p>
+      </details>
+    <% end %>
+  <% else %>
+    <%= render "shared/empty_state",
+               icon: "shopping-cart",
+               title: "Your shopping list is empty",
+               body: "Add items from a recipe or type your own." %>
+  <% end %>
+</div>

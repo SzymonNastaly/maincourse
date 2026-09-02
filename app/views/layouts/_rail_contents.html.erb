@@ -1,0 +1,79 @@
+<%# Shared by the desktop rail and the mobile drawer. %>
+<%= link_to root_path, class: "flex items-center gap-[9px] px-4 pb-[18px]" do %>
+  <%= brand_mark %>
+  <span class="text-[14.5px] font-semibold tracking-[-0.25px] text-ink">MainCourse</span>
+<% end %>
+
+<% if current_cookbook %>
+  <button type="button"
+          class="mx-3 mb-5 flex items-center gap-[9px] rounded-card border border-hairline bg-surface px-[11px] py-2.5 text-left transition-colors hover:border-accent-line"
+          data-controller="dialog-opener"
+          data-dialog-opener-target-value="cookbook-switcher"
+          data-action="dialog-opener#open"
+          data-testid="cookbook-switcher-trigger">
+    <span class="flex size-6 shrink-0 items-center justify-center rounded-control bg-accent">
+      <%= icon cookbook_icon(current_cookbook), size: 12, stroke: 2, style: "color: var(--color-lime)" %>
+    </span>
+    <span class="min-w-0 grow">
+      <span class="block truncate text-[12.5px] font-medium text-ink"><%= current_cookbook.name %></span>
+      <span class="mt-px block truncate text-[10px] text-muted"><%= cookbook_subtitle(current_cookbook) %></span>
+    </span>
+    <%= icon "chevrons-up-down", size: 11, stroke: 2.4, class: "text-muted" %>
+  </button>
+<% end %>
+
+<nav class="flex flex-col gap-0.5 px-2.5">
+  <% nav_items.each do |item| %>
+    <% on = nav_active?(item[:key]) %>
+    <%= link_to item[:path],
+                class: class_names(
+                  "flex items-center gap-2.5 rounded-control px-[11px] py-2 text-[13px] transition-colors",
+                  "bg-accent font-medium text-white" => on,
+                  "text-body hover:bg-line/60" => !on
+                ),
+                aria: { current: ("page" if on) } do %>
+      <%= icon item[:icon], size: 15 %>
+      <span class="grow"><%= item[:label] %></span>
+      <% if item[:badge].to_i.positive? %>
+        <span class="rounded-[4px] px-[5px] py-px font-mono text-[10px] font-medium text-white <%= on ? "bg-white/20" : "bg-accent" %>"
+              data-testid="shopping-list-badge"><%= item[:badge] %></span>
+      <% elsif item[:count] %>
+        <span class="font-mono text-[10.5px] <%= on ? "text-white/75" : "text-muted" %>"
+              data-testid="<%= item[:key] %>-count"><%= item[:count] %></span>
+      <% end %>
+    <% end %>
+  <% end %>
+</nav>
+
+<div class="grow"></div>
+
+<% collections = rail_collections %>
+<% if collections.any? %>
+  <div class="px-5 pb-[18px]">
+    <div class="mc-section-label mb-2.5">Collections</div>
+    <div class="flex flex-col gap-[9px]">
+      <% collections.each do |tag| %>
+        <%= link_to recipes_path(tag: tag.slug), class: "flex items-center justify-between gap-2 hover:text-ink" do %>
+          <span class="truncate text-[12.5px] text-body"><%= tag.name %></span>
+          <span class="font-mono text-[10.5px] text-muted"><%= tag.recipes_count %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="mx-3 border-t border-line pt-3">
+  <% on = nav_active?(:settings) %>
+  <%= link_to edit_settings_path,
+              class: class_names(
+                "flex items-center gap-[9px] rounded-control px-2 py-1.5 transition-colors",
+                "bg-accent" => on,
+                "hover:bg-line/60" => !on
+              ) do %>
+    <span class="flex size-[26px] items-center justify-center rounded-control text-[10.5px] font-semibold <%= on ? "bg-white/20 text-white" : "bg-line text-body" %>">
+      <%= user_initials(Current.user) %>
+    </span>
+    <span class="min-w-0 grow truncate text-[11.5px] <%= on ? "font-medium text-white" : "text-body" %>">Settings</span>
+    <%= icon "chevron-right", size: 12, stroke: 2.2, class: on ? "text-white/70" : "text-muted" %>
+  <% end %>
+</div>

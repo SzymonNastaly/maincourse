@@ -1,0 +1,35 @@
+<% done = item.checked_at.present? %>
+<div class="group relative" data-testid="shopping-item">
+  <%= button_to toggle_shopping_list_item_path(item), method: :patch,
+                form_class: "block h-full",
+                class: class_names(
+                  "flex aspect-square w-full flex-col rounded-card p-2.5 text-left transition-colors md:p-3",
+                  "bg-sunken" => done,
+                  "border border-hairline bg-surface shadow-[0_1px_2px_rgba(20,23,28,0.05)] hover:border-accent-line" => !done
+                ),
+                data: { testid: "toggle-item-#{item.id}" } do %>
+    <span class="block pr-4 text-[11.5px] leading-[1.3] font-medium tracking-[-0.15px] md:text-[13px] <%= done ? "text-muted line-through" : "text-ink" %>">
+      <%= item.name %>
+    </span>
+
+    <span class="grow"></span>
+
+    <%# The check sits bottom-right so it stays clear of the remove button. %>
+    <span class="flex items-end justify-between gap-1.5">
+      <% detail = [ item.details.presence, item.source_recipe&.name ].compact.join(" · ") %>
+      <span class="min-w-0 grow text-[9px] leading-[1.35] font-light text-muted italic md:text-[10.5px]">
+        <%= detail if detail.present? %>
+      </span>
+      <span class="flex size-4 shrink-0 items-center justify-center rounded-full <%= done ? "bg-accent" : "border-[1.5px] border-hairline" %>">
+        <%= icon "check", size: 10, stroke: 3, class: "text-white" if done %>
+      </span>
+    </span>
+  <% end %>
+
+  <%= button_to shopping_list_item_path(item), method: :delete,
+                form_class: "absolute -top-1.5 -right-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
+                class: "flex size-6 items-center justify-center rounded-full border border-hairline bg-surface text-muted shadow-sm hover:text-danger",
+                aria: { label: "Remove #{item.name}" } do %>
+    <%= icon "x", size: 12, stroke: 2.4 %>
+  <% end %>
+</div>

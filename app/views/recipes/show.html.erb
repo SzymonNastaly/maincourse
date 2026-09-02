@@ -1,44 +1,136 @@
-<% content_for :title, @recipe.name %>
+<% page_title @recipe.name %>
+<%= turbo_stream_from current_cookbook %>
 
-<div class="flex flex-col h-full">
-  <%# Header Bar - Sticky on mobile %>
-  <div class="sticky top-0 z-20 h-14 flex items-center justify-between px-4 md:px-6 bg-surface-base dark:bg-gray-950 border-b border-border-subtle dark:border-gray-800">
-      <%# Left: Back button %>
-      <%= link_to recipes_path, class: "flex items-center gap-2 text-text-secondary dark:text-gray-400 hover:text-text-primary dark:hover:text-gray-200 transition-colors", data: { testid: "back-to-recipes-link" } do %>
-        <%= lucide_icon "chevron-left", class: "size-5" %>
-        <span class="hidden sm:inline text-sm font-medium">Back to recipes</span>
+<% content_for :mobile_header do %>
+  <%= render "layouts/back_bar", label: "All Recipes", path: recipes_path,
+             right: render("recipes/detail_actions", recipe: @recipe) %>
+<% end %>
+
+<div data-controller="portion-scaler"
+     data-portion-scaler-base-servings-value="<%= @recipe.servings.to_i %>"
+     data-portion-scaler-servings-value="<%= @recipe.servings.to_i %>">
+
+  <%# ---- Desktop toolbar ------------------------------------------------- %>
+  <div class="hidden items-center gap-2.5 border-b border-line px-[30px] py-4 md:flex">
+    <%= link_to recipes_path, class: "flex items-center gap-[7px] text-[12.5px] text-body hover:text-ink" do %>
+      <%= icon "arrow-left", size: 15, stroke: 2 %><span>All Recipes</span>
+    <% end %>
+    <div class="grow"></div>
+    <%= render "recipes/detail_actions", recipe: @recipe %>
+  </div>
+
+  <div class="px-4 pb-10 md:px-[30px] md:pt-[22px]">
+    <%# ---- Hero ---------------------------------------------------------- %>
+    <div class="-mx-4 h-[150px] overflow-hidden md:mx-0 md:mb-[18px] md:h-[168px] md:rounded-panel"
+         style="background: <%= recipe_placeholder_gradient(@recipe) %>">
+      <% if @recipe.cover_image.attached? %>
+        <%= image_tag @recipe.cover_image.variant(:hero), class: "size-full object-cover", alt: "" %>
+      <% end %>
+    </div>
+
+    <div class="pt-4 md:pt-0">
+      <%# ---- Title + tags + source ---------------------------------------- %>
+      <div class="mb-3.5 flex items-start justify-between gap-6 md:mb-3.5">
+        <div class="min-w-0">
+          <h1 class="mb-2 text-[20px] leading-[1.22] font-semibold tracking-[-0.45px] md:text-[25px] md:tracking-[-0.6px]">
+            <%= @recipe.name %>
+          </h1>
+
+          <div class="flex flex-wrap items-center gap-1.5">
+            <% @recipe.tags.each do |tag| %>
+              <%= link_to tag.name, recipes_path(tag: tag.slug),
+                          class: "rounded-[4px] bg-sunken px-2 py-[3px] text-[10.5px] text-body hover:text-ink md:text-[11px] md:px-[9px]" %>
+            <% end %>
+
+            <% if (source_url = safe_source_url(@recipe)) %>
+              <%= link_to source_url, target: "_blank", rel: "noopener noreferrer",
+                          class: "ml-1 inline-flex items-center gap-1 text-[11px] text-accent hover:text-accent-dark md:text-[11.5px]" do %>
+                <%= icon "external-link", size: 11, stroke: 2 %><span><%= source_domain(@recipe) %></span>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+
+        <% if @recipe.ingredients.any? %>
+          <button type="button" class="mc-btn mc-btn-primary hidden md:inline-flex"
+                  data-controller="dialog-opener"
+                  data-dialog-opener-target-value="add-to-list"
+                  data-action="dialog-opener#open"
+                  data-testid="add-all-to-list">
+            <%= icon "shopping-cart", size: 14, stroke: 2.2 %>
+            <span>Add all to shopping list</span>
+          </button>
+        <% end %>
+      </div>
+
+      <%# ---- Timing ------------------------------------------------------ %>
+      <% if @recipe.prep_time.to_i.positive? || @recipe.cook_time.to_i.positive? %>
+        <div class="flex items-center gap-4 border-b border-line pb-3.5 md:gap-[22px] md:pt-3 md:pb-5">
+          <% if @recipe.prep_time.to_i.positive? %>
+            <%= render "recipes/meta_stat", icon_name: "clock", label: "Prep", value: format_duration(@recipe.prep_time) %>
+          <% end %>
+          <% if @recipe.cook_time.to_i.positive? %>
+            <%= render "recipes/meta_stat", icon_name: "flame", label: "Cook", value: format_duration(@recipe.cook_time) %>
+          <% end %>
+        </div>
       <% end %>
 
-      <%# Right: Actions %>
-      <div class="flex items-center gap-2">
-        <%# Favorite Button %>
-        <%= render "recipes/favorite_button", recipe: @recipe, context: :show %>
+      <% if @recipe.ingredients.any? %>
+        <div class="py-3.5 md:hidden">
+          <button type="button" class="mc-btn mc-btn-primary w-full py-3 text-[13px]"
+                  data-controller="dialog-opener"
+                  data-dialog-opener-target-value="add-to-list"
+                  data-action="dialog-opener#open">
+            <%= icon "shopping-cart", size: 15, stroke: 2.2 %>
+            <span>Add all to shopping list</span>
+          </button>
+        </div>
+      <% end %>
 
-        <%# Edit Button %>
-        <%= link_to edit_recipe_path(@recipe), class: "p-2 rounded-md text-text-secondary dark:text-gray-400 hover:text-brand-primary dark:hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors", data: { testid: "edit-recipe-link" } do %>
-          <%= lucide_icon "pencil", class: "size-5" %>
-        <% end %>
+      <%# ---- Ingredients + method ---------------------------------------- %>
+      <div class="md:flex md:gap-[34px] md:pt-5">
+        <div class="md:w-[248px] md:shrink-0">
+          <% if @ingredients.any? %>
+            <div class="mb-3 flex items-center gap-2">
+              <span class="mc-section-label">Ingredients</span>
+              <div class="grow"></div>
+              <%= render "recipes/servings_stepper", recipe: @recipe %>
+            </div>
 
-        <%# Delete Button %>
-        <%= button_to @recipe, method: :delete, data: { turbo_confirm: "Are you sure you want to delete this recipe?", testid: "delete-recipe-button" }, class: "p-2 rounded-md text-text-secondary dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer" do %>
-          <%= lucide_icon "trash-2", class: "size-5" %>
-        <% end %>
+            <% @ingredients.each do |ingredient| %>
+              <%= render "recipes/ingredient_row", ingredient: ingredient %>
+            <% end %>
+          <% end %>
+        </div>
+
+        <div class="min-w-0 grow">
+          <% if @recipe.instructions.present? %>
+            <div class="mt-6 mb-3 md:mt-0">
+              <span class="mc-section-label">Method</span>
+            </div>
+
+            <% @recipe.instructions.each_with_index do |step, index| %>
+              <div class="mb-3.5 flex gap-3 md:mb-4">
+                <span class="flex size-[22px] shrink-0 items-center justify-center rounded-control bg-accent-tint font-mono text-[11px] font-medium text-accent">
+                  <%= index + 1 %>
+                </span>
+                <p class="text-[12.5px] leading-[1.62] font-light text-body md:text-[13px]"><%= step %></p>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if @recipe.notes.present? %>
+            <div class="mt-6 mb-3">
+              <span class="mc-section-label">Notes</span>
+            </div>
+            <p class="text-[12.5px] leading-[1.62] font-light text-body italic md:text-[13px]"><%= simple_format @recipe.notes %></p>
+          <% end %>
+        </div>
       </div>
-  </div>
-
-  <%# Content Area %>
-  <div class="flex-1 overflow-y-auto">
-    <%# Flash Notice %>
-    <% if notice.present? %>
-      <div class="mx-4 mt-4 md:mx-6 flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-md">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span class="text-sm"><%= notice %></span>
-      </div>
-    <% end %>
-
-    <%# Recipe Content %>
-    <div class="p-4 md:p-6 pb-8">
-      <%= render @recipe %>
     </div>
   </div>
+
+  <% if @recipe.ingredients.any? %>
+    <%= render "recipes/add_to_list_dialog", recipe: @recipe, ingredients: @ingredients %>
+  <% end %>
 </div>

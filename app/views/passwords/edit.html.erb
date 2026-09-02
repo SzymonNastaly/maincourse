@@ -1,45 +1,26 @@
-<div class="w-full max-w-md">
-  <%# Auth Card %>
-  <div class="bg-surface-overlay dark:bg-gray-800 rounded-xl shadow-lg border border-border-subtle dark:border-gray-700 p-8">
-    <%# Header %>
-    <div class="text-center mb-8">
-      <h1 class="font-serif text-2xl font-bold text-text-primary dark:text-gray-100">
-        Set new password
-      </h1>
-      <p class="text-sm text-text-secondary dark:text-gray-400 mt-1">
-        Choose a strong password for your account
-      </p>
-    </div>
+<% page_title "Set a new password" %>
 
-    <%# Form %>
-    <%= form_with url: password_path(params[:token]), method: :put, class: "space-y-4" do |form| %>
-      <div>
-        <label for="password" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          New password
-        </label>
-        <%= form.password_field :password,
-            required: true,
-            autofocus: true,
-            autocomplete: "new-password",
-            placeholder: "Enter new password",
-            maxlength: 72,
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
-      </div>
-
-      <div>
-        <label for="password_confirmation" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Confirm new password
-        </label>
-        <%= form.password_field :password_confirmation,
-            required: true,
-            autocomplete: "new-password",
-            placeholder: "Confirm new password",
-            maxlength: 72,
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
-      </div>
-
-      <%= form.submit "Update password",
-          class: "w-full bg-brand-primary hover:bg-brand-primary-dark dark:bg-amber-700 dark:hover:bg-amber-800 text-white py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all cursor-pointer" %>
-    <% end %>
-  </div>
+<div class="mb-10 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
 </div>
+
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Set a new password</h1>
+<p class="mb-7 text-[13px] font-light text-muted">You'll be signed out everywhere else.</p>
+
+<%= form_with url: password_path(params[:token]), method: :patch do |form| %>
+  <div class="mb-3.5">
+    <%= form.label :password, "New password", class: "mc-label" %>
+    <%= form.password_field :password, required: true, autofocus: true, minlength: 12,
+                            autocomplete: "new-password", class: "mc-field" %>
+    <p class="mt-1.5 text-[11px] font-light text-muted">At least 12 characters.</p>
+  </div>
+
+  <div class="mb-5">
+    <%= form.label :password_confirmation, "Confirm password", class: "mc-label" %>
+    <%= form.password_field :password_confirmation, required: true,
+                            autocomplete: "new-password", class: "mc-field" %>
+  </div>
+
+  <%= form.submit "Save password", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+<% end %>

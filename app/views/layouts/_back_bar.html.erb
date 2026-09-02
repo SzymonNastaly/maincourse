@@ -1,0 +1,8 @@
+<%# Mobile sub-page bar: nav-stack pushes become a browser-style back affordance. %>
+<header class="flex shrink-0 items-center gap-2.5 border-b border-line bg-surface px-3.5 py-[13px] md:hidden">
+  <%= link_to path, class: "-ml-0.5 flex min-w-0 grow items-center gap-[7px] text-ink" do %>
+    <%= icon "arrow-left", size: 18, stroke: 2 %>
+    <span class="truncate text-[13.5px] font-medium"><%= label %></span>
+  <% end %>
+  <%= local_assigns[:right] %>
+</header>

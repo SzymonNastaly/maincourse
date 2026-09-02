@@ -1,30 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title><%= content_for(:title) || "Hauptgang" %></title>
+    <title><%= content_for(:title) ? "#{content_for(:title)} · MainCourse" : "MainCourse" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#EEF0F2">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= yield :head %>
 
-    <%= favicon_link_tag "icon.png" %>
+    <%= render "layouts/favicons" %>
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "application", "data-turbo-track": "reload" %>
+    <%# Named explicitly: Propshaft's :app would also pull in the Avo admin CSS. %>
+    <%= stylesheet_link_tag "application", "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body id="body">
-    <div data-controller="mobile-nav" class="h-screen w-full bg-surface-base dark:bg-gray-950 grain-texture flex flex-col md:flex-row overflow-hidden">
-      <%= render "layouts/mobile_sidebar_drawer" %>
-      <%= render "layouts/sidebar" %>
+  <body class="bg-canvas font-sans text-ink antialiased">
+    <div class="flex h-dvh w-full overflow-hidden" data-controller="drawer search-shortcut">
+      <%= render "layouts/rail" %>
 
-      <main class="flex-1 flex flex-col min-w-0 h-full bg-surface-base dark:bg-gray-950">
-        <%= yield %>
-      </main>
+      <div class="flex min-w-0 flex-1 flex-col bg-surface">
+        <%= render "layouts/app_bar" %>
+
+        <main class="min-h-0 flex-1 overflow-y-auto">
+          <%= render "layouts/flash" %>
+          <%= yield %>
+        </main>
+      </div>
+
+      <%= render "layouts/drawer" %>
     </div>
 
-
+    <%= render "layouts/cookbook_switcher" %>
   </body>
 </html>

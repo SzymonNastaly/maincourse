@@ -13,6 +13,10 @@ class Recipe < ApplicationRecord
   has_many :recipe_engagements, dependent: :delete_all
   has_many :notification_deliveries, dependent: :nullify
 
+  # Keeps the web UI live: other members of a shared cookbook see new recipes,
+  # and an import that finishes in the background replaces its own spinner card.
+  broadcasts_refreshes_to :cookbook
+
   # Replace the ingredient rows from an array of raw strings.
   # Existing rows are wiped. `name` is left nil until ParseRecipeIngredientsJob
   # fills structured fields; consumers should fall back to `raw` for display.

@@ -1,194 +1,190 @@
 class RecipesController < ApplicationController
-  before_action :set_recipe, only: %i[ show edit update destroy toggle_favorite ]
+  before_action :require_cookbook
+  before_action :set_recipe, only: %i[show edit update destroy move]
 
-  # GET /recipes or /recipes.json
+  SORTS = {
+    "recent" => { label: "Recently updated", order: { updated_at: :desc } },
+    "name" => { label: "Name", order: { name: :asc } },
+    "oldest" => { label: "Oldest first", order: { created_at: :asc } }
+  }.freeze
+
+  DEFAULT_SORT = "recent".freeze
+
+  helper_method :sort_option
+
   def index
-    @recipes = personal_cookbook.recipes
-      .with_attached_cover_image
-      .includes(:tags)
+    scope = current_cookbook.recipes.with_attached_cover_image.includes(:tags)
 
-    # Filter by favorites if requested
-    @recipes = @recipes.favorited if params[:view] == "favorites"
+    # Failed imports never appear in the grid; they surface as dismissible
+    # banners so a broken import cannot quietly pollute the library.
+    @failed_imports = scope.failed.order(created_at: :desc)
 
-    # Filter by tag if requested
-    if params[:tag].present?
-      @selected_tag = Tag.find_by(slug: params[:tag])
-      @recipes = @recipes.joins(:tags).where(tags: { id: @selected_tag.id }) if @selected_tag
-    end
+    @recipes = scope.where.not(import_status: :failed)
+    @active_tag = Tag.find_by(slug: params[:tag]) if params[:tag].present?
+    @recipes = @recipes.joins(:tags).where(tags: { id: @active_tag.id }) if @active_tag
+    @recipes = @recipes.order(sort_option.fetch(:order))
 
-    @tags = Tag.all.order(:name)
-
-    # Set ETag for conditional requests (304 Not Modified)
-    fresh_when(@recipes)
+    @tags = Tag.for_cookbook(current_cookbook)
   end
 
-  # GET /recipes/1 or /recipes/1.json
   def show
-    # Set ETag for conditional requests (304 Not Modified)
-    fresh_when(@recipe)
+    @ingredients = @recipe.ingredients.to_a
+    @other_cookbooks = available_cookbooks.reject { |cookbook| cookbook.id == current_cookbook.id }
   end
 
-  # GET /recipes/new - Choice screen
   def new
+    @recipe = current_cookbook.recipes.new(servings: 2)
   end
 
-  # GET /recipes/new/form - Manual recipe creation form
-  def new_form
-    attrs = imported_recipe_params
-    raw_lines = attrs.delete(:imported_ingredient_strings) || []
-    @recipe = personal_cookbook.recipes.build(attrs.merge(user: Current.user))
-    raw_lines.each_with_index do |raw, idx|
-      @recipe.ingredients.build(position: idx, raw: raw)
-    end
-  end
+  def create
+    @recipe = current_cookbook.recipes.new(recipe_params.except(:ingredients))
+    @recipe.user = Current.user
 
-  # GET /recipes/new/import - Import URL input
-  def new_import
-  end
-
-  # POST /recipes/import - Process URL and redirect to form
-  def import
-    result = RecipeImporter.new(params[:url]).import
-
-    if result.success?
-      session[:imported_recipe] = result.recipe_attributes
-      redirect_to new_form_recipes_path
+    if @recipe.save
+      apply_ingredients(@recipe)
+      redirect_to @recipe, notice: "Recipe saved."
     else
-      flash.now[:alert] = result.error
-      render :new_import, status: :unprocessable_entity
+      render :new, status: :unprocessable_entity
     end
   end
 
-  # GET /recipes/1/edit
   def edit
   end
 
-  # POST /recipes or /recipes.json
-  def create
-    attrs = recipe_params
-    ingredients_strings = attrs.delete(:ingredients)
-    @recipe = personal_cookbook.recipes.build(attrs.merge(user: Current.user))
-
-    respond_to do |format|
-      if @recipe.save
-        @recipe.replace_ingredients_from_strings(ingredients_strings) if ingredients_strings
-        enqueue_parse_job(@recipe)
-        format.html { redirect_to @recipe, notice: "Recipe was successfully created." }
-        format.json { render :show, status: :created, location: @recipe }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @recipe.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-
-  # PATCH/PUT /recipes/1 or /recipes/1.json
   def update
-    attrs = recipe_params
-    ingredients_strings = attrs.delete(:ingredients)
-
-    respond_to do |format|
-      if @recipe.update(attrs)
-        @recipe.replace_ingredients_from_strings(ingredients_strings) if ingredients_strings
-        enqueue_parse_job(@recipe)
-        format.html { redirect_to @recipe, notice: "Recipe was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @recipe }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @recipe.errors, status: :unprocessable_entity }
-      end
+    if @recipe.update(recipe_params.except(:ingredients))
+      apply_ingredients(@recipe)
+      redirect_to @recipe, notice: "Recipe updated."
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
-  # DELETE /recipes/1 or /recipes/1.json
   def destroy
-    @recipe.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to recipes_path, notice: "Recipe was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
-    end
-  rescue ActiveRecord::RecordNotDestroyed => e
-    alert = e.record.errors.full_messages.to_sentence.presence || "Could not delete recipe."
-    respond_to do |format|
-      format.html { redirect_to recipes_path, alert: alert, status: :see_other }
-      format.json { render json: { error: alert }, status: :unprocessable_entity }
+    if @recipe.destroy
+      redirect_to recipes_path, notice: "Recipe deleted.", status: :see_other
+    else
+      redirect_to @recipe, alert: @recipe.errors.full_messages.to_sentence.presence || "Could not delete recipe."
     end
   end
 
-  # PATCH /recipes/1/toggle_favorite
-  def toggle_favorite
-    @recipe.update(favorite: !@recipe.favorite)
-    @context = request.referer&.include?(recipe_path(@recipe)) ? :show : :card
+  # PATCH /recipes/:id/move
+  def move
+    destination = available_cookbooks.find { |cookbook| cookbook.id == params[:cookbook_id].to_i }
 
-    respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_to recipes_path }
+    if destination.nil? || destination.id == @recipe.cookbook_id
+      return redirect_back fallback_location: recipes_path, alert: "Pick a different cookbook."
     end
+
+    @recipe.update!(cookbook: destination)
+    redirect_to recipes_path, notice: "Moved to #{destination.name}."
+  end
+
+  # POST /recipes/import — a link
+  def import
+    url = params[:url].to_s.strip
+    return redirect_to recipes_path, alert: "Paste a link first." if url.blank?
+
+    validation = RecipeImporters::UrlValidator.new(url).validate
+    return redirect_to recipes_path, alert: validation.error unless validation.success?
+
+    started = start_import(source_url: url) do |placeholder|
+      RecipeImportJob.perform_later(Current.user.id, placeholder.id, url)
+    end
+    return unless started
+
+    redirect_to recipes_path, notice: "Importing your recipe…"
+  end
+
+  # POST /recipes/import_photo — an upload or a camera capture
+  def import_photo
+    image = params[:image]
+    if (error = validate_import_image(image))
+      return redirect_to recipes_path, alert: error
+    end
+
+    started = start_import do |placeholder|
+      placeholder.import_image.attach(image)
+      RecipeImageExtractJob.perform_later(Current.user.id, placeholder.id)
+    end
+    return unless started
+
+    redirect_to recipes_path, notice: "Reading your photo…"
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    # Scoped to current user - prevents accessing other users' recipes
-    def set_recipe
-      @recipe = personal_cookbook.recipes.find(params.expect(:id))
+
+  # Search spans every cookbook the user belongs to, so opening a result may
+  # mean the recipe lives in the other one. Follow it and switch, rather than
+  # dead-ending on a 404.
+  def set_recipe
+    @recipe = Recipe.where(cookbook_id: available_cookbooks.map(&:id))
+                    .includes(:tags, :ingredients)
+                    .find(params[:id])
+
+    switch_cookbook(@recipe.cookbook) unless @recipe.cookbook_id == current_cookbook.id
+  rescue ActiveRecord::RecordNotFound
+    redirect_to recipes_path, alert: "That recipe is no longer available."
+  end
+
+  def sort_option
+    SORTS.fetch(params[:sort], SORTS.fetch(DEFAULT_SORT))
+  end
+
+  # Mirrors the API: a pending placeholder created under a lock so the monthly
+  # limit cannot be raced, then a background job.
+  def start_import(source_url: nil)
+    placeholder = Current.user.with_lock do
+      if Current.user.import_limit_reached?
+        nil
+      else
+        current_cookbook.recipes.create!(
+          name: "Importing…",
+          source_url: source_url,
+          import_status: :pending,
+          user: Current.user
+        )
+      end
     end
 
-    def personal_cookbook
-      @personal_cookbook ||= Current.user.personal_cookbook
+    if placeholder.nil?
+      redirect_to pro_path, alert: "You've reached your free limit of #{User::FREE_MONTHLY_IMPORT_LIMIT} imports this month."
+      return nil
     end
 
-    # Params for imported recipe (from session storage). Returns a hash usable
-    # with Recipe.new — `imported_ingredients` is consumed separately by the form.
-    def imported_recipe_params
-      imported = session.delete(:imported_recipe)
-      return {} unless imported.present?
+    yield placeholder
+    placeholder
+  end
 
-      attrs = imported.slice(
-        "name",
-        "notes",
-        "servings",
-        "prep_time",
-        "cook_time",
-        "source_url",
-        "instructions"
-      ).symbolize_keys
+  def validate_import_image(image)
+    return "Choose a photo first." if image.blank?
+    return "That file is not an image." unless image.respond_to?(:content_type) && image.content_type.to_s.start_with?("image/")
+    return "That image is too big (max 15MB)." if image.respond_to?(:size) && image.size > 15.megabytes
 
-      raw_lines = Array(imported["ingredients"]).map do |ing|
-        ing.is_a?(Hash) ? ing["raw"].presence || ing["name"].to_s : ing.to_s
-      end.reject(&:blank?)
+    nil
+  end
 
-      attrs[:imported_ingredient_strings] = raw_lines if raw_lines.any?
-      attrs
-    end
+  def apply_ingredients(recipe)
+    return unless recipe_params.key?(:ingredients)
 
-    # Only allow a list of trusted parameters through.
-    def recipe_params
-      permitted = params.require(:recipe).permit(
-        :name,
-        :notes,
-        :servings,
-        :prep_time,
-        :cook_time,
-        :cover_image,
-        tag_ids: [],
-        ingredients: [],
-        instructions: []
+    recipe.replace_ingredients_from_strings(recipe_params[:ingredients])
+    ParseRecipeIngredientsJob.perform_later(recipe.id)
+  end
+
+  def recipe_params
+    @recipe_params ||= begin
+      permitted = params.expect(
+        recipe: [ :name, :notes, :servings, :prep_time, :cook_time, :source_url, :cover_image,
+                  { tag_ids: [], ingredients: [], instructions: [] } ]
       )
 
-      if permitted[:instructions].is_a?(Array)
-        permitted[:instructions] = permitted[:instructions].reject(&:blank?)
-      end
+      permitted[:instructions] = Array(permitted[:instructions]).map { |s| s.to_s.strip }.reject(&:blank?) if permitted.key?(:instructions)
+      permitted[:tag_ids] = Array(permitted[:tag_ids]).reject(&:blank?) if permitted.key?(:tag_ids)
 
-      if permitted[:ingredients].is_a?(Array)
-        permitted[:ingredients] = permitted[:ingredients].reject(&:blank?)
-      end
+      # An untouched file field posts "", which Active Storage treats as "purge".
+      permitted.delete(:cover_image) if permitted[:cover_image].blank?
 
       permitted
     end
-
-    def enqueue_parse_job(recipe)
-      return unless recipe.ingredients.any? { |i| !i.parsed? }
-      ParseRecipeIngredientsJob.perform_later(recipe.id)
-    end
+  end
 end

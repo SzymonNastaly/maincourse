@@ -1,0 +1,8 @@
+<%= button_to destroy_all_shopping_list_items_path, method: :delete,
+              form_class: "inline-block",
+              class: "mc-btn mc-btn-danger",
+              data: { turbo_confirm: "Remove everything from your shopping list, including ticked items?",
+                      testid: "remove-all" } do %>
+  <%= icon "trash-2", size: 14, stroke: 2.2 %>
+  <span>Remove all</span>
+<% end %>

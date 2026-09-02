@@ -1,0 +1,40 @@
+<div class="flex items-center gap-1.5 md:gap-[7px]">
+  <div class="flex min-w-0 grow items-center gap-1.5 overflow-x-auto md:gap-[7px]">
+    <% chip = "shrink-0 rounded-control px-3 py-[5px] text-[11.5px] md:text-[12px]" %>
+
+    <%= link_to "All", recipes_path(sort: params[:sort]),
+                class: class_names(chip,
+                  "bg-ink font-medium text-white" => @active_tag.nil?,
+                  "border border-hairline text-body hover:border-accent-line" => @active_tag.present?) %>
+
+    <% @tags.each do |tag| %>
+      <% on = @active_tag&.id == tag.id %>
+      <%= link_to tag.name, recipes_path(tag: tag.slug, sort: params[:sort]),
+                  class: class_names(chip,
+                    "bg-ink font-medium text-white" => on,
+                    "border border-hairline text-body hover:border-accent-line" => !on),
+                  data: { testid: "tag-chip-#{tag.slug}" } %>
+    <% end %>
+  </div>
+
+  <%# Sort lives on the right of the chip row on desktop only. It sits outside the
+      scrolling chip container so the popover is not clipped by its overflow. %>
+  <div class="relative hidden shrink-0 md:block" data-controller="menu">
+    <button type="button" class="flex items-center gap-1.5 text-[11.5px] font-light text-muted hover:text-body"
+            data-action="menu#toggle" data-testid="sort-menu">
+      <span><%= sort_option.fetch(:label) %></span>
+      <%= icon "chevron-down", size: 11, stroke: 2.4 %>
+    </button>
+
+    <div class="absolute top-6 right-0 z-20 hidden w-[176px] rounded-[7px] border border-hairline bg-surface p-[5px] shadow-[0_12px_28px_-10px_rgba(20,23,28,0.28)]"
+         data-menu-target="menu">
+      <% RecipesController::SORTS.each do |key, option| %>
+        <%= link_to recipes_path(tag: params[:tag], sort: key),
+                    class: "flex items-center gap-2.5 rounded-control px-[11px] py-2 text-[12.5px] hover:bg-sunken #{sort_option == option ? "text-ink" : "text-body"}" do %>
+          <span class="grow"><%= option.fetch(:label) %></span>
+          <%= icon "check", size: 13, stroke: 2.6, class: "text-accent" if sort_option == option %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

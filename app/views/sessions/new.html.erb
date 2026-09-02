@@ -1,61 +1,41 @@
-<div class="w-full max-w-md">
-  <%# Auth Card %>
-  <div class="bg-surface-overlay dark:bg-gray-800 rounded-xl shadow-lg border border-border-subtle dark:border-gray-700 p-8">
-    <%# Header %>
-    <div class="text-center mb-8">
-      <h1 class="font-serif text-2xl font-bold text-text-primary dark:text-gray-100">
-        Welcome back
-      </h1>
-      <p class="text-sm text-text-secondary dark:text-gray-400 mt-1">
-        Sign in to your account
-      </p>
-    </div>
+<% page_title "Sign in" %>
 
-    <%# Form %>
-    <%= form_with url: session_path, class: "space-y-4", data: { testid: "login-form" } do |form| %>
-      <div>
-        <label for="email_address" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Email
-        </label>
-        <%= form.email_field :email_address,
-            required: true,
-            autofocus: true,
-            autocomplete: "username",
-            placeholder: "you@example.com",
-            value: params[:email_address],
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500",
-            data: { testid: "email-input" } %>
-      </div>
+<div class="mb-10 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
+</div>
 
-      <div>
-        <label for="password" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Password
-        </label>
-        <%= form.password_field :password,
-            required: true,
-            autocomplete: "current-password",
-            placeholder: "Enter your password",
-            maxlength: 72,
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500",
-            data: { testid: "password-input" } %>
-      </div>
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Sign in to your kitchen</h1>
+<p class="mb-7 text-[13px] font-light text-muted">Your recipes and shopping list, on every device.</p>
 
-      <%= form.submit "Sign in",
-          class: "w-full bg-brand-primary hover:bg-brand-primary-dark dark:bg-amber-700 dark:hover:bg-amber-800 text-white py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all cursor-pointer",
-          data: { testid: "sign-in-button" } %>
-    <% end %>
-
-    <%# Forgot password link %>
-    <div class="mt-6 text-center">
-      <%= link_to "Forgot your password?", new_password_path,
-          class: "text-sm text-brand-primary dark:text-amber-500 hover:underline" %>
-    </div>
+<%= form_with url: session_path, method: :post do |form| %>
+  <div class="mb-3.5">
+    <%= form.label :email_address, "Email", class: "mc-label" %>
+    <%= form.email_field :email_address,
+                         required: true, autofocus: true, autocomplete: "username",
+                         placeholder: "you@example.com",
+                         class: "mc-field",
+                         data: { testid: "email" } %>
   </div>
 
-  <%# Sign up link below card %>
-  <p class="text-center mt-6 text-sm text-text-secondary dark:text-gray-400">
-    Don't have an account?
-    <%= link_to "Sign up", new_registration_path,
-        class: "text-brand-primary dark:text-amber-500 font-medium hover:underline" %>
-  </p>
-</div>
+  <div class="mb-1.5">
+    <%= form.label :password, "Password", class: "mc-label" %>
+    <%= form.password_field :password,
+                            required: true, autocomplete: "current-password",
+                            class: "mc-field",
+                            data: { testid: "password" } %>
+  </div>
+
+  <div class="mb-5 text-right">
+    <%= link_to "Forgot password?", new_password_path,
+                class: "text-[11.5px] font-medium text-accent hover:text-accent-dark" %>
+  </div>
+
+  <%= form.submit "Sign in", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]",
+                  data: { testid: "submit" } %>
+<% end %>
+
+<p class="mt-8 text-center text-[12.5px] font-light text-muted">
+  New to MainCourse?
+  <%= link_to "Create an account", new_registration_path, class: "font-medium text-accent hover:text-accent-dark" %>
+</p>

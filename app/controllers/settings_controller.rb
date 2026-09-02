@@ -5,6 +5,7 @@ class SettingsController < ApplicationController
 
   def update
     @user = Current.user
+
     if @user.update(settings_params)
       redirect_to edit_settings_path, notice: "Settings updated."
     else
@@ -15,6 +16,6 @@ class SettingsController < ApplicationController
   private
 
   def settings_params
-    params.expect(user: [ :name ])
+    params.expect(user: [ :name, :lifecycle_notifications_enabled ])
   end
 end

@@ -1,0 +1,59 @@
+<dialog id="add-recipe"
+        class="m-auto w-[min(420px,calc(100vw-32px))] rounded-[10px] border-0 bg-surface p-0 shadow-[0_24px_60px_-20px_rgba(20,23,28,0.5)]"
+        data-controller="dialog"
+        data-action="click->dialog#closeOnBackdrop">
+  <div class="flex items-center border-b border-line px-5 py-[17px]">
+    <h2 class="grow text-[16px] font-semibold tracking-[-0.3px]">Add a recipe</h2>
+    <button type="button" class="text-muted hover:text-ink" data-action="dialog#close" aria-label="Close">
+      <%= icon "x", size: 17, stroke: 2.2 %>
+    </button>
+  </div>
+
+  <div class="p-5">
+    <%= form_with url: import_recipes_path, method: :post, class: "block" do |form| %>
+      <div class="mb-3.5">
+        <%= form.label :url, "Paste a link", class: "mc-label" %>
+        <%= form.url_field :url,
+                           placeholder: "https://smittenkitchen.com/…",
+                           autocomplete: "off",
+                           class: "mc-field",
+                           data: { testid: "import-url" } %>
+      </div>
+
+      <%= form.button type: "submit", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" do %>
+        <%= icon "plus", size: 15, stroke: 2.2 %>
+        <span>Import recipe</span>
+      <% end %>
+    <% end %>
+
+    <div class="my-[18px] flex items-center gap-3">
+      <div class="h-px grow bg-line"></div>
+      <span class="text-[11px] font-light text-muted">or</span>
+      <div class="h-px grow bg-line"></div>
+    </div>
+
+    <%# Two separate forms: one field each, so an untouched input cannot clobber
+        the one the user actually picked. %>
+    <div class="flex gap-2.5">
+      <%= render "recipes/photo_import_tile",
+                 icon_name: "image",
+                 title: "Upload a photo",
+                 subtitle: "A cookbook page or a screenshot",
+                 capture: nil,
+                 testid: "import-photo" %>
+
+      <%= render "recipes/photo_import_tile",
+                 icon_name: "camera",
+                 title: "Take a photo",
+                 subtitle: "Straight from your camera",
+                 capture: "environment",
+                 testid: "import-camera" %>
+    </div>
+
+    <p class="mt-4 text-[11.5px] leading-relaxed font-light text-muted">
+      We read the page or the photo and pull out the ingredients, steps and timings.
+      You can fix anything afterwards, or
+      <%= link_to "add one manually", new_recipe_path, class: "font-normal text-accent hover:text-accent-dark" %>.
+    </p>
+  </div>
+</dialog>

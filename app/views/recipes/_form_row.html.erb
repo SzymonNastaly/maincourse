@@ -1,0 +1,14 @@
+<div class="mb-2 flex items-start gap-2" data-recipe-form-target="row">
+  <% if multiline %>
+    <%= text_area_tag field_name, value, rows: 2, placeholder: placeholder, id: nil, class: "mc-field" %>
+  <% else %>
+    <%= text_field_tag field_name, value, placeholder: placeholder, id: nil, class: "mc-field" %>
+  <% end %>
+
+  <button type="button"
+          class="mt-1 flex size-8 shrink-0 items-center justify-center rounded-card text-muted hover:bg-danger-tint hover:text-danger"
+          data-action="recipe-form#removeRow"
+          aria-label="Remove">
+    <%= icon "x", size: 15, stroke: 2.2 %>
+  </button>
+</div>

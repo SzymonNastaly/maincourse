@@ -1,0 +1,38 @@
+<% others = available_cookbooks.reject { |cookbook| cookbook.id == recipe.cookbook_id } %>
+<div class="absolute top-2 right-2" data-controller="menu">
+  <button type="button"
+          class="flex size-7 items-center justify-center rounded-control bg-surface/92 text-body opacity-0 shadow-sm transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+          data-action="menu#toggle"
+          aria-label="Recipe actions"
+          data-testid="recipe-menu-<%= recipe.id %>">
+    <%= icon "more-horizontal", size: 15, stroke: 2 %>
+  </button>
+
+  <div class="absolute top-8 right-0 z-20 hidden w-[186px] rounded-[7px] border border-hairline bg-surface p-[5px] shadow-[0_12px_28px_-10px_rgba(20,23,28,0.28)]"
+       data-menu-target="menu">
+    <%= link_to recipe, class: "flex items-center gap-2.5 rounded-control px-[11px] py-2 text-[12.5px] text-ink hover:bg-sunken" do %>
+      <%= icon "external-link", size: 14, stroke: 2 %><span>Open recipe</span>
+    <% end %>
+
+    <%= link_to edit_recipe_path(recipe), class: "flex items-center gap-2.5 rounded-control px-[11px] py-2 text-[12.5px] text-ink hover:bg-sunken" do %>
+      <%= icon "pencil", size: 14, stroke: 2 %><span>Edit</span>
+    <% end %>
+
+    <% others.each do |cookbook| %>
+      <%= button_to move_recipe_path(recipe, cookbook_id: cookbook.id), method: :patch,
+                    form_class: "block",
+                    class: "flex w-full items-center gap-2.5 rounded-control px-[11px] py-2 text-left text-[12.5px] text-ink hover:bg-sunken" do %>
+        <%= icon "book-open", size: 14, stroke: 2 %><span class="truncate">Move to <%= cookbook.name %></span>
+      <% end %>
+    <% end %>
+
+    <div class="mx-1.5 my-1 h-px bg-line"></div>
+
+    <%= button_to recipe_path(recipe), method: :delete,
+                  form_class: "block",
+                  class: "flex w-full items-center gap-2.5 rounded-control px-[11px] py-2 text-left text-[12.5px] text-danger hover:bg-danger-tint",
+                  data: { turbo_confirm: "Delete “#{recipe.name}”? This cannot be undone." } do %>
+      <%= icon "trash-2", size: 14, stroke: 2 %><span>Delete</span>
+    <% end %>
+  </div>
+</div>

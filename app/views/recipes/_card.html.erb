@@ -1,0 +1,35 @@
+<%# Image-topped recipe card. Sizes step up from the 2-up mobile grid to 3-up desktop. %>
+<div class="group relative flex flex-col gap-2.5" data-testid="recipe-card">
+  <%= link_to recipe, class: "flex flex-col gap-2.5", data: { testid: "recipe-link-#{recipe.id}" } do %>
+    <div class="relative h-28 overflow-hidden rounded-card md:h-32"
+         style="background: <%= recipe_placeholder_gradient(recipe) %>">
+      <% if recipe.cover_image.attached? %>
+        <%= image_tag recipe.cover_image.variant(:card),
+                      class: "size-full object-cover",
+                      alt: "",
+                      loading: "lazy" %>
+      <% end %>
+
+      <% if recipe.pending? %>
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface/85"
+             data-testid="importing-overlay">
+          <%= render "shared/spinner" %>
+          <span class="text-[11px] font-medium text-body">Importing…</span>
+        </div>
+      <% end %>
+    </div>
+
+    <div>
+      <div class="mb-1.5 text-[13.5px] leading-[1.3] font-medium tracking-[-0.2px] text-ink md:text-[14.5px]">
+        <%= recipe.name %>
+      </div>
+      <% if (meta = recipe_meta(recipe)).present? %>
+        <div class="font-mono text-[10px] text-muted md:text-[10.5px]"><%= meta %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% unless recipe.pending? %>
+    <%= render "recipes/card_menu", recipe: recipe %>
+  <% end %>
+</div>

@@ -54,25 +54,54 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :recipes do
-    member do
-      patch :toggle_favorite
-    end
-    collection do
-      get "new/form", to: "recipes#new_form", as: :new_form
-      get "new/import", to: "recipes#new_import", as: :new_import
-      post "import", to: "recipes#import", as: :import
-    end
-  end
-  get "invite/:token", to: "invitations#show", as: :invite
-
+  # --- Web (HTML) ---------------------------------------------------------
   root to: redirect("/recipes")
-  resource :session
+
+  resource :session, only: [ :new, :create, :destroy ]
+  resource :registration, only: [ :new, :create ]
   resources :passwords, param: :token
 
-  resource :registration, only: [ :new, :create ]
+  # The cookbook the web UI is scoped to. See CookbookScoped.
+  resource :active_cookbook, only: [ :update ]
+
+  resources :recipes do
+    member do
+      patch :move
+    end
+    collection do
+      post :import
+      post :import_photo
+    end
+    scope module: :recipes do
+      resources :shopping_list_items, only: [ :create ]
+    end
+  end
+
+  get "search", to: "searches#show", as: :search
+
+  resources :shopping_list_items, path: "shopping_list", only: [ :index, :create, :destroy ] do
+    member do
+      patch :toggle
+    end
+    collection do
+      delete :destroy_all
+    end
+  end
+
+  resources :cookbooks, only: [ :index, :create, :destroy ] do
+    member do
+      post :leave
+    end
+    resource :invitation, only: [ :create ], module: :cookbooks
+  end
+
+  get "invite/:token", to: "invitations#show", as: :invite
+  post "invite/:token/accept", to: "invitations#accept", as: :accept_invite
+  post "invite/:token/reject", to: "invitations#reject", as: :reject_invite
+
   resource :settings, only: [ :edit, :update ]
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  resource :account, only: [ :show, :destroy ]
+  get "pro", to: "pro#show", as: :pro
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

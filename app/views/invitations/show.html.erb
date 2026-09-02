@@ -1,22 +1,87 @@
-<div class="max-w-md mx-auto mt-16 p-6 text-center">
-  <h1 class="text-2xl font-bold mb-4">Cookbook Invitation</h1>
+<% page_title "Cookbook invitation" %>
 
-  <% if @invitation && @invitation.pending? && !@invitation.time_expired? %>
-    <p class="mb-4">
-      <strong><%= @invitation.inviter.email_address %></strong> has invited you to join
-      the cookbook <strong>"<%= @invitation.cookbook.name %>"</strong>.
-    </p>
-    <p class="text-gray-600 mb-4">
-      Open this link on your iPhone with the Hauptgang app installed to accept the invitation.
-      If nothing happens automatically, tap the button below.
-    </p>
-    <%= link_to "Open in Hauptgang", "hauptgang://invite/#{@token}",
-        class: "inline-block w-full bg-brand-primary hover:bg-brand-primary-dark dark:bg-amber-700 dark:hover:bg-amber-800 text-white py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all cursor-pointer" %>
-  <% elsif @invitation&.time_expired? || @invitation&.expired? %>
-    <p class="text-gray-600">This invitation has expired.</p>
-  <% elsif @invitation&.accepted? %>
-    <p class="text-gray-600">This invitation has already been accepted.</p>
-  <% else %>
-    <p class="text-gray-600">This invitation is no longer valid.</p>
-  <% end %>
+<div class="mb-8 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
 </div>
+
+<% if @invitation.nil? %>
+  <h1 class="mb-2 text-[20px] leading-[1.3] font-semibold tracking-[-0.45px]">This invitation doesn't exist</h1>
+  <p class="mb-7 text-[12.5px] leading-relaxed font-light text-muted">
+    The link may have been mistyped, or the invitation was replaced by a newer one.
+  </p>
+  <%= link_to "Go to MainCourse", root_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+
+<% elsif !@invitation.pending? || @invitation.time_expired? %>
+  <h1 class="mb-2 text-[20px] leading-[1.3] font-semibold tracking-[-0.45px]">
+    <%= @invitation.time_expired? ? "This invitation has expired" : "This invitation is no longer available" %>
+  </h1>
+  <p class="mb-7 text-[12.5px] leading-relaxed font-light text-muted">
+    Ask <%= @invitation.inviter.email_address %> to send you a new link.
+  </p>
+  <%= link_to "Go to MainCourse", root_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+
+<% else %>
+  <div class="mb-6 flex flex-col items-center gap-3.5 text-center">
+    <span class="flex size-[54px] items-center justify-center rounded-full bg-accent-tint text-[20px] font-semibold text-accent">
+      <%= user_initials(@invitation.inviter) %>
+    </span>
+    <div>
+      <h1 class="mb-1.5 text-[20px] leading-[1.3] font-semibold tracking-[-0.45px]">
+        <%= @invitation.inviter.name.presence || @invitation.inviter.email_address %> invited you to a shared cookbook
+      </h1>
+      <p class="text-[12.5px] leading-relaxed font-light text-muted">
+        You'll be able to see, add and edit everything in it.
+      </p>
+    </div>
+  </div>
+
+  <div class="mb-5 flex items-center gap-3 rounded-panel border border-hairline bg-surface px-4 py-3.5">
+    <span class="flex size-[38px] shrink-0 items-center justify-center rounded-panel bg-accent">
+      <%= icon "book-open", size: 18, stroke: 2, style: "color: var(--color-lime)" %>
+    </span>
+    <span class="min-w-0 grow">
+      <span class="block truncate text-[14px] font-medium"><%= @invitation.cookbook.name %></span>
+      <span class="mt-0.5 block text-[11.5px] font-light text-muted">
+        <%= mono @invitation.cookbook.recipes.count, class: "text-[11px]" %> recipes ·
+        <%= pluralize(@invitation.cookbook.cookbook_memberships.count, "member") %>
+      </span>
+    </span>
+  </div>
+
+  <% if Current.user.nil? %>
+    <p class="mb-4 rounded-card bg-sunken px-3 py-2.5 text-[11.5px] leading-relaxed font-light text-body">
+      Sign in or create an account to join. We'll bring you straight back here.
+    </p>
+    <div class="flex flex-col gap-2.5">
+      <%= link_to "Sign in", new_session_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+      <%= link_to "Create an account", new_registration_path, class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+    </div>
+
+  <% elsif @already_member %>
+    <p class="mb-4 text-[12.5px] font-light text-muted">You're already a member of this cookbook.</p>
+    <%= link_to "Open #{@invitation.cookbook.name}", recipes_path,
+                class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+
+  <% elsif @blocked_by_existing_shared %>
+    <div class="mb-4 flex items-start gap-2.5 rounded-card border border-danger-line bg-danger-tint px-3 py-2.5 text-[11.5px] leading-relaxed text-danger">
+      <%= icon "triangle-alert", size: 15, stroke: 2, class: "mt-px" %>
+      <span>
+        You already have a shared cookbook. Leave
+        <strong class="font-medium"><%= Current.user.shared_cookbook.name %></strong> before joining another.
+      </span>
+    </div>
+    <%= link_to "Manage cookbooks", cookbooks_path, class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+
+  <% else %>
+    <div class="flex flex-col gap-2.5">
+      <%= button_to "Accept invitation", accept_invite_path(@token),
+                    form_class: "block",
+                    class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]",
+                    data: { testid: "accept-invite" } %>
+      <%= button_to "Not now", reject_invite_path(@token),
+                    form_class: "block",
+                    class: "mc-btn mc-btn-quiet w-full py-3 text-[13.5px]" %>
+    </div>
+  <% end %>
+<% end %>

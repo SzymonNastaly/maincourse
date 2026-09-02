@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens for the MainCourse web app.
+ * Source of truth: docs/web-design/parts.mjs (the `T` object) and the README table.
+ * The old brown/Lato Hauptgang tokens are superseded here; they still describe iOS.
+ */
 @theme {
-  /* Font Families */
-  --font-sans: "Lato", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Merriweather", ui-serif, Georgia, serif;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Brand Colors */
-  --color-brand-primary: #8B5E34;
-  --color-brand-primary-dark: #6B4826;
-  --color-brand-primary-light: #A57A52;
+  /* Surfaces */
+  --color-canvas: #eef0f2;
+  --color-surface: #ffffff;
+  --color-rail: #f8f9fa;
+  --color-sunken: #f5f7f8;
 
-  /* Surface/Background Colors */
-  --color-surface-base: #FDFBF7;
-  --color-surface-raised: #F5F2EA;
-  --color-surface-overlay: #FFFFFF;
+  /* Text */
+  --color-ink: #14171c;
+  --color-body: #5b6570;
+  --color-muted: #9aa3ae;
 
-  /* Border Colors */
-  --color-border-subtle: #E5E0D5;
-  --color-border-medium: #D5CABF;
+  /* Lines */
+  --color-line: #e3e6ea;
+  --color-hairline: #dce0e6;
 
-  /* Text Colors */
-  --color-text-primary: #1F1F1F;
-  --color-text-secondary: #6B6B6B;
-  --color-text-tertiary: #9B9B9B;
+  /* Accent — the only action colour */
+  --color-accent: #16624b;
+  --color-accent-dark: #0f4736;
+  --color-accent-tint: #f1f7f4;
+  --color-accent-line: #d6e7df;
+
+  /* Signal only: badges, "2 months free" */
+  --color-lime: #cdeb7a;
+
+  /* Owner crown */
+  --color-amber: #b07d12;
+  --color-amber-tint: #fbf3e0;
+
+  /* Danger */
+  --color-danger: #b42318;
+  --color-danger-tint: #fdf3f2;
+  --color-danger-line: #efd5d3;
+
+  /* Radii: 5px controls and chips, 6px cards and fields, 8px panels */
+  --radius-control: 5px;
+  --radius-card: 6px;
+  --radius-panel: 8px;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+  }
+
+  body {
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus ring in the accent colour, everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@utility mc-field {
+  @apply w-full rounded-card border border-hairline bg-surface px-3 py-2.5 text-[13px] text-ink
+         placeholder:font-light placeholder:text-muted
+         focus:border-accent focus:ring-3 focus:ring-accent-tint focus:outline-none;
+}
+
+@utility mc-label {
+  @apply mb-1.5 block text-[11.5px] font-medium text-body;
+}
+
+@utility mc-section-label {
+  @apply text-[9.5px] font-medium tracking-[1.1px] text-muted uppercase;
+}
+
+@utility mc-panel {
+  @apply overflow-hidden rounded-panel border border-hairline bg-surface;
+}
+
+@utility mc-btn {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-card px-3.5 py-2.5
+         text-[12.5px] font-medium whitespace-nowrap transition-colors;
+}
+
+@utility mc-btn-primary {
+  @apply border border-accent bg-accent text-white hover:bg-accent-dark hover:border-accent-dark;
+}
+
+@utility mc-btn-outline {
+  @apply border border-hairline bg-surface text-ink hover:bg-sunken;
+}
+
+@utility mc-btn-quiet {
+  @apply border border-transparent bg-transparent text-body hover:bg-sunken;
+}
+
+@utility mc-btn-danger {
+  @apply border border-danger-line bg-surface text-danger hover:bg-danger-tint;
 }

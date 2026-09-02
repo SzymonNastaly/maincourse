@@ -1,42 +1,18 @@
-<% content_for :title, "New Recipe" %>
+<% page_title "New recipe" %>
 
-<div class="flex-1 overflow-y-auto">
-  <div class="max-w-lg mx-auto px-4 md:px-8 py-12">
+<% content_for :mobile_header do %>
+  <%= render "layouts/back_bar", label: "All Recipes", path: recipes_path %>
+<% end %>
 
-    <%# Back link %>
-    <%= link_to recipes_path, class: "flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-8" do %>
-      <%= lucide_icon "arrow-left", class: "size-4" %>
-      Back to recipes
-    <% end %>
+<div class="hidden items-center gap-2.5 border-b border-line px-[30px] py-4 md:flex">
+  <%= link_to recipes_path, class: "flex items-center gap-[7px] text-[12.5px] text-body hover:text-ink" do %>
+    <%= icon "arrow-left", size: 15, stroke: 2 %><span>All Recipes</span>
+  <% end %>
+</div>
 
-    <%# Header %>
-    <h1 class="font-serif font-bold text-2xl text-text-primary dark:text-gray-100 mb-2 text-center">Create New Recipe</h1>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center">How would you like to add your recipe?</p>
+<div class="px-4 pt-5 pb-10 md:px-[30px] md:pt-[26px]">
+  <h1 class="mb-1.5 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]">New recipe</h1>
+  <p class="mb-6 text-[12.5px] font-light text-muted">Adding to <%= current_cookbook.name %>.</p>
 
-    <%# Choice Cards %>
-    <div class="grid gap-4">
-      <%= link_to new_form_recipes_path, class: "group flex items-center gap-4 p-5 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-brand-primary dark:hover:border-amber-500 transition-colors", data: { testid: "create-manually" } do %>
-        <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/20 transition-colors">
-          <%= lucide_icon "pencil", class: "size-6 text-gray-500 dark:text-gray-400 group-hover:text-brand-primary dark:group-hover:text-amber-500" %>
-        </div>
-        <div class="flex-1">
-          <h2 class="font-bold text-text-primary dark:text-gray-100">Create Manually</h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Write your own recipe from scratch</p>
-        </div>
-        <%= lucide_icon "chevron-right", class: "size-5 text-gray-300 dark:text-gray-600 group-hover:text-brand-primary dark:group-hover:text-amber-500" %>
-      <% end %>
-
-      <%= link_to new_import_recipes_path, class: "group flex items-center gap-4 p-5 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-brand-primary dark:hover:border-amber-500 transition-colors", data: { testid: "import-from-url" } do %>
-        <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/20 transition-colors">
-          <%= lucide_icon "globe", class: "size-6 text-gray-500 dark:text-gray-400 group-hover:text-brand-primary dark:group-hover:text-amber-500" %>
-        </div>
-        <div class="flex-1">
-          <h2 class="font-bold text-text-primary dark:text-gray-100">Import from Website</h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Paste a URL and we'll extract the recipe</p>
-        </div>
-        <%= lucide_icon "chevron-right", class: "size-5 text-gray-300 dark:text-gray-600 group-hover:text-brand-primary dark:group-hover:text-amber-500" %>
-      <% end %>
-    </div>
-
-  </div>
+  <%= render "recipes/form", recipe: @recipe %>
 </div>

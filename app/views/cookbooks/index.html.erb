@@ -1,0 +1,45 @@
+<% page_title "Cookbooks" %>
+
+<% content_for :mobile_header do %>
+  <%= render "layouts/back_bar", label: "Settings", path: edit_settings_path %>
+<% end %>
+
+<div class="px-4 pt-[18px] pb-10 md:px-[30px] md:pt-[26px]">
+  <div class="mb-5 md:mb-5">
+    <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px] md:mb-1.5 md:text-[29px] md:tracking-[-0.7px]">Cookbooks</h1>
+    <p class="text-[11.5px] font-light text-muted md:text-[12.5px]">Keep recipes to yourself, or share a kitchen.</p>
+  </div>
+
+  <div class="max-w-[560px]">
+    <%# ---- Personal ------------------------------------------------------ %>
+    <div class="mb-2.5"><span class="mc-section-label">Personal</span></div>
+    <div class="mc-panel mb-6">
+      <div class="flex items-center gap-3 px-[15px] py-3.5">
+        <span class="flex size-[30px] shrink-0 items-center justify-center rounded-card bg-sunken">
+          <%= icon "user", size: 15, class: "text-body" %>
+        </span>
+        <span class="min-w-0 grow">
+          <span class="block text-[13.5px] font-medium tracking-[-0.15px]"><%= @personal.name %></span>
+          <span class="mt-0.5 block text-[11.5px] font-light text-muted"><%= pluralize(@personal.recipes.count, "recipe") %></span>
+        </span>
+        <% if current_cookbook&.id == @personal.id %>
+          <span class="rounded-[4px] bg-accent-tint px-2 py-[3px] text-[10.5px] font-medium text-accent">Active</span>
+        <% else %>
+          <%= button_to "Switch", active_cookbook_path(cookbook_id: @personal.id), method: :patch,
+                        form_class: "inline-block", class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]" %>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ---- Shared -------------------------------------------------------- %>
+    <div class="mb-2.5"><span class="mc-section-label">Shared</span></div>
+
+    <% if @shared %>
+      <%= render "cookbooks/shared_panel", cookbook: @shared, memberships: @memberships, invitation: @invitation %>
+    <% else %>
+      <%= render "cookbooks/create_prompt" %>
+    <% end %>
+  </div>
+</div>
+
+<%= render "cookbooks/create_dialog" unless @shared %>

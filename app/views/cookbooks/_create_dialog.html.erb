@@ -1,0 +1,36 @@
+<dialog id="create-cookbook"
+        class="m-auto w-[min(420px,calc(100vw-32px))] rounded-[10px] border-0 bg-surface p-0 shadow-[0_24px_60px_-20px_rgba(20,23,28,0.5)]"
+        data-controller="dialog"
+        data-action="click->dialog#closeOnBackdrop">
+  <div class="flex items-center border-b border-line px-5 py-[17px]">
+    <h2 class="grow text-[16px] font-semibold tracking-[-0.3px]">Create a shared cookbook</h2>
+    <button type="button" class="text-muted hover:text-ink" data-action="dialog#close" aria-label="Close">
+      <%= icon "x", size: 17, stroke: 2.2 %>
+    </button>
+  </div>
+
+  <%= form_with url: cookbooks_path, method: :post, class: "p-5" do |form| %>
+    <div class="mb-4">
+      <%= label_tag "cookbook[name]", "Name", class: "mc-label" %>
+      <%= text_field_tag "cookbook[name]", nil, placeholder: "Our Kitchen", class: "mc-field",
+                         data: { testid: "cookbook-name" } %>
+    </div>
+
+    <label class="mb-4 flex cursor-pointer items-start gap-3 rounded-card bg-sunken px-3 py-3">
+      <%= hidden_field_tag "cookbook[move_personal_recipes]", "0", id: nil %>
+      <%= check_box_tag "cookbook[move_personal_recipes]", "1", true,
+                        class: "mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]" %>
+      <span>
+        <span class="block text-[13px] font-medium">Move all personal recipes</span>
+        <span class="mt-0.5 block text-[11.5px] leading-relaxed font-light text-muted">
+          Your recipes and shopping list move into the shared cookbook. Untick to leave them where they are.
+        </span>
+      </span>
+    </label>
+
+    <div class="flex items-center gap-2.5">
+      <%= form.submit "Create cookbook", class: "mc-btn mc-btn-primary" %>
+      <button type="button" class="mc-btn mc-btn-quiet" data-action="dialog#close">Cancel</button>
+    </div>
+  <% end %>
+</dialog>

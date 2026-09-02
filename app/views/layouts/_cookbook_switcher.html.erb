@@ -1,0 +1,42 @@
+<% if current_cookbook %>
+  <dialog id="cookbook-switcher"
+          class="mx-auto mt-auto mb-0 w-full max-w-none rounded-t-[14px] border-0 bg-surface p-0 shadow-[0_-12px_32px_-12px_rgba(20,23,28,0.35)] sm:my-auto sm:w-[400px] sm:rounded-panel"
+          data-controller="dialog"
+          data-action="click->dialog#closeOnBackdrop">
+    <div class="px-[18px] pt-2.5 pb-6">
+      <div class="mx-auto mb-4 h-1 w-9 rounded-sm bg-hairline sm:hidden"></div>
+      <h2 class="mb-2 text-[15px] font-semibold tracking-[-0.3px]">Switch cookbook</h2>
+
+      <% available_cookbooks.each do |cookbook| %>
+        <% on = cookbook.id == current_cookbook.id %>
+        <%= button_to active_cookbook_path(cookbook_id: cookbook.id), method: :patch,
+                      form_class: "block",
+                      class: "flex w-full items-center gap-3 border-b border-line px-1 py-[13px] text-left",
+                      data: { testid: "switch-cookbook-#{cookbook.id}" } do %>
+          <span class="flex size-[34px] shrink-0 items-center justify-center rounded-[7px] <%= on ? "bg-accent" : "bg-sunken" %>">
+            <%= icon cookbook_icon(cookbook), size: 16,
+                     style: on ? "color: var(--color-lime)" : nil,
+                     class: on ? nil : "text-body" %>
+          </span>
+          <span class="min-w-0 grow">
+            <span class="block truncate text-[14px] font-medium"><%= cookbook.name %></span>
+            <span class="mt-0.5 block truncate text-[11.5px] font-light text-muted"><%= cookbook_subtitle(cookbook) %></span>
+          </span>
+          <% if on %>
+            <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent">
+              <%= icon "check", size: 12, stroke: 3, class: "text-white" %>
+            </span>
+          <% else %>
+            <span class="size-5 shrink-0 rounded-full border-[1.5px] border-hairline"></span>
+          <% end %>
+        <% end %>
+      <% end %>
+
+      <%= link_to cookbooks_path, class: "flex items-center gap-2.5 px-1 pt-[15px] pb-1 text-body hover:text-ink" do %>
+        <%= icon "settings", size: 15 %>
+        <span class="grow text-[13px]">Manage cookbooks</span>
+        <%= icon "chevron-right", size: 13, stroke: 2.2, class: "text-muted" %>
+      <% end %>
+    </div>
+  </dialog>
+<% end %>

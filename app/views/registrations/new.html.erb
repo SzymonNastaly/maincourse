@@ -1,83 +1,49 @@
-<div class="w-full max-w-md">
-  <%# Auth Card %>
-  <div class="bg-surface-overlay dark:bg-gray-800 rounded-xl shadow-lg border border-border-subtle dark:border-gray-700 p-8">
-    <%# Header %>
-    <div class="text-center mb-8">
-      <h1 class="font-serif text-2xl font-bold text-text-primary dark:text-gray-100">
-        Create your account
-      </h1>
-      <p class="text-sm text-text-secondary dark:text-gray-400 mt-1">
-        Start organizing your recipes
-      </p>
+<% page_title "Create an account" %>
+
+<div class="mb-10 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
+</div>
+
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Create your kitchen</h1>
+<p class="mb-7 text-[13px] font-light text-muted">Save recipes from anywhere and cook from them on any device.</p>
+
+<%= form_with model: @user, url: registration_path, method: :post do |form| %>
+  <% if @user.errors.any? %>
+    <div class="mb-4 rounded-card border border-danger-line bg-danger-tint px-3 py-2.5 text-[12.5px] text-danger"
+         data-testid="form-errors">
+      <%= @user.errors.full_messages.to_sentence %>
     </div>
+  <% end %>
 
-    <%# Validation errors %>
-    <% if @user.errors.any? %>
-      <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm">
-        <ul class="list-disc list-inside space-y-1">
-          <% @user.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
-
-    <%# Form %>
-    <%= form_with model: @user, url: registration_path, class: "space-y-4" do |form| %>
-      <div>
-        <label for="user_name" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Name
-        </label>
-        <%= form.text_field :name,
-            required: true,
-            autofocus: true,
-            autocomplete: "name",
-            placeholder: "What should we call you?",
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
-      </div>
-
-      <div>
-        <label for="user_email_address" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Email
-        </label>
-        <%= form.email_field :email_address,
-            required: true,
-            autocomplete: "username",
-            placeholder: "you@example.com",
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
-      </div>
-
-      <div>
-        <label for="user_password" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Password
-        </label>
-        <%= form.password_field :password,
-            required: true,
-            autocomplete: "new-password",
-            placeholder: "Create a password",
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
-      </div>
-
-      <div>
-        <label for="user_password_confirmation" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
-          Confirm password
-        </label>
-        <%= form.password_field :password_confirmation,
-            required: true,
-            autocomplete: "new-password",
-            placeholder: "Confirm your password",
-            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
-      </div>
-
-      <%= form.submit "Create account",
-          class: "w-full bg-brand-primary hover:bg-brand-primary-dark dark:bg-amber-700 dark:hover:bg-amber-800 text-white py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all cursor-pointer" %>
-    <% end %>
+  <div class="mb-3.5">
+    <%= form.label :name, "First name", class: "mc-label" %>
+    <%= form.text_field :name, autofocus: true, autocomplete: "given-name", class: "mc-field" %>
   </div>
 
-  <%# Sign in link below card %>
-  <p class="text-center mt-6 text-sm text-text-secondary dark:text-gray-400">
-    Already have an account?
-    <%= link_to "Sign in", new_session_path,
-        class: "text-brand-primary dark:text-amber-500 font-medium hover:underline" %>
-  </p>
-</div>
+  <div class="mb-3.5">
+    <%= form.label :email_address, "Email", class: "mc-label" %>
+    <%= form.email_field :email_address, required: true, autocomplete: "username",
+                         placeholder: "you@example.com", class: "mc-field" %>
+  </div>
+
+  <div class="mb-3.5">
+    <%= form.label :password, "Password", class: "mc-label" %>
+    <%= form.password_field :password, required: true, minlength: 12,
+                            autocomplete: "new-password", class: "mc-field" %>
+    <p class="mt-1.5 text-[11px] font-light text-muted">At least 12 characters.</p>
+  </div>
+
+  <div class="mb-5">
+    <%= form.label :password_confirmation, "Confirm password", class: "mc-label" %>
+    <%= form.password_field :password_confirmation, required: true,
+                            autocomplete: "new-password", class: "mc-field" %>
+  </div>
+
+  <%= form.submit "Create account", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+<% end %>
+
+<p class="mt-8 text-center text-[12.5px] font-light text-muted">
+  Already have an account?
+  <%= link_to "Sign in", new_session_path, class: "font-medium text-accent hover:text-accent-dark" %>
+</p>

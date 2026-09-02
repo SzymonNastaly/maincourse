@@ -1,0 +1,15 @@
+<% mobile = local_assigns.fetch(:mobile, false) %>
+<%= form_with url: search_path, method: :get, data: { turbo_frame: "_top" },
+              class: mobile ? "block" : "block w-[172px]" do |form| %>
+  <div class="flex items-center gap-2 rounded-card border border-hairline <%= mobile ? "bg-sunken px-3 py-2.5" : "bg-surface px-[11px] py-2" %> focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-tint">
+    <%= icon "search", size: mobile ? 15 : 14, stroke: 2.2, class: "text-muted" %>
+    <%= form.search_field :q,
+                          placeholder: "Search recipes",
+                          class: "w-full min-w-0 bg-transparent text-[#{mobile ? "13px" : "12.5px"}] text-ink placeholder:font-light placeholder:text-muted focus:outline-none",
+                          data: { search_shortcut_target: "input" },
+                          "aria-label": "Search recipes" %>
+    <% unless mobile %>
+      <kbd class="rounded-[3px] border border-line px-1 py-px font-mono text-[9.5px] text-muted">&#8984;K</kbd>
+    <% end %>
+  </div>
+<% end %>
