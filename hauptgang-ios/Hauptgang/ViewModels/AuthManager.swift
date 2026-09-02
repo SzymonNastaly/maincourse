@@ -21,12 +21,16 @@ final class AuthManager: ObservableObject {
         case authenticated(User)
 
         var isAuthenticated: Bool {
-            if case .authenticated = self { return true }
+            if case .authenticated = self {
+                return true
+            }
             return false
         }
 
         var user: User? {
-            if case let .authenticated(user) = self { return user }
+            if case let .authenticated(user) = self {
+                return user
+            }
             return nil
         }
 

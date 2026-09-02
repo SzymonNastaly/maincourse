@@ -133,7 +133,7 @@ struct ErrorBannerView: View {
                 updatedAt: Date()
             )
             recipe.importStatus = "failed"
-            recipe.errorMessage = "Import from allrecipes.com failed - page is not supported or doesn't contain a recipe"
+            recipe.errorMessage = "Import from allrecipes.com failed - page is not supported"
             return recipe
         }(),
         onDismiss: {}
@@ -147,7 +147,7 @@ struct ErrorBannerView: View {
             recipe: {
                 let recipe = PersistedRecipe(id: 1, name: "Test", favorite: false, updatedAt: Date())
                 recipe.importStatus = "failed"
-                recipe.errorMessage = "Import from allrecipes.com failed - page is not supported or doesn't contain a recipe"
+                recipe.errorMessage = "Import from allrecipes.com failed - page is not supported"
                 return recipe
             }(),
             onDismiss: {}
@@ -157,7 +157,7 @@ struct ErrorBannerView: View {
             recipe: {
                 let recipe = PersistedRecipe(id: 2, name: "Test", favorite: false, updatedAt: Date())
                 recipe.importStatus = "failed"
-                recipe.errorMessage = "Import from epicurious.com failed - page is not supported or doesn't contain a recipe"
+                recipe.errorMessage = "Import from epicurious.com failed - page is not supported"
                 return recipe
             }(),
             onDismiss: {}

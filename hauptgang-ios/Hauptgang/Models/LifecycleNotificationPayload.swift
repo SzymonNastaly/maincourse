@@ -24,8 +24,12 @@ struct LifecycleNotificationPayload: Equatable, Sendable {
     }
 
     private static func int(_ value: Any?) -> Int? {
-        if let number = value as? NSNumber { return number.intValue }
-        if let string = value as? String { return Int(string) }
+        if let number = value as? NSNumber {
+            return number.intValue
+        }
+        if let string = value as? String {
+            return Int(string)
+        }
         return nil
     }
 }

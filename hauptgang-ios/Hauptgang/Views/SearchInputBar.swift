@@ -51,8 +51,12 @@ struct SearchInputBar: View {
     }
 
     private var resolvedReturnKey: UIReturnKeyType {
-        if self.keepFocusOnSubmit { return .continue }
-        if self.onSubmit != nil { return .done }
+        if self.keepFocusOnSubmit {
+            return .continue
+        }
+        if self.onSubmit != nil {
+            return .done
+        }
         return .search
     }
 }

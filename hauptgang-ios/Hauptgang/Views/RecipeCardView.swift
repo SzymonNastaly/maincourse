@@ -52,7 +52,7 @@ struct RecipeCardView: View {
                 CachedRecipeImage(url: url, maxPixelSize: maxPixelSize) { image in
                     image
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .scaledToFill()
                 } placeholder: {
                     Color.hauptgangSurfaceRaised
                 } failure: {

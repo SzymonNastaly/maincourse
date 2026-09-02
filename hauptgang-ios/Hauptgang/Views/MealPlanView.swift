@@ -162,14 +162,12 @@ private struct MealPlanPickerSheet: View {
     let onPickRecipe: (PersistedRecipe) -> Void
 
     var body: some View {
-        Group {
-            if let cookbookId {
-                MealPlanRecipePicker(
-                    cookbookId: cookbookId,
-                    dateString: self.date,
-                    onRecipePicked: self.onPickRecipe
-                )
-            }
+        if let cookbookId {
+            MealPlanRecipePicker(
+                cookbookId: cookbookId,
+                dateString: self.date,
+                onRecipePicked: self.onPickRecipe
+            )
         }
     }
 }

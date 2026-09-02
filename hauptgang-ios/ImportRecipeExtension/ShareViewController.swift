@@ -334,8 +334,12 @@ class ShareViewController: UIViewController {
         let event = Event(level: .error)
         event.message = SentryMessage(formatted: "Recipe import failed: \(message)")
         var extra: [String: Any] = ["source": source]
-        if let url { extra["url"] = url }
-        if let host { extra["host"] = host }
+        if let url {
+            extra["url"] = url
+        }
+        if let host {
+            extra["host"] = host
+        }
         event.extra = extra
         SentrySDK.capture(event: event)
     }

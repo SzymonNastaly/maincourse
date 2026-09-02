@@ -81,7 +81,9 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         key: CodingKeys
     ) throws -> Decimal? {
         guard container.contains(key) else { return nil }
-        if try container.decodeNil(forKey: key) { return nil }
+        if try container.decodeNil(forKey: key) {
+            return nil
+        }
 
         // Wire format is String. Fall back to Decimal/Double for resilience
         // (e.g. cached responses written before the wire format was firmed up).

@@ -26,7 +26,9 @@ actor SlowMockRecipeViewSink: RecipeViewSink {
 
     /// Suspends until `send` has been called at least once.
     func waitUntilSendStarted() async {
-        if self.hasStarted { return }
+        if self.hasStarted {
+            return
+        }
         await withCheckedContinuation { continuation in
             self.sendStartedContinuation = continuation
         }

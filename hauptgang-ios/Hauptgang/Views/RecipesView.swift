@@ -123,7 +123,11 @@ struct RecipesView: View {
                 "Import Failed",
                 isPresented: Binding(
                     get: { self.recipeViewModel.importError != nil },
-                    set: { if !$0 { self.recipeViewModel.importError = nil } }
+                    set: {
+                        if !$0 {
+                            self.recipeViewModel.importError = nil
+                        }
+                    }
                 )
             ) {
                 Button("OK", role: .cancel) {}
@@ -324,7 +328,11 @@ struct RecipesView: View {
             "Delete Recipe",
             isPresented: Binding(
                 get: { self.recipeToDelete?.id == recipe.id },
-                set: { if !$0 { self.recipeToDelete = nil } }
+                set: {
+                    if !$0 {
+                        self.recipeToDelete = nil
+                    }
+                }
             ),
             presenting: self.recipeToDelete
         ) { candidate in
@@ -340,7 +348,11 @@ struct RecipesView: View {
             "Move Recipe",
             isPresented: Binding(
                 get: { self.recipeToMove?.id == recipe.id },
-                set: { if !$0 { self.recipeToMove = nil } }
+                set: {
+                    if !$0 {
+                        self.recipeToMove = nil
+                    }
+                }
             ),
             presenting: self.recipeToMove
         ) { candidate in

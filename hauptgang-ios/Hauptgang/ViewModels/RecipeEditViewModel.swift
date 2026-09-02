@@ -37,7 +37,9 @@ final class RecipeEditViewModel {
 
     var nameError: String? {
         let trimmed = self.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "Name is required" }
+        if trimmed.isEmpty {
+            return "Name is required"
+        }
         return nil
     }
 

@@ -27,7 +27,7 @@ actor MockAPIClient: APIClientProtocol {
     }
 
     private(set) var recorded: [Recorded] = []
-    var responseData: Data = Data("{}".utf8)
+    var responseData: Data = .init("{}".utf8)
     var errorToThrow: Error?
 
     func request<T: Decodable>(
@@ -38,7 +38,9 @@ actor MockAPIClient: APIClientProtocol {
         authenticated _: Bool
     ) async throws -> T {
         self.record(endpoint: endpoint, method: method, body: body)
-        if let error = self.errorToThrow { throw error }
+        if let error = self.errorToThrow {
+            throw error
+        }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(T.self, from: self.responseData)
@@ -52,7 +54,9 @@ actor MockAPIClient: APIClientProtocol {
         authenticated _: Bool
     ) async throws {
         self.record(endpoint: endpoint, method: method, body: body)
-        if let error = self.errorToThrow { throw error }
+        if let error = self.errorToThrow {
+            throw error
+        }
     }
 
     func uploadMultipart<T: Decodable>(
@@ -62,7 +66,9 @@ actor MockAPIClient: APIClientProtocol {
         authenticated _: Bool
     ) async throws -> T {
         self.record(endpoint: endpoint, method: method, body: nil)
-        if let error = self.errorToThrow { throw error }
+        if let error = self.errorToThrow {
+            throw error
+        }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(T.self, from: self.responseData)

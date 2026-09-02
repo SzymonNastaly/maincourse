@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class NotificationRouterTests: XCTestCase {
-    func testARecipeCampaignRoutesToThatRecipe() async {
+    func testARecipeCampaignRoutesToThatRecipe() {
         let deliveries = MockNotificationDeliveryService()
         let router = NotificationRouter(deliveryService: deliveries)
 
@@ -14,7 +14,7 @@ final class NotificationRouterTests: XCTestCase {
         XCTAssertEqual(router.pendingRoute, .recipe(id: 7, cookbookId: 3))
     }
 
-    func testTheStaleListCampaignRoutesToTheShoppingList() async {
+    func testTheStaleListCampaignRoutesToTheShoppingList() {
         let deliveries = MockNotificationDeliveryService()
         let router = NotificationRouter(deliveryService: deliveries)
 
@@ -34,7 +34,7 @@ final class NotificationRouterTests: XCTestCase {
         XCTAssertEqual(deliveries.opened.map(\.deliveryId), [44])
     }
 
-    func testANonLifecycleNotificationIsIgnored() async {
+    func testANonLifecycleNotificationIsIgnored() {
         let deliveries = MockNotificationDeliveryService()
         let router = NotificationRouter(deliveryService: deliveries)
 
@@ -43,7 +43,7 @@ final class NotificationRouterTests: XCTestCase {
         XCTAssertNil(router.pendingRoute)
     }
 
-    func testConsumingClearsTheRoute() async {
+    func testConsumingClearsTheRoute() {
         let deliveries = MockNotificationDeliveryService()
         let router = NotificationRouter(deliveryService: deliveries)
 

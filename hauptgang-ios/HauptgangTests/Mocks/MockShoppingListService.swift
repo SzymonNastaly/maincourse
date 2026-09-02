@@ -21,14 +21,18 @@ final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sen
 
     func fetchItems() async throws -> [ShoppingListItemResponse] {
         self.fetchCallCount += 1
-        if self.shouldThrow { throw self.errorToThrow }
+        if self.shouldThrow {
+            throw self.errorToThrow
+        }
         return self.fetchResult
     }
 
     func createItems(_ items: [ShoppingListItemCreate]) async throws -> [ShoppingListItemResponse] {
         self.createCallCount += 1
         self.lastCreatedPayload = items
-        if self.shouldThrow { throw self.errorToThrow }
+        if self.shouldThrow {
+            throw self.errorToThrow
+        }
         return self.createResult
     }
 
@@ -40,7 +44,9 @@ final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sen
     ) async throws -> ShoppingListItemResponse {
         self.updateCallCount += 1
         self.lastUpdatedId = id
-        if self.shouldThrow { throw self.errorToThrow }
+        if self.shouldThrow {
+            throw self.errorToThrow
+        }
         guard let result = self.updateResult else { throw MockShoppingListServiceError.notConfigured }
         return result
     }
@@ -48,12 +54,18 @@ final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sen
     func deleteItem(id: Int) async throws {
         self.deleteCallCount += 1
         self.lastDeletedId = id
-        if let error = self.deleteError { throw error }
-        if self.shouldThrow { throw self.errorToThrow }
+        if let error = self.deleteError {
+            throw error
+        }
+        if self.shouldThrow {
+            throw self.errorToThrow
+        }
     }
 
     func deleteAllItems() async throws {
-        if self.shouldThrow { throw self.errorToThrow }
+        if self.shouldThrow {
+            throw self.errorToThrow
+        }
     }
 }
 

@@ -53,7 +53,11 @@ struct SettingsView: View {
             }
             .alert("Error", isPresented: Binding(
                 get: { self.errorMessage != nil },
-                set: { if !$0 { self.errorMessage = nil } }
+                set: {
+                    if !$0 {
+                        self.errorMessage = nil
+                    }
+                }
             )) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -151,13 +155,15 @@ struct SettingsView: View {
             // Someone who denied earlier gets no system dialog — iOS only ever shows it
             // once — so the switch would sit there reading "on" while nothing arrives.
             // The Settings app is the only route back.
-            if await PushNotificationService.shared.currentAuthorizationStatus() == .denied {
+            let status = await PushNotificationService.shared.currentAuthorizationStatus()
+            if status == .denied {
                 self.showingNotificationSettingsAlert = true
             }
         } catch {
             // The toggle reads from authManager, which is unchanged on failure, so it
             // snaps back on its own.
-            self.errorMessage = (error as? APIError)?.errorDescription ?? "An unexpected error occurred. Please try again."
+            self.errorMessage = (error as? APIError)?.errorDescription
+                ?? "An unexpected error occurred. Please try again."
         }
     }
 
@@ -185,40 +191,38 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     private var proSubscriptionContent: some View {
-        Group {
+        HStack {
+            Image(systemName: "crown.fill")
+                .foregroundColor(.yellow)
+            Text("MainCourse Pro")
+                .fontWeight(.semibold)
+        }
+        Button {
+            self.showingCustomerCenter = true
+        } label: {
             HStack {
-                Image(systemName: "crown.fill")
-                    .foregroundColor(.yellow)
-                Text("MainCourse Pro")
-                    .fontWeight(.semibold)
-            }
-            Button {
-                self.showingCustomerCenter = true
-            } label: {
-                HStack {
-                    Image(systemName: "gearshape")
-                    Text("Manage Subscription")
-                }
+                Image(systemName: "gearshape")
+                Text("Manage Subscription")
             }
         }
     }
 
+    @ViewBuilder
     private var freeSubscriptionContent: some View {
-        Group {
+        HStack {
+            Image(systemName: "person")
+                .foregroundColor(.hauptgangTextSecondary)
+            Text("Free Plan")
+        }
+        Button {
+            self.showingPaywall = true
+        } label: {
             HStack {
-                Image(systemName: "person")
-                    .foregroundColor(.hauptgangTextSecondary)
-                Text("Free Plan")
-            }
-            Button {
-                self.showingPaywall = true
-            } label: {
-                HStack {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.yellow)
-                    Text("Upgrade to Pro")
-                }
+                Image(systemName: "star.fill")
+                    .foregroundColor(.yellow)
+                Text("Upgrade to Pro")
             }
         }
     }

@@ -17,6 +17,8 @@ final class MockRecipeViewSink: RecipeViewSink, @unchecked Sendable {
 
     func send(_ views: [RecipeView]) async throws {
         self.lock.withLock { self._batches.append(views) }
-        if let error = self.errorToThrow { throw error }
+        if let error = self.errorToThrow {
+            throw error
+        }
     }
 }

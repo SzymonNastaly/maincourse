@@ -101,7 +101,7 @@ struct RecipeDetailContentView: View {
                         ) { image in
                             image
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
+                                .scaledToFill()
                         } placeholder: {
                             Color.gray.opacity(0.2)
                                 .overlay {
@@ -210,13 +210,12 @@ struct RecipeDetailContentView: View {
         }
     }
 
+    @ViewBuilder
     private var cookingModeButton: some View {
-        Group {
-            if #available(iOS 26, *) {
-                self.cookingModeButtonGlass
-            } else {
-                self.cookingModeButtonLegacy
-            }
+        if #available(iOS 26, *) {
+            self.cookingModeButtonGlass
+        } else {
+            self.cookingModeButtonLegacy
         }
     }
 

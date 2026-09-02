@@ -110,7 +110,7 @@ final class PushNotificationServiceTests: XCTestCase {
     func testRegistrationIncludesTheDeviceTimeZone() async throws {
         let api = MockAPIClient()
         await api.setResponse(#"{"id":1,"token":"abc","environment":"sandbox"}"#)
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let service = PushNotificationService(api: api, defaults: defaults)
 
         await service.setAuthenticated(true)
@@ -125,7 +125,7 @@ final class PushNotificationServiceTests: XCTestCase {
     func testTimeZoneChangeTriggersReRegistration() async throws {
         let api = MockAPIClient()
         await api.setResponse(#"{"id":1,"token":"abcd","environment":"sandbox"}"#)
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let service = PushNotificationService(api: api, defaults: defaults)
 
         await service.setAuthenticated(true)

@@ -69,7 +69,7 @@ struct MealPlanRecipePicker: View {
         Group {
             if let url = Constants.API.resolveURL(recipe.thumbnailCoverImageUrl) {
                 CachedRecipeImage(url: url, maxPixelSize: 48 * self.displayScale) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
+                    image.resizable().scaledToFill()
                 } placeholder: {
                     Color.clear
                 } failure: {

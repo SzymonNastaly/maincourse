@@ -18,11 +18,11 @@ final class RecipeViewTrackerTests: XCTestCase {
 
     func testFlushSendsRecordedViewsAndClearsTheQueue() async throws {
         let sink = MockRecipeViewSink()
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let tracker = RecipeViewTracker(sink: sink, defaults: defaults)
 
-        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1_000))
-        await tracker.record(recipeId: 9, at: Date(timeIntervalSince1970: 2_000))
+        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1000))
+        await tracker.record(recipeId: 9, at: Date(timeIntervalSince1970: 2000))
         await tracker.flush()
 
         XCTAssertEqual(sink.batches.count, 1)
@@ -36,10 +36,10 @@ final class RecipeViewTrackerTests: XCTestCase {
     func testAFailedFlushKeepsTheViewsForNextTime() async throws {
         let sink = MockRecipeViewSink()
         sink.errorToThrow = APIError.networkError(URLError(.notConnectedToInternet))
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let tracker = RecipeViewTracker(sink: sink, defaults: defaults)
 
-        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1_000))
+        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1000))
         await tracker.flush()
         XCTAssertEqual(sink.batches.count, 1)
 
@@ -52,9 +52,9 @@ final class RecipeViewTrackerTests: XCTestCase {
 
     func testQueueSurvivesRelaunch() async throws {
         let sink = MockRecipeViewSink()
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let first = RecipeViewTracker(sink: sink, defaults: defaults)
-        await first.record(recipeId: 42, at: Date(timeIntervalSince1970: 3_000))
+        await first.record(recipeId: 42, at: Date(timeIntervalSince1970: 3000))
 
         // A fresh instance backed by the same defaults stands in for the next launch.
         let second = RecipeViewTracker(sink: sink, defaults: defaults)
@@ -65,10 +65,10 @@ final class RecipeViewTrackerTests: XCTestCase {
 
     func testQueueIsCappedAndKeepsTheNewest() async throws {
         let sink = MockRecipeViewSink()
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let tracker = RecipeViewTracker(sink: sink, defaults: defaults)
 
-        for id in 1...(RecipeViewTracker.maxQueued + 10) {
+        for id in 1 ... (RecipeViewTracker.maxQueued + 10) {
             await tracker.record(recipeId: id, at: Date(timeIntervalSince1970: TimeInterval(id)))
         }
         await tracker.flush()
@@ -84,14 +84,14 @@ final class RecipeViewTrackerTests: XCTestCase {
         // already in the batch) is recorded. The post-flush reconciliation must drop only
         // the entries that were actually sent, not the newest matching-by-content entry.
         let sink = SlowMockRecipeViewSink()
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let tracker = RecipeViewTracker(sink: sink, defaults: defaults)
 
-        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1_000))
+        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1000))
 
         let flushTask = Task { await tracker.flush() }
         await sink.waitUntilSendStarted()
-        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1_000))
+        await tracker.record(recipeId: 7, at: Date(timeIntervalSince1970: 1000))
         await sink.releaseSend()
         await flushTask.value
 
@@ -108,7 +108,7 @@ final class RecipeViewTrackerTests: XCTestCase {
 
     func testResetClearsTheQueue() async throws {
         let sink = MockRecipeViewSink()
-        nonisolated(unsafe) let defaults = self.defaults!
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
         let tracker = RecipeViewTracker(sink: sink, defaults: defaults)
 
         await tracker.record(recipeId: 7)

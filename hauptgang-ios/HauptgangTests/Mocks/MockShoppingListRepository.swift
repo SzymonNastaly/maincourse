@@ -20,13 +20,17 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     }
 
     func getAllItems() throws -> [PersistedShoppingListItem] {
-        if self.shouldThrowOnGet { throw MockShoppingListRepoError.testError }
+        if self.shouldThrowOnGet {
+            throw MockShoppingListRepoError.testError
+        }
         return self.items
     }
 
     /// Simulates the real repository: prunes orphaned synced items when told to, then upserts.
     func saveItems(_ serverItems: [ShoppingListItemResponse], pruneOrphans: Bool) throws {
-        if self.shouldThrowOnSave { throw MockShoppingListRepoError.testError }
+        if self.shouldThrowOnSave {
+            throw MockShoppingListRepoError.testError
+        }
 
         if pruneOrphans {
             let serverClientIds = Set(serverItems.map(\.clientId))
@@ -62,7 +66,9 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     }
 
     func addLocalItems(_ items: [ShoppingListItemCreate]) throws {
-        if self.shouldThrowOnSave { throw MockShoppingListRepoError.testError }
+        if self.shouldThrowOnSave {
+            throw MockShoppingListRepoError.testError
+        }
         self.addedLocalItems.append(items)
         for item in items {
             let persisted = PersistedShoppingListItem(
@@ -78,7 +84,9 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     }
 
     func updateItem(clientId: String, checkedAt: Date?) throws {
-        if self.shouldThrowOnSave { throw MockShoppingListRepoError.testError }
+        if self.shouldThrowOnSave {
+            throw MockShoppingListRepoError.testError
+        }
         self.updatedItems.append((clientId: clientId, checkedAt: checkedAt))
     }
 
@@ -88,7 +96,9 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     }
 
     func updateItemFromServer(clientId: String, response: ShoppingListItemResponse) throws {
-        if self.shouldThrowOnSave { throw MockShoppingListRepoError.testError }
+        if self.shouldThrowOnSave {
+            throw MockShoppingListRepoError.testError
+        }
         guard let local = self.items.first(where: { $0.clientId == clientId }) else { return }
         local.serverId = response.id
         local.name = response.name
@@ -104,12 +114,16 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     }
 
     func getPendingCreates() throws -> [PersistedShoppingListItem] {
-        if self.shouldThrowOnGet { throw MockShoppingListRepoError.testError }
+        if self.shouldThrowOnGet {
+            throw MockShoppingListRepoError.testError
+        }
         return self.items.filter { $0.syncState == .pendingCreate }
     }
 
     func getPendingUpdates() throws -> [PersistedShoppingListItem] {
-        if self.shouldThrowOnGet { throw MockShoppingListRepoError.testError }
+        if self.shouldThrowOnGet {
+            throw MockShoppingListRepoError.testError
+        }
         return self.items.filter { $0.syncState == .pendingUpdate }
     }
 

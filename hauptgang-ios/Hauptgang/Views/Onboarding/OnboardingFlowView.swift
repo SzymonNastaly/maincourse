@@ -124,22 +124,21 @@ struct OnboardingFlowView: View {
 
     // MARK: - Footer
 
+    @ViewBuilder
     private var footer: some View {
-        Group {
-            if self.viewModel.step.isQuestion {
-                Button(action: self.handleAdvance) {
-                    HStack {
-                        Text(self.advanceLabel)
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
+        if self.viewModel.step.isQuestion {
+            Button(action: self.handleAdvance) {
+                HStack {
+                    Text(self.advanceLabel)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .semibold))
                 }
-                .primaryButton()
-                .puffyButton()
-                .disabled(!self.viewModel.canAdvance)
-                .opacity(self.viewModel.canAdvance ? 1.0 : 0.5)
-                .padding(.bottom, Theme.Spacing.md)
             }
+            .primaryButton()
+            .puffyButton()
+            .disabled(!self.viewModel.canAdvance)
+            .opacity(self.viewModel.canAdvance ? 1.0 : 0.5)
+            .padding(.bottom, Theme.Spacing.md)
         }
     }
 

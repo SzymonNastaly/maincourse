@@ -18,7 +18,9 @@ enum RecipeFuzzyScorer {
 
             let tokens = self.searchableTokens(from: snapshot)
             let totalScore = self.totalScore(for: queryTokenGroups, tokens: tokens)
-            if totalScore == 0 { return nil }
+            if totalScore == 0 {
+                return nil
+            }
 
             return totalScore > 0 ? (snapshot.id, totalScore, snapshot.updatedAt) : nil
         }
@@ -64,7 +66,9 @@ enum RecipeFuzzyScorer {
                 return max(best, nameScore, ingredientScore, instructionScore)
             }
 
-            if bestScore == 0 { return 0 }
+            if bestScore == 0 {
+                return 0
+            }
             total += bestScore
         }
 
@@ -121,13 +125,21 @@ enum RecipeFuzzyScorer {
     }
 
     private static func levenshteinDistance(_ lhs: String, _ rhs: String, maxDistance: Int) -> Int? {
-        if lhs == rhs { return 0 }
-        if abs(lhs.count - rhs.count) > maxDistance { return nil }
+        if lhs == rhs {
+            return 0
+        }
+        if abs(lhs.count - rhs.count) > maxDistance {
+            return nil
+        }
 
         let lhsChars = Array(lhs)
         let rhsChars = Array(rhs)
-        if lhsChars.isEmpty { return rhsChars.count <= maxDistance ? rhsChars.count : nil }
-        if rhsChars.isEmpty { return lhsChars.count <= maxDistance ? lhsChars.count : nil }
+        if lhsChars.isEmpty {
+            return rhsChars.count <= maxDistance ? rhsChars.count : nil
+        }
+        if rhsChars.isEmpty {
+            return lhsChars.count <= maxDistance ? lhsChars.count : nil
+        }
 
         var previous = Array(0 ... rhsChars.count)
         var current = Array(repeating: 0, count: rhsChars.count + 1)

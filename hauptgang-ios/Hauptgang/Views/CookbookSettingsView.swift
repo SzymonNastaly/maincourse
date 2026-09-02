@@ -46,7 +46,11 @@ struct CookbookSettingsView: View {
         }
         .alert("Error", isPresented: Binding(
             get: { self.errorMessage != nil },
-            set: { if !$0 { self.errorMessage = nil } }
+            set: {
+                if !$0 {
+                    self.errorMessage = nil
+                }
+            }
         )) {
             Button("OK", role: .cancel) {}
         } message: {

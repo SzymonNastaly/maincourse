@@ -103,7 +103,7 @@ struct SplashView: View {
 
             Image("LaunchLogo")
                 .resizable()
-                .aspectRatio(contentMode: .fit)
+                .scaledToFit()
                 .frame(width: 96, height: 96)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

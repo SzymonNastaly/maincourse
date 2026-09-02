@@ -79,7 +79,9 @@ private extension String {
         while result.hasSuffix("0") {
             result.removeLast()
         }
-        if result.hasSuffix(".") { result.removeLast() }
+        if result.hasSuffix(".") {
+            result.removeLast()
+        }
         return result
     }
 }

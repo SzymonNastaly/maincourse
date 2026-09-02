@@ -59,8 +59,12 @@ final class AuthViewModel: ObservableObject {
     var emailError: String? {
         guard self.emailDirty else { return nil }
         let trimmed = self.email.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty { return nil }
-        if !self.isValidEmail(trimmed) { return "Please enter a valid email" }
+        if trimmed.isEmpty {
+            return nil
+        }
+        if !self.isValidEmail(trimmed) {
+            return "Please enter a valid email"
+        }
         return nil
     }
 

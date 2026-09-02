@@ -49,6 +49,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         await NotificationRouter.shared.handle(payload)
     }
 
+    // swiftlint:disable async_without_await
     /// Show lifecycle notifications even while the app is in the foreground — they are
     /// timed for a moment the user is deciding what to cook, and silently dropping one
     /// because the app happens to be open would lose the nudge entirely.
@@ -58,4 +59,5 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) async -> UNNotificationPresentationOptions {
         [.banner, .sound]
     }
+    // swiftlint:enable async_without_await
 }

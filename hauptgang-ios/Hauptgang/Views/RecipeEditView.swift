@@ -54,7 +54,11 @@ struct RecipeEditView: View {
         }
         .alert("Error", isPresented: Binding(
             get: { self.viewModel.errorMessage != nil },
-            set: { if !$0 { self.viewModel.errorMessage = nil } }
+            set: {
+                if !$0 {
+                    self.viewModel.errorMessage = nil
+                }
+            }
         )) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -97,7 +101,7 @@ struct RecipeEditView: View {
                 if let data = self.viewModel.coverImageData, let uiImage = UIImage(data: data) {
                     Image(uiImage: uiImage)
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .scaledToFill()
                         .frame(height: 180)
                         .frame(maxWidth: .infinity)
                         .clipped()
@@ -106,7 +110,7 @@ struct RecipeEditView: View {
                     CachedRecipeImage(url: url, maxPixelSize: 180 * self.displayScale) { image in
                         image
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
                             .frame(height: 180)
                             .frame(maxWidth: .infinity)
                             .clipped()

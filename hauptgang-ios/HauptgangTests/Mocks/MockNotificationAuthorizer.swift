@@ -1,5 +1,5 @@
-@testable import Hauptgang
 import Foundation
+@testable import Hauptgang
 import UserNotifications
 
 /// Drives `PushNotificationService`'s authorization branches without a system dialog.

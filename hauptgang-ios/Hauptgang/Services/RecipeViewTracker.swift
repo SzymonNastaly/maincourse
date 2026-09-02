@@ -132,7 +132,7 @@ actor RecipeViewTracker {
             return
         }
         do {
-            self.defaults.set(try JSONEncoder().encode(queue), forKey: Self.queueKey)
+            try self.defaults.set(JSONEncoder().encode(queue), forKey: Self.queueKey)
         } catch {
             logger.error("Failed to persist recipe view queue: \(error.localizedDescription)")
         }

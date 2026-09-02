@@ -79,7 +79,7 @@ struct LoginView: View {
             VStack(spacing: Theme.Spacing.md) {
                 Image("LoginLogo")
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .scaledToFit()
                     .frame(width: 80, height: 80)
                     .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
 

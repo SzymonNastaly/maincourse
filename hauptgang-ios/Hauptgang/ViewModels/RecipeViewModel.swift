@@ -331,7 +331,9 @@ extension RecipeViewModel {
                 break
             }
 
-            if Task.isCancelled { break }
+            if Task.isCancelled {
+                break
+            }
             if await self.pollOnceFoundNoPendingImports() {
                 await MainActor.run {
                     self.logger.info("No more pending imports, stopping polling")
@@ -590,7 +592,9 @@ extension RecipeViewModel {
         while !Task.isCancelled {
             do {
                 let response = try await recipeService.fetchRecipeDetails(cursor: cursor, limit: 100)
-                if response.recipes.isEmpty { break }
+                if response.recipes.isEmpty {
+                    break
+                }
 
                 await MainActor.run {
                     self.applyDetailSyncRecipes(response.recipes, repository: repository)

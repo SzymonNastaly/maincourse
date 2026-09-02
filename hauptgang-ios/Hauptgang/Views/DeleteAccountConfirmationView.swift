@@ -75,7 +75,11 @@ struct DeleteAccountConfirmationView: View {
             "Couldn't delete account",
             isPresented: Binding(
                 get: { self.errorMessage != nil },
-                set: { if !$0 { self.errorMessage = nil } }
+                set: {
+                    if !$0 {
+                        self.errorMessage = nil
+                    }
+                }
             )
         ) {
             Button("OK", role: .cancel) {}

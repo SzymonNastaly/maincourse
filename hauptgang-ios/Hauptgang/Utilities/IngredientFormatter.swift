@@ -47,7 +47,9 @@ enum IngredientFormatter {
     static func unicodeFraction(_ value: Decimal) -> String? {
         for entry in self.fractionTable {
             var diff = value - entry.value
-            if diff < 0 { diff = -diff }
+            if diff < 0 {
+                diff = -diff
+            }
             if diff < Self.fractionTolerance {
                 return entry.glyph
             }

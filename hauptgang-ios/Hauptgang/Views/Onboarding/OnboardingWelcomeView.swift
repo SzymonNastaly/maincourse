@@ -19,7 +19,7 @@ struct OnboardingWelcomeView: View {
             VStack(spacing: Theme.Spacing.lg) {
                 Image("LoginLogo")
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .scaledToFit()
                     .frame(width: 96, height: 96)
                     .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
                     .opacity(self.logoVisible ? 1 : 0)
