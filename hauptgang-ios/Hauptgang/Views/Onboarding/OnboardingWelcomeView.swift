@@ -46,7 +46,6 @@ struct OnboardingWelcomeView: View {
                 Text("Get started")
             }
             .primaryButton()
-            .puffyButton()
             .padding(.bottom, Theme.Spacing.md)
             .opacity(self.ctaVisible ? 1 : 0)
             .offset(y: self.ctaVisible ? 0 : 8)

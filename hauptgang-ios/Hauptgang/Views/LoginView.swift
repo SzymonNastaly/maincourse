@@ -222,7 +222,6 @@ struct LoginView: View {
             }
         }
         .primaryButton()
-        .puffyButton()
         .disabled(!self.viewModel.isFormValid || self.viewModel.isLoading)
         .opacity((!self.viewModel.isFormValid || self.viewModel.isLoading) ? 0.5 : 1.0)
     }
