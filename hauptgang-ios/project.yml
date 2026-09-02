@@ -78,6 +78,7 @@ targets:
       - path: Hauptgang/Services/KeychainService.swift
       - path: Hauptgang/Models/APIError.swift
       - path: Hauptgang/Models/User.swift
+      - path: Hauptgang/Utilities/MainCourseTheme.swift
       - path: Hauptgang/Utilities/Constants.swift
       - path: Hauptgang/Models/ImportRecipeResponse.swift
       - path: Hauptgang/Services/RecipeImportService.swift
