@@ -87,7 +87,7 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
             HStack {
                 Text("To Buy")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .foregroundStyle(Color.mcBody)
                     .textCase(.uppercase)
                 Spacer()
                 self.uncheckedHeaderTrailing
@@ -118,12 +118,12 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
                 HStack(spacing: Theme.Spacing.sm) {
                     Text("Already Got")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.hauptgangTextSecondary)
+                        .foregroundStyle(Color.mcBody)
                         .textCase(.uppercase)
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.hauptgangTextMuted)
+                        .foregroundStyle(Color.mcMuted)
                         .rotationEffect(.degrees(self.checkedSectionExpanded ? 90 : 0))
                 }
             }
@@ -152,19 +152,19 @@ private struct ShoppingListItemTile: View {
                     Text(trimmed)
                         .font(.caption.weight(.light))
                         .italic()
-                        .foregroundStyle(Color.hauptgangTextSecondary)
+                        .foregroundStyle(Color.mcBody)
                         .lineLimit(2)
                         .minimumScaleFactor(0.8)
                 }
             }
             .multilineTextAlignment(.center)
-            .foregroundStyle(self.item.isChecked ? Color.hauptgangTextMuted : Color.hauptgangTextPrimary)
+            .foregroundStyle(self.item.isChecked ? Color.mcMuted : Color.mcInk)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(Theme.Spacing.sm)
             .aspectRatio(1, contentMode: .fit)
             .background(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                    .fill(self.item.isChecked ? Color.hauptgangSurfaceRaised : Color.hauptgangCard)
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .fill(self.item.isChecked ? Color.mcSunken : Color.mcSurface)
                     .shadow(
                         color: Color.black.opacity(self.item.isChecked ? 0 : 0.06),
                         radius: 4,
@@ -175,7 +175,7 @@ private struct ShoppingListItemTile: View {
         }
         .buttonStyle(.plain)
         .geometryGroup()
-        .contentShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
         .contextMenu {
             if let onDelete = self.item.onDelete {
                 Button(role: .destructive) {

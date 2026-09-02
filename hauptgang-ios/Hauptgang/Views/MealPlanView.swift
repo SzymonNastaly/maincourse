@@ -29,7 +29,7 @@ struct MealPlanView: View {
                 onDeleteEntry: self.deleteEntry,
                 onToggleVote: self.toggleVote
             )
-            .background(Color.hauptgangBackground.ignoresSafeArea())
+            .background(Color.mcCanvas.ignoresSafeArea())
             .navigationTitle(self.navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarTitleMenu {

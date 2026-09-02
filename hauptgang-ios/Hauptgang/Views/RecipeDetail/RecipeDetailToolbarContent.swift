@@ -19,7 +19,7 @@ struct RecipeDetailToolbarContent: ToolbarContent {
                 Button(action: self.onAddToShoppingList) {
                     Image(systemName: "cart.badge.plus")
                 }
-                .tint(Color.hauptgangPrimary)
+                .tint(Color.mcAccent)
                 .accessibilityLabel("Add to shopping list")
                 .accessibilityHint("Review this recipe's ingredients before adding them to your shopping list")
             } else {
@@ -28,7 +28,7 @@ struct RecipeDetailToolbarContent: ToolbarContent {
                 }
                 .accessibilityLabel("Add to shopping list")
                 .accessibilityHint("Review this recipe's ingredients before adding them to your shopping list")
-                .tint(Color.hauptgangPrimary)
+                .tint(Color.mcAccent)
             }
         }
     }
@@ -39,7 +39,7 @@ struct RecipeDetailToolbarContent: ToolbarContent {
             Button(action: self.onEdit) {
                 Image(systemName: "pencil")
             }
-            .tint(Color.hauptgangPrimary)
+            .tint(Color.mcAccent)
             .accessibilityLabel("Edit recipe")
         } else {
             Button(action: self.onEdit) {

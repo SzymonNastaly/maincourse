@@ -20,7 +20,7 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         ZStack {
-            Color.hauptgangBackground.ignoresSafeArea()
+            Color.mcCanvas.ignoresSafeArea()
 
             if self.showWelcome, self.viewModel.step.isQuestion {
                 OnboardingWelcomeView {
@@ -52,7 +52,7 @@ struct OnboardingFlowView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.hauptgangTextSecondary)
+                        .foregroundColor(.mcBody)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -67,7 +67,7 @@ struct OnboardingFlowView: View {
             } else {
                 Text("Account")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.hauptgangTextSecondary)
+                    .foregroundColor(.mcBody)
             }
 
             Spacer()
@@ -78,7 +78,7 @@ struct OnboardingFlowView: View {
                     self.onFinished()
                 }
                 .font(.subheadline)
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
                 .frame(minWidth: 44, minHeight: 44)
             } else {
                 Color.clear.frame(width: 44, height: 44)
@@ -93,8 +93,8 @@ struct OnboardingFlowView: View {
                 Capsule()
                     .fill(
                         index <= self.viewModel.step.progressIndex
-                            ? Color.hauptgangPrimary
-                            : Color.hauptgangBorderSubtle
+                            ? Color.mcAccent
+                            : Color.mcHairline
                     )
                     .frame(width: index == self.viewModel.step.progressIndex ? 24 : 8, height: 6)
                     .animation(.easeInOut(duration: 0.25), value: self.viewModel.step)

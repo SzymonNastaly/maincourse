@@ -46,8 +46,8 @@ struct ErrorBannerView: View {
         }
         .padding(Theme.Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                .fill(Color.hauptgangErrorSoft)
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .fill(Color.mcDanger)
         )
         .shadow(
             color: Color.black.opacity(0.1),

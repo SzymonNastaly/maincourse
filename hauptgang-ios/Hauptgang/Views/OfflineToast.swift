@@ -27,7 +27,7 @@ extension OfflineToast {
                 .font(.caption)
                 .fontWeight(.medium)
         }
-        .foregroundStyle(Color.hauptgangTextSecondary)
+        .foregroundStyle(Color.mcBody)
         .padding(.horizontal, Theme.Spacing.sm)
         .padding(.vertical, Theme.Spacing.xs)
     }

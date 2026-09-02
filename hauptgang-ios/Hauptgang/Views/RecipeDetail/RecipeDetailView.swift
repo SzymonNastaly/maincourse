@@ -62,7 +62,7 @@ struct RecipeDetailView: View {
                 RecipeDetailErrorView(message: errorMessage, onRetry: self.retryLoad)
             }
         }
-        .background(Color.hauptgangBackground)
+        .background(Color.mcCanvas)
         .navigationBarTitleDisplayMode(.inline)
         .modifier(NavigationBarBackgroundModifier())
         .toolbar {
@@ -196,11 +196,11 @@ private struct RecipeDetailLoadingView: View {
         VStack(spacing: Theme.Spacing.md) {
             ProgressView()
                 .scaleEffect(1.2)
-                .tint(.hauptgangPrimary)
+                .tint(.mcAccent)
 
             Text("Loading recipe...")
                 .font(.subheadline)
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -214,11 +214,11 @@ private struct RecipeDetailErrorView: View {
         VStack(spacing: Theme.Spacing.lg) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 48))
-                .foregroundColor(.hauptgangError)
+                .foregroundColor(.mcDanger)
 
             Text(self.message)
                 .font(.subheadline)
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
                 .multilineTextAlignment(.center)
 
             Button(action: self.onRetry) {
@@ -226,7 +226,7 @@ private struct RecipeDetailErrorView: View {
                     .font(.subheadline)
             }
             .buttonStyle(.bordered)
-            .tint(.hauptgangPrimary)
+            .tint(.mcAccent)
         }
         .padding(Theme.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

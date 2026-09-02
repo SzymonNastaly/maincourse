@@ -12,17 +12,17 @@ struct OnboardingChip: View {
             Text(self.label)
                 .font(.system(.body, design: .default))
                 .fontWeight(.medium)
-                .foregroundColor(self.isSelected ? .white : .hauptgangTextPrimary)
+                .foregroundColor(self.isSelected ? .white : .mcInk)
                 .padding(.horizontal, Theme.Spacing.md)
                 .padding(.vertical, Theme.Spacing.sm + 2)
                 .background(
-                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                        .fill(self.isSelected ? Color.hauptgangPrimary : Color.hauptgangCard)
+                    RoundedRectangle(cornerRadius: Theme.Radius.card)
+                        .fill(self.isSelected ? Color.mcAccent : Color.mcSurface)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                    RoundedRectangle(cornerRadius: Theme.Radius.card)
                         .stroke(
-                            self.isSelected ? Color.clear : Color.hauptgangBorderSubtle,
+                            self.isSelected ? Color.clear : Color.mcHairline,
                             lineWidth: 1
                         )
                 )
@@ -43,12 +43,12 @@ struct OnboardingQuestionHeader: View {
             Text(self.title)
                 .font(.system(.title, design: .serif))
                 .fontWeight(.bold)
-                .foregroundColor(.hauptgangTextPrimary)
+                .foregroundColor(.mcInk)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(self.subtitle)
                 .font(.subheadline)
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

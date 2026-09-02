@@ -25,7 +25,7 @@ struct DeleteAccountConfirmationView: View {
                     Text(
                         "Deleting your account will permanently remove:"
                     )
-                    .foregroundColor(.hauptgangTextPrimary)
+                    .foregroundColor(.mcInk)
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         self.bulletRow("Your personal cookbook and all its recipes")
                         self.bulletRow("Your shopping list and meal plans")
@@ -37,7 +37,7 @@ struct DeleteAccountConfirmationView: View {
                         so their data is preserved.
                         """
                     )
-                    .foregroundColor(.hauptgangTextSecondary)
+                    .foregroundColor(.mcBody)
                     .font(.callout)
                 }
                 .padding(.vertical, Theme.Spacing.xs)
@@ -45,7 +45,7 @@ struct DeleteAccountConfirmationView: View {
 
             Section {
                 Text("Type **\(self.requiredPhrase)** to confirm")
-                    .foregroundColor(.hauptgangTextSecondary)
+                    .foregroundColor(.mcBody)
                 TextField(self.requiredPhrase, text: self.$typedConfirmation)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
@@ -93,7 +93,7 @@ struct DeleteAccountConfirmationView: View {
             Text("•")
             Text(text)
         }
-        .foregroundColor(.hauptgangTextPrimary)
+        .foregroundColor(.mcInk)
     }
 
     private func performDelete() async {

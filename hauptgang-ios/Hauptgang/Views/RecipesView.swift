@@ -176,7 +176,7 @@ struct RecipesView: View {
                 self.recipeListView
             }
         }
-        .background(Color.hauptgangBackground.ignoresSafeArea())
+        .background(Color.mcCanvas.ignoresSafeArea())
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
@@ -394,11 +394,11 @@ struct RecipesView: View {
                 Text("No recipes yet")
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundColor(.hauptgangTextPrimary)
+                    .foregroundColor(.mcInk)
 
                 Text("Your recipes will appear here")
                     .font(.subheadline)
-                    .foregroundColor(.hauptgangTextSecondary)
+                    .foregroundColor(.mcBody)
             }
 
             Button {
@@ -411,7 +411,7 @@ struct RecipesView: View {
                     .font(.subheadline)
             }
             .buttonStyle(.bordered)
-            .tint(.hauptgangPrimary)
+            .tint(.mcAccent)
 
             Spacer()
         }
@@ -423,10 +423,10 @@ private struct ImportingOverlayBackground: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
             content
-                .glassEffect(.regular, in: .rect(cornerRadius: Theme.CornerRadius.lg))
+                .glassEffect(.regular, in: .rect(cornerRadius: Theme.Radius.card))
         } else {
             content
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         }
     }
 }

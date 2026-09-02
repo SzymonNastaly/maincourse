@@ -12,11 +12,11 @@ struct ManageAccountView: View {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text(user.email)
                             .font(.body)
-                            .foregroundColor(.hauptgangTextPrimary)
+                            .foregroundColor(.mcInk)
                         if let name = user.name, !name.isEmpty {
                             Text(name)
                                 .font(.caption)
-                                .foregroundColor(.hauptgangTextSecondary)
+                                .foregroundColor(.mcBody)
                         }
                     }
                     .padding(.vertical, Theme.Spacing.xs)

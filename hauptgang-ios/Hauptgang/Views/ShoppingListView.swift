@@ -62,7 +62,7 @@ struct ShoppingListView: View {
             await self.networkMonitor.refreshStatus()
             await self.viewModel.refresh()
         }
-        .background(Color.hauptgangBackground.ignoresSafeArea())
+        .background(Color.mcCanvas.ignoresSafeArea())
         .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
@@ -188,17 +188,17 @@ struct ShoppingListView: View {
             Text("Remove All")
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(Color.hauptgangTextSecondary)
+                .foregroundColor(Color.mcBody)
                 .padding(.horizontal, Theme.Spacing.sm + 4)
                 .padding(.vertical, Theme.Spacing.xs + 2)
                 .background(
                     Capsule()
-                        .fill(Color.hauptgangBackground)
+                        .fill(Color.mcCanvas)
                 )
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .strokeBorder(Color.hauptgangTextMuted.opacity(0.4), lineWidth: 1)
+                        .strokeBorder(Color.mcMuted.opacity(0.4), lineWidth: 1)
                 )
         }
         .disabled(self.viewModel.isSyncing)
@@ -225,11 +225,11 @@ struct ShoppingListView: View {
 
                 Text("Your shopping list is empty")
                     .font(.headline)
-                    .foregroundStyle(Color.hauptgangTextPrimary)
+                    .foregroundStyle(Color.mcInk)
 
                 Text("Add items from a recipe or type your own")
                     .font(.subheadline)
-                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .foregroundStyle(Color.mcBody)
                     .multilineTextAlignment(.center)
 
                 Spacer()

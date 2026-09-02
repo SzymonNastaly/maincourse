@@ -10,10 +10,10 @@ struct ThemeTextFieldModifier: ViewModifier {
             .padding(.horizontal, Theme.Spacing.md)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 52, alignment: .center)
-            .background(self.isError ? Color.hauptgangError
-                .opacity(0.1) : (self.isGrouped ? Color.clear : Color.hauptgangCard))
-            .clipShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.CornerRadius.md))
-            .contentShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.CornerRadius.md))
+            .background(self.isError ? Color.mcDanger
+                .opacity(0.1) : (self.isGrouped ? Color.clear : Color.mcSurface))
+            .clipShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.Radius.card))
+            .contentShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.Radius.card))
     }
 }
 
@@ -30,10 +30,10 @@ struct PrimaryButtonStyle: ButtonStyle {
             .padding(Theme.Spacing.md)
             .background(
                 self.isEnabled
-                    ? (configuration.isPressed ? Color.hauptgangPrimaryHover : Color.hauptgangPrimary)
-                    : Color.hauptgangTextMuted
+                    ? (configuration.isPressed ? Color.mcAccentDark : Color.mcAccent)
+                    : Color.mcMuted
             )
-            .cornerRadius(Theme.CornerRadius.md)
+            .cornerRadius(Theme.Radius.card)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
@@ -52,7 +52,7 @@ struct PuffyButtonStyle: ButtonStyle {
                 y: pressed ? 1 : 2
             )
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
                     .fill(Color.black.opacity(pressed ? 0.15 : 0))
             )
             .animation(.easeInOut(duration: 0.15), value: pressed)

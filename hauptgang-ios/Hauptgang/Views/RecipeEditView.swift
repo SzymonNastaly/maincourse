@@ -105,7 +105,7 @@ struct RecipeEditView: View {
                         .frame(height: 180)
                         .frame(maxWidth: .infinity)
                         .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
                 } else if let url = Constants.API.resolveURL(self.recipe.heroCoverImageUrl) {
                     CachedRecipeImage(url: url, maxPixelSize: 180 * self.displayScale) { image in
                         image
@@ -119,7 +119,7 @@ struct RecipeEditView: View {
                     } failure: {
                         self.imagePlaceholder
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
                 } else {
                     self.imagePlaceholder
                 }
@@ -128,7 +128,7 @@ struct RecipeEditView: View {
                 PhotosPicker(selection: self.$viewModel.selectedPhoto, matching: .images) {
                     Label(pickerLabel, systemImage: "photo")
                         .font(.subheadline)
-                        .foregroundColor(Color.hauptgangPrimary)
+                        .foregroundColor(Color.mcAccent)
                 }
             }
         }
@@ -136,14 +136,14 @@ struct RecipeEditView: View {
     }
 
     private var imagePlaceholder: some View {
-        RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-            .fill(Color.hauptgangSurfaceRaised)
+        RoundedRectangle(cornerRadius: Theme.Radius.card)
+            .fill(Color.mcSunken)
             .frame(height: 120)
             .frame(maxWidth: .infinity)
             .overlay {
                 Image(systemName: "photo")
                     .font(.system(size: 32))
-                    .foregroundColor(Color.hauptgangTextMuted)
+                    .foregroundColor(Color.mcMuted)
             }
     }
 
@@ -158,7 +158,7 @@ struct RecipeEditView: View {
         } footer: {
             if let error = self.viewModel.nameError, !self.viewModel.name.isEmpty {
                 Text(error)
-                    .foregroundStyle(Color.hauptgangError)
+                    .foregroundStyle(Color.mcDanger)
             }
         }
     }
@@ -169,7 +169,7 @@ struct RecipeEditView: View {
         Section("Time & Servings") {
             HStack {
                 Label("Prep", systemImage: "clock")
-                    .foregroundColor(Color.hauptgangTextSecondary)
+                    .foregroundColor(Color.mcBody)
                 Spacer()
                 TextField("min", text: self.$viewModel.prepTime)
                     .keyboardType(.numberPad)
@@ -179,7 +179,7 @@ struct RecipeEditView: View {
 
             HStack {
                 Label("Cook", systemImage: "flame")
-                    .foregroundColor(Color.hauptgangTextSecondary)
+                    .foregroundColor(Color.mcBody)
                 Spacer()
                 TextField("min", text: self.$viewModel.cookTime)
                     .keyboardType(.numberPad)
@@ -189,7 +189,7 @@ struct RecipeEditView: View {
 
             HStack {
                 Label("Servings", systemImage: "person.2")
-                    .foregroundColor(Color.hauptgangTextSecondary)
+                    .foregroundColor(Color.mcBody)
                 Spacer()
                 TextField("qty", text: self.$viewModel.servings)
                     .keyboardType(.numberPad)
@@ -218,7 +218,7 @@ struct RecipeEditView: View {
                             withAnimation { self.viewModel.removeIngredient(at: index) }
                         } label: {
                             Image(systemName: "minus.circle.fill")
-                                .foregroundColor(Color.hauptgangError)
+                                .foregroundColor(Color.mcDanger)
                         }
                         .buttonStyle(.plain)
                     }
@@ -230,7 +230,7 @@ struct RecipeEditView: View {
                 withAnimation { self.viewModel.addIngredient() }
             } label: {
                 Label("Add Ingredient", systemImage: "plus.circle.fill")
-                    .foregroundColor(Color.hauptgangPrimary)
+                    .foregroundColor(Color.mcAccent)
             }
         } header: {
             Text("Ingredients")
@@ -245,7 +245,7 @@ struct RecipeEditView: View {
                 HStack(alignment: .top) {
                     Text("\(index + 1).")
                         .font(.body)
-                        .foregroundColor(Color.hauptgangTextSecondary)
+                        .foregroundColor(Color.mcBody)
                         .padding(.top, 8)
 
                     TextField(
@@ -263,7 +263,7 @@ struct RecipeEditView: View {
                             withAnimation { self.viewModel.removeInstruction(at: index) }
                         } label: {
                             Image(systemName: "minus.circle.fill")
-                                .foregroundColor(Color.hauptgangError)
+                                .foregroundColor(Color.mcDanger)
                         }
                         .buttonStyle(.plain)
                         .padding(.top, 6)
@@ -276,7 +276,7 @@ struct RecipeEditView: View {
                 withAnimation { self.viewModel.addInstruction() }
             } label: {
                 Label("Add Step", systemImage: "plus.circle.fill")
-                    .foregroundColor(Color.hauptgangPrimary)
+                    .foregroundColor(Color.mcAccent)
             }
         } header: {
             Text("Instructions")

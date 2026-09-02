@@ -22,7 +22,7 @@ struct MealPlanDayRow: View {
     }
 
     private var pastForegroundColor: Color {
-        Color.hauptgangTextMuted.opacity(0.7)
+        Color.mcMuted.opacity(0.7)
     }
 
     var body: some View {
@@ -51,7 +51,7 @@ struct MealPlanDayRow: View {
                 .foregroundStyle(
                     self.components.isPast
                         ? self.pastForegroundColor
-                        : (self.components.isToday ? Color.hauptgangPrimary : Color.hauptgangTextPrimary)
+                        : (self.components.isToday ? Color.mcAccent : Color.mcInk)
                 )
                 .frame(minWidth: Self.dayNumberWidth, alignment: .leading)
                 .offset(x: Self.dayNumberHorizontalOffset)
@@ -62,14 +62,14 @@ struct MealPlanDayRow: View {
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor
-                            : Color.hauptgangTextPrimary
+                            : Color.mcInk
                     )
                 Text(self.components.month.uppercased())
                     .font(.caption)
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor
-                            : Color.hauptgangTextMuted
+                            : Color.mcMuted
                     )
             }
 
@@ -81,7 +81,7 @@ struct MealPlanDayRow: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.title3.weight(.regular))
-                        .foregroundStyle(Color.hauptgangPrimary)
+                        .foregroundStyle(Color.mcAccent)
                         .frame(width: 32, height: 32)
                         .contentShape(Rectangle())
                 }
@@ -136,7 +136,7 @@ struct MealPlanDayRow: View {
                         .foregroundStyle(
                             self.components.isPast
                                 ? self.pastForegroundColor
-                                : Color.hauptgangTextPrimary
+                                : Color.mcInk
                         )
                         .lineLimit(2)
 
@@ -146,7 +146,7 @@ struct MealPlanDayRow: View {
                             .foregroundStyle(
                                 self.components.isPast
                                     ? self.pastForegroundColor
-                                    : Color.hauptgangTextMuted
+                                    : Color.mcMuted
                             )
                     }
                 }
@@ -170,14 +170,14 @@ struct MealPlanDayRow: View {
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor
-                            : Color.hauptgangTextSecondary
+                            : Color.mcBody
                     )
                     .frame(minWidth: 16, alignment: .trailing)
                 Image(systemName: entry.votedByCurrentUser ? "heart.fill" : "heart")
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor
-                            : (entry.votedByCurrentUser ? Color.hauptgangPrimary : Color.hauptgangTextMuted)
+                            : (entry.votedByCurrentUser ? Color.mcAccent : Color.mcMuted)
                     )
                     .font(.title3)
             }

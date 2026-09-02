@@ -11,13 +11,13 @@ struct RecipeRowView: View {
                 HStack(spacing: Theme.Spacing.sm) {
                     Text(self.recipe.name)
                         .font(.headline)
-                        .foregroundColor(.hauptgangTextPrimary)
+                        .foregroundColor(.mcInk)
                         .lineLimit(2)
 
                     if self.recipe.favorite {
                         Image(systemName: "heart.fill")
                             .font(.caption)
-                            .foregroundColor(.hauptgangPrimary)
+                            .foregroundColor(.mcAccent)
                     }
                 }
 
@@ -29,7 +29,7 @@ struct RecipeRowView: View {
                         Text(timeText)
                             .font(.caption)
                     }
-                    .foregroundColor(.hauptgangTextSecondary)
+                    .foregroundColor(.mcBody)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -37,16 +37,11 @@ struct RecipeRowView: View {
             // Chevron indicator
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundColor(.hauptgangTextMuted)
+                .foregroundColor(.mcMuted)
         }
         .padding(Theme.Spacing.md)
-        .background(Color.hauptgangCard)
-        .cornerRadius(Theme.CornerRadius.md)
-        .shadow(
-            color: Theme.Shadow.sm.color,
-            radius: Theme.Shadow.sm.radius,
-            y: Theme.Shadow.sm.offsetY
-        )
+        .background(Color.mcSurface)
+        .cornerRadius(Theme.Radius.card)
     }
 
     /// Formats prep and cook time into a readable string
@@ -77,7 +72,7 @@ struct RecipeRowView: View {
         )
     )
     .padding()
-    .background(Color.hauptgangBackground)
+    .background(Color.mcCanvas)
 }
 
 #Preview("Minimal info") {
@@ -90,5 +85,5 @@ struct RecipeRowView: View {
         )
     )
     .padding()
-    .background(Color.hauptgangBackground)
+    .background(Color.mcCanvas)
 }

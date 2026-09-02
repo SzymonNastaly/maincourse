@@ -21,7 +21,7 @@ struct MealPlanRecipePicker: View {
                     self.recipeList
                 }
             }
-            .background(Color.hauptgangBackground.ignoresSafeArea())
+            .background(Color.mcCanvas.ignoresSafeArea())
             .navigationTitle("Add Recipe")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -52,12 +52,12 @@ struct MealPlanRecipePicker: View {
 
                     Text(recipe.name)
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.hauptgangTextPrimary)
+                        .foregroundStyle(Color.mcInk)
                         .lineLimit(2)
                 }
                 .padding(.vertical, Theme.Spacing.xs)
             }
-            .listRowBackground(Color.hauptgangBackground)
+            .listRowBackground(Color.mcCanvas)
             .listRowSeparator(.hidden, edges: recipe.id == self.filteredRecipes.first?.id ? .top : [])
             .listRowSeparator(.hidden, edges: recipe.id == self.filteredRecipes.last?.id ? .bottom : [])
         }
@@ -80,7 +80,7 @@ struct MealPlanRecipePicker: View {
             }
         }
         .frame(width: 48, height: 48)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.sm))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.control))
     }
 
     private var emptyState: some View {
@@ -88,10 +88,10 @@ struct MealPlanRecipePicker: View {
             Spacer()
             Image(systemName: "fork.knife")
                 .font(.system(size: 40))
-                .foregroundStyle(Color.hauptgangTextMuted)
+                .foregroundStyle(Color.mcMuted)
             Text("No recipes found")
                 .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
+                .foregroundStyle(Color.mcBody)
             Spacer()
         }
         .frame(maxWidth: .infinity)

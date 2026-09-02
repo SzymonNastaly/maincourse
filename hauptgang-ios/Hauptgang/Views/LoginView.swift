@@ -29,7 +29,7 @@ struct LoginView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ZStack {
-                    Color.hauptgangBackground
+                    Color.mcCanvas
                         .ignoresSafeArea()
                         .contentShape(Rectangle())
                         .onTapGesture { self.focusedField = nil }
@@ -72,7 +72,7 @@ struct LoginView: View {
             Text(self.viewModel.isSignUp ? "Create your account" : "Welcome back")
                 .font(.system(.title, design: .serif))
                 .fontWeight(.bold)
-                .foregroundColor(.hauptgangTextPrimary)
+                .foregroundColor(.mcInk)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
@@ -81,16 +81,16 @@ struct LoginView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
 
                 (Text("Cook something ")
-                    .foregroundColor(.hauptgangTextPrimary)
+                    .foregroundColor(.mcInk)
                     + Text("delicious")
-                    .foregroundColor(.hauptgangPrimary)
+                    .foregroundColor(.mcAccent)
                     .italic()
                     .underline()
                     + Text(" today")
-                    .foregroundColor(.hauptgangTextPrimary))
+                    .foregroundColor(.mcInk))
                     .font(.system(.title2, design: .serif))
             }
         }
@@ -109,11 +109,11 @@ struct LoginView: View {
                     .padding(.leading, Theme.Spacing.md)
                 self.passwordField
             }
-            .background(Color.hauptgangCard)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+            .background(Color.mcSurface)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                    .stroke(Color.hauptgangBorderSubtle, lineWidth: 1)
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .stroke(Color.mcHairline, lineWidth: 1)
             )
 
             self.errorSection
@@ -184,22 +184,22 @@ struct LoginView: View {
                 if let error = self.viewModel.nameError {
                     Text(error)
                         .font(.caption)
-                        .foregroundStyle(Color.hauptgangError)
+                        .foregroundStyle(Color.mcDanger)
                 }
                 if let error = self.viewModel.emailError {
                     Text(error)
                         .font(.caption)
-                        .foregroundStyle(Color.hauptgangError)
+                        .foregroundStyle(Color.mcDanger)
                 }
                 if self.showPasswordLengthError {
                     Text("Password must be at least 12 characters")
                         .font(.caption)
-                        .foregroundStyle(Color.hauptgangError)
+                        .foregroundStyle(Color.mcDanger)
                 }
                 if let errorMessage = self.viewModel.errorMessage {
                     Label(errorMessage, systemImage: "exclamationmark.circle.fill")
                         .font(.subheadline)
-                        .foregroundColor(.hauptgangError)
+                        .foregroundColor(.mcDanger)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,16 +235,16 @@ struct LoginView: View {
         } label: {
             if self.viewModel.isSignUp {
                 (Text("Already have an account? ")
-                    .foregroundColor(.hauptgangTextSecondary)
+                    .foregroundColor(.mcBody)
                     + Text("Sign In")
-                    .foregroundColor(.hauptgangPrimary)
+                    .foregroundColor(.mcAccent)
                     .bold())
                     .font(.subheadline)
             } else {
                 (Text("Don't have an account? ")
-                    .foregroundColor(.hauptgangTextSecondary)
+                    .foregroundColor(.mcBody)
                     + Text("Sign Up")
-                    .foregroundColor(.hauptgangPrimary)
+                    .foregroundColor(.mcAccent)
                     .bold())
                     .font(.subheadline)
             }

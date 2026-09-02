@@ -70,7 +70,7 @@ struct ShoppingListReviewSheet: View {
                 .padding(.horizontal, Theme.Spacing.lg)
                 .padding(.vertical, Theme.Spacing.lg)
             }
-            .background(Color.hauptgangBackground.ignoresSafeArea())
+            .background(Color.mcCanvas.ignoresSafeArea())
             .navigationTitle("Add to Shopping List")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

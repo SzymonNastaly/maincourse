@@ -75,15 +75,15 @@ struct SettingsView: View {
                 HStack {
                     Image(systemName: "person.circle.fill")
                         .font(.title)
-                        .foregroundColor(.hauptgangPrimary)
+                        .foregroundColor(.mcAccent)
 
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text("Signed in as")
                             .font(.caption)
-                            .foregroundColor(.hauptgangTextSecondary)
+                            .foregroundColor(.mcBody)
                         Text(user.email)
                             .font(.body)
-                            .foregroundColor(.hauptgangTextPrimary)
+                            .foregroundColor(.mcInk)
                     }
                 }
                 .padding(.vertical, Theme.Spacing.xs)
@@ -93,16 +93,16 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "person.text.rectangle")
-                            .foregroundColor(.hauptgangPrimary)
+                            .foregroundColor(.mcAccent)
                         Text("Name")
-                            .foregroundColor(.hauptgangTextPrimary)
+                            .foregroundColor(.mcInk)
                         Spacer()
                         Text(user.name?.isEmpty == false ? user.name! : "Add your name")
-                            .foregroundColor(.hauptgangTextSecondary)
+                            .foregroundColor(.mcBody)
                             .lineLimit(1)
                         Image(systemName: "chevron.right")
                             .font(.caption)
-                            .foregroundColor(.hauptgangTextSecondary)
+                            .foregroundColor(.mcBody)
                     }
                 }
 
@@ -112,7 +112,7 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "person.crop.circle.badge.exclamationmark")
-                            .foregroundColor(.hauptgangPrimary)
+                            .foregroundColor(.mcAccent)
                         Text("Manage Account")
                     }
                 }
@@ -132,9 +132,9 @@ struct SettingsView: View {
                 )) {
                     HStack {
                         Image(systemName: "bell.badge")
-                            .foregroundColor(.hauptgangPrimary)
+                            .foregroundColor(.mcAccent)
                         Text("Recipe reminders")
-                            .foregroundColor(.hauptgangTextPrimary)
+                            .foregroundColor(.mcInk)
                     }
                 }
                 .disabled(self.isUpdatingNotifications)
@@ -174,7 +174,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "book.closed.fill")
-                        .foregroundColor(.hauptgangPrimary)
+                        .foregroundColor(.mcAccent)
                     Text("Manage Cookbooks")
                 }
             }
@@ -213,7 +213,7 @@ struct SettingsView: View {
     private var freeSubscriptionContent: some View {
         HStack {
             Image(systemName: "person")
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
             Text("Free Plan")
         }
         Button {

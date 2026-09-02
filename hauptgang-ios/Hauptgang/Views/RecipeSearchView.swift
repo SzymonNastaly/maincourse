@@ -36,7 +36,7 @@ struct RecipeSearchView: View {
                 .padding(.vertical, Theme.Spacing.sm)
             }
             .scrollDismissesKeyboard(.immediately)
-            .background(Color.hauptgangBackground.ignoresSafeArea())
+            .background(Color.mcCanvas.ignoresSafeArea())
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: Int.self) { recipeId in
@@ -51,10 +51,10 @@ struct RecipeSearchView: View {
             Spacer().frame(height: 60)
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 48))
-                .foregroundStyle(Color.hauptgangTextMuted)
+                .foregroundStyle(Color.mcMuted)
             Text("Search your recipes")
                 .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
+                .foregroundStyle(Color.mcBody)
         }
         .frame(maxWidth: .infinity)
     }
@@ -65,10 +65,10 @@ struct RecipeSearchView: View {
             Text("No results")
                 .font(.title3)
                 .fontWeight(.semibold)
-                .foregroundStyle(Color.hauptgangTextPrimary)
+                .foregroundStyle(Color.mcInk)
             Text("Try a different search term")
                 .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
+                .foregroundStyle(Color.mcBody)
         }
         .frame(maxWidth: .infinity)
     }

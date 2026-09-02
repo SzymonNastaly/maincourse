@@ -99,7 +99,7 @@ struct RootView: View {
 struct SplashView: View {
     var body: some View {
         ZStack {
-            Color.hauptgangBackground
+            Color.mcCanvas
 
             Image("LaunchLogo")
                 .resizable()

@@ -21,19 +21,19 @@ struct OnboardingWelcomeView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 96, height: 96)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
                     .opacity(self.logoVisible ? 1 : 0)
                     .scaleEffect(self.logoVisible ? 1 : 0.92)
                     .offset(y: self.logoVisible ? 0 : 8)
 
                 (Text("Cook something ")
-                    .foregroundColor(.hauptgangTextPrimary)
+                    .foregroundColor(.mcInk)
                     + Text("delicious")
-                    .foregroundColor(.hauptgangPrimary)
+                    .foregroundColor(.mcAccent)
                     .italic()
                     .underline()
                     + Text(" today")
-                    .foregroundColor(.hauptgangTextPrimary))
+                    .foregroundColor(.mcInk))
                     .font(.system(.title2, design: .serif))
                     .multilineTextAlignment(.center)
                     .opacity(self.taglineVisible ? 1 : 0)
@@ -70,7 +70,7 @@ struct OnboardingWelcomeView: View {
 
 #Preview {
     ZStack {
-        Color.hauptgangBackground.ignoresSafeArea()
+        Color.mcCanvas.ignoresSafeArea()
         OnboardingWelcomeView(onStart: {})
     }
 }

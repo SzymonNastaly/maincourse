@@ -55,10 +55,10 @@ struct InvitationView: View {
         VStack(spacing: Theme.Spacing.md) {
             Spacer()
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .hauptgangPrimary))
+                .progressViewStyle(CircularProgressViewStyle(tint: .mcAccent))
             Text("Loading invitation...")
                 .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
+                .foregroundStyle(Color.mcBody)
             Spacer()
         }
     }
@@ -69,23 +69,23 @@ struct InvitationView: View {
 
             Image(systemName: "person.2.circle.fill")
                 .font(.system(size: 60))
-                .foregroundStyle(Color.hauptgangPrimary)
+                .foregroundStyle(Color.mcAccent)
 
             Text("You've been invited!")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(Color.hauptgangTextPrimary)
+                .foregroundStyle(Color.mcInk)
 
             if let preview {
                 VStack(spacing: Theme.Spacing.sm) {
                     Text(preview.cookbookName)
                         .font(.title3)
                         .fontWeight(.semibold)
-                        .foregroundStyle(Color.hauptgangTextPrimary)
+                        .foregroundStyle(Color.mcInk)
 
                     Text("Invited by \(preview.inviterEmail)")
                         .font(.subheadline)
-                        .foregroundStyle(Color.hauptgangTextSecondary)
+                        .foregroundStyle(Color.mcBody)
                 }
             }
 
@@ -101,14 +101,14 @@ struct InvitationView: View {
         if self.cookbookViewModel.hasSharedCookbook {
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(Color.hauptgangAmber)
+                    .foregroundStyle(Color.mcAmber)
                 Text("You already have a shared cookbook. You must leave it before joining another.")
                     .font(.caption)
-                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .foregroundStyle(Color.mcBody)
             }
             .padding(Theme.Spacing.md)
-            .background(Color.hauptgangSurfaceRaised)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
+            .background(Color.mcSunken)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
             .padding(.horizontal, Theme.Spacing.xl)
         }
     }
@@ -124,7 +124,7 @@ struct InvitationView: View {
                     .padding(.vertical, Theme.Spacing.md)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.hauptgangPrimary)
+            .tint(.mcAccent)
             .disabled(self.cookbookViewModel.hasSharedCookbook)
 
             Button {
@@ -132,7 +132,7 @@ struct InvitationView: View {
             } label: {
                 Text("Decline")
                     .font(.subheadline)
-                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .foregroundStyle(Color.mcBody)
             }
         }
         .padding(.horizontal, Theme.Spacing.xl)
@@ -142,10 +142,10 @@ struct InvitationView: View {
         VStack(spacing: Theme.Spacing.md) {
             Spacer()
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .hauptgangPrimary))
+                .progressViewStyle(CircularProgressViewStyle(tint: .mcAccent))
             Text("Joining cookbook...")
                 .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
+                .foregroundStyle(Color.mcBody)
             Spacer()
         }
     }
@@ -156,17 +156,17 @@ struct InvitationView: View {
 
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 60))
-                .foregroundStyle(Color.hauptgangSuccess)
+                .foregroundStyle(Color.mcAccent)
 
             Text("You're in!")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(Color.hauptgangTextPrimary)
+                .foregroundStyle(Color.mcInk)
 
             if let preview {
                 Text("You've joined \(preview.cookbookName)")
                     .font(.subheadline)
-                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .foregroundStyle(Color.mcBody)
             }
 
             Button {
@@ -178,7 +178,7 @@ struct InvitationView: View {
                     .padding(.vertical, Theme.Spacing.md)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.hauptgangPrimary)
+            .tint(.mcAccent)
             .padding(.horizontal, Theme.Spacing.xl)
 
             Spacer()
@@ -191,17 +191,17 @@ struct InvitationView: View {
 
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 60))
-                .foregroundStyle(Color.hauptgangError)
+                .foregroundStyle(Color.mcDanger)
 
             Text("Invitation Error")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(Color.hauptgangTextPrimary)
+                .foregroundStyle(Color.mcInk)
 
             if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
-                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .foregroundStyle(Color.mcBody)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, Theme.Spacing.xl)
             }
@@ -215,7 +215,7 @@ struct InvitationView: View {
                     .padding(.vertical, Theme.Spacing.md)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.hauptgangPrimary)
+            .tint(.mcAccent)
             .padding(.horizontal, Theme.Spacing.xl)
 
             Spacer()

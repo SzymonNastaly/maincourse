@@ -33,13 +33,8 @@ struct RecipeCardView: View {
             }
         }
         .frame(height: self.cardHeight)
-        .contentShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
-        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
-        .shadow(
-            color: Theme.Shadow.sm.color,
-            radius: Theme.Shadow.sm.radius,
-            y: Theme.Shadow.sm.offsetY
-        )
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 
     // MARK: - Background Views
@@ -54,10 +49,10 @@ struct RecipeCardView: View {
                         .resizable()
                         .scaledToFill()
                 } placeholder: {
-                    Color.hauptgangSurfaceRaised
+                    Color.mcSunken
                 } failure: {
                     // Fall back to solid background on error.
-                    Color.hauptgangCard
+                    Color.mcSurface
                 }
             }
             .clipped()
@@ -77,11 +72,11 @@ struct RecipeCardView: View {
     }
 
     private var solidBackgroundView: some View {
-        RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-            .fill(Color.hauptgangSurfaceRaised)
+        RoundedRectangle(cornerRadius: Theme.Radius.card)
+            .fill(Color.mcSunken)
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                    .stroke(Color.hauptgangBorderSubtle, lineWidth: 1)
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .stroke(Color.mcHairline, lineWidth: 1)
             )
     }
 
@@ -95,7 +90,7 @@ struct RecipeCardView: View {
             Text(self.recipe.name)
                 .font(.system(.headline, design: .serif))
                 .fontWeight(.bold)
-                .foregroundColor(self.hasImage ? .white : .hauptgangTextPrimary)
+                .foregroundColor(self.hasImage ? .white : .mcInk)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
 
@@ -107,7 +102,7 @@ struct RecipeCardView: View {
                     Text("\(totalTime)m")
                         .font(.caption)
                 }
-                .foregroundColor(self.hasImage ? .white.opacity(0.8) : .hauptgangTextSecondary)
+                .foregroundColor(self.hasImage ? .white.opacity(0.8) : .mcBody)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -177,7 +172,7 @@ struct RecipeCardView: View {
     )
     .frame(width: 180)
     .padding()
-    .background(Color.hauptgangBackground)
+    .background(Color.mcCanvas)
 }
 
 #Preview("Without image") {
@@ -192,7 +187,7 @@ struct RecipeCardView: View {
     )
     .frame(width: 180)
     .padding()
-    .background(Color.hauptgangBackground)
+    .background(Color.mcCanvas)
 }
 
 #Preview("Grid layout") {
@@ -239,6 +234,6 @@ private struct RecipeCardGridPreview: View {
             }
             .padding(Theme.Spacing.lg)
         }
-        .background(Color.hauptgangBackground)
+        .background(Color.mcCanvas)
     }
 }

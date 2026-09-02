@@ -28,7 +28,7 @@ struct EditNameView: View {
                 if let errorMessage = self.errorMessage {
                     Section {
                         Label(errorMessage, systemImage: "exclamationmark.circle.fill")
-                            .foregroundColor(.hauptgangError)
+                            .foregroundColor(.mcDanger)
                             .font(.subheadline)
                     }
                 }

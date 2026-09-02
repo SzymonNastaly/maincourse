@@ -51,7 +51,7 @@ struct RecipeDetailContentView: View {
                     Text(self.recipe.name)
                         .font(.system(.title2, design: .serif))
                         .fontWeight(.bold)
-                        .foregroundColor(.hauptgangTextPrimary)
+                        .foregroundColor(.mcInk)
 
                     if (self.recipe.prepTime ?? 0) > 0
                         || (self.recipe.cookTime ?? 0) > 0
@@ -106,10 +106,10 @@ struct RecipeDetailContentView: View {
                             Color.gray.opacity(0.2)
                                 .overlay {
                                     ProgressView()
-                                        .tint(.hauptgangTextMuted)
+                                        .tint(.mcMuted)
                                 }
                         } failure: {
-                            Color.hauptgangSurfaceRaised
+                            Color.mcSunken
                         }
                     }
                 }
@@ -167,8 +167,8 @@ struct RecipeDetailContentView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Theme.Spacing.md)
-        .background(Color.hauptgangSurfaceRaised)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .background(Color.mcSunken)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 
     private var ingredientsSection: some View {
@@ -195,12 +195,12 @@ struct RecipeDetailContentView: View {
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                             .frame(width: 24, height: 24)
-                            .background(Color.hauptgangPrimary)
+                            .background(Color.mcAccent)
                             .clipShape(Circle())
 
                         Text(instruction)
                             .font(.body)
-                            .foregroundColor(.hauptgangTextPrimary)
+                            .foregroundColor(.mcInk)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .fixedSize(horizontal: false, vertical: true)
@@ -238,11 +238,11 @@ struct RecipeDetailContentView: View {
         if self.isCookingMode {
             button
                 .buttonStyle(.glassProminent)
-                .tint(Color.hauptgangPrimary)
+                .tint(Color.mcAccent)
         } else {
             button
                 .buttonStyle(.glass)
-                .tint(Color.hauptgangPrimary)
+                .tint(Color.mcAccent)
         }
     }
 
@@ -258,17 +258,17 @@ struct RecipeDetailContentView: View {
             }
             .font(.subheadline)
             .fontWeight(.medium)
-            .foregroundColor(self.isCookingMode ? .white : Color.hauptgangPrimary)
+            .foregroundColor(self.isCookingMode ? .white : Color.mcAccent)
             .padding(.horizontal, Theme.Spacing.md)
             .padding(.vertical, Theme.Spacing.sm)
             .background(
                 Capsule()
-                    .fill(self.isCookingMode ? Color.hauptgangPrimary : Color.hauptgangSurfaceRaised)
+                    .fill(self.isCookingMode ? Color.mcAccent : Color.mcSunken)
             )
             .clipShape(Capsule())
             .overlay(
                 Capsule()
-                    .strokeBorder(Color.hauptgangPrimary.opacity(self.isCookingMode ? 0 : 0.3), lineWidth: 1)
+                    .strokeBorder(Color.mcAccent.opacity(self.isCookingMode ? 0 : 0.3), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.1), radius: 4, y: 2)
         }
@@ -279,17 +279,17 @@ struct RecipeDetailContentView: View {
         VStack(spacing: Theme.Spacing.xs) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundColor(.hauptgangPrimary)
+                .foregroundColor(.mcAccent)
                 .frame(height: 24)
 
             Text(value)
                 .font(.headline)
-                .foregroundColor(.hauptgangTextPrimary)
+                .foregroundColor(.mcInk)
                 .frame(height: 28)
 
             Text(label)
                 .font(.caption)
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
                 .frame(height: 18)
         }
         .frame(maxWidth: .infinity)
@@ -301,7 +301,7 @@ struct RecipeDetailContentView: View {
 
             Text(notes)
                 .font(.body)
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
                 .italic()
         }
     }
@@ -309,7 +309,7 @@ struct RecipeDetailContentView: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.headline)
-            .foregroundColor(.hauptgangTextPrimary)
+            .foregroundColor(.mcInk)
     }
 }
 
@@ -332,7 +332,7 @@ private struct IngredientRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.sm) {
             Circle()
-                .fill(Color.hauptgangPrimary)
+                .fill(Color.mcAccent)
                 .frame(width: 6, height: 6)
                 .padding(.top, 8)
 
@@ -341,7 +341,7 @@ private struct IngredientRow: View {
             } else {
                 Text(self.ingredient.raw)
                     .font(.body)
-                    .foregroundColor(.hauptgangTextPrimary)
+                    .foregroundColor(.mcInk)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -362,13 +362,13 @@ private struct IngredientRow: View {
                 .font(.body)
                 .fontWeight(.semibold)
                 .monospacedDigit()
-                .foregroundColor(.hauptgangPrimary)
+                .foregroundColor(.mcAccent)
                 + Text(self.ingredient.name ?? self.ingredient.raw)
                 .font(.body)
-                .foregroundColor(.hauptgangTextPrimary)
+                .foregroundColor(.mcInk)
                 + Text(self.ingredient.note.map { ", \($0)" } ?? "")
                 .font(.body)
-                .foregroundColor(.hauptgangTextSecondary)
+                .foregroundColor(.mcBody)
         )
         .multilineTextAlignment(.leading)
         .frame(maxWidth: .infinity, alignment: .leading)

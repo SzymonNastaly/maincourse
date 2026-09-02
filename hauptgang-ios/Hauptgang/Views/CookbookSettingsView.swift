@@ -25,7 +25,7 @@ struct CookbookSettingsView: View {
                     } label: {
                         HStack {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(Color.hauptgangPrimary)
+                                .foregroundStyle(Color.mcAccent)
                             Text("Create Shared Cookbook")
                         }
                     }
@@ -96,14 +96,14 @@ struct CookbookSettingsView: View {
     private func cookbookRow(_ cookbook: Cookbook, isPersonal: Bool) -> some View {
         HStack {
             Image(systemName: isPersonal ? "person.fill" : "person.2.fill")
-                .foregroundStyle(Color.hauptgangPrimary)
+                .foregroundStyle(Color.mcAccent)
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 Text(cookbook.name)
                     .font(.body)
-                    .foregroundStyle(Color.hauptgangTextPrimary)
+                    .foregroundStyle(Color.mcInk)
                 Text("\(cookbook.recipeCount) recipes")
                     .font(.caption)
-                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .foregroundStyle(Color.mcBody)
             }
         }
     }
@@ -128,14 +128,14 @@ struct CookbookSettingsView: View {
         HStack {
             Image(systemName: member.role == "owner" ? "crown.fill" : "person.fill")
                 .font(.caption)
-                .foregroundStyle(member.role == "owner" ? Color.hauptgangAmber : .hauptgangTextMuted)
+                .foregroundStyle(member.role == "owner" ? Color.mcAmber : .mcMuted)
             Text(member.email)
                 .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextPrimary)
+                .foregroundStyle(Color.mcInk)
             Spacer()
             Text(member.role.capitalized)
                 .font(.caption)
-                .foregroundStyle(Color.hauptgangTextSecondary)
+                .foregroundStyle(Color.mcBody)
         }
     }
 
@@ -253,7 +253,7 @@ private struct CreateCookbookSheet: View {
             if let error = self.errorMessage {
                 Section {
                     Text(error)
-                        .foregroundStyle(Color.hauptgangError)
+                        .foregroundStyle(Color.mcDanger)
                         .font(.subheadline)
                 }
             }
@@ -308,16 +308,16 @@ private struct ShareLinkSheet: View {
 
             Image(systemName: "link.circle.fill")
                 .font(.system(size: 60))
-                .foregroundStyle(Color.hauptgangPrimary)
+                .foregroundStyle(Color.mcAccent)
 
             Text("Invite Link Created")
                 .font(.title3)
                 .fontWeight(.semibold)
-                .foregroundStyle(Color.hauptgangTextPrimary)
+                .foregroundStyle(Color.mcInk)
 
             Text("Share this link with someone to invite them to your cookbook.")
                 .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
+                .foregroundStyle(Color.mcBody)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Theme.Spacing.xl)
 
@@ -328,7 +328,7 @@ private struct ShareLinkSheet: View {
                     .padding(.vertical, Theme.Spacing.md)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.hauptgangPrimary)
+            .tint(.mcAccent)
             .padding(.horizontal, Theme.Spacing.xl)
 
             Spacer()

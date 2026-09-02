@@ -50,7 +50,7 @@ struct MainTabView: View {
                 )
             }
         }
-        .tint(.hauptgangPrimary)
+        .tint(.mcAccent)
         .modifier(TabBarBackgroundModifier())
         .modifier(TabBarMinimizeModifier())
         .modifier(TabSearchActivationModifier())
