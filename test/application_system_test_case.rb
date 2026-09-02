@@ -6,6 +6,10 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
 
   driven_by :selenium, using: :headless_chrome, screen_size: DESKTOP_SIZE
 
+  # A cold run — first browser launch, unwarmed assets — can leave Stimulus a few
+  # seconds behind the first page load, which the 2s default doesn't cover.
+  Capybara.default_max_wait_time = 5
+
   # Capybara reuses the browser between tests, so a test that shrinks the window
   # must put it back or every later test runs at phone width.
   def with_mobile_viewport

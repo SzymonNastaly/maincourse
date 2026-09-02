@@ -43,6 +43,9 @@ class RecipesTest < ApplicationSystemTestCase
     assert_selector "#add-to-list[open]"
     assert_button "Add 4"
 
+    # Ticking only moves the count once list-review is listening for the change.
+    assert_selector "#add-to-list [data-list-review-ready]"
+
     all("#add-to-list input[type=checkbox]").first.click
     assert_button "Add 3"
 

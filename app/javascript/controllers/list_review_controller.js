@@ -7,6 +7,10 @@ export default class extends Controller {
 
   connect() {
     this.update()
+
+    // Controllers load as separate modules, so a click can land before this one
+    // is listening — the change event is then lost. System tests wait on this.
+    this.element.dataset.listReviewReady = "true"
   }
 
   update() {

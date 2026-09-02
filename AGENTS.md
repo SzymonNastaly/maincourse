@@ -38,6 +38,22 @@ bin/logs                     # Attach lazyjournal to production (host from confi
 # Standard Rails commands for database, testing, etc. work as expected
 ```
 
+**Running `bin/ci`:** it prints a per-step summary and the failing step's output
+scrolls far past a terminal's worth, so capture it and read the file:
+
+```bash
+bin/ci > tmp/ci.log 2>&1; echo "exit=$?"   # then grep/tail tmp/ci.log
+```
+
+Never pipe `bin/ci` straight into `tail`/`head` — the pipeline reports *that*
+command's exit status, so a failed suite looks like it passed. If you do pipe,
+`set -o pipefail` first. `bin/ci` also ends with a red "Continuous Integration
+failed" line, so grep for it rather than trusting the last few lines.
+
+`bin/ci` sets `CI=true`, which turns the recipe-corpus snapshot tests into a
+single skip, so it reports ~200 fewer tests than a bare `bin/rails test`. That
+gap is expected, not a regression.
+
 **Recipe Import Corpus:** A regression test suite for recipe extractors using cached HTML snapshots. See `docs/recipe-import-corpus.md` for usage and `recipe_corpus:*` rake tasks.
 
 ## Web UI
