@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@300;400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #F0A03C; text-decoration: none; }
+    a:hover { color: #FFC069; }
+  </style>
+</helmet>
+
+<div style="width: 1280px; height: 900px; box-sizing: border-box; padding: 28px; background: #141312; font-family: 'Public Sans', system-ui, sans-serif; color: #F4EFE6; display: flex; flex-direction: column; gap: 20px;">
+
+  <div style="display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid #302C28; padding-bottom: 14px;">
+    <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.6px;">Direction C — Night Kitchen</span>
+    <span style="font-size: 13px; color: #A29A8E; font-weight: 300;">Dark-first and loud. Big type, hard edges, amber signal. Reads across a dim kitchen at arm's length.</span>
+  </div>
+
+  <div style="display: flex; gap: 34px; flex-grow: 1;">
+
+    <!-- ============ DESKTOP ============ -->
+    <div style="width: 872px; height: 760px; display: flex; flex-direction: column; background: #1A1817; border: 1px solid #302C28; overflow: hidden;">
+
+      <!-- top nav -->
+      <div style="height: 56px; flex-shrink: 0; border-bottom: 1px solid #302C28; display: flex; align-items: center; padding: 0 24px; gap: 26px; background: #141312;">
+        <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; color: #F4EFE6;">MAINCOURSE</span>
+
+        <nav style="display: flex; align-items: center; gap: 22px; font-size: 13px;">
+          <span style="color: #F0A03C; font-weight: 600; border-bottom: 2px solid #F0A03C; padding-bottom: 3px;">Recipes</span>
+          <span style="color: #A29A8E; font-weight: 400;">Shopping List</span>
+          <span style="color: #A29A8E; font-weight: 400;">Cookbooks</span>
+        </nav>
+
+        <div style="flex-grow: 1;"></div>
+
+        <div style="display: flex; align-items: center; gap: 8px; background: #252220; border: 1px solid #35302B; padding: 7px 12px; width: 190px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7D766C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span style="font-size: 12.5px; color: #7D766C; font-weight: 300;">Search</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 7px; background: #F0A03C; color: #141312; padding: 8px 15px; font-size: 12.5px; font-weight: 600;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span>ADD</span>
+        </div>
+
+        <div style="width: 30px; height: 30px; background: #35302B; color: #C9C0B3; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center;">SN</div>
+      </div>
+
+      <!-- title block -->
+      <div style="padding: 26px 24px 18px 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 8px;">
+            <span style="font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: #F0A03C; font-weight: 600;">Our Kitchen</span>
+            <span style="font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: #6E675E; font-weight: 500;">Shared · 2 people</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6E675E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <h1 style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 46px; font-weight: 800; margin: 0; letter-spacing: -1.6px; line-height: 0.95;">128 RECIPES</h1>
+        </div>
+        <div style="display: flex; gap: 7px; padding-bottom: 5px;">
+          <span style="font-size: 11px; padding: 5px 12px; background: #F4EFE6; color: #141312; font-weight: 600; letter-spacing: 0.3px;">ALL</span>
+          <span style="font-size: 11px; padding: 5px 12px; border: 1px solid #35302B; color: #A29A8E; font-weight: 400;">FAVORITES</span>
+          <span style="font-size: 11px; padding: 5px 12px; border: 1px solid #35302B; color: #A29A8E; font-weight: 400;">WEEKNIGHT</span>
+          <span style="font-size: 11px; padding: 5px 12px; border: 1px solid #35302B; color: #A29A8E; font-weight: 400;">BAKING</span>
+        </div>
+      </div>
+
+      <!-- feature + grid -->
+      <div style="flex-grow: 1; padding: 0 24px 24px 24px; display: flex; gap: 16px; min-height: 0;">
+
+        <!-- feature card -->
+        <div style="width: 336px; flex-shrink: 0; position: relative; background: linear-gradient(165deg, #6B4A22 0%, #2A1E13 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 22px;">
+          <div style="position: absolute; top: 14px; left: 14px; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #141312; background: #F0A03C; padding: 3px 8px; font-weight: 700;">Last cooked</div>
+          <div style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: rgba(20,19,18,0.55); display: flex; align-items: center; justify-content: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#F0A03C" stroke="#F0A03C" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          </div>
+          <h2 style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 30px; font-weight: 700; margin: 0 0 10px 0; line-height: 1.02; letter-spacing: -0.8px;">Miso Butter Roast Chicken</h2>
+          <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; color: #D6CCBC; font-weight: 300;">
+            <span>1 h 25 min</span>
+            <span style="width: 3px; height: 3px; background: #857C70;"></span>
+            <span>Serves 4</span>
+            <span style="width: 3px; height: 3px; background: #857C70;"></span>
+            <span>12 ingredients</span>
+          </div>
+        </div>
+
+        <!-- grid -->
+        <div style="flex-grow: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 14px; min-width: 0;">
+
+          <div style="display: flex; background: #221F1D; border: 1px solid #302C28; overflow: hidden;">
+            <div style="width: 78px; flex-shrink: 0; background: linear-gradient(150deg, #4A5A2F, #23290F);"></div>
+            <div style="flex-grow: 1; padding: 13px 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+              <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.12; margin-bottom: 6px; letter-spacing: -0.3px;">Zucchini Fritters</div>
+              <div style="font-size: 11px; color: #857C70; font-weight: 300;">35 min · Serves 2</div>
+            </div>
+          </div>
+
+          <div style="display: flex; background: #221F1D; border: 1px solid #302C28; overflow: hidden;">
+            <div style="width: 78px; flex-shrink: 0; background: linear-gradient(150deg, #7A5228, #33200D);"></div>
+            <div style="flex-grow: 1; padding: 13px 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+              <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.12; margin-bottom: 6px; letter-spacing: -0.3px;">Apple Galette</div>
+              <div style="font-size: 11px; color: #857C70; font-weight: 300;">1 h 10 min · Serves 6</div>
+            </div>
+          </div>
+
+          <div style="display: flex; background: #221F1D; border: 1px solid #302C28; overflow: hidden;">
+            <div style="width: 78px; flex-shrink: 0; background: linear-gradient(150deg, #55483A, #241E17);"></div>
+            <div style="flex-grow: 1; padding: 13px 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+              <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.12; margin-bottom: 6px; letter-spacing: -0.3px;">Lentil Soup, Celeriac</div>
+              <div style="font-size: 11px; color: #857C70; font-weight: 300;">50 min · Serves 4</div>
+            </div>
+          </div>
+
+          <div style="display: flex; background: #221F1D; border: 1px solid #302C28; overflow: hidden;">
+            <div style="width: 78px; flex-shrink: 0; background: linear-gradient(150deg, #7A3A24, #2E150D);"></div>
+            <div style="flex-grow: 1; padding: 13px 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+              <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.12; margin-bottom: 6px; letter-spacing: -0.3px;">Harissa Braised Beans</div>
+              <div style="font-size: 11px; color: #857C70; font-weight: 300;">45 min · Serves 4</div>
+            </div>
+          </div>
+
+          <div style="display: flex; background: #221F1D; border: 1px solid #302C28; overflow: hidden;">
+            <div style="width: 78px; flex-shrink: 0; background: linear-gradient(150deg, #605845, #26221A);"></div>
+            <div style="flex-grow: 1; padding: 13px 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+              <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.12; margin-bottom: 6px; letter-spacing: -0.3px;">Sourdough Focaccia</div>
+              <div style="font-size: 11px; color: #857C70; font-weight: 300;">4 h 30 min · Serves 8</div>
+            </div>
+          </div>
+
+          <div style="display: flex; background: #221F1D; border: 1px solid #302C28; overflow: hidden;">
+            <div style="width: 78px; flex-shrink: 0; background: linear-gradient(150deg, #38475180, #1A2126);"></div>
+            <div style="flex-grow: 1; padding: 13px 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+              <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.12; margin-bottom: 6px; letter-spacing: -0.3px;">Cacio e Pepe</div>
+              <div style="font-size: 11px; color: #857C70; font-weight: 300;">20 min · Serves 2</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MOBILE ============ -->
+    <div style="width: 300px; height: 760px; background: #1A1817; border: 1px solid #302C28; border-radius: 26px; overflow: hidden; display: flex; flex-direction: column;">
+
+      <div style="padding: 26px 18px 0 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 16px; font-weight: 800; letter-spacing: -0.4px;">MAINCOURSE</span>
+          <div style="width: 34px; height: 34px; background: #F0A03C; display: flex; align-items: center; justify-content: center;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#141312" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 6px;">
+          <span style="font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #F0A03C; font-weight: 600;">Our Kitchen</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6E675E" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <h1 style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 32px; font-weight: 800; margin: 0 0 14px 0; letter-spacing: -1.1px; line-height: 0.95;">128 RECIPES</h1>
+
+        <div style="display: flex; align-items: center; gap: 8px; background: #252220; border: 1px solid #35302B; padding: 10px 12px; margin-bottom: 14px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7D766C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span style="font-size: 12.5px; color: #7D766C; font-weight: 300;">Search recipes</span>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-bottom: 16px;">
+          <span style="font-size: 10.5px; padding: 4px 11px; background: #F4EFE6; color: #141312; font-weight: 600;">ALL</span>
+          <span style="font-size: 10.5px; padding: 4px 11px; border: 1px solid #35302B; color: #A29A8E;">FAVORITES</span>
+          <span style="font-size: 10.5px; padding: 4px 11px; border: 1px solid #35302B; color: #A29A8E;">WEEKNIGHT</span>
+        </div>
+      </div>
+
+      <div style="flex-grow: 1; overflow: hidden; padding: 0 18px; display: flex; flex-direction: column; gap: 12px;">
+
+        <div style="position: relative; height: 152px; background: linear-gradient(165deg, #6B4A22 0%, #2A1E13 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; flex-shrink: 0;">
+          <div style="position: absolute; top: 11px; right: 11px; width: 26px; height: 26px; background: rgba(20,19,18,0.55); display: flex; align-items: center; justify-content: center;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#F0A03C" stroke="#F0A03C" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          </div>
+          <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 21px; font-weight: 700; line-height: 1.02; letter-spacing: -0.5px; margin-bottom: 7px;">Miso Butter Roast Chicken</div>
+          <div style="font-size: 11px; color: #D6CCBC; font-weight: 300;">1 h 25 min · Serves 4</div>
+        </div>
+
+        <div style="display: flex; background: #221F1D; border: 1px solid #302C28; height: 68px; flex-shrink: 0;">
+          <div style="width: 68px; flex-shrink: 0; background: linear-gradient(150deg, #4A5A2F, #23290F);"></div>
+          <div style="flex-grow: 1; padding: 0 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+            <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 5px; letter-spacing: -0.2px;">Zucchini Fritters</div>
+            <div style="font-size: 10.5px; color: #857C70; font-weight: 300;">35 min · Serves 2</div>
+          </div>
+        </div>
+
+        <div style="display: flex; background: #221F1D; border: 1px solid #302C28; height: 68px; flex-shrink: 0;">
+          <div style="width: 68px; flex-shrink: 0; background: linear-gradient(150deg, #7A5228, #33200D);"></div>
+          <div style="flex-grow: 1; padding: 0 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+            <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 5px; letter-spacing: -0.2px;">Apple Galette</div>
+            <div style="font-size: 10.5px; color: #857C70; font-weight: 300;">1 h 10 min · Serves 6</div>
+          </div>
+        </div>
+
+        <div style="display: flex; background: #221F1D; border: 1px solid #302C28; height: 68px; flex-shrink: 0;">
+          <div style="width: 68px; flex-shrink: 0; background: linear-gradient(150deg, #55483A, #241E17);"></div>
+          <div style="flex-grow: 1; padding: 0 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+            <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 5px; letter-spacing: -0.2px;">Lentil Soup, Celeriac</div>
+            <div style="font-size: 10.5px; color: #857C70; font-weight: 300;">50 min · Serves 4</div>
+          </div>
+        </div>
+
+        <div style="display: flex; background: #221F1D; border: 1px solid #302C28; height: 68px; flex-shrink: 0;">
+          <div style="width: 68px; flex-shrink: 0; background: linear-gradient(150deg, #7A3A24, #2E150D);"></div>
+          <div style="flex-grow: 1; padding: 0 13px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+            <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 5px; letter-spacing: -0.2px;">Harissa Braised Beans</div>
+            <div style="font-size: 10.5px; color: #857C70; font-weight: 300;">45 min · Serves 4</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="border-top: 1px solid #302C28; background: #141312; padding: 12px 10px 20px 10px; display: flex; justify-content: space-around; margin-top: 14px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; color: #F0A03C;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+          <span style="font-size: 9px; letter-spacing: 0.5px; font-weight: 600;">RECIPES</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; color: #6E675E;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span style="font-size: 9px; letter-spacing: 0.5px;">SEARCH</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; color: #6E675E;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+          <span style="font-size: 9px; letter-spacing: 0.5px;">LIST</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; color: #6E675E;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16.11 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1.01H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span style="font-size: 9px; letter-spacing: 0.5px;">SETTINGS</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

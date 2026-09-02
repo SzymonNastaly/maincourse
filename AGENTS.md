@@ -40,6 +40,14 @@ bin/logs                     # Attach lazyjournal to production (host from confi
 
 **Recipe Import Corpus:** A regression test suite for recipe extractors using cached HTML snapshots. See `docs/recipe-import-corpus.md` for usage and `recipe_corpus:*` rake tasks.
 
+## Web UI
+
+The web app has its own design system — grey canvas, deep green accent, IBM Plex —
+with tokens in `app/assets/tailwind/application.css`. See `docs/web-ui.md` for how
+the app is assembled and the `maincourse-design` skill for the tokens themselves
+before touching views or styling. The old brown/Lato/Merriweather theme still
+describes **iOS only**; it survives as that skill's `ios-legacy-tokens.md`.
+
 ## Documentation
 
 `docs/` contains guides and reference documentation about how things work in this codebase. Check there first when working on a feature area.
