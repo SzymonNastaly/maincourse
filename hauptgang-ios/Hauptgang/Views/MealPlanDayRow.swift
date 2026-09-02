@@ -47,7 +47,7 @@ struct MealPlanDayRow: View {
     private var header: some View {
         HStack(alignment: .center, spacing: Theme.Spacing.md) {
             Text(self.components.dayNumber)
-                .font(.system(size: 36, weight: .regular))
+                .font(.mcMono(.largeTitle))
                 .foregroundStyle(
                     self.components.isPast
                         ? self.pastForegroundColor
@@ -58,14 +58,16 @@ struct MealPlanDayRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(self.components.weekday.uppercased())
-                    .font(.footnote.weight(.semibold))
+                    .font(.caption2.weight(.medium))
+                    .tracking(1.1)
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor
                             : Color.mcInk
                     )
                 Text(self.components.month.uppercased())
-                    .font(.caption)
+                    .font(.caption2.weight(.medium))
+                    .tracking(1.1)
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor
@@ -168,7 +170,7 @@ struct MealPlanDayRow: View {
         } label: {
             HStack(spacing: Theme.Spacing.xs) {
                 Text(entry.voteCount > 0 ? "\(entry.voteCount)" : "")
-                    .font(.subheadline.weight(.medium))
+                    .font(.mcMono(.subheadline, weight: .medium))
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor

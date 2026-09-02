@@ -27,9 +27,9 @@ struct RecipeRowView: View {
                         Image(systemName: "clock")
                             .font(.caption2)
                         Text(timeText)
-                            .font(.caption)
+                            .font(.mcMono(.caption))
                     }
-                    .foregroundColor(.mcBody)
+                    .foregroundColor(.mcMuted)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -41,7 +41,11 @@ struct RecipeRowView: View {
         }
         .padding(Theme.Spacing.md)
         .background(Color.mcSurface)
-        .cornerRadius(Theme.Radius.card)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .stroke(Color.mcHairline, lineWidth: 1)
+        )
     }
 
     /// Formats prep and cook time into a readable string

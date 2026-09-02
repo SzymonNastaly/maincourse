@@ -35,6 +35,7 @@ struct InvitationView: View {
                     self.errorContent
                 }
             }
+            .background(Color.mcCanvas.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -55,7 +56,7 @@ struct InvitationView: View {
         VStack(spacing: Theme.Spacing.md) {
             Spacer()
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .mcAccent))
+                .progressViewStyle(CircularProgressViewStyle(tint: Color.mcAccent))
             Text("Loading invitation...")
                 .font(.subheadline)
                 .foregroundStyle(Color.mcBody)
@@ -87,6 +88,15 @@ struct InvitationView: View {
                         .font(.subheadline)
                         .foregroundStyle(Color.mcBody)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(Theme.Spacing.lg)
+                .background(Color.mcSurface)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.panel)
+                        .stroke(Color.mcHairline, lineWidth: 1)
+                )
+                .padding(.horizontal, Theme.Spacing.xl)
             }
 
             self.sharedCookbookWarning
@@ -107,7 +117,7 @@ struct InvitationView: View {
                     .foregroundStyle(Color.mcBody)
             }
             .padding(Theme.Spacing.md)
-            .background(Color.mcSunken)
+            .background(Color.mcAmberTint)
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
             .padding(.horizontal, Theme.Spacing.xl)
         }
@@ -119,21 +129,16 @@ struct InvitationView: View {
                 Task { await self.acceptInvitation() }
             } label: {
                 Text("Join Cookbook")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Theme.Spacing.md)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.mcAccent)
+            .primaryButton()
             .disabled(self.cookbookViewModel.hasSharedCookbook)
 
             Button {
                 Task { await self.declineInvitation() }
             } label: {
                 Text("Decline")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.mcBody)
             }
+            .outlineButton()
         }
         .padding(.horizontal, Theme.Spacing.xl)
     }
@@ -142,7 +147,7 @@ struct InvitationView: View {
         VStack(spacing: Theme.Spacing.md) {
             Spacer()
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .mcAccent))
+                .progressViewStyle(CircularProgressViewStyle(tint: Color.mcAccent))
             Text("Joining cookbook...")
                 .font(.subheadline)
                 .foregroundStyle(Color.mcBody)
@@ -173,12 +178,8 @@ struct InvitationView: View {
                 self.onComplete()
             } label: {
                 Text("Done")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Theme.Spacing.md)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.mcAccent)
+            .primaryButton()
             .padding(.horizontal, Theme.Spacing.xl)
 
             Spacer()
@@ -210,12 +211,8 @@ struct InvitationView: View {
                 self.onComplete()
             } label: {
                 Text("Close")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Theme.Spacing.md)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.mcAccent)
+            .primaryButton()
             .padding(.horizontal, Theme.Spacing.xl)
 
             Spacer()

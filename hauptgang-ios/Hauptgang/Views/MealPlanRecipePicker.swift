@@ -71,12 +71,12 @@ struct MealPlanRecipePicker: View {
                 CachedRecipeImage(url: url, maxPixelSize: 48 * self.displayScale) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
-                    Color.clear
+                    Color.mcSunken
                 } failure: {
-                    Color.clear
+                    RecipePlaceholderGradient.gradient(for: String(recipe.id))
                 }
             } else {
-                Color.clear
+                RecipePlaceholderGradient.gradient(for: String(recipe.id))
             }
         }
         .frame(width: 48, height: 48)
