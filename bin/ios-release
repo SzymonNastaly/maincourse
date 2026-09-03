@@ -52,7 +52,7 @@ if [ "$EXTERNAL" = true ]; then
 
   echo "==> Submitting for Beta App Review..."
   BUILD_ID=$(asc builds info --app "$APP_ID" --latest 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
-  asc testflight review submit --build "$BUILD_ID" --confirm
+  asc testflight review submit --build-id "$BUILD_ID" --confirm
 
   echo ""
   echo "==> Done! Build $NEXT uploaded and submitted for external review."
