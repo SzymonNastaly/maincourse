@@ -58,8 +58,10 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.1"
 # image_processing 2.0 made the backends soft dependencies; Rails defaults to the
-# vips processor and the Dockerfile installs libvips, so declare ruby-vips here.
-gem "ruby-vips"
+# vips processor, so declare ruby-vips here. require: false because loading it
+# binds libvips through FFI at boot, which is only present where images are
+# actually processed (the Dockerfile installs it; CI runners do not have it).
+gem "ruby-vips", require: false
 
 # S3-compatible storage (Hetzner Object Storage) [https://github.com/aws/aws-sdk-ruby]
 gem "aws-sdk-s3", require: false
