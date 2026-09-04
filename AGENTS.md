@@ -69,3 +69,20 @@ brown/Lato/Merriweather theme is gone from both platforms.
 ## Documentation
 
 `docs/` contains guides and reference documentation about how things work in this codebase. Check there first when working on a feature area.
+
+## Task tracking
+
+Deferred work lives in GitHub Issues (`SzymonNastaly/maincourse`), not TODO
+comments or markdown checklists. Much of it isn't code-anchored — App Store
+Connect metadata, infra chores — so an issue is the only place it fits.
+
+- Before starting work in an area, check for related open items:
+  `gh issue list --search "<area>"`.
+- When you notice something worth doing but out of scope, file it rather than
+  only mentioning it in chat:
+  `gh issue create --label chore --title "..." --body "..."`.
+  Write it so someone can act on it cold: what you observed, where, and why it
+  was deferred.
+- Use `deferred` for work that is blocked until something else ships, and say
+  in the body what unblocks it.
+- Close from PRs with `Fixes #N`.

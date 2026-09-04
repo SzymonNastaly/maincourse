@@ -64,3 +64,6 @@ test/recipe_corpus/snapshots/static/*
 
 # App Store Connect build artifacts (.ipa / .xcarchive)
 hauptgang-ios/.asc/
+
+# asc release checkpoints (repo root, written by `asc release stage`)
+/.asc/
