@@ -62,6 +62,28 @@ enum Constants {
         ]
     }
 
+    enum OAuth {
+        static var isGoogleConfigured: Bool {
+            guard let clientId = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String,
+                  let serverClientId = Bundle.main.object(forInfoDictionaryKey: "GIDServerClientID") as? String,
+                  clientId.hasSuffix(".apps.googleusercontent.com"),
+                  !clientId.hasPrefix("REPLACE_WITH_"),
+                  !serverClientId.isEmpty,
+                  !serverClientId.hasPrefix("REPLACE_WITH_")
+            else {
+                return false
+            }
+
+            let prefix = clientId.dropLast(".apps.googleusercontent.com".count)
+            let expectedScheme = "com.googleusercontent.apps.\(prefix)"
+            let urlTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? []
+            return urlTypes
+                .compactMap { $0["CFBundleURLSchemes"] as? [String] }
+                .flatMap { $0 }
+                .contains(expectedScheme)
+        }
+    }
+
     enum RevenueCat {
         #if DEBUG
         static let apiKey = "test_JMMvmVnASkOxcTiywZWGOyDZhMK"

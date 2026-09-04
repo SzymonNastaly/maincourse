@@ -66,12 +66,13 @@ actor OnboardingService {
         UserDefaults.standard.set(deviceId, forKey: self.deviceIdDefaultsKey)
     }
 
-    /// Pop the stored onboarding device id (read once, then clear). Returns nil if none.
-    static func consumeDeviceIdForAuth() -> String? {
-        let defaults = UserDefaults.standard
-        let value = defaults.string(forKey: Self.deviceIdDefaultsKey)
-        defaults.removeObject(forKey: Self.deviceIdDefaultsKey)
-        return value
+    /// Keep the id until authentication succeeds so a recoverable auth error can retry.
+    static func deviceIdForAuth() -> String? {
+        UserDefaults.standard.string(forKey: self.deviceIdDefaultsKey)
+    }
+
+    static func clearDeviceIdForAuth() {
+        UserDefaults.standard.removeObject(forKey: self.deviceIdDefaultsKey)
     }
 
     static func markAuthStepReached() {

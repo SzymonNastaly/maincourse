@@ -3,7 +3,10 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
     @StateObject private var viewModel: AuthViewModel
+    @StateObject private var appleSignInService = AppleSignInService()
     @FocusState private var focusedField: Field?
+    @State private var isProviderFlowActive = false
+    @State private var isPasswordFlowActive = false
 
     private let isEmbeddedInOnboarding: Bool
     private let onAuthenticated: (() -> Void)?
@@ -25,15 +28,12 @@ struct LoginView: View {
     var body: some View {
         Group {
             if self.isEmbeddedInOnboarding {
-                self.content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                self.scrollingContent
             } else {
                 ZStack {
                     Color.mcCanvas
                         .ignoresSafeArea()
-                        .contentShape(Rectangle())
-                        .onTapGesture { self.focusedField = nil }
-                    self.content
+                    self.scrollingContent
                 }
             }
         }
@@ -44,6 +44,18 @@ struct LoginView: View {
             case .password: self.viewModel.passwordDirty = true
             case nil: break
             }
+        }
+    }
+
+    private var scrollingContent: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                self.content
+                    .frame(minHeight: geometry.size.height)
+            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .simultaneousGesture(TapGesture().onEnded { self.focusedField = nil })
         }
     }
 
@@ -96,6 +108,9 @@ struct LoginView: View {
 
     private var form: some View {
         VStack(spacing: Theme.Spacing.md) {
+            self.providerButtons
+            self.authDivider
+
             VStack(spacing: 0) {
                 if self.viewModel.isSignUp {
                     self.nameField
@@ -120,6 +135,34 @@ struct LoginView: View {
                 .padding(.top, Theme.Spacing.xs)
         }
         .id(self.viewModel.isSignUp)
+    }
+
+    private var providerButtons: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            ContinueWithAppleButton(action: self.beginAppleSignIn)
+                .disabled(self.isAuthBusy)
+
+            if Constants.OAuth.isGoogleConfigured {
+                ContinueWithGoogleButton(action: self.beginGoogleSignIn)
+                    .disabled(self.isAuthBusy)
+            }
+        }
+    }
+
+    private var authDivider: some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Rectangle()
+                .fill(Color.mcLine)
+                .frame(height: 1)
+            Text("or")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.mcMuted)
+                .textCase(.uppercase)
+            Rectangle()
+                .fill(Color.mcLine)
+                .frame(height: 1)
+        }
+        .accessibilityHidden(true)
     }
 
     private var nameField: some View {
@@ -208,7 +251,7 @@ struct LoginView: View {
     private var submitButton: some View {
         Button(action: self.submitForm) {
             HStack(spacing: Theme.Spacing.sm) {
-                if self.viewModel.isLoading {
+                if self.isPasswordFlowActive {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 }
@@ -220,7 +263,7 @@ struct LoginView: View {
             }
         }
         .primaryButton()
-        .disabled(!self.viewModel.isFormValid || self.viewModel.isLoading)
+        .disabled(!self.viewModel.isFormValid || self.isAuthBusy)
     }
 
     private var modeToggle: some View {
@@ -254,9 +297,13 @@ struct LoginView: View {
 
     private var buttonLabel: String {
         if self.viewModel.isSignUp {
-            return self.viewModel.isLoading ? "Creating Account…" : "Create Account"
+            return self.isPasswordFlowActive ? "Creating Account…" : "Create Account"
         }
-        return self.viewModel.isLoading ? "Signing in…" : "Sign In"
+        return self.isPasswordFlowActive ? "Signing in…" : "Sign In"
+    }
+
+    private var isAuthBusy: Bool {
+        self.isProviderFlowActive || self.viewModel.isLoading
     }
 
     /// Heuristic: a single change that adds more than one character at once
@@ -272,10 +319,12 @@ struct LoginView: View {
 
     private func submitForm() {
         self.viewModel.markAllDirty()
-        guard self.viewModel.isFormValid, !self.viewModel.isLoading else { return }
+        guard self.viewModel.isFormValid, !self.isAuthBusy else { return }
         self.focusedField = nil
+        self.isPasswordFlowActive = true
 
-        Task {
+        Task { @MainActor in
+            defer { self.isPasswordFlowActive = false }
             let didAuthenticate: Bool = if self.viewModel.isSignUp {
                 await self.viewModel.signup(authManager: self.authManager)
             } else {
@@ -285,6 +334,45 @@ struct LoginView: View {
             if didAuthenticate {
                 self.onAuthenticated?()
             }
+        }
+    }
+
+    private func beginAppleSignIn() {
+        guard !self.isAuthBusy else { return }
+        self.isProviderFlowActive = true
+
+        Task { @MainActor in
+            defer { self.isProviderFlowActive = false }
+
+            do {
+                guard let credential = try await self.appleSignInService.signIn() else { return }
+                await self.authenticate(with: credential)
+            } catch {
+                self.viewModel.present(error)
+            }
+        }
+    }
+
+    private func beginGoogleSignIn() {
+        guard !self.isAuthBusy else { return }
+        self.isProviderFlowActive = true
+
+        Task { @MainActor in
+            defer { self.isProviderFlowActive = false }
+
+            do {
+                guard let credential = try await GoogleSignInService.shared.signIn() else { return }
+                await self.authenticate(with: credential)
+            } catch {
+                self.viewModel.present(error)
+            }
+        }
+    }
+
+    private func authenticate(with credential: OAuthCredential) async {
+        let didAuthenticate = await self.viewModel.login(with: credential, authManager: self.authManager)
+        if didAuthenticate {
+            self.onAuthenticated?()
         }
     }
 }

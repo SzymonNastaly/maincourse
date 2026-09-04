@@ -153,6 +153,95 @@ final class APIClientTests: XCTestCase {
         }
     }
 
+    func testRequest_401FromOAuth_throwsOAuthAuthenticationFailed() async throws {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 401,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let body = #"{"error": "Provider authentication failed", "error_code": "oauth_failed"}"#.data(using: .utf8)!
+            return (response, body)
+        }
+
+        do {
+            let _: EmptyDecodable = try await sut.request(
+                endpoint: "oauth_session",
+                method: .post,
+                body: nil,
+                authenticated: false
+            )
+            XCTFail("Expected oauthAuthenticationFailed error")
+        } catch let error as APIError {
+            if case .oauthAuthenticationFailed = error {
+                // Expected
+            } else {
+                XCTFail("Expected oauthAuthenticationFailed, got \(error)")
+            }
+        }
+    }
+
+    func testRequest_409FromOAuth_throwsAccountLinkRequired() async throws {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 409,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let body = #"{"error": "Sign in with your password", "error_code": "account_link_required"}"#
+                .data(using: .utf8)!
+            return (response, body)
+        }
+
+        do {
+            let _: EmptyDecodable = try await sut.request(
+                endpoint: "oauth_session",
+                method: .post,
+                body: nil,
+                authenticated: false
+            )
+            XCTFail("Expected accountLinkRequired error")
+        } catch let error as APIError {
+            if case .accountLinkRequired = error {
+                // Expected
+            } else {
+                XCTFail("Expected accountLinkRequired, got \(error)")
+            }
+        }
+    }
+
+    func testRequest_503FromOAuth_throwsOAuthUnavailable() async throws {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 503,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let body = #"{"error": "Provider unavailable", "error_code": "oauth_unavailable"}"#
+                .data(using: .utf8)!
+            return (response, body)
+        }
+
+        do {
+            let _: EmptyDecodable = try await sut.request(
+                endpoint: "oauth_session",
+                method: .post,
+                body: nil,
+                authenticated: false
+            )
+            XCTFail("Expected oauthUnavailable error")
+        } catch let error as APIError {
+            if case .oauthUnavailable = error {
+                // Expected
+            } else {
+                XCTFail("Expected oauthUnavailable, got \(error)")
+            }
+        }
+    }
+
     func testRequest_422_throwsUnprocessableEntity() async throws {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(

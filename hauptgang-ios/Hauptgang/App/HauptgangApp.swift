@@ -1,3 +1,4 @@
+@preconcurrency import GoogleSignIn
 import os
 import RevenueCat
 import Sentry
@@ -83,7 +84,9 @@ struct HauptgangApp: App {
                     await self.subscriptionManager.refreshStatus()
                 }
                 .onOpenURL { url in
-                    self.deepLinkRouter.handle(url)
+                    if !GIDSignIn.sharedInstance.handle(url) {
+                        self.deepLinkRouter.handle(url)
+                    }
                 }
                 .onChange(of: self.scenePhase) { _, newPhase in
                     // Flush when the app is put away and again when it comes back: those are

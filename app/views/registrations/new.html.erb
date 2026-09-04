@@ -8,6 +8,8 @@
 <h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Create your kitchen</h1>
 <p class="mb-7 text-[13px] font-light text-muted">Save recipes from anywhere and cook from them on any device.</p>
 
+<%= render "shared/oauth_buttons" %>
+
 <%= form_with model: @user, url: registration_path, method: :post do |form| %>
   <% if @user.errors.any? %>
     <div class="mb-4 rounded-card border border-danger-line bg-danger-tint px-3 py-2.5 text-[12.5px] text-danger"

@@ -98,10 +98,29 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
+    func login(with credential: OAuthCredential, authManager: AuthManager) async -> Bool {
+        await self.performAuthAction(authManager: authManager, requiresValidForm: false) {
+            try await self.authService.login(with: credential)
+        }
+    }
+
+    func present(_ error: Error) {
+        if let localizedError = error as? LocalizedError,
+           let description = localizedError.errorDescription {
+            self.errorMessage = description
+        } else {
+            self.errorMessage = "An unexpected error occurred. Please try again."
+        }
+    }
+
     // MARK: - Private
 
-    private func performAuthAction(authManager: AuthManager, action: () async throws -> User) async -> Bool {
-        guard self.isFormValid else { return false }
+    private func performAuthAction(
+        authManager: AuthManager,
+        requiresValidForm: Bool = true,
+        action: () async throws -> User
+    ) async -> Bool {
+        guard !requiresValidForm || self.isFormValid else { return false }
 
         self.isLoading = true
         self.errorMessage = nil

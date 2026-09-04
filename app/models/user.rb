@@ -1,9 +1,10 @@
 class User < ApplicationRecord
   include ImportLimitable
 
-  has_secure_password
+  has_secure_password validations: false
   has_many :sessions, dependent: :destroy
   has_many :api_tokens, dependent: :destroy
+  has_many :identities, dependent: :destroy
   has_many :device_tokens, dependent: :destroy
   has_many :cookbook_memberships, dependent: :delete_all
   has_many :cookbooks, through: :cookbook_memberships
@@ -17,6 +18,10 @@ class User < ApplicationRecord
 
   validates :email_address, presence: true, uniqueness: true
   validates :name, length: { maximum: 50 }
+  validates :password, confirmation: true, allow_nil: true
+  validate :password_is_present_without_an_identity
+  validate :password_is_within_bcrypt_limit
+  validate :password_challenge_is_valid
 
   after_create :create_personal_cookbook!
   before_destroy :handle_owned_cookbooks!, prepend: true
@@ -45,6 +50,24 @@ class User < ApplicationRecord
   end
 
   private
+
+  def password_is_present_without_an_identity
+    errors.add(:password, :blank) if password_digest.blank? && identities.empty?
+  end
+
+  def password_is_within_bcrypt_limit
+    return unless password.present? && password.bytesize > ActiveModel::SecurePassword::MAX_PASSWORD_LENGTH_ALLOWED
+
+    errors.add(:password, :password_too_long)
+  end
+
+  def password_challenge_is_valid
+    return if password_challenge.nil?
+
+    unless password_digest_was.present? && BCrypt::Password.new(password_digest_was).is_password?(password_challenge)
+      errors.add(:password_challenge)
+    end
+  end
 
   def create_personal_cookbook!
     cookbook = Cookbook.create!(name: "My Recipes", personal: true)

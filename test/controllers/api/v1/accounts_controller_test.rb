@@ -40,10 +40,14 @@ class Api::V1::AccountsControllerTest < ActionDispatch::IntegrationTest
   test "destroy deletes the account and cascades data" do
     user_id = @user.id
     personal_cookbook_id = @user.personal_cookbook.id
+    revoked_user = nil
 
-    delete api_v1_account_url, headers: @auth_headers, as: :json
+    Oauth::AppleTokenRevoker.stub(:call, ->(user) { revoked_user = user }) do
+      delete api_v1_account_url, headers: @auth_headers, as: :json
+    end
 
     assert_response :no_content
+    assert_equal @user, revoked_user
     assert_nil User.find_by(id: user_id)
     assert_nil Cookbook.find_by(id: personal_cookbook_id)
   end

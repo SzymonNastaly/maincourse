@@ -1,6 +1,20 @@
 require "test_helper"
 
 class UserTest < ActiveSupport::TestCase
+  test "requires a password without an OAuth identity" do
+    user = User.new(email_address: "passwordless@example.com")
+
+    assert_not user.valid?
+    assert user.errors.of_kind?(:password, :blank)
+  end
+
+  test "allows an OAuth identity instead of a password" do
+    user = User.new(email_address: "oauth@example.com")
+    user.identities.build(provider: "google", uid: "oauth-user", email: user.email_address)
+
+    assert user.valid?
+  end
+
   test "downcases and strips email_address" do
     user = User.new(email_address: " DOWNCASED@EXAMPLE.COM ")
     assert_equal("downcased@example.com", user.email_address)

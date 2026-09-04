@@ -12,6 +12,7 @@ class AccountsController < ApplicationController
 
     user = Current.user
     terminate_session
+    Oauth::AppleTokenRevoker.call(user)
     # Ownership of shared cookbooks transfers to the oldest remaining
     # collaborator; see User#handle_owned_cookbooks!.
     user.destroy!

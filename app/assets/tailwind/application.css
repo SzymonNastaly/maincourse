@@ -96,6 +96,10 @@
   @apply border border-hairline bg-surface text-ink hover:bg-sunken;
 }
 
+@utility mc-btn-apple {
+  @apply border border-ink bg-ink text-surface hover:opacity-90;
+}
+
 @utility mc-btn-quiet {
   @apply border border-transparent bg-transparent text-body hover:bg-sunken;
 }

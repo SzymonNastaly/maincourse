@@ -5,6 +5,7 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 AllCops:
   Exclude:
     - "hauptgang-mobile/**/*"
+    - "hauptgang-ios/build/**/*"
 
 # Complexity Metrics
 Metrics/CyclomaticComplexity:

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_072317) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_090000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -92,6 +92,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_072317) do
     t.integer "user_id", null: false
     t.index ["token"], name: "index_device_tokens_on_token", unique: true
     t.index ["user_id"], name: "index_device_tokens_on_user_id"
+  end
+
+  create_table "identities", force: :cascade do |t|
+    t.text "apple_refresh_tokens"
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.string "provider", null: false
+    t.string "uid", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["provider", "uid"], name: "index_identities_on_provider_and_uid", unique: true
+    t.index ["user_id"], name: "index_identities_on_user_id"
   end
 
   create_table "ingredients", force: :cascade do |t|
@@ -275,7 +287,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_072317) do
     t.datetime "last_active_at"
     t.boolean "lifecycle_notifications_enabled", default: true, null: false
     t.string "name"
-    t.string "password_digest", null: false
+    t.string "password_digest"
     t.boolean "pro", default: false, null: false
     t.string "time_zone", default: "UTC", null: false
     t.datetime "updated_at", null: false
@@ -290,6 +302,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_072317) do
   add_foreign_key "cookbook_memberships", "cookbooks", on_delete: :cascade
   add_foreign_key "cookbook_memberships", "users", on_delete: :cascade
   add_foreign_key "device_tokens", "users", on_delete: :cascade
+  add_foreign_key "identities", "users"
   add_foreign_key "ingredients", "recipes", on_delete: :cascade
   add_foreign_key "meal_plan_entries", "meal_plans", on_delete: :cascade
   add_foreign_key "meal_plan_entries", "recipes", on_delete: :restrict

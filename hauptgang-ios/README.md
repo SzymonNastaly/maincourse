@@ -5,7 +5,7 @@ Native SwiftUI iOS app for the Hauptgang recipe tracker.
 ## Requirements
 
 - Xcode 16.0+
-- iOS 17.0+
+- iOS 18.0+
 - XcodeGen
 
 ## Setup
@@ -57,6 +57,8 @@ hauptgang-ios/
 - **SwiftData** - Apple's modern persistence framework
 - **MVVM** - Model-View-ViewModel pattern
 - **URLSession** - Native async/await networking
+- **AuthenticationServices / GoogleSignIn** - Native provider authentication;
+  see `../docs/oauth-sign-in.md` for provider setup
 
 ## Development
 

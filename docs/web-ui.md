@@ -156,5 +156,4 @@ drift from the RevenueCat dashboard config.
 ## Not on the web
 
 Meal plan (hidden on iOS too), favourites (the column and API remain for iOS),
-RevenueCat/payments, OAuth sign-in, per-ingredient or per-step checkoff,
-recipe sharing.
+RevenueCat/payments, per-ingredient or per-step checkoff, recipe sharing.

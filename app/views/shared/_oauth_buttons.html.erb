@@ -1,0 +1,31 @@
+<% apple_enabled = Rails.application.config.x.oauth.apple_enabled %>
+<% google_enabled = Rails.application.config.x.oauth.google_enabled %>
+<% oauth_available_on_host = !Rails.env.production? || request.host == Rails.application.config.x.canonical_host %>
+
+<% if oauth_available_on_host && (apple_enabled || google_enabled) %>
+  <div class="mb-6 space-y-2.5">
+    <% if apple_enabled %>
+      <%= button_to "/auth/apple", method: :post,
+                    class: "mc-btn mc-btn-apple w-full py-3 text-[13.5px]",
+                    form: { data: { turbo: false } } do %>
+        <%= image_tag "apple-logo-white.svg", class: "size-[15px] object-contain", alt: "" %>
+        Continue with Apple
+      <% end %>
+    <% end %>
+
+    <% if google_enabled %>
+      <%= button_to "/auth/google_oauth2", method: :post,
+                    class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]",
+                    form: { data: { turbo: false } } do %>
+        <%= image_tag "google-g.svg", class: "size-[16px]", alt: "" %>
+        Continue with Google
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="mb-6 flex items-center gap-3" aria-hidden="true">
+    <span class="h-px flex-1 bg-line"></span>
+    <span class="text-[10.5px] font-medium uppercase tracking-[1px] text-muted">or</span>
+    <span class="h-px flex-1 bg-line"></span>
+  </div>
+<% end %>

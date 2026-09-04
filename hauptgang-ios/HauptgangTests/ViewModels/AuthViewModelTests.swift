@@ -159,4 +159,39 @@ final class AuthViewModelTests: XCTestCase {
         // After login completes
         XCTAssertFalse(self.sut.isLoading)
     }
+
+    func testOAuthLogin_doesNotRequireEmailAndPasswordFields() async {
+        let credential = OAuthCredential(
+            provider: .google,
+            idToken: "identity-token",
+            authorizationCode: nil,
+            nonce: "nonce",
+            name: nil
+        )
+        self.mockAuthService.loginResult = .success(User(id: 42, email: "oauth@example.com"))
+        let authManager = AuthManager(authService: self.mockAuthService)
+
+        let authenticated = await self.sut.login(with: credential, authManager: authManager)
+
+        XCTAssertTrue(authenticated)
+        XCTAssertTrue(authManager.authState.isAuthenticated)
+        XCTAssertEqual(self.mockAuthService.lastOAuthCredential?.idToken, "identity-token")
+    }
+
+    func testOAuthLogin_failureShowsProviderError() async {
+        let credential = OAuthCredential(
+            provider: .apple,
+            idToken: "identity-token",
+            authorizationCode: "authorization-code",
+            nonce: "nonce",
+            name: "Test User"
+        )
+        self.mockAuthService.loginResult = .failure(APIError.oauthAuthenticationFailed)
+        let authManager = AuthManager(authService: self.mockAuthService)
+
+        let authenticated = await self.sut.login(with: credential, authManager: authManager)
+
+        XCTAssertFalse(authenticated)
+        XCTAssertEqual(self.sut.errorMessage, "Could not sign in with that provider. Please try again.")
+    }
 }

@@ -32,7 +32,19 @@
 				<string>hauptgang</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Google Sign-In</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
+	<key>GIDServerClientID</key>
+	<string>$(GOOGLE_SERVER_CLIENT_ID)</string>
 	<key>KeychainAccessGroup</key>
 	<string>$(AppIdentifierPrefix)app.hauptgang.shared</string>
 	<key>UIApplicationSceneManifest</key>

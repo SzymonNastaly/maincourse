@@ -4,6 +4,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :registration, only: [ :create ]
       resource :session, only: [ :create, :destroy ]
+      resource :oauth_session, only: [ :create ]
       resource :account, only: [ :update, :destroy ]
       resource :onboarding_response, only: [ :create ]
       resources :device_tokens, only: [ :create, :destroy ], param: :token, constraints: { token: /[^\/]+/ }
@@ -60,6 +61,9 @@ Rails.application.routes.draw do
   resource :session, only: [ :new, :create, :destroy ]
   resource :registration, only: [ :new, :create ]
   resources :passwords, param: :token
+  get "auth/google_oauth2/callback", to: "omniauth_callbacks#create"
+  post "auth/apple/callback", to: "omniauth_callbacks#create"
+  get "auth/failure", to: "omniauth_callbacks#failure"
 
   # The cookbook the web UI is scoped to. See CookbookScoped.
   resource :active_cookbook, only: [ :update ]

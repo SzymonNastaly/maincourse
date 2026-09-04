@@ -8,6 +8,8 @@
 <h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Sign in to your kitchen</h1>
 <p class="mb-7 text-[13px] font-light text-muted">Your recipes and shopping list, on every device.</p>
 
+<%= render "shared/oauth_buttons" %>
+
 <%= form_with url: session_path, method: :post do |form| %>
   <div class="mb-3.5">
     <%= form.label :email_address, "Email", class: "mc-label" %>

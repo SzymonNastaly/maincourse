@@ -34,10 +34,15 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "deletion with the phrase removes the account and signs out" do
+    revoked_user = nil
+
     assert_difference "User.count", -1 do
-      delete account_path, params: { confirmation: "DELETE" }
+      Oauth::AppleTokenRevoker.stub(:call, ->(user) { revoked_user = user }) do
+        delete account_path, params: { confirmation: "DELETE" }
+      end
     end
 
+    assert_equal @user, revoked_user
     assert_redirected_to new_session_path
 
     get recipes_path

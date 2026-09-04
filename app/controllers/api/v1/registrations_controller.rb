@@ -18,17 +18,7 @@ module Api
 
         if user.save
           OnboardingResponse.link_to_user!(device_id: params[:onboarding_device_id], user: user)
-          token_record, raw_token = ApiToken.generate_for(user, name: params[:device_name])
-          render json: {
-            token: raw_token,
-            expires_at: token_record.expires_at,
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email_address,
-              lifecycle_notifications_enabled: user.lifecycle_notifications_enabled
-            }
-          }, status: :created
+          render_authenticated_user(user)
         else
           render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
         end

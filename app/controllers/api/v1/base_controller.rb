@@ -39,6 +39,20 @@ module Api
         render json: { error: "Unauthorized" }, status: :unauthorized
       end
 
+      def render_authenticated_user(user)
+        token_record, raw_token = ApiToken.generate_for(user, name: params[:device_name])
+        render json: {
+          token: raw_token,
+          expires_at: token_record.expires_at,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email_address,
+            lifecycle_notifications_enabled: user.lifecycle_notifications_enabled
+          }
+        }, status: :created
+      end
+
       def record_user_activity
         current_user.touch_last_active! if current_user && !current_user.destroyed?
       end

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the Hauptgang iOS a
 
 ## Project Overview
 
-Native SwiftUI app for iOS 17+ that communicates with the Rails backend API. Uses MVVM architecture with async/await networking.
+Native SwiftUI app for iOS 18+ that communicates with the Rails backend API. Uses MVVM architecture with async/await networking.
 
 ## Essential Commands
 

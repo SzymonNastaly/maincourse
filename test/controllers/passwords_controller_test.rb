@@ -60,6 +60,38 @@ class PasswordsControllerTest < ActionDispatch::IntegrationTest
     assert_notice "Passwords did not match"
   end
 
+  test "an OAuth-only user can set a password" do
+    user = Identity.authenticate!(
+      provider: "google",
+      uid: "password-reset-oauth-user",
+      email: "oauth-reset@example.com",
+      email_verified: true
+    )
+
+    put password_path(user.password_reset_token), params: {
+      password: "new-password",
+      password_confirmation: "new-password"
+    }
+
+    assert_redirected_to new_session_path
+    assert user.reload.authenticate("new-password")
+  end
+
+  test "an OAuth-only user cannot complete password reset with a blank password" do
+    user = Identity.authenticate!(
+      provider: "google",
+      uid: "blank-password-reset-oauth-user",
+      email: "blank-oauth-reset@example.com",
+      email_verified: true
+    )
+    token = user.password_reset_token
+
+    put password_path(token), params: { password: "", password_confirmation: "" }
+
+    assert_redirected_to edit_password_path(token)
+    assert_nil user.reload.password_digest
+  end
+
   private
     def assert_notice(text)
       assert_select "div", /#{text}/

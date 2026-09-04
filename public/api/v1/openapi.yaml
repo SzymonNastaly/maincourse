@@ -67,6 +67,35 @@ components:
         user:
           $ref: '#/components/schemas/User'
 
+    OAuthLoginRequest:
+      type: object
+      required:
+        - provider
+        - id_token
+        - nonce
+      properties:
+        provider:
+          type: string
+          enum: [apple, google]
+        id_token:
+          type: string
+          description: Provider-signed OpenID Connect identity token
+        authorization_code:
+          type: string
+          description: Required for Apple so the server can obtain a revocable refresh token
+        nonce:
+          type: string
+          description: Raw nonce used when requesting the identity token
+        name:
+          type: string
+          description: Name returned by Apple on first authorization
+        device_name:
+          type: string
+          description: Optional device name for token identification
+        onboarding_device_id:
+          type: string
+          description: Optional anonymous onboarding response identifier
+
     LogoutResponse:
       type: object
       required:
@@ -227,6 +256,50 @@ components:
           description: Error message
 
 paths:
+  /oauth_session:
+    post:
+      operationId: oauthLogin
+      summary: Create a session with Apple or Google
+      description: Verify a native provider credential and receive an API token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthLoginRequest'
+      responses:
+        '201':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid provider credential
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: A password account already exists for the verified provider email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Provider configuration or upstream service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /session:
     post:
       operationId: login

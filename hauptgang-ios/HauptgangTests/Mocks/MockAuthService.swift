@@ -11,6 +11,7 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     var currentUser: User?
     var updateLifecycleResult: User?
     private(set) var lastLifecycleValue: Bool?
+    private(set) var lastOAuthCredential: OAuthCredential?
 
     func login(email _: String, password _: String) async throws -> User {
         try self.loginResult.get()
@@ -23,6 +24,11 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
         passwordConfirmation _: String
     ) async throws -> User {
         try self.loginResult.get()
+    }
+
+    func login(with credential: OAuthCredential) async throws -> User {
+        self.lastOAuthCredential = credential
+        return try self.loginResult.get()
     }
 
     func updateName(_ name: String) async throws -> User {

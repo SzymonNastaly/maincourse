@@ -14,6 +14,9 @@ enum APIError: LocalizedError {
     case decodingError(Error)
     case importLimitReached
     case invalidCredentials
+    case oauthAuthenticationFailed
+    case oauthUnavailable
+    case accountLinkRequired
     case unknown
 
     var errorDescription: String? {
@@ -44,6 +47,12 @@ enum APIError: LocalizedError {
             "You've reached your free limit of 15 imports this month. Upgrade to Pro for unlimited imports."
         case .invalidCredentials:
             "Invalid email or password"
+        case .oauthAuthenticationFailed:
+            "Could not sign in with that provider. Please try again."
+        case .oauthUnavailable:
+            "That sign-in provider is temporarily unavailable. Please try again later."
+        case .accountLinkRequired:
+            "An account already exists for this email. Sign in with your password instead."
         case .unknown:
             "An unexpected error occurred"
         }
@@ -57,6 +66,12 @@ enum APIError: LocalizedError {
             "Please sign in with your credentials."
         case .invalidCredentials:
             "Double-check your email and password, then try again."
+        case .oauthAuthenticationFailed:
+            "Try the provider again or use email and password."
+        case .oauthUnavailable:
+            "Wait a moment and try again, or use email and password."
+        case .accountLinkRequired:
+            "Use the password reset link on the website if you have forgotten your password."
         case .serverError:
             "Wait a moment and try again. If the problem persists, contact support."
         default:

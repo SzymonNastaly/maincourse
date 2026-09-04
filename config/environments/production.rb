@@ -31,6 +31,14 @@ Rails.application.configure do
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
   config.force_ssl = true
 
+  # Apple's web callback is a cross-site form POST. This cookie only contains
+  # transient Rails state; the signed authentication cookie remains SameSite=Lax.
+  config.session_store :cookie_store,
+    key: "_hauptgang_session",
+    same_site: :none,
+    secure: true,
+    httponly: true
+
   # Skip http-to-https redirect for the default health check endpoint.
   config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 

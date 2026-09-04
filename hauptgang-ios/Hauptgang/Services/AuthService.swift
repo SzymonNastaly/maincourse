@@ -14,7 +14,7 @@ final class AuthService: AuthServiceProtocol {
 
     func login(email: String, password: String) async throws -> User {
         let deviceName = await getDeviceName()
-        let onboardingDeviceId = OnboardingService.consumeDeviceIdForAuth()
+        let onboardingDeviceId = OnboardingService.deviceIdForAuth()
 
         let request = LoginRequest(
             email: email,
@@ -28,6 +28,7 @@ final class AuthService: AuthServiceProtocol {
             method: .post,
             body: request
         )
+        OnboardingService.clearDeviceIdForAuth()
 
         // Store credentials securely
         try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
@@ -40,7 +41,7 @@ final class AuthService: AuthServiceProtocol {
 
     func signup(name: String, email: String, password: String, passwordConfirmation: String) async throws -> User {
         let deviceName = await getDeviceName()
-        let onboardingDeviceId = OnboardingService.consumeDeviceIdForAuth()
+        let onboardingDeviceId = OnboardingService.deviceIdForAuth()
 
         let request = SignupRequest(
             name: name,
@@ -56,6 +57,35 @@ final class AuthService: AuthServiceProtocol {
             method: .post,
             body: request
         )
+        OnboardingService.clearDeviceIdForAuth()
+
+        try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
+        try await self.keychain.saveUser(response.user)
+
+        return response.user
+    }
+
+    // MARK: - Provider Login
+
+    func login(with credential: OAuthCredential) async throws -> User {
+        let deviceName = await getDeviceName()
+        let onboardingDeviceId = OnboardingService.deviceIdForAuth()
+        let request = OAuthLoginRequest(
+            provider: credential.provider,
+            idToken: credential.idToken,
+            authorizationCode: credential.authorizationCode,
+            nonce: credential.nonce,
+            name: credential.name,
+            deviceName: deviceName,
+            onboardingDeviceId: onboardingDeviceId
+        )
+
+        let response: AuthResponse = try await api.request(
+            endpoint: "oauth_session",
+            method: .post,
+            body: request
+        )
+        OnboardingService.clearDeviceIdForAuth()
 
         try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
         try await self.keychain.saveUser(response.user)
@@ -109,6 +139,7 @@ final class AuthService: AuthServiceProtocol {
         }
 
         // Always clear local credentials
+        await GoogleSignInService.shared.signOut()
         await self.keychain.clearAll()
     }
 
@@ -120,6 +151,7 @@ final class AuthService: AuthServiceProtocol {
             method: .delete,
             authenticated: true
         )
+        await GoogleSignInService.shared.disconnect()
         await self.keychain.clearAll()
     }
 
@@ -162,6 +194,16 @@ private struct SignupRequest: Encodable {
     let email: String
     let password: String
     let passwordConfirmation: String
+    let deviceName: String
+    let onboardingDeviceId: String?
+}
+
+private struct OAuthLoginRequest: Encodable {
+    let provider: OAuthProvider
+    let idToken: String
+    let authorizationCode: String?
+    let nonce: String
+    let name: String?
     let deviceName: String
     let onboardingDeviceId: String?
 }

@@ -17,6 +17,7 @@ module Api
       end
 
       def destroy
+        Oauth::AppleTokenRevoker.call(current_user)
         current_user.destroy!
         head :no_content
       end

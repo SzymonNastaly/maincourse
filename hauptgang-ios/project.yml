@@ -16,6 +16,9 @@ packages:
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa.git
     from: 9.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS.git
+    from: 9.2.0
 
 settings:
   SWIFT_VERSION: "5.9"
@@ -44,6 +47,9 @@ targets:
         ENABLE_PREVIEWS: YES
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_EMIT_LOC_STRINGS: YES
+        GOOGLE_IOS_CLIENT_ID: 1048887933015-7defnrd0upbah2pdhru5i7m57ngouugp.apps.googleusercontent.com
+        GOOGLE_SERVER_CLIENT_ID: 1048887933015-tga3ld77ufb2jfgugh5b5ddgo854uoto.apps.googleusercontent.com
+        GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.1048887933015-7defnrd0upbah2pdhru5i7m57ngouugp
       configs:
         Debug:
           CODE_SIGN_ENTITLEMENTS: Hauptgang/Hauptgang.entitlements
@@ -64,6 +70,8 @@ targets:
         product: GRDB
       - package: Sentry
         product: SentrySwiftUI
+      - package: GoogleSignIn
+        product: GoogleSignIn
 
   ImportRecipeExtension:
     type: app-extension

@@ -236,6 +236,8 @@ actor APIClient: APIClientProtocol {
             throw self.forbiddenError(from: json)
         case 404:
             throw APIError.notFound
+        case 409:
+            throw self.conflictError(from: json)
         case 413:
             throw APIError.payloadTooLarge
         case 415:
@@ -243,7 +245,7 @@ actor APIClient: APIClientProtocol {
         case 422:
             throw APIError.unprocessableEntity(self.unprocessableMessage(from: json))
         case 500 ... 599:
-            throw APIError.serverError(statusCode: response.statusCode)
+            throw self.serverError(statusCode: response.statusCode, json: json)
         default:
             throw APIError.unknown
         }
@@ -257,6 +259,10 @@ actor APIClient: APIClientProtocol {
         guard let error = json["error"] as? String else {
             return .unauthorized
         }
+        if json["error_code"] as? String == "oauth_failed" ||
+            error == "Could not authenticate with that provider" {
+            return .oauthAuthenticationFailed
+        }
         return error.lowercased().contains("invalid") ? .invalidCredentials : .unauthorized
     }
 
@@ -265,6 +271,19 @@ actor APIClient: APIClientProtocol {
             return .forbidden
         }
         return errorCode == "import_limit_reached" ? .importLimitReached : .forbidden
+    }
+
+    private func conflictError(from json: [String: Any]) -> APIError {
+        guard json["error_code"] as? String == "account_link_required" else {
+            return .unknown
+        }
+        return .accountLinkRequired
+    }
+
+    private func serverError(statusCode: Int, json: [String: Any]) -> APIError {
+        json["error_code"] as? String == "oauth_unavailable"
+            ? .oauthUnavailable
+            : .serverError(statusCode: statusCode)
     }
 
     private func unprocessableMessage(from json: [String: Any]) -> String? {

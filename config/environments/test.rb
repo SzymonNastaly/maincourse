@@ -22,6 +22,12 @@ Rails.application.configure do
   config.consider_all_requests_local = true
   config.cache_store = :null_store
 
+  # Tests must not depend on the ignored local master key. These keys encrypt
+  # disposable test data only and are deliberately checked in.
+  config.active_record.encryption.primary_key = "test-primary-key-000000000000000"
+  config.active_record.encryption.deterministic_key = "test-deterministic-key-000000000"
+  config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-00000000"
+
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
 
