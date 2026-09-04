@@ -1,3 +1,5 @@
+inherit_from: .rubocop_todo.yml
+
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
@@ -37,3 +39,15 @@ Metrics/BlockLength:
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
 # Layout/SpaceInsideArrayLiteralBrackets:
 #   Enabled: false
+
+# Custom cops
+require:
+  - ./lib/rubocop/cop/maincourse/migration_table_rebuild.rb
+
+# On SQLite most schema changes rebuild the table, and that rebuild's DROP
+# fires every ON DELETE CASCADE / SET NULL pointing at it unless the migration
+# opts out of db:migrate's wrapping transaction. See the cop for the full story.
+Maincourse/MigrationTableRebuild:
+  Enabled: true
+  Include:
+    - "db/migrate/**/*.rb"
