@@ -13,6 +13,7 @@ class RecipesTest < ApplicationSystemTestCase
   end
 
   test "the add-a-recipe dialog opens and imports a link" do
+    wait_for_stimulus("[data-testid=add-recipe]")
     find("[data-testid=add-recipe]").click
 
     assert_selector "#add-recipe[open]"
@@ -30,6 +31,7 @@ class RecipesTest < ApplicationSystemTestCase
     assert_text "200 g"
 
     # 4 servings -> 6.
+    wait_for_stimulus("[aria-label='More servings']")
     2.times { find("[aria-label='More servings']").click }
 
     assert_text "300 g"
@@ -38,13 +40,14 @@ class RecipesTest < ApplicationSystemTestCase
 
   test "the add-to-list dialog counts only the ticked ingredients" do
     visit recipe_path(@recipe)
+    wait_for_stimulus("[data-testid=add-all-to-list]")
     find("[data-testid=add-all-to-list]").click
 
     assert_selector "#add-to-list[open]"
     assert_button "Add 4"
 
     # Ticking only moves the count once list-review is listening for the change.
-    assert_selector "#add-to-list [data-list-review-ready]"
+    wait_for_stimulus("#add-to-list [data-controller~=list-review]")
 
     all("#add-to-list input[type=checkbox]").first.click
     assert_button "Add 3"

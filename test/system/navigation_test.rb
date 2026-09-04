@@ -24,6 +24,7 @@ class NavigationTest < ApplicationSystemTestCase
       visit recipes_path
 
       assert_no_selector "[data-testid=rail]", visible: true
+      wait_for_stimulus("[data-testid=drawer-toggle]")
       find("[data-testid=drawer-toggle]").click
 
       assert_selector "[data-testid=drawer]", visible: true
@@ -40,6 +41,7 @@ class NavigationTest < ApplicationSystemTestCase
     CookbookMembership.create!(cookbook: shared, user: @user, role: :owner)
 
     visit recipes_path
+    wait_for_stimulus("[data-testid=cookbook-switcher-trigger]")
     find("[data-testid=cookbook-switcher-trigger]").click
 
     assert_selector "#cookbook-switcher[open]"
@@ -49,6 +51,7 @@ class NavigationTest < ApplicationSystemTestCase
   end
 
   test "cmd-K focuses the search field" do
+    wait_for_stimulus("[data-controller~=search-shortcut]")
     find("body").send_keys([ :meta, "k" ])
 
     assert_equal "q", page.evaluate_script("document.activeElement.name")
