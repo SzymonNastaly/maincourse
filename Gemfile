@@ -56,7 +56,10 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.1"
+# image_processing 2.0 made the backends soft dependencies; Rails defaults to the
+# vips processor and the Dockerfile installs libvips, so declare ruby-vips here.
+gem "ruby-vips"
 
 # S3-compatible storage (Hetzner Object Storage) [https://github.com/aws/aws-sdk-ruby]
 gem "aws-sdk-s3", require: false
@@ -93,8 +96,7 @@ end
 group :test do
   # System testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
-  # 4.45+ regressed: chromedriver launched without the Selenium Manager browser path
-  gem "selenium-webdriver", "< 4.45"
+  gem "selenium-webdriver"
 
   # HTTP request stubbing for testing [https://github.com/bblimke/webmock]
   gem "webmock"
