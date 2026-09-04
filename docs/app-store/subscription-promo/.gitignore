@@ -1,0 +1,3 @@
+# Intermediates from build.sh — only the two flattened PNGs are the deliverable.
+*.html
+*-raw.png
