@@ -39,6 +39,9 @@
 # Ignore CI service files.
 /.github
 
+# The native client is released separately and is not part of the Rails image.
+/hauptgang-ios/
+
 # Ignore Kamal files.
 /config/deploy*.yml
 /.kamal
