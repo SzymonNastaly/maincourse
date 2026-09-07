@@ -344,7 +344,7 @@ class SessionController(
             when {
                 failure is ApiFailure && failure.status == 401 ->
                     invalidateAuthenticatedSession(context, failure.message)
-                failure is ApiFailure ->
+                failure is ApiFailure && failure.status != null ->
                     setAccountError(context, failure.userMessage("Could not delete account"))
                 else -> setAccountError(context, DELETION_AMBIGUOUS_MESSAGE)
             }
@@ -367,13 +367,13 @@ class SessionController(
         synchronized(jobsLock) {
             if (admission != Admission.AUTHENTICATED || accountJob?.isActive == true) return completedJob()
             launched = scope.launch(start = CoroutineStart.LAZY) {
-                transition.withLock {
-                    mutableAccountState.value = mutableAccountState.value.copy(
-                        operation = operation,
-                        error = null,
-                    )
-                }
                 try {
+                    transition.withLock {
+                        mutableAccountState.value = mutableAccountState.value.copy(
+                            operation = operation,
+                            error = null,
+                        )
+                    }
                     block()
                 } finally {
                     withContext(NonCancellable) {
@@ -382,15 +382,17 @@ class SessionController(
                                 operation = AccountOperation.IDLE,
                             )
                         }
-                        synchronized(jobsLock) {
-                            authenticatedJobs.remove(launched)
-                            if (accountJob == launched) accountJob = null
-                        }
                     }
                 }
             }
             accountJob = launched
             authenticatedJobs += launched
+            launched.invokeOnCompletion {
+                synchronized(jobsLock) {
+                    authenticatedJobs.remove(launched)
+                    if (accountJob == launched) accountJob = null
+                }
+            }
         }
         launched.start()
         return launched

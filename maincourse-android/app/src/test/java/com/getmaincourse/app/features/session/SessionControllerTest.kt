@@ -1728,6 +1728,30 @@ class SessionControllerTest {
     }
 
     @Test
+    fun statuslessApiFailureLeavesDeletionUnconfirmedWithoutAutomaticReplay() = runTest {
+        val api = FakeApi().apply {
+            deleteAccountBlock = { throw ApiFailure(null, "Network request failed") }
+        }
+        val sessionStore = FakeSessionStore(SESSION)
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+
+        controller.deleteAccount().join()
+        advanceUntilIdle()
+
+        assertEquals(1, api.deleteAccountCalls)
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+        assertEquals(USER, controller.state.value.user)
+        assertEquals(SESSION, sessionStore.value)
+        assertFalse(sessionStore.cleared)
+        assertEquals(AccountOperation.IDLE, controller.accountState.value.operation)
+        assertEquals(
+            "Account deletion could not be confirmed. Retry deliberately or sign out.",
+            controller.accountState.value.error,
+        )
+    }
+
+    @Test
     fun deletion401InvalidatesSessionWithoutClaimingConfirmedDeletion() = runTest {
         val api = FakeApi().apply { deleteAccountBlock = { throw ApiFailure(401, "expired") } }
         val controller = controller(api = api, session = SESSION)
