@@ -157,6 +157,7 @@ class SessionControllerTest {
         controller.restore().join()
 
         assertEquals(SessionPhase.RESTORE_FAILED, controller.state.value.phase)
+        assertEquals("Could not read the saved session", controller.state.value.message)
         assertTrue(controller.state.value.canRetry)
         assertTrue(controller.state.value.canReset)
         assertFalse(sessionStore.cleared)
@@ -771,6 +772,70 @@ class SessionControllerTest {
     }
 
     @Test
+    fun failedRecipePurgeRetryDoesNotReplaceAnUnrelatedOpenDetail() = runTest {
+        val store = FakeCatalogStore().apply { removeRecipeFailure = IOException("disk") }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP, SALAD) }
+            recipeBlock = { _, _, recipeId ->
+                if (recipeId == SOUP.id) throw ApiFailure(404, "missing")
+                SOUP_DETAIL.copy(id = SALAD.id, name = SALAD.name)
+            }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        controller.openRecipe(SOUP.id).join()
+        controller.openRecipe(SALAD.id).join()
+
+        controller.refresh().join()
+
+        assertEquals(SALAD.id, controller.state.value.detail?.recipeId)
+        assertEquals(DetailStatus.FRESH, controller.state.value.detail?.status)
+    }
+
+    @Test
+    fun peerCompletingTheSamePendingPurgeDoesNotDropACookbookSwitch() = runTest {
+        val firstStarted = CompletableDeferred<Unit>()
+        val secondStarted = CompletableDeferred<Unit>()
+        val releaseFirst = CompletableDeferred<Unit>()
+        val releaseSecond = CompletableDeferred<Unit>()
+        var removals = 0
+        val store = FakeCatalogStore().apply { removeRecipeFailure = IOException("disk") }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL, SHARED) }
+            recipesBlock = { _, cookbookId -> if (cookbookId == SHARED.id) listOf(SALAD) else listOf(SOUP) }
+            recipeBlock = { _, _, _ -> throw ApiFailure(404, "missing") }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        controller.openRecipe(SOUP.id).join()
+        store.removeRecipeFailure = null
+        store.beforeRemoveRecipe = {
+            removals++
+            if (removals == 1) {
+                firstStarted.complete(Unit)
+                releaseFirst.await()
+            } else {
+                secondStarted.complete(Unit)
+                releaseSecond.await()
+            }
+        }
+
+        val refresh = controller.refresh()
+        firstStarted.await()
+        val switch = controller.switchCookbook(SHARED.id)
+        runCurrent()
+        releaseFirst.complete(Unit)
+        secondStarted.await()
+        releaseSecond.complete(Unit)
+        refresh.join()
+        switch.join()
+
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+    }
+
+    @Test
     fun failedForbiddenPurgeIsRetriedBeforeDiscoveryOrCachedContentReuse() = runTest {
         var discoveries = 0
         val store = FakeCatalogStore().apply { removeCookbookFailure = IOException("disk") }
@@ -840,7 +905,7 @@ class SessionControllerTest {
 
         assertEquals(LoadStatus.FRESH, controller.state.value.catalogStatus)
         assertEquals(LoadStatus.DEGRADED, controller.state.value.recipeStatus)
-        assertEquals("recipe offline", controller.state.value.message)
+        assertEquals("Could not refresh recipes", controller.state.value.message)
         assertTrue(controller.state.value.canRetry)
     }
 

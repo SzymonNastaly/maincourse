@@ -776,11 +776,14 @@ class SessionController(
                 is PendingPurge.Recipe -> catalogRepository.removeRecipe(purge.scope, purge.recipeId)
             }
             transition.withLock {
-                if (isCurrentLocked(context) && pendingPurge == purge) {
-                    pendingPurge = null
-                    true
-                } else {
-                    false
+                when {
+                    !isCurrentLocked(context) -> false
+                    pendingPurge == purge -> {
+                        pendingPurge = null
+                        true
+                    }
+                    pendingPurge == null -> true
+                    else -> false
                 }
             }
         } catch (failure: CancellationException) {
@@ -807,11 +810,18 @@ class SessionController(
                         is PendingPurge.Recipe -> mutableState.value.copy(
                             recipes = mutableState.value.recipes.filterNot { it.id == purge.recipeId },
                             recipeStatus = LoadStatus.ERROR,
-                            detail = RecipeDetailState(
-                                purge.recipeId,
-                                DetailStatus.UNAVAILABLE,
-                                message = "Recipe is no longer available",
-                            ),
+                            detail = if (
+                                mutableState.value.detail == null ||
+                                mutableState.value.detail?.recipeId == purge.recipeId
+                            ) {
+                                RecipeDetailState(
+                                    purge.recipeId,
+                                    DetailStatus.UNAVAILABLE,
+                                    message = "Recipe is no longer available",
+                                )
+                            } else {
+                                mutableState.value.detail
+                            },
                             message = failure.userMessage("Could not remove unavailable recipe data"),
                             canRetry = true,
                             canReset = true,
@@ -964,7 +974,8 @@ class SessionController(
 
     private fun LoadStatus.isFailure(): Boolean = this == LoadStatus.DEGRADED || this == LoadStatus.ERROR
 
-    private fun Throwable.userMessage(fallback: String): String = message?.takeIf { it.isNotBlank() } ?: fallback
+    private fun Throwable.userMessage(fallback: String): String =
+        if (this is ApiFailure) message?.takeIf { it.isNotBlank() } ?: fallback else fallback
 
     private data class UserContext(val response: SessionResponse, val generation: Long)
 

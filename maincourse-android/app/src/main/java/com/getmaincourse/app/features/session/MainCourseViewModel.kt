@@ -28,6 +28,10 @@ class MainCourseViewModel(
 
     val state = controller.state
 
+    init {
+        controller.restore()
+    }
+
     fun restore() = controller.restore()
     fun signIn(request: SignInRequest) = controller.signIn(request)
     fun signUp(request: SignUpRequest) = controller.signUp(request)

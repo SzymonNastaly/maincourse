@@ -1,7 +1,7 @@
 # Android Development
-`maincourse-android/` is the native Kotlin/Jetpack Compose client. It currently
-provides a themed preview shell and interactive design gallery and does not yet
-connect to Rails. See `docs/superpowers/plans/2026-09-07-native-android.md` for
+`maincourse-android/` is the native Kotlin/Jetpack Compose client. It provides
+email sessions, cookbook-scoped cached recipe browsing, and an interactive
+design gallery backed by the Rails API. See `docs/superpowers/plans/2026-09-07-native-android.md` for
 the product roadmap and [issue #92](https://github.com/SzymonNastaly/maincourse/issues/92)
 for Android external-service setup.
 
@@ -28,16 +28,19 @@ together. Lint treats warnings as errors and disables only the time-dependent
 `NewerVersionAvailable`, `AndroidGradlePluginVersion`, and `GradleDependency`
 freshness checks; it does not suppress a blanket baseline.
 
-Milestone 0 excludes HTTP/JSON libraries, Room, Coil, secure credential storage, repositories, and product models. Add each in
-Milestone 1 when the first real vertical slice uses it rather than carrying dead dependencies.
+Milestone 1 uses OkHttp/kotlinx.serialization, Room, Android Keystore storage,
+and a session-owned Coil image loader for the first authenticated vertical slice.
 
 ## Source Layout
 Use package-by-feature directories inside `app/src/main/java/com/getmaincourse/app/`. The root anchors are `MainActivity.kt` and
 `MainCourseApp.kt`; bootstrap features are `features/preview/PreviewScreen.kt` and
 `features/designsystem/DesignSystemScreen.kt`; theme code is under `ui/theme/`.
 
-`MainCourseApp.kt` owns the root scaffold and navigation. Its four destinations are Recipes, Shopping, Search, and Settings.
-They are previews/placeholders, not real account, recipe, persistence, or network flows.
+`MainCourseApplication.kt` manually constructs the singleton API and stores.
+`MainActivity.kt` owns the lifecycle-retained session view model, and
+`MainCourseApp.kt` owns auth-first UI and typed navigation. Its four destinations
+are Recipes, Shopping, Search, and Settings; Shopping and Search remain explicit
+previews.
 
 `DesignSystemScreen.kt` is a navigable, interactive token/component gallery for phone/tablet validation, not a production
 destination or substitute for feature tests.
@@ -130,17 +133,20 @@ The manifest sets `allowBackup="false"` and `fullBackupContent="false"`. `data_e
 domain, including device-protected storage, from cloud backup and device transfer on API 31+.
 
 ## Tests
-The bootstrap tests are intentionally narrow:
+The Android suites include:
 
 - `MainCourseThemeTest.kt`: token identity and required text/surface contrast.
-- `MainCourseAppTest.kt`: four destinations, navigation selection, gallery route, and state restoration.
+- `MainCourseAppTest.kt`: authentication validation, session recovery, cookbook
+  switching, recipe list/detail cache states, logout, four destinations, Back,
+  gallery restoration, and adaptive navigation.
+- `SessionImagesTest.kt`: session loader reuse, cleanup, and unauthenticated
+  image requests.
 
 Use the Compose JUnit `v2` test rules. Keep Espresso explicitly pinned in the
 catalog: Compose's older transitive version uses an input API removed in API 37.
 
-These tests do not imply that authentication, recipes, persistence, or network
-behavior exists. Milestone 1 adds JVM, Compose, and Room tests with those
-features.
+Room, secure-store, API, coordinator, image URL, and theme behavior also have
+JVM or device coverage at their appropriate boundary.
 
 ## CI
 `.github/workflows/android.yml` defines, but does not by itself prove execution
