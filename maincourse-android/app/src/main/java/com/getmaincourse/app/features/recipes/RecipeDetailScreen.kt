@@ -71,9 +71,9 @@ fun RecipeDetailScreen(
         } else {
             item {
                 when (detailState?.status) {
-                    DetailStatus.ERROR -> RetryState(stringResource(R.string.recipe_connect_to_load), onRetry)
+                    DetailStatus.ERROR -> RetryState(stringResource(R.string.recipe_load_error), onRetry)
                     DetailStatus.UNAVAILABLE -> RetryState(stringResource(R.string.recipe_unavailable), onRetry)
-                    DetailStatus.NOT_READY -> Feedback(detailState.message ?: stringResource(R.string.recipe_processing))
+                    DetailStatus.NOT_READY -> Feedback(stringResource(R.string.recipe_processing))
                     else -> Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }

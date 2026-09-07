@@ -23,7 +23,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,17 +60,33 @@ fun AuthScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var submitted by remember { mutableStateOf(false) }
-    var locallySubmitting by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(isSubmitting, error) {
-        if (!isSubmitting) locallySubmitting = false
-    }
-    val busy = isSubmitting || locallySubmitting
+    val busy = isSubmitting
     val nameInvalid = submitted && signup && name.isBlank()
     val emailInvalid = submitted && !email.isValidEmail()
     val passwordInvalid = submitted && password.isEmpty()
     val passwordShort = submitted && signup && password.length < 12
+    val submit = {
+        submitted = true
+        val valid = email.isValidEmail() && password.isNotEmpty() &&
+            (!signup || (name.isNotBlank() && password.length >= 12))
+        if (valid && !busy) {
+            if (signup) {
+                onSignUp(
+                    SignUpRequest(
+                        name = name.trim(),
+                        email = email.trim(),
+                        password = password,
+                        passwordConfirmation = password,
+                        deviceName = "Android",
+                    ),
+                )
+            } else {
+                onSignIn(SignInRequest(email.trim(), password, "Android"))
+            }
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().safeDrawingPadding().navigationBarsPadding().imePadding()
@@ -79,7 +94,7 @@ fun AuthScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 440.dp),
+            modifier = Modifier.widthIn(max = 440.dp).fillMaxWidth().testTag("auth_form"),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Image(painterResource(R.drawable.brand_mark), contentDescription = null, modifier = Modifier.size(72.dp))
@@ -143,31 +158,14 @@ fun AuthScreen(
                 enabled = !busy,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                    submit()
+                }),
                 shape = MainCourseShapes.Card,
             )
             Button(
-                onClick = {
-                    submitted = true
-                    val valid = email.isValidEmail() && password.isNotEmpty() &&
-                        (!signup || (name.isNotBlank() && password.length >= 12))
-                    if (valid && !busy) {
-                        locallySubmitting = true
-                        if (signup) {
-                            onSignUp(
-                                SignUpRequest(
-                                    name = name.trim(),
-                                    email = email.trim(),
-                                    password = password,
-                                    passwordConfirmation = password,
-                                    deviceName = "Android",
-                                ),
-                            )
-                        } else {
-                            onSignIn(SignInRequest(email.trim(), password, "Android"))
-                        }
-                    }
-                },
+                onClick = submit,
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().testTag("auth_submit"),
                 shape = MainCourseShapes.Control,

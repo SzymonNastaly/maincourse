@@ -206,3 +206,124 @@ and clear of system bars. Screenshots were captured outside the repository at
   were not added.
 - Cross-process incomplete-cleanup durability remains tracked in issue #94 and
   was not duplicated here.
+
+## Round 1 review amendments
+
+### UI lifecycle and recovery
+
+- Authentication now has one stable Compose callsite for signed-out and
+  authenticating phases. Login email/password and signup mode/name/email/password
+  survive request loading and 401/422 responses; Activity recreation still
+  removes the volatile password while retaining saveable non-secret fields.
+- The authentication form applies its 440dp bound before filling available
+  width, and IME Done invokes the same validation/submission path as its button.
+- Authenticated loading and ready phases share one `ProtectedApp` callsite.
+  A user-keyed `DisposableEffect` clears navigation when that authenticated
+  composition is replaced, while Navigation 3 and gallery saveable state remain
+  intact across Activity recreation.
+- Cold cookbook discovery now shows neutral cookbook/loading UI instead of a
+  false empty state. `catalogStatus` is passed to Recipes, cached/degraded
+  membership is visible even when recipes are fresh, and true empty/error states
+  remain distinct.
+- Recovery/startup surfaces scroll in short landscape/200%-font windows.
+- Card navigation has one detail-load trigger. A same-scope 404 retains its
+  unavailable destination and Back action; restored routes with no fetched list
+  show a retryable load failure instead of spinning forever.
+- Generic recipe/detail/not-ready failures use resource-backed status copy.
+  Backend authentication validation remains visible, but controller/internal
+  exception text is not rendered as product copy.
+- Recipe card images and placeholders are decorative because the card already
+  exposes the recipe name to accessibility services.
+
+### SessionImages ownership change
+
+Image preparation is now asynchronous and disk work is dispatched off Main:
+
+```kotlin
+SessionImages(context: Context, apiBaseUrl: String)
+fun resolve(path: String?): String?
+suspend fun prepare(userId: Long): ImageLoader
+suspend fun clear()
+```
+
+`MainActivity` keeps a nullable loader while `prepare` runs, so placeholders are
+available immediately without `runBlocking` or synchronous cache deletion in
+composition. A coroutine `Mutex` serializes preparation, user changes, and
+cleanup. First acquisition preserves the same user's existing disk directory
+while deleting obsolete users; switching users disposes the old loader before
+removal. Cancelled preparation cannot publish after cleanup. Failed recursive
+deletion throws and therefore reaches the existing `CLEANUP_FAILED` session
+path rather than claiming local cleanup completed.
+
+### Round 1 RED evidence
+
+The expanded Compose suite was observed with 13 behavioral failures before the
+UI fixes, including lost auth fields/signup mode, duplicate detail opens, false
+cold-start empty UI, missing degraded membership feedback, unreachable 404,
+infinite restored-detail loading, unbounded tablet form, non-scrollable recovery,
+and IME Done not submitting:
+
+```text
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.MainCourseAppTest \
+  --console=plain
+26 tests, 13 failures
+BUILD FAILED
+exit 1
+```
+
+The image contract tests were added before the async API and failed compilation
+on the missing `prepare` signature and injected cleanup/preparation seams:
+
+```text
+$ bin/android-gradle :app:compileDebugAndroidTestKotlin --console=plain
+SessionImagesTest.kt: Unresolved reference 'prepare'
+SessionImagesTest.kt: No parameter with name 'cacheDirectory'
+SessionImagesTest.kt: No parameter with name 'deleteDirectory'
+SessionImagesTest.kt: No parameter with name 'beforePublish'
+BUILD FAILED
+exit 1
+```
+
+Focused REDs also reproduced raw controller copy on recipe/detail surfaces.
+During the full gate, the existing gallery recreation check exposed that adding
+saveable/key state above Navigation 3 invalidated nested gallery restoration.
+The final user-scoping implementation uses disposal keyed by authenticated user
+identity without inserting another saveable owner above the back stack.
+
+### Round 1 focused GREEN
+
+```text
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.MainCourseAppTest,com.getmaincourse.app.data.images.SessionImagesTest \
+  --console=plain
+BUILD SUCCESSFUL in 57s
+exit 0
+```
+
+New image coverage proves same-user cache reuse by a new `SessionImages`
+instance, cross-user removal, no Authorization header, loader construction off
+Main, failed-removal propagation, and cancellation/cleanup ordering.
+
+### Round 1 final verification
+
+```text
+$ bin/android-test --device
+BUILD SUCCESSFUL in 56s
+exit 0
+
+JUnit XML: 61 JVM tests + 57 device tests = 118 tests,
+0 failures, 0 errors, 0 skipped.
+
+$ bin/android-gradle :app:assembleDebug :app:assembleRelease :app:lintRelease --console=plain
+BUILD SUCCESSFUL in 24s
+exit 0
+```
+
+The actual unauthenticated launcher was inspected on the API 37 emulator at its
+phone configuration (1080x2424, density 420), a tablet override (1600x2560,
+density 320), and tablet 200% font scale. The 440dp form bound and scroll-safe
+layout were visible. Emulator size, density, and font scale were restored to
+physical defaults and 1.0 afterward. Screenshots are outside the repository as
+`task4-round1-phone.png`, `task4-round1-tablet.png`, and
+`task4-round1-tablet-large.png`.

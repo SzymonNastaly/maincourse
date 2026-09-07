@@ -60,11 +60,12 @@ fun RecipesScreen(
     recipes: List<RecipeSummary>,
     recipesFetched: Boolean,
     status: LoadStatus,
-    message: String?,
+    catalogStatus: LoadStatus,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     onSwitchCookbook: (Long) -> Unit,
     onRefresh: () -> Unit,
+    onLogout: () -> Unit,
     onOpenRecipe: (Long) -> Unit,
 ) {
     val refreshing = status == LoadStatus.LOADING && recipesFetched
@@ -82,6 +83,11 @@ fun RecipesScreen(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 CookbookPicker(cookbooks, activeCookbookId, onSwitchCookbook)
             }
+            if (catalogStatus == LoadStatus.DEGRADED && cookbooks.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    StatusPanel(stringResource(R.string.cookbooks_saved), onRefresh)
+                }
+            }
             if (status == LoadStatus.DEGRADED) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     StatusPanel(stringResource(R.string.recipes_saved), onRefresh)
@@ -89,18 +95,23 @@ fun RecipesScreen(
             } else if (status == LoadStatus.ERROR) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     StatusPanel(
-                        if (recipes.isEmpty()) stringResource(R.string.recipes_load_error)
-                        else message ?: stringResource(R.string.recipes_load_error),
+                        stringResource(R.string.recipes_load_error),
                         onRefresh,
                     )
                 }
             }
             when {
-                cookbooks.isEmpty() -> item(span = { GridItemSpan(maxLineSpan) }) {
+                cookbooks.isEmpty() && catalogStatus == LoadStatus.LOADING -> item(span = { GridItemSpan(maxLineSpan) }) {
+                    LoadingPanel(stringResource(R.string.startup_loading))
+                }
+                cookbooks.isEmpty() && catalogStatus == LoadStatus.ERROR -> item(span = { GridItemSpan(maxLineSpan) }) {
+                    CatalogErrorPanel(onRefresh, onLogout)
+                }
+                cookbooks.isEmpty() && catalogStatus == LoadStatus.FRESH -> item(span = { GridItemSpan(maxLineSpan) }) {
                     EmptyPanel(stringResource(R.string.cookbooks_empty))
                 }
                 status == LoadStatus.LOADING && recipes.isEmpty() -> item(span = { GridItemSpan(maxLineSpan) }) {
-                    LoadingPanel()
+                    LoadingPanel(stringResource(R.string.recipes_loading))
                 }
                 recipesFetched && recipes.isEmpty() -> item(span = { GridItemSpan(maxLineSpan) }) {
                     EmptyPanel(stringResource(R.string.recipes_empty))
@@ -114,7 +125,11 @@ fun RecipesScreen(
 }
 
 @Composable
-private fun CookbookPicker(cookbooks: List<Cookbook>, activeId: Long?, onSwitch: (Long) -> Unit) {
+private fun CookbookPicker(
+    cookbooks: List<Cookbook>,
+    activeId: Long?,
+    onSwitch: (Long) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     val active = cookbooks.firstOrNull { it.id == activeId }
     Box {
@@ -128,7 +143,10 @@ private fun CookbookPicker(cookbooks: List<Cookbook>, activeId: Long?, onSwitch:
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Text(stringResource(R.string.cookbook_picker), style = MaterialTheme.typography.labelSmall, color = MainCourseColors.Muted)
-                Text(active?.name ?: stringResource(R.string.cookbooks_empty), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    active?.name ?: stringResource(R.string.cookbook_none_selected),
+                    style = MaterialTheme.typography.titleMedium,
+                )
             }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -186,7 +204,7 @@ private fun RecipeImage(recipe: RecipeSummary, imageLoader: ImageLoader?, resolv
     ) {
         Icon(
             painterResource(R.drawable.ic_recipes),
-            contentDescription = stringResource(R.string.recipe_image_placeholder, recipe.name),
+            contentDescription = null,
             tint = MainCourseColors.Muted,
             modifier = Modifier.size(36.dp),
         )
@@ -194,7 +212,7 @@ private fun RecipeImage(recipe: RecipeSummary, imageLoader: ImageLoader?, resolv
             AsyncImage(
                 model = model,
                 imageLoader = imageLoader,
-                contentDescription = recipe.name,
+                contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -224,13 +242,26 @@ private fun EmptyPanel(text: String) {
 }
 
 @Composable
-private fun LoadingPanel() {
+private fun LoadingPanel(text: String) {
     Column(
         Modifier.fillMaxWidth().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CircularProgressIndicator()
-        Text(stringResource(R.string.recipes_loading), color = MainCourseColors.Body)
+        Text(text, color = MainCourseColors.Body)
+    }
+}
+
+@Composable
+private fun CatalogErrorPanel(onRetry: () -> Unit, onLogout: () -> Unit) {
+    Surface(shape = MainCourseShapes.Panel, color = MainCourseColors.Surface, border = BorderStroke(1.dp, MainCourseColors.Hairline)) {
+        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.cookbooks_load_error), color = MainCourseColors.Body)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+                androidx.compose.material3.OutlinedButton(onClick = onLogout) { Text(stringResource(R.string.sign_out)) }
+            }
+        }
     }
 }

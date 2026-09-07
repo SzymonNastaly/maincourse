@@ -31,7 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -54,6 +56,8 @@ import com.getmaincourse.app.features.recipes.RecipesScreen
 import com.getmaincourse.app.features.session.SessionPhase
 import com.getmaincourse.app.features.session.SessionState
 import com.getmaincourse.app.features.session.LoadStatus
+import com.getmaincourse.app.features.session.DetailStatus
+import com.getmaincourse.app.features.session.RecipeDetailState
 import com.getmaincourse.app.features.settings.SettingsScreen
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import kotlinx.serialization.Serializable
@@ -93,17 +97,28 @@ fun MainCourseApp(
     imageLoader: ImageLoader? = null,
     resolveImage: (String?) -> String? = { it },
 ) {
+    val showingAuthentication = state.phase == SessionPhase.SIGNED_OUT ||
+        (state.phase == SessionPhase.LOADING_COOKBOOKS && state.user == null)
+    if (showingAuthentication) {
+        AuthScreen(
+            isSubmitting = state.phase == SessionPhase.LOADING_COOKBOOKS,
+            error = state.authError,
+            onSignIn = actions.signIn,
+            onSignUp = actions.signUp,
+        )
+        return
+    }
+
+    val authenticatedUser = state.user
+    if (authenticatedUser != null &&
+        (state.phase == SessionPhase.LOADING_COOKBOOKS || state.phase == SessionPhase.READY)
+    ) {
+        ProtectedApp(state, actions, imageLoader, resolveImage)
+        return
+    }
+
     when (state.phase) {
         SessionPhase.RESTORING -> StartupScreen(R.string.startup_loading)
-        SessionPhase.SIGNED_OUT -> AuthScreen(false, state.authError, actions.signIn, actions.signUp)
-        SessionPhase.LOADING_COOKBOOKS -> if (state.user == null) {
-            AuthScreen(true, state.authError, actions.signIn, actions.signUp)
-        } else if (state.activeCookbookId == null && state.catalogStatus == LoadStatus.ERROR) {
-            CookbookRecoveryScreen(actions.refresh, actions.logout)
-        } else {
-            ProtectedApp(state, actions, imageLoader, resolveImage)
-        }
-        SessionPhase.READY -> ProtectedApp(state, actions, imageLoader, resolveImage)
         SessionPhase.SIGNING_OUT -> StartupScreen(R.string.auth_submitting)
         SessionPhase.RESTORE_FAILED -> RecoveryScreen(
             title = R.string.startup_failed,
@@ -117,19 +132,7 @@ fun MainCourseApp(
             onReset = actions.reset,
             retryLabel = R.string.retry_cleanup,
         )
-    }
-}
-
-@Composable
-private fun CookbookRecoveryScreen(onRetry: () -> Unit, onLogout: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(stringResource(R.string.cookbooks_load_error), style = MaterialTheme.typography.titleLarge)
-        Button(onClick = onRetry, modifier = Modifier.padding(top = 20.dp)) { Text(stringResource(R.string.retry)) }
-        OutlinedButton(onClick = onLogout) { Text(stringResource(R.string.sign_out)) }
+        SessionPhase.SIGNED_OUT, SessionPhase.LOADING_COOKBOOKS, SessionPhase.READY -> Unit
     }
 }
 
@@ -143,6 +146,12 @@ private fun ProtectedApp(
 ) {
     val user = state.user ?: return StartupScreen(R.string.startup_loading)
     val backStack = rememberNavBackStack(Destination.Recipes)
+    DisposableEffect(user.id, backStack) {
+        onDispose {
+            backStack.clear()
+            backStack.add(Destination.Recipes)
+        }
+    }
     val current = backStack.last()
     val selected = backStack.filterIsInstance<Destination>().lastOrNull { it in topLevelDestinations }
         ?: Destination.Recipes
@@ -156,10 +165,12 @@ private fun ProtectedApp(
     LaunchedEffect(state.phase, state.user.id, state.activeCookbookId, state.recipeStatus, state.recipes, current) {
         val detailRoute = current as? RecipeDestination ?: return@LaunchedEffect
         val scopeChanged = detailRoute.cookbookId != state.activeCookbookId
+        val unavailableHere = state.detail?.recipeId == detailRoute.recipeId &&
+            state.detail.status == DetailStatus.UNAVAILABLE
         val authoritativelyMissing = state.recipesFetched &&
-            state.recipeStatus != com.getmaincourse.app.features.session.LoadStatus.LOADING &&
+            state.recipeStatus != LoadStatus.LOADING &&
             state.recipes.none { it.id == detailRoute.recipeId }
-        if (scopeChanged || authoritativelyMissing) {
+        if (scopeChanged || (authoritativelyMissing && !unavailableHere)) {
             backStack.removeLastOrNull()
             actions.closeRecipe()
         } else if (state.detail?.recipeId != detailRoute.recipeId &&
@@ -254,16 +265,16 @@ private fun ProtectedApp(
                                     recipes = state.recipes,
                                     recipesFetched = state.recipesFetched,
                                     status = state.recipeStatus,
-                                    message = state.message,
+                                    catalogStatus = state.catalogStatus,
                                     imageLoader = imageLoader,
                                     resolveImage = resolveImage,
                                     onSwitchCookbook = actions.switchCookbook,
                                     onRefresh = actions.refresh,
+                                    onLogout = actions.logout,
                                     onOpenRecipe = { recipeId ->
                                         val cookbookId = state.activeCookbookId
                                         if (cookbookId != null) {
                                             backStack.add(RecipeDestination(cookbookId, recipeId))
-                                            actions.openRecipe(recipeId)
                                         }
                                     },
                                 )
@@ -275,8 +286,14 @@ private fun ProtectedApp(
                             }
                         }
                         entry<RecipeDestination> { destination ->
+                            val displayedDetail = state.detail?.takeIf { it.recipeId == destination.recipeId }
+                                ?: if (!state.recipesFetched && state.recipeStatus.isFailure()) {
+                                    RecipeDetailState(destination.recipeId, DetailStatus.ERROR)
+                                } else {
+                                    null
+                                }
                             RecipeDetailScreen(
-                                detailState = state.detail?.takeIf { it.recipeId == destination.recipeId },
+                                detailState = displayedDetail,
                                 imageLoader = imageLoader,
                                 resolveImage = resolveImage,
                                 onRetry = { actions.openRecipe(destination.recipeId) },
@@ -292,7 +309,7 @@ private fun ProtectedApp(
 @Composable
 private fun StartupScreen(@StringRes message: Int) {
     Column(
-        Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
+        Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -309,7 +326,7 @@ private fun RecoveryScreen(
     @StringRes retryLabel: Int,
 ) {
     Column(
-        Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
+        Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -318,3 +335,5 @@ private fun RecoveryScreen(
         OutlinedButton(onClick = onReset) { Text(stringResource(R.string.clear_local_data)) }
     }
 }
+
+private fun LoadStatus.isFailure(): Boolean = this == LoadStatus.DEGRADED || this == LoadStatus.ERROR

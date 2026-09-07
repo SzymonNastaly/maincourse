@@ -6,12 +6,16 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getmaincourse.app.features.session.MainCourseViewModel
 import com.getmaincourse.app.ui.theme.MainCourseTheme
+import kotlinx.coroutines.CancellationException
 
 class MainActivity : ComponentActivity() {
     private val appContainer: AppContainer
@@ -29,8 +33,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             MainCourseTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
-                val imageLoader = remember(state.user?.id) {
-                    state.user?.id?.let(appContainer.images::loaderFor)
+                val userId = state.user?.id
+                var imageLoader by remember(userId) { mutableStateOf<coil3.ImageLoader?>(null) }
+                LaunchedEffect(userId) {
+                    imageLoader = null
+                    if (userId != null) {
+                        imageLoader = try {
+                            appContainer.images.prepare(userId)
+                        } catch (failure: CancellationException) {
+                            throw failure
+                        } catch (_: Throwable) {
+                            null
+                        }
+                    }
                 }
                 MainCourseApp(
                     state = state,

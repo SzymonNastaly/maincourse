@@ -63,8 +63,10 @@
     <string name="retry_cleanup">Retry cleanup</string>
     <string name="clear_local_data">Clear local data</string>
     <string name="cookbook_picker">Cookbook</string>
+    <string name="cookbook_none_selected">No cookbook selected</string>
     <string name="cookbooks_empty">No cookbooks are available for this account.</string>
     <string name="cookbooks_load_error">Cookbooks could not be loaded.</string>
+    <string name="cookbooks_saved">Showing saved cookbooks. Connect and retry to check access.</string>
     <string name="recipes_empty">No recipes in this cookbook yet.</string>
     <string name="recipes_loading">Loading recipes…</string>
     <string name="recipes_saved">Showing saved recipes. Connect and retry to refresh.</string>
@@ -72,9 +74,8 @@
     <string name="recipe_processing">Preparing recipe</string>
     <string name="recipe_failed">Import failed</string>
     <string name="recipe_saved_offline">Saved recipe — you’re offline.</string>
-    <string name="recipe_connect_to_load">Connect to load this recipe.</string>
+    <string name="recipe_load_error">Recipe could not be loaded. Check your connection and retry.</string>
     <string name="recipe_unavailable">This recipe is no longer available.</string>
-    <string name="recipe_image_placeholder">No photo for %1$s</string>
     <string name="recipe_time">%1$d min</string>
     <string name="recipe_prep">Prep</string>
     <string name="recipe_cook">Cook</string>

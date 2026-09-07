@@ -1,21 +1,33 @@
 package com.getmaincourse.app
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.CoverImages
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -117,6 +129,71 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun loginFieldsSurviveSubmittingAndARejectedResponse() {
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+        recorder.afterSignIn = {
+            state.value = SessionState(phase = SessionPhase.LOADING_COOKBOOKS, catalogStatus = LoadStatus.LOADING)
+        }
+        compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
+        compose.onNodeWithTag("auth_password").performTextInput("short")
+        compose.onNodeWithTag("auth_submit").performClick()
+        show(SessionState(phase = SessionPhase.SIGNED_OUT, authError = "Invalid email or password"))
+
+        compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
+        compose.onNodeWithTag("auth_submit").performClick()
+        assertEquals(2, recorder.signInCount)
+        assertEquals("short", recorder.signIn?.password)
+    }
+
+    @Test
+    fun signupModeAndFieldsSurviveSubmittingAndValidationErrors() {
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+        recorder.afterSignUp = {
+            state.value = SessionState(phase = SessionPhase.LOADING_COOKBOOKS, catalogStatus = LoadStatus.LOADING)
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_need_account)).performClick()
+        compose.onNodeWithTag("auth_name").performTextInput("Reader")
+        compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
+        compose.onNodeWithTag("auth_password").performTextInput("long-password")
+        compose.onNodeWithTag("auth_submit").performClick()
+        show(SessionState(phase = SessionPhase.SIGNED_OUT, authError = "Email is already registered"))
+
+        compose.onNodeWithTag("auth_name").assertTextContains("Reader")
+        compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
+        compose.onNodeWithTag("auth_submit").performClick()
+        assertEquals(2, recorder.signUpCount)
+        assertEquals("long-password", recorder.signUp?.password)
+    }
+
+    @Test
+    fun passwordImeActionUsesTheSameSubmitPathAsTheButton() {
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+        compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
+        compose.onNodeWithTag("auth_password").performTextInput("short")
+        compose.onNodeWithTag("auth_password").performImeAction()
+
+        assertEquals(1, recorder.signInCount)
+        assertEquals("short", recorder.signIn?.password)
+    }
+
+    @Test
+    fun authenticationFormIsWidthBoundedInsideTabletConstraints() {
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    Box(Modifier.requiredWidth(800.dp).requiredHeight(1000.dp)) {
+                        MainCourseApp(SessionState(phase = SessionPhase.SIGNED_OUT), recorder.actions)
+                    }
+                }
+            }
+        }
+
+        val widthPixels = compose.onNodeWithTag("auth_form").fetchSemanticsNode().boundsInRoot.width
+        val density = compose.activity.resources.displayMetrics.density
+        assertEquals(true, widthPixels / density <= 440.5f)
+    }
+
+    @Test
     fun cookbookSwitchUpdatesListAndDetailShowsSavedOfflineSections() {
         compose.onNodeWithTag("cookbook_picker").performClick()
         compose.onNodeWithText("Family cookbook").performClick()
@@ -124,6 +201,7 @@ class MainCourseAppTest {
         show(readyState(cookbookId = 2L, recipes = listOf(SOUP)))
 
         compose.onNodeWithText("Vegetable soup").performClick()
+        compose.waitForIdle()
         assertEquals(20L, recorder.openedRecipe)
         show(
             readyState(cookbookId = 2L, recipes = listOf(SOUP)).copy(
@@ -139,6 +217,20 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun aRecipeCardStartsExactlyOneDetailLoad() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        compose.waitForIdle()
+        assertEquals(1, recorder.openRecipeCount)
+    }
+
+    @Test
+    fun aMissingCardImageIsDecorativeBecauseTheCardAlreadyNamesTheRecipe() {
+        compose.onAllNodesWithContentDescription(
+            "No photo for Vegetable soup",
+        ).assertCountEquals(0)
+    }
+
+    @Test
     fun uncachedDetailOffersConnectionRetryWithoutInventingContent() {
         compose.onNodeWithText("Vegetable soup").performClick()
         show(
@@ -147,9 +239,52 @@ class MainCourseAppTest {
             ),
         )
         compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.recipe_connect_to_load)).assertIsDisplayed()
+        compose.onNodeWithText("Recipe could not be loaded. Check your connection and retry.").assertIsDisplayed()
         compose.onNodeWithText(compose.activity.getString(R.string.retry)).performClick()
         assertEquals(20L, recorder.openedRecipe)
+    }
+
+    @Test
+    fun restoredUnfetchedDetailShowsRetryInsteadOfAnInfiniteSpinner() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(
+            readyState(recipes = emptyList()).copy(
+                recipesFetched = false,
+                recipeStatus = LoadStatus.ERROR,
+                detail = null,
+            ),
+        )
+
+        compose.onNodeWithText("Recipe could not be loaded. Check your connection and retry.").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.retry)).assertIsDisplayed()
+    }
+
+    @Test
+    fun notReadyDetailUsesStatusCopyInsteadOfInternalMessages() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(
+            readyState().copy(
+                detail = RecipeDetailState(20L, DetailStatus.NOT_READY, message = "java.lang.IllegalStateException"),
+            ),
+        )
+
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_processing)).assertIsDisplayed()
+        compose.onAllNodesWithText("java.lang.IllegalStateException").assertCountEquals(0)
+    }
+
+    @Test
+    fun removedRecipeKeepsItsUnavailableDestinationUntilBack() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(
+            readyState(recipes = emptyList()).copy(
+                detail = RecipeDetailState(20L, DetailStatus.UNAVAILABLE),
+            ),
+        )
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_unavailable)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
     }
 
     @Test
@@ -174,6 +309,43 @@ class MainCourseAppTest {
         compose.onNodeWithText(compose.activity.getString(R.string.recipe_failed)).assertIsDisplayed()
         compose.onNodeWithText("Imported cake").performClick()
         assertNull(recorder.openedRecipe)
+    }
+
+    @Test
+    fun coldCatalogDiscoveryShowsLoadingBeforeARealEmptyResult() {
+        show(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                catalogStatus = LoadStatus.LOADING,
+                recipeStatus = LoadStatus.IDLE,
+            ),
+        )
+        compose.onNodeWithText(compose.activity.getString(R.string.startup_loading)).assertIsDisplayed()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.cookbooks_empty)).assertCountEquals(0)
+
+        show(readyState(recipes = emptyList()).copy(cookbooks = emptyList(), activeCookbookId = null))
+        compose.onNodeWithText(compose.activity.getString(R.string.cookbooks_empty)).assertIsDisplayed()
+    }
+
+    @Test
+    fun degradedCookbookMembershipIsVisibleEvenWhenRecipesAreFresh() {
+        show(readyState().copy(catalogStatus = LoadStatus.DEGRADED, recipeStatus = LoadStatus.FRESH))
+        compose.onNodeWithText("Showing saved cookbooks. Connect and retry to check access.").assertIsDisplayed()
+    }
+
+    @Test
+    fun recipeFailuresUseResourceCopyInsteadOfInternalControllerMessages() {
+        show(
+            readyState().copy(
+                recipeStatus = LoadStatus.ERROR,
+                message = "java.io.IOException: socket closed",
+                canRetry = true,
+            ),
+        )
+
+        compose.onNodeWithText(compose.activity.getString(R.string.recipes_load_error)).assertIsDisplayed()
+        compose.onAllNodesWithText("java.io.IOException: socket closed").assertCountEquals(0)
     }
 
     @Test
@@ -207,6 +379,24 @@ class MainCourseAppTest {
         show(SessionState(phase = SessionPhase.CLEANUP_FAILED, canRetry = true, canReset = true))
         compose.onNodeWithText(compose.activity.getString(R.string.retry_cleanup)).performClick()
         assertEquals(1, recorder.logoutCount)
+    }
+
+    @Test
+    fun recoveryActionsRemainScrollableAtLargeTextInShortWindows() {
+        val failed = SessionState(phase = SessionPhase.RESTORE_FAILED, canRetry = true, canReset = true)
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+                    Box(Modifier.requiredWidth(500.dp).requiredHeight(150.dp)) {
+                        MainCourseTheme { MainCourseApp(failed, recorder.actions) }
+                    }
+                }
+            }
+        }
+
+        compose.onNodeWithText(compose.activity.getString(R.string.clear_local_data)).performScrollTo().performClick()
+        assertEquals(1, recorder.resetCount)
     }
 
     @Test
@@ -284,6 +474,16 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun protectedNavigationSurvivesSameUserLoadingButResetsForAnotherUser() {
+        compose.onNodeWithTag("nav_Settings").performClick()
+        show(readyState().copy(phase = SessionPhase.LOADING_COOKBOOKS, catalogStatus = LoadStatus.LOADING))
+        compose.onNodeWithTag("screen_Settings").assertIsDisplayed()
+
+        show(readyState().copy(user = USER.copy(id = 8L, email = "other@example.test")))
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+    }
+
+    @Test
     fun topLevelNavigationAndWidthAdaptationRemainAvailable() {
         listOf("Shopping", "Search", "Settings", "Recipes").forEach { destination ->
             compose.onNodeWithTag("nav_$destination").performClick().assertIsSelected()
@@ -305,13 +505,16 @@ class MainCourseAppTest {
         var signIn: SignInRequest? = null
         var signUp: SignUpRequest? = null
         var signInCount = 0
+        var signUpCount = 0
         var switchedCookbook: Long? = null
         var openedRecipe: Long? = null
+        var openRecipeCount = 0
         var refreshCount = 0
         var logoutCount = 0
         var restoreCount = 0
         var resetCount = 0
         var afterSignIn: () -> Unit = {}
+        var afterSignUp: () -> Unit = {}
 
         val actions = MainCourseActions(
             restore = { restoreCount++ },
@@ -320,10 +523,17 @@ class MainCourseAppTest {
                 signInCount++
                 afterSignIn()
             },
-            signUp = { signUp = it },
+            signUp = {
+                signUp = it
+                signUpCount++
+                afterSignUp()
+            },
             switchCookbook = { switchedCookbook = it },
             refresh = { refreshCount++ },
-            openRecipe = { openedRecipe = it },
+            openRecipe = {
+                openedRecipe = it
+                openRecipeCount++
+            },
             closeRecipe = { state.value = state.value.copy(detail = null) },
             logout = { logoutCount++ },
             reset = { resetCount++ },
