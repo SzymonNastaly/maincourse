@@ -180,3 +180,59 @@ JUnit XML summary: 43 tests, 0 failures, 0 errors, 0 skipped across 3 suites.
 - Task 4 must wire application-singleton `SessionStore`, `CatalogStore`, API, repository, and the concrete image cleanup callback.
 - Task 4 must invoke `restore()` at startup and `checkExpiry()` on resume, then map controller messages/statuses to resource-backed UI copy and accessibility behavior.
 - No device/Room instrumentation or Compose tests were added here; those remain with the persistence/UI tasks. This task's new tests are pure JVM tests using contract-faithful in-memory fakes.
+- A cleanup-in-progress marker is not persisted across process death; that separate durability enhancement is intentionally outside this task and should remain tracked as follow-up work.
+
+## Review round 1 amendments
+
+### Behavior changes
+
+- Restore admission is now explicit: only initial `RESTORING` and retryable `RESTORE_FAILED` states may read protected storage. Restore is ignored during authentication, cleanup/revoke, authenticated use, and ordinary signed-out form errors.
+- A restore job is registered before it starts, so logout/reset can cancel and join a slow protected-store read before cleanup.
+- Cleanup admission is coalesced across concurrent logout/reset calls. Authentication remains blocked for the whole cleanup lifetime, and stale expiry/401 paths cannot start another cleanup or publish over a newer account.
+- Failed 404/403 cache removals are contained as retryable states. The rejected content is hidden immediately, and a pending purge must succeed before cache reads or rediscovery resume.
+- `refresh()` reruns membership discovery whenever catalog state is not `FRESH`, allowing degraded cached startup to reconcile additions/removals once connectivity returns.
+- Successful cookbook discovery preserves a failed/degraded recipe status, message, and retry action.
+- 404 completion now compares against the generation captured when removal began, rather than the mutable current generation.
+- Invalid cookbook IDs are rejected before advancing the cookbook request generation.
+- Detail open/close uses a separate request generation and post-suspension checks; invalidated cache reads cannot start API work, and delayed cancellation cannot publish stale `NOT_READY`/close state.
+- Cached membership with no fetched list now reaches terminal recipe `ERROR` when discovery fails instead of remaining `LOADING` without work.
+
+The public constructors, state types, and action signatures listed above are unchanged. Task 4 should still call `restore()` once at startup, `checkExpiry()` on resume, and derive resource-backed copy from statuses/errors.
+
+### Review RED
+
+```text
+$ bin/android-gradle :app:testDebugUnitTest --tests '*SessionControllerTest' --console=plain
+SessionControllerTest > refreshFromDegradedCatalogRediscoveryReconcilesMemberships FAILED
+SessionControllerTest > invalidatedDetailLoadDoesNotStartApiAfterItsCacheRead FAILED
+SessionControllerTest > failedForbiddenPurgeIsRetriedBeforeDiscoveryOrCachedContentReuse FAILED
+SessionControllerTest > invalidSwitchDoesNotInvalidateAnInProgressValidSwitch FAILED
+SessionControllerTest > restoreIsIgnoredDuringSlowLogoutRevocation FAILED
+SessionControllerTest > restoreIsIgnoredDuringAuthenticationAndAfterSignedOutFormError FAILED
+SessionControllerTest > successfulDiscoveryDoesNotEraseDegradedRecipeFailure FAILED
+Command timed out with the intentionally blocked pre-fix cleanup regression still pending.
+exit 124
+```
+
+The same red batch also included deterministic regressions for reset during a slow session read, overlapping cleanup/new-login admission, failed 404 removal, stale detail cancellation/cache reads, and unfetched-cache offline startup.
+
+### Review focused GREEN
+
+```text
+$ bin/android-gradle :app:testDebugUnitTest --tests '*SessionControllerTest' --console=plain
+BUILD SUCCESSFUL in 2s
+28 actionable tasks: 7 executed, 21 up-to-date
+41 tests, 0 failures, 0 errors
+exit 0
+```
+
+### Review final gate
+
+```text
+$ bin/android-test
+BUILD SUCCESSFUL in 2s
+37 actionable tasks: 8 executed, 29 up-to-date
+exit 0
+
+JUnit XML summary: 56 tests, 0 failures, 0 errors, 0 skipped across 3 suites.
+```

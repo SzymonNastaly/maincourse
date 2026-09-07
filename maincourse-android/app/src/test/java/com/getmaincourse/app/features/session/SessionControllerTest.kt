@@ -646,6 +646,342 @@ class SessionControllerTest {
         assertTrue(store.allRecipeWrites.isEmpty())
     }
 
+    @Test
+    fun resetDuringSlowRestorePreventsTheReadSessionFromBeingAdmitted() = runTest {
+        val readStarted = CompletableDeferred<Unit>()
+        val releaseRead = CompletableDeferred<Unit>()
+        val sessionStore = FakeSessionStore(SESSION).apply {
+            beforeRead = {
+                readStarted.complete(Unit)
+                releaseRead.await()
+            }
+        }
+        val controller = controller(sessionStore = sessionStore)
+
+        val restoring = controller.restore()
+        readStarted.await()
+        val resetting = controller.reset()
+        runCurrent()
+        releaseRead.complete(Unit)
+        restoring.join()
+        resetting.join()
+
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertNull(controller.state.value.user)
+    }
+
+    @Test
+    fun restoreIsIgnoredDuringSlowLogoutRevocation() = runTest {
+        val revokeStarted = CompletableDeferred<Unit>()
+        val releaseRevoke = CompletableDeferred<Unit>()
+        val sessionStore = FakeSessionStore(SESSION)
+        val api = FakeApi().apply {
+            signOutBlock = {
+                revokeStarted.complete(Unit)
+                releaseRevoke.await()
+            }
+        }
+        val controller = controller(api = api, sessionStore = sessionStore)
+        controller.restore().join()
+
+        val logout = controller.logout()
+        revokeStarted.await()
+        controller.restore().join()
+
+        assertEquals(1, sessionStore.readCalls)
+        releaseRevoke.complete(Unit)
+        logout.join()
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+    }
+
+    @Test
+    fun restoreIsIgnoredDuringAuthenticationAndAfterSignedOutFormError() = runTest {
+        val authResponse = CompletableDeferred<SessionResponse>()
+        val sessionStore = FakeSessionStore(null)
+        val api = FakeApi().apply { signInBlock = { authResponse.await() } }
+        val controller = controller(api = api, sessionStore = sessionStore)
+        controller.restore().join()
+        val readsAfterStartup = sessionStore.readCalls
+        sessionStore.value = SESSION
+
+        val authentication = controller.signIn(SIGN_IN)
+        runCurrent()
+        controller.restore().join()
+        assertEquals(readsAfterStartup, sessionStore.readCalls)
+
+        authResponse.completeExceptionally(ApiFailure(401, "bad credentials"))
+        authentication.join()
+        controller.restore().join()
+
+        assertEquals(readsAfterStartup, sessionStore.readCalls)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertEquals("bad credentials", controller.state.value.authError)
+    }
+
+    @Test
+    fun overlappingCleanupCannotAdmitThenClearANewLogin() = runTest {
+        val cleanupStarted = CompletableDeferred<Unit>()
+        val releaseCleanup = CompletableDeferred<Unit>()
+        var cleanupCalls = 0
+        val api = FakeApi().apply { cookbooksBlock = { listOf(PERSONAL) } }
+        val sessionStore = FakeSessionStore(SESSION)
+        val controller = controller(api = api, sessionStore = sessionStore) {
+            cleanupCalls++
+            if (cleanupCalls == 1) {
+                cleanupStarted.complete(Unit)
+                releaseCleanup.await()
+            }
+        }
+        controller.restore().join()
+
+        val logout = controller.logout()
+        cleanupStarted.await()
+        val reset = controller.reset()
+        runCurrent()
+        controller.signIn(SIGN_IN).join()
+        assertEquals(0, api.signInCalls)
+
+        releaseCleanup.complete(Unit)
+        logout.join()
+        reset.join()
+        controller.signIn(SIGN_IN).join()
+
+        assertEquals(1, api.signInCalls)
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+    }
+
+    @Test
+    fun failedRecipeRemovalIsContainedAndRetryableWithMissingContentHidden() = runTest {
+        val store = FakeCatalogStore().apply { removeRecipeFailure = IOException("disk") }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            recipeBlock = { _, _, _ -> throw ApiFailure(404, "missing") }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+
+        controller.openRecipe(SOUP.id).join()
+
+        assertTrue(controller.state.value.recipes.isEmpty())
+        assertEquals(DetailStatus.UNAVAILABLE, controller.state.value.detail?.status)
+        assertEquals(LoadStatus.ERROR, controller.state.value.recipeStatus)
+        assertTrue(controller.state.value.canRetry)
+        assertTrue(controller.state.value.canReset)
+    }
+
+    @Test
+    fun failedForbiddenPurgeIsRetriedBeforeDiscoveryOrCachedContentReuse() = runTest {
+        var discoveries = 0
+        val store = FakeCatalogStore().apply { removeCookbookFailure = IOException("disk") }
+        val api = FakeApi().apply {
+            cookbooksBlock = {
+                discoveries++
+                listOf(PERSONAL)
+            }
+            recipesBlock = { _, _ -> throw ApiFailure(403, "forbidden") }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+
+        assertNull(controller.state.value.activeCookbookId)
+        assertTrue(controller.state.value.recipes.isEmpty())
+        assertEquals(LoadStatus.ERROR, controller.state.value.catalogStatus)
+        assertEquals(1, discoveries)
+
+        store.removeCookbookFailure = null
+        api.cookbooksBlock = { discoveries++; listOf(SHARED) }
+        api.recipesBlock = { _, _ -> listOf(SALAD) }
+        controller.refresh().join()
+
+        assertEquals(2, discoveries)
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+    }
+
+    @Test
+    fun refreshFromDegradedCatalogRediscoveryReconcilesMemberships() = runTest {
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(RecipeScope(USER.id, PERSONAL.id), listOf(SOUP))
+        }
+        var offline = true
+        val api = FakeApi().apply {
+            cookbooksBlock = { if (offline) throw IOException("offline") else listOf(SHARED) }
+            recipesBlock = { _, _ -> listOf(SALAD) }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        assertEquals(LoadStatus.DEGRADED, controller.state.value.catalogStatus)
+
+        offline = false
+        controller.refresh().join()
+
+        assertEquals(LoadStatus.FRESH, controller.state.value.catalogStatus)
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+        assertFalse(store.memberships(USER.id).contains(PERSONAL.id))
+    }
+
+    @Test
+    fun successfulDiscoveryDoesNotEraseDegradedRecipeFailure() = runTest {
+        val scope = RecipeScope(USER.id, PERSONAL.id)
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(scope, listOf(SOUP))
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> throw IOException("recipe offline") }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+
+        controller.restore().join()
+
+        assertEquals(LoadStatus.FRESH, controller.state.value.catalogStatus)
+        assertEquals(LoadStatus.DEGRADED, controller.state.value.recipeStatus)
+        assertEquals("recipe offline", controller.state.value.message)
+        assertTrue(controller.state.value.canRetry)
+    }
+
+    @Test
+    fun invalidSwitchDoesNotInvalidateAnInProgressValidSwitch() = runTest {
+        val selectionStarted = CompletableDeferred<Unit>()
+        val releaseSelection = CompletableDeferred<Unit>()
+        val store = FakeCatalogStore()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL, SHARED) }
+            recipesBlock = { _, cookbookId -> if (cookbookId == SHARED.id) listOf(SALAD) else listOf(SOUP) }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        store.beforeSelect = { cookbookId ->
+            if (cookbookId == SHARED.id) {
+                selectionStarted.complete(Unit)
+                releaseSelection.await()
+            }
+        }
+
+        val validSwitch = controller.switchCookbook(SHARED.id)
+        selectionStarted.await()
+        controller.switchCookbook(999L).join()
+        releaseSelection.complete(Unit)
+        validSwitch.join()
+
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+        assertEquals(LoadStatus.FRESH, controller.state.value.recipeStatus)
+    }
+
+    @Test
+    fun delayed404CleanupCannotPublishAcrossSwitchAwayAndBack() = runTest {
+        val removalStarted = CompletableDeferred<Unit>()
+        val releaseRemoval = CompletableDeferred<Unit>()
+        val store = FakeCatalogStore().apply {
+            beforeRemoveRecipe = {
+                removalStarted.complete(Unit)
+                withContext(NonCancellable) { releaseRemoval.await() }
+            }
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL, SHARED) }
+            recipesBlock = { _, cookbookId -> if (cookbookId == PERSONAL.id) listOf(SOUP) else listOf(SALAD) }
+            recipeBlock = { _, _, _ -> throw ApiFailure(404, "missing") }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+
+        val missing = controller.openRecipe(SOUP.id)
+        removalStarted.await()
+        val away = controller.switchCookbook(SHARED.id)
+        val back = controller.switchCookbook(PERSONAL.id)
+        runCurrent()
+        releaseRemoval.complete(Unit)
+        missing.join()
+        away.join()
+        back.join()
+        controller.refresh().join()
+
+        assertEquals(PERSONAL.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SOUP), controller.state.value.recipes)
+        assertNull(controller.state.value.detail)
+        assertEquals(LoadStatus.FRESH, controller.state.value.recipeStatus)
+    }
+
+    @Test
+    fun logoutDuringDetailCancellationCannotPublishNotReadyState() = runTest {
+        val detailStarted = CompletableDeferred<Unit>()
+        val releaseDetail = CompletableDeferred<Unit>()
+        val pending = SALAD.copy(importStatus = "pending")
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP, pending) }
+            recipeBlock = { _, _, _ ->
+                detailStarted.complete(Unit)
+                withContext(NonCancellable) { releaseDetail.await() }
+                SOUP_DETAIL
+            }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        val firstDetail = controller.openRecipe(SOUP.id)
+        detailStarted.await()
+        val pendingOpen = controller.openRecipe(pending.id)
+        runCurrent()
+        val logout = controller.logout()
+        runCurrent()
+        releaseDetail.complete(Unit)
+        firstDetail.join()
+        pendingOpen.join()
+        logout.join()
+
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertNull(controller.state.value.detail)
+    }
+
+    @Test
+    fun invalidatedDetailLoadDoesNotStartApiAfterItsCacheRead() = runTest {
+        val cacheReadStarted = CompletableDeferred<Unit>()
+        val releaseCacheRead = CompletableDeferred<Unit>()
+        val store = FakeCatalogStore().apply {
+            beforeDetailRead = {
+                cacheReadStarted.complete(Unit)
+                withContext(NonCancellable) { releaseCacheRead.await() }
+            }
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+
+        val detail = controller.openRecipe(SOUP.id)
+        cacheReadStarted.await()
+        val logout = controller.logout()
+        runCurrent()
+        releaseCacheRead.complete(Unit)
+        detail.join()
+        logout.join()
+
+        assertEquals(0, api.recipeCalls)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+    }
+
+    @Test
+    fun unfetchedCachedMembershipEndsOfflineStartupInRecipeError() = runTest {
+        val store = FakeCatalogStore().apply { replaceCookbooks(USER.id, listOf(PERSONAL)) }
+        val api = FakeApi().apply { cookbooksBlock = { throw IOException("offline") } }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+
+        controller.restore().join()
+
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+        assertEquals(LoadStatus.DEGRADED, controller.state.value.catalogStatus)
+        assertEquals(LoadStatus.ERROR, controller.state.value.recipeStatus)
+        assertTrue(controller.state.value.canRetry)
+    }
+
     private fun CoroutineScope.controller(
         api: FakeApi = FakeApi(),
         sessionStore: FakeSessionStore = FakeSessionStore(null),
@@ -678,10 +1014,15 @@ class SessionControllerTest {
         var writeFailure: Throwable? = null
         var clearFailure: Throwable? = null
         var cleared = false
+        var readCalls = 0
+        var beforeRead: suspend () -> Unit = {}
 
         override suspend fun read(): StoredSession? {
+            readCalls++
             readFailure?.let { throw it }
-            return value
+            val result = value
+            beforeRead()
+            return result
         }
 
         override suspend fun write(session: StoredSession) {
@@ -703,6 +1044,10 @@ class SessionControllerTest {
         private val details = mutableMapOf<Pair<RecipeScope, Long>, RecipeDetail>()
         val allRecipeWrites = mutableListOf<Pair<RecipeScope, List<RecipeSummary>>>()
         var beforeSelect: suspend (Long) -> Unit = {}
+        var beforeDetailRead: suspend () -> Unit = {}
+        var beforeRemoveRecipe: suspend () -> Unit = {}
+        var removeRecipeFailure: Throwable? = null
+        var removeCookbookFailure: Throwable? = null
         var cleared = false
 
         fun memberships(userId: Long) = cookbookItems[userId].orEmpty().map { it.id }
@@ -735,7 +1080,10 @@ class SessionControllerTest {
             allRecipeWrites += scope to items
         }
 
-        override suspend fun detail(scope: RecipeScope, recipeId: Long) = details[scope to recipeId]
+        override suspend fun detail(scope: RecipeScope, recipeId: Long): RecipeDetail? {
+            beforeDetailRead()
+            return details[scope to recipeId]
+        }
 
         override suspend fun saveDetail(scope: RecipeScope, detail: RecipeDetail) {
             if (recipeItems[scope]?.items?.any { it.id == detail.id } == true) {
@@ -744,12 +1092,15 @@ class SessionControllerTest {
         }
 
         override suspend fun removeRecipe(scope: RecipeScope, recipeId: Long) {
+            removeRecipeFailure?.let { throw it }
+            beforeRemoveRecipe()
             val current = recipeItems[scope] ?: CachedRecipes(emptyList(), false)
             recipeItems[scope] = current.copy(items = current.items.filterNot { it.id == recipeId })
             details.remove(scope to recipeId)
         }
 
         override suspend fun removeCookbook(scope: RecipeScope) {
+            removeCookbookFailure?.let { throw it }
             cookbookItems[scope.userId] = cookbookItems[scope.userId].orEmpty().filterNot { it.id == scope.cookbookId }
             recipeItems.remove(scope)
             details.keys.filter { it.first == scope }.forEach(details::remove)
@@ -767,6 +1118,7 @@ class SessionControllerTest {
 
     private class FakeApi : MainCourseApi {
         var signInCalls = 0
+        var recipeCalls = 0
         var signInBlock: suspend (SignInRequest) -> SessionResponse = { SESSION.response }
         var signUpBlock: suspend (SignUpRequest) -> SessionResponse = { SESSION.response }
         var signOutBlock: suspend (String) -> Unit = {}
@@ -783,7 +1135,10 @@ class SessionControllerTest {
         override suspend fun signOut(token: String) = signOutBlock(token)
         override suspend fun cookbooks(token: String) = cookbooksBlock(token)
         override suspend fun recipes(token: String, cookbookId: Long) = recipesBlock(token, cookbookId)
-        override suspend fun recipe(token: String, cookbookId: Long, recipeId: Long) = recipeBlock(token, cookbookId, recipeId)
+        override suspend fun recipe(token: String, cookbookId: Long, recipeId: Long): RecipeDetail {
+            recipeCalls++
+            return recipeBlock(token, cookbookId, recipeId)
+        }
     }
 
     private companion object {
