@@ -150,3 +150,124 @@ API-base-origin mismatch/expiry policy remains coordinator work; this task store
 the origin and response together so that policy can be applied. No UI,
 coordinator, backup rules, provider configuration, credentials, or unrelated
 pre-existing skill-file changes were touched.
+
+## Review round 1 — 2026-09-07
+
+### Changes
+
+- Narrowed encrypted-session invalidation to missing/permanently invalid keys,
+  invalid framing, AEAD authentication failure, and serialization corruption.
+  Genuine absence returns `null`; transient KeyStore/provider/non-absence file IO
+  failures propagate and leave the encrypted record available for retry.
+- Session and cache JSON now always use `ignoreUnknownKeys = true`, including
+  when callers supply a base `Json` configuration.
+- Added a minimal internal key-lookup lambda used only to exercise transient
+  AndroidKeyStore failure. The public `SessionStore` and constructor remain
+  unchanged.
+- Added KDoc to `CatalogStore.selectCookbook` and `replaceRecipes`: both require
+  a membership previously stored by `replaceCookbooks`; this includes an empty
+  recipe replacement. Room keeps and enforces the foreign keys.
+- Made malformed cache recovery scope-safe and transactional. A malformed recipe
+  summary clears that scope's complete list and fetched marker; malformed detail
+  clears only the matching detail payload; malformed cookbook JSON removes only
+  that membership and lets foreign-key cascades remove its selection/cache.
+  Conditional payload deletes and encompassing Room transactions prevent a
+  recovery read from deleting a concurrent replacement. Only
+  `SerializationException` is recovered; cancellation and database failures
+  propagate.
+- Removed the duplicate `detailUpdatedAt` SQL column from the still-unshipped v1
+  schema; the preserved detail JSON remains the single source of its `updatedAt`.
+- Replaced recipe `NOT IN` pruning with transactional snapshot → scoped delete →
+  replacement upsert → fetched marker, preserving retained detail without SQLite
+  bind-limit risk.
+- Secure-store teardown now uses `AtomicFile.delete()` so base, `.new`, and
+  `.bak` artifacts are removed.
+
+### RED evidence
+
+The first focused secure-store run failed at Android-test compilation because the
+new transient-key test requested the not-yet-implemented internal seam:
+
+```text
+./bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.data.session.EncryptedSessionStoreTest
+> Task :app:compileDebugAndroidTestKotlin FAILED
+No parameter with name 'keyLookup' found.
+BUILD FAILED
+```
+
+After the first narrow exception implementation, a focused IO regression was
+observed failing before the absence classification was corrected:
+
+```text
+tests="9" failures="1"
+transientFileReadFailurePropagatesWithoutBeingReportedAsAbsence
+Expected file read failure, got null
+```
+
+A final ordering regression was also observed before moving file absence ahead
+of key access: with no record and an injected transient KeyStore failure, the
+store threw instead of returning `null`. The file is now checked first, while a
+present valid record still propagates transient key failures unchanged.
+
+The cache recovery tests were also run before implementation:
+
+```text
+tests="12" failures="4"
+malformedCookbookRemovesOnlyThatMembershipCacheAndSelection
+malformedDetailClearsOnlyThatDetailAndPreservesSummariesAndPeers
+malformedRecipeListInvalidatesOnlyItsScopeAndFetchedState
+unknownJsonFieldsAreIgnoredAcrossCachedPayloads
+BUILD FAILED
+```
+
+The first three exposed uncaught `JsonDecodingException`; the fourth reported
+the unknown `future_field` and requested `ignoreUnknownKeys = true`.
+
+### GREEN and verification evidence
+
+Focused instrumentation on `MainCourse_Phone_API37` / `emulator-5554`:
+
+```text
+# RoomCatalogStoreTest
+tests="12" failures="0"
+BUILD SUCCESSFUL in 4s
+
+# EncryptedSessionStoreTest
+tests="10" failures="0"
+BUILD SUCCESSFUL in 4s
+```
+
+The secure suite now proves a valid encrypted record survives transient
+KeyStore and file-read failures, while true absence/corruption/missing key retain
+their earlier behavior. The Room suite adds membership rejection, unknown-field
+compatibility, and malformed list/detail/cookbook recovery with cross-user
+isolation.
+
+Final project checks after production changes:
+
+```text
+ANDROID_HOME="$HOME/Library/Android/sdk" ./bin/android-test
+BUILD SUCCESSFUL in 2s
+
+ANDROID_HOME="$HOME/Library/Android/sdk" ./bin/android-build
+BUILD SUCCESSFUL in 362ms
+```
+
+### Task 3 contract
+
+Public store method signatures are unchanged and remain Android-free. Task 3
+fakes must reject `selectCookbook` and `replaceRecipes` (including an empty list)
+unless `(userId, cookbookId)` exists in the latest stored memberships. Room's
+concrete rejection is `SQLiteConstraintException`; Android-free fakes should
+model the rejection behavior without depending on that Android exception type.
+
+`SessionStore.read()` now has three observable outcomes for Task 3: a session;
+`null` for genuine absence or unusable protected state that has been removed;
+or a thrown retryable storage failure for transient KeyStore/provider/non-absence
+IO problems. The coordinator must not translate that thrown failure into logout.
+
+Cache reads recover only serialization corruption: malformed complete recipe
+lists become `CachedRecipes(emptyList(), fetched = false)`, malformed details
+become `null` while retaining summaries, and malformed cookbook memberships are
+removed with their own selection/cache. Other exceptions continue outward.

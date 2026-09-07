@@ -58,12 +58,6 @@ interface CatalogDao {
     @Query("DELETE FROM recipes WHERE userId = :userId AND cookbookId = :cookbookId")
     suspend fun deleteRecipes(userId: Long, cookbookId: Long)
 
-    @Query(
-        "DELETE FROM recipes WHERE userId = :userId AND cookbookId = :cookbookId " +
-            "AND recipeId NOT IN (:retainedIds)",
-    )
-    suspend fun deleteRecipesExcept(userId: Long, cookbookId: Long, retainedIds: List<Long>)
-
     @Upsert
     suspend fun markRecipesFetched(fetch: RecipeFetchEntity)
 
@@ -89,20 +83,15 @@ interface CatalogDao {
         val replacements = items.map { item ->
             item.copy(
                 detailJson = existing[item.recipeId]?.detailJson,
-                detailUpdatedAt = existing[item.recipeId]?.detailUpdatedAt,
             )
         }
+        deleteRecipes(userId, cookbookId)
         if (replacements.isNotEmpty()) upsertRecipes(replacements)
-        if (items.isEmpty()) {
-            deleteRecipes(userId, cookbookId)
-        } else {
-            deleteRecipesExcept(userId, cookbookId, items.map(RecipeEntity::recipeId))
-        }
         markRecipesFetched(RecipeFetchEntity(userId, cookbookId))
     }
 
     @Query(
-        "UPDATE recipes SET detailJson = :detailJson, detailUpdatedAt = :detailUpdatedAt " +
+        "UPDATE recipes SET detailJson = :detailJson " +
             "WHERE userId = :userId AND cookbookId = :cookbookId AND recipeId = :recipeId",
     )
     suspend fun updateDetail(
@@ -110,8 +99,28 @@ interface CatalogDao {
         cookbookId: Long,
         recipeId: Long,
         detailJson: String,
-        detailUpdatedAt: String,
     ): Int
+
+    @Query(
+        "UPDATE recipes SET detailJson = NULL " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId AND recipeId = :recipeId " +
+            "AND detailJson = :invalidDetailJson",
+    )
+    suspend fun clearDetailIfInvalid(
+        userId: Long,
+        cookbookId: Long,
+        recipeId: Long,
+        invalidDetailJson: String,
+    ): Int
+
+    @Query("DELETE FROM recipe_fetches WHERE userId = :userId AND cookbookId = :cookbookId")
+    suspend fun clearRecipesFetched(userId: Long, cookbookId: Long)
+
+    @Transaction
+    suspend fun invalidateRecipes(userId: Long, cookbookId: Long) {
+        deleteRecipes(userId, cookbookId)
+        clearRecipesFetched(userId, cookbookId)
+    }
 
     @Query(
         "DELETE FROM recipes " +
@@ -121,6 +130,16 @@ interface CatalogDao {
 
     @Query("DELETE FROM cookbooks WHERE userId = :userId AND cookbookId = :cookbookId")
     suspend fun removeCookbook(userId: Long, cookbookId: Long)
+
+    @Query(
+        "DELETE FROM cookbooks WHERE userId = :userId AND cookbookId = :cookbookId " +
+            "AND cookbookJson = :invalidCookbookJson",
+    )
+    suspend fun removeCookbookIfInvalid(
+        userId: Long,
+        cookbookId: Long,
+        invalidCookbookJson: String,
+    ): Int
 
     @Query("DELETE FROM cookbooks")
     suspend fun clear()

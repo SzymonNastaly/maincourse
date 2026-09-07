@@ -1,6 +1,7 @@
 package com.getmaincourse.app.data.cache
 
 import android.content.Context
+import android.database.sqlite.SQLiteConstraintException
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.data.model.Cookbook
@@ -11,6 +12,7 @@ import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTag
 import com.getmaincourse.app.data.model.StructuredIngredient
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -178,6 +180,106 @@ class RoomCatalogStoreTest {
         assertNull(store.selectedCookbookId(2))
     }
 
+    @Test
+    fun selectingOrCachingRecipesWithoutStoredMembershipIsRejected() = runBlocking {
+        val scope = RecipeScope(1, 10)
+
+        assertConstraintFailure { store.selectCookbook(1, 10) }
+        assertConstraintFailure { store.replaceRecipes(scope, listOf(summary(1, "Missing membership"))) }
+        assertConstraintFailure { store.replaceRecipes(scope, emptyList()) }
+
+        assertNull(store.selectedCookbookId(1))
+        assertEquals(CachedRecipes(emptyList(), fetched = false), store.recipes(scope))
+    }
+
+    @Test
+    fun unknownJsonFieldsAreIgnoredAcrossCachedPayloads() = runBlocking {
+        val scope = RecipeScope(1, 10)
+        val expectedCookbook = cookbook(10)
+        val expectedSummary = summary(1, "Compatible")
+        val expectedDetail = detail(1, "Compatible", "2026-08-01T00:00:00Z")
+        store.replaceCookbooks(1, listOf(expectedCookbook))
+        store.replaceRecipes(scope, listOf(expectedSummary))
+        store.saveDetail(scope, expectedDetail)
+
+        val dao = database.catalogDao()
+        val cookbookEntity = dao.cookbooks(1).single()
+        dao.upsertCookbooks(listOf(cookbookEntity.copy(cookbookJson = withUnknownField(cookbookEntity.cookbookJson))))
+        val recipeEntity = dao.recipes(1, 10).single()
+        dao.upsertRecipes(
+            listOf(
+                recipeEntity.copy(
+                    summaryJson = withUnknownField(recipeEntity.summaryJson),
+                    detailJson = withUnknownField(requireNotNull(recipeEntity.detailJson)),
+                ),
+            ),
+        )
+
+        assertEquals(listOf(expectedCookbook), store.cookbooks(1))
+        assertEquals(CachedRecipes(listOf(expectedSummary), fetched = true), store.recipes(scope))
+        assertEquals(expectedDetail, store.detail(scope, 1))
+    }
+
+    @Test
+    fun malformedRecipeListInvalidatesOnlyItsScopeAndFetchedState() = runBlocking {
+        val corruptScope = RecipeScope(1, 10)
+        val otherUserScope = RecipeScope(2, 10)
+        store.replaceCookbooks(1, listOf(cookbook(10)))
+        store.replaceCookbooks(2, listOf(cookbook(10, "Other user")))
+        store.replaceRecipes(corruptScope, listOf(summary(1, "Valid"), summary(2, "Corrupt")))
+        store.replaceRecipes(otherUserScope, listOf(summary(1, "Other user recipe")))
+        val dao = database.catalogDao()
+        val corrupt = dao.recipe(1, 10, 2)!!
+        dao.upsertRecipes(listOf(corrupt.copy(summaryJson = "{")))
+
+        assertEquals(CachedRecipes(emptyList(), fetched = false), store.recipes(corruptScope))
+        assertTrue(dao.recipes(1, 10).isEmpty())
+        assertEquals(listOf(summary(1, "Other user recipe")), store.recipes(otherUserScope).items)
+    }
+
+    @Test
+    fun malformedDetailClearsOnlyThatDetailAndPreservesSummariesAndPeers() = runBlocking {
+        val scope = RecipeScope(1, 10)
+        val firstSummary = summary(1, "First")
+        val secondSummary = summary(2, "Second")
+        val secondDetail = detail(2, "Second", "2026-08-02T00:00:00Z")
+        store.replaceCookbooks(1, listOf(cookbook(10)))
+        store.replaceRecipes(scope, listOf(firstSummary, secondSummary))
+        store.saveDetail(scope, detail(1, "First", "2026-08-01T00:00:00Z"))
+        store.saveDetail(scope, secondDetail)
+        val dao = database.catalogDao()
+        val corrupt = dao.recipe(1, 10, 1)!!
+        dao.upsertRecipes(listOf(corrupt.copy(detailJson = "{")))
+
+        assertNull(store.detail(scope, 1))
+        assertEquals(listOf(firstSummary, secondSummary), store.recipes(scope).items)
+        assertEquals(secondDetail, store.detail(scope, 2))
+        assertNull(dao.recipe(1, 10, 1)?.detailJson)
+    }
+
+    @Test
+    fun malformedCookbookRemovesOnlyThatMembershipCacheAndSelection() = runBlocking {
+        val corruptScope = RecipeScope(1, 10)
+        val otherUserScope = RecipeScope(2, 10)
+        val otherCookbook = cookbook(10, "Other user")
+        store.replaceCookbooks(1, listOf(cookbook(10)))
+        store.replaceCookbooks(2, listOf(otherCookbook))
+        store.selectCookbook(1, 10)
+        store.selectCookbook(2, 10)
+        store.replaceRecipes(corruptScope, listOf(summary(1, "Corrupt membership data")))
+        store.replaceRecipes(otherUserScope, listOf(summary(1, "Other user recipe")))
+        val dao = database.catalogDao()
+        val corrupt = dao.cookbooks(1).single()
+        dao.upsertCookbooks(listOf(corrupt.copy(cookbookJson = "{")))
+
+        assertTrue(store.cookbooks(1).isEmpty())
+        assertNull(store.selectedCookbookId(1))
+        assertEquals(CachedRecipes(emptyList(), fetched = false), store.recipes(corruptScope))
+        assertEquals(listOf(otherCookbook), store.cookbooks(2))
+        assertEquals(10L, store.selectedCookbookId(2))
+        assertEquals(listOf(summary(1, "Other user recipe")), store.recipes(otherUserScope).items)
+    }
+
     private fun cookbook(id: Long, name: String = "Cookbook $id") = Cookbook(
         id = id,
         name = name,
@@ -233,4 +335,12 @@ class RoomCatalogStoreTest {
         createdAt = "2025-01-01T00:00:00Z",
         updatedAt = updatedAt,
     )
+
+    private suspend fun assertConstraintFailure(block: suspend () -> Unit) {
+        val failure = runCatching { block() }.exceptionOrNull()
+        assertTrue("Expected SQLite foreign-key rejection, got $failure", failure is SQLiteConstraintException)
+    }
+
+    private fun withUnknownField(encoded: String): String =
+        encoded.dropLast(1) + ",\"future_field\":${Json.encodeToString("ignored")}}"
 }

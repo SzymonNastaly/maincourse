@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "660e51da5f1dd68336a84f4b59a141e5",
+    "identityHash": "8223efd2429cfdd7cf95cabe510789fc",
     "entities": [
       {
         "tableName": "cookbooks",
@@ -134,7 +134,7 @@
       },
       {
         "tableName": "recipes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, `recipeId` INTEGER NOT NULL, `listPosition` INTEGER NOT NULL, `summaryJson` TEXT NOT NULL, `detailJson` TEXT, `detailUpdatedAt` TEXT, PRIMARY KEY(`userId`, `cookbookId`, `recipeId`), FOREIGN KEY(`userId`, `cookbookId`) REFERENCES `cookbooks`(`userId`, `cookbookId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, `recipeId` INTEGER NOT NULL, `listPosition` INTEGER NOT NULL, `summaryJson` TEXT NOT NULL, `detailJson` TEXT, PRIMARY KEY(`userId`, `cookbookId`, `recipeId`), FOREIGN KEY(`userId`, `cookbookId`) REFERENCES `cookbooks`(`userId`, `cookbookId`) ON UPDATE CASCADE ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "userId",
@@ -169,11 +169,6 @@
           {
             "fieldPath": "detailJson",
             "columnName": "detailJson",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "detailUpdatedAt",
-            "columnName": "detailUpdatedAt",
             "affinity": "TEXT"
           }
         ],
@@ -216,7 +211,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '660e51da5f1dd68336a84f4b59a141e5')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8223efd2429cfdd7cf95cabe510789fc')"
     ]
   }
 }

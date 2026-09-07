@@ -2,45 +2,86 @@ package com.getmaincourse.app.data.session
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.AtomicFile
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.EOFException
 import java.security.KeyStore
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-class EncryptedSessionStore(
+class EncryptedSessionStore private constructor(
     context: Context,
     private val keyAlias: String = DEFAULT_KEY_ALIAS,
     fileName: String = DEFAULT_FILE_NAME,
-    private val json: Json = Json,
+    json: Json,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val keyLookup: (() -> SecretKey?)?,
 ) : SessionStore {
     private val file = AtomicFile(File(context.noBackupFilesDir, fileName))
+    private val json = Json(json) { ignoreUnknownKeys = true }
     private val mutex = Mutex()
+
+    constructor(
+        context: Context,
+        keyAlias: String = DEFAULT_KEY_ALIAS,
+        fileName: String = DEFAULT_FILE_NAME,
+        json: Json = Json,
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ) : this(context, keyAlias, fileName, json, ioDispatcher, keyLookup = null)
+
+    internal constructor(
+        context: Context,
+        keyAlias: String,
+        fileName: String,
+        keyLookup: () -> SecretKey?,
+    ) : this(context, keyAlias, fileName, Json, Dispatchers.IO, keyLookup)
 
     override suspend fun read(): StoredSession? = withContext(ioDispatcher) {
         mutex.withLock {
+            val encrypted = try {
+                file.openRead().use { it.readBytes() }
+            } catch (failure: FileNotFoundException) {
+                return@withLock if (hasAtomicRecord()) throw failure else null
+            }
+
+            val key = try {
+                existingKey()
+            } catch (_: KeyPermanentlyInvalidatedException) {
+                return@withLock discardRecord()
+            } ?: return@withLock discardRecord()
+
+            val plaintext = try {
+                decrypt(encrypted, key)
+            } catch (_: EOFException) {
+                return@withLock discardRecord()
+            } catch (_: InvalidSessionRecordException) {
+                return@withLock discardRecord()
+            } catch (_: AEADBadTagException) {
+                return@withLock discardRecord()
+            } catch (_: KeyPermanentlyInvalidatedException) {
+                return@withLock discardRecord()
+            }
+
             try {
-                val key = existingKey() ?: return@withLock discardRecord()
-                val encrypted = file.openRead().use { it.readBytes() }
-                json.decodeFromString<StoredSession>(decrypt(encrypted, key).decodeToString())
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Exception) {
+                json.decodeFromString<StoredSession>(plaintext.decodeToString())
+            } catch (_: SerializationException) {
                 discardRecord()
             }
         }
@@ -92,15 +133,15 @@ class EncryptedSessionStore(
         DataInputStream(ByteArrayInputStream(record)).use { input ->
             val header = ByteArray(FILE_HEADER.size)
             input.readFully(header)
-            require(header.contentEquals(FILE_HEADER))
+            if (!header.contentEquals(FILE_HEADER)) throw InvalidSessionRecordException()
 
             val ivSize = input.readInt()
-            require(ivSize in 12..16)
+            if (ivSize !in 12..16) throw InvalidSessionRecordException()
             val iv = ByteArray(ivSize).also(input::readFully)
             val ciphertextSize = input.readInt()
-            require(ciphertextSize in 16..MAX_CIPHERTEXT_BYTES)
+            if (ciphertextSize !in 16..MAX_CIPHERTEXT_BYTES) throw InvalidSessionRecordException()
             val ciphertext = ByteArray(ciphertextSize).also(input::readFully)
-            require(input.read() == -1)
+            if (input.read() != -1) throw InvalidSessionRecordException()
 
             Cipher.getInstance(TRANSFORMATION).run {
                 init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_BITS, iv))
@@ -109,7 +150,11 @@ class EncryptedSessionStore(
             }
         }
 
-    private fun existingKey(): SecretKey? = keyStore().getKey(keyAlias, null) as? SecretKey
+    private fun existingKey(): SecretKey? = if (keyLookup != null) {
+        keyLookup.invoke()
+    } else {
+        keyStore().getKey(keyAlias, null) as? SecretKey
+    }
 
     private fun getOrCreateKey(): SecretKey = existingKey() ?: KeyGenerator
         .getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE)
@@ -133,6 +178,11 @@ class EncryptedSessionStore(
         file.delete()
         return null
     }
+
+    private fun hasAtomicRecord(): Boolean =
+        file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()
+
+    private class InvalidSessionRecordException : Exception()
 
     private companion object {
         const val ANDROID_KEY_STORE = "AndroidKeyStore"

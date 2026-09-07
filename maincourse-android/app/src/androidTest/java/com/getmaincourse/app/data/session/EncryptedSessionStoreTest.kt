@@ -1,6 +1,9 @@
 package com.getmaincourse.app.data.session
 
 import android.content.Context
+import android.system.Os
+import android.system.OsConstants
+import android.util.AtomicFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.data.model.SessionResponse
@@ -16,8 +19,13 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
 import java.security.KeyStore
+import java.security.KeyStoreException
 import java.util.UUID
+import javax.crypto.Cipher
+import javax.crypto.SecretKey
 
 @RunWith(AndroidJUnit4::class)
 class EncryptedSessionStoreTest {
@@ -38,8 +46,7 @@ class EncryptedSessionStoreTest {
 
     @After
     fun tearDown() = runBlocking {
-        file.deleteRecursively()
-        File(file.path + ".bak").deleteRecursively()
+        AtomicFile(file).delete()
         deleteKey(keyAlias)
     }
 
@@ -88,6 +95,63 @@ class EncryptedSessionStoreTest {
 
         assertNull(store.read())
         assertFalse(file.exists())
+    }
+
+    @Test
+    fun transientKeyStoreFailurePropagatesWithoutDeletingValidSession() = runBlocking {
+        val expected = session()
+        store.write(expected)
+        val failingStore = EncryptedSessionStore(
+            context = context,
+            keyAlias = keyAlias,
+            fileName = fileName,
+            keyLookup = { throw KeyStoreException("temporarily unavailable") },
+        )
+
+        val failure = runCatching { failingStore.read() }.exceptionOrNull()
+
+        assertTrue(failure is KeyStoreException)
+        assertTrue(file.exists())
+        assertEquals(expected, store.read())
+    }
+
+    @Test
+    fun absentRecordReturnsNullWithoutConsultingFailingKeyStore() = runBlocking {
+        val failingStore = EncryptedSessionStore(
+            context = context,
+            keyAlias = keyAlias,
+            fileName = fileName,
+            keyLookup = { throw KeyStoreException("temporarily unavailable") },
+        )
+
+        assertNull(failingStore.read())
+    }
+
+    @Test
+    fun transientFileReadFailurePropagatesWithoutBeingReportedAsAbsence() = runBlocking {
+        val expected = session()
+        store.write(expected)
+        Os.chmod(file.path, 0)
+
+        val failure = try {
+            runCatching { store.read() }.exceptionOrNull()
+        } finally {
+            Os.chmod(file.path, OsConstants.S_IRUSR or OsConstants.S_IWUSR)
+        }
+
+        assertTrue("Expected file read failure, got $failure", failure is java.io.FileNotFoundException)
+        assertTrue(file.exists())
+        assertEquals(expected, store.read())
+    }
+
+    @Test
+    fun unknownJsonFieldsRemainCompatibleWithStoredSessions() = runBlocking {
+        store.write(session())
+        writeEncryptedJson(
+            """{"baseUrl":"https://example.test/api/","response":{"token":"secret-token-that-must-never-be-plaintext","expires_at":"2026-12-01T00:00:00Z","user":{"id":42,"name":"Ada","email":"ada@example.test","lifecycle_notifications_enabled":true,"future_user":1},"future_response":true},"future_root":"kept"}""",
+        )
+
+        assertEquals(session(), store.read())
     }
 
     @Test
@@ -145,4 +209,32 @@ class EncryptedSessionStoreTest {
     }
 
     private fun keyStore(): KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+
+    private fun writeEncryptedJson(value: String) {
+        val key = keyStore().getKey(keyAlias, null) as SecretKey
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
+            init(Cipher.ENCRYPT_MODE, key)
+            updateAAD(byteArrayOf(0x4d, 0x43, 0x53, 0x01))
+        }
+        val ciphertext = cipher.doFinal(value.encodeToByteArray())
+        val record = ByteArrayOutputStream().use { bytes ->
+            DataOutputStream(bytes).use { output ->
+                output.write(byteArrayOf(0x4d, 0x43, 0x53, 0x01))
+                output.writeInt(cipher.iv.size)
+                output.write(cipher.iv)
+                output.writeInt(ciphertext.size)
+                output.write(ciphertext)
+            }
+            bytes.toByteArray()
+        }
+        val atomicFile = AtomicFile(file)
+        val output = atomicFile.startWrite()
+        try {
+            output.write(record)
+            atomicFile.finishWrite(output)
+        } catch (failure: Throwable) {
+            atomicFile.failWrite(output)
+            throw failure
+        }
+    }
 }

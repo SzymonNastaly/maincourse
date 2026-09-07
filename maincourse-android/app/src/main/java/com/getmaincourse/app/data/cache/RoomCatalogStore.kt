@@ -1,18 +1,28 @@
 package com.getmaincourse.app.data.cache
 
+import androidx.room.withTransaction
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 class RoomCatalogStore(
-    database: MainCourseDatabase,
-    private val json: Json = Json,
+    private val database: MainCourseDatabase,
+    json: Json = Json,
 ) : CatalogStore {
     private val dao = database.catalogDao()
+    private val json = Json(json) { ignoreUnknownKeys = true }
 
-    override suspend fun cookbooks(userId: Long): List<Cookbook> = dao.cookbooks(userId).map {
-        json.decodeFromString<Cookbook>(it.cookbookJson)
+    override suspend fun cookbooks(userId: Long): List<Cookbook> = database.withTransaction {
+        dao.cookbooks(userId).mapNotNull { entity ->
+            try {
+                json.decodeFromString<Cookbook>(entity.cookbookJson)
+            } catch (_: SerializationException) {
+                dao.removeCookbookIfInvalid(entity.userId, entity.cookbookId, entity.cookbookJson)
+                null
+            }
+        }
     }
 
     override suspend fun replaceCookbooks(userId: Long, items: List<Cookbook>) {
@@ -36,13 +46,20 @@ class RoomCatalogStore(
     }
 
     override suspend fun recipes(scope: RecipeScope): CachedRecipes {
-        val stored = dao.storedRecipes(scope.userId, scope.cookbookId)
-        return CachedRecipes(
-            items = stored.items.map {
-                json.decodeFromString<RecipeSummary>(it.summaryJson)
-            },
-            fetched = stored.fetched,
-        )
+        return database.withTransaction {
+            val stored = dao.storedRecipes(scope.userId, scope.cookbookId)
+            try {
+                CachedRecipes(
+                    items = stored.items.map {
+                        json.decodeFromString<RecipeSummary>(it.summaryJson)
+                    },
+                    fetched = stored.fetched,
+                )
+            } catch (_: SerializationException) {
+                dao.invalidateRecipes(scope.userId, scope.cookbookId)
+                CachedRecipes(emptyList(), fetched = false)
+            }
+        }
     }
 
     override suspend fun replaceRecipes(scope: RecipeScope, items: List<RecipeSummary>) {
@@ -61,10 +78,16 @@ class RoomCatalogStore(
         )
     }
 
-    override suspend fun detail(scope: RecipeScope, recipeId: Long): RecipeDetail? =
-        dao.recipe(scope.userId, scope.cookbookId, recipeId)?.detailJson?.let {
-            json.decodeFromString<RecipeDetail>(it)
+    override suspend fun detail(scope: RecipeScope, recipeId: Long): RecipeDetail? = database.withTransaction {
+        dao.recipe(scope.userId, scope.cookbookId, recipeId)?.detailJson?.let { detailJson ->
+            try {
+                json.decodeFromString<RecipeDetail>(detailJson)
+            } catch (_: SerializationException) {
+                dao.clearDetailIfInvalid(scope.userId, scope.cookbookId, recipeId, detailJson)
+                null
+            }
         }
+    }
 
     override suspend fun saveDetail(scope: RecipeScope, detail: RecipeDetail) {
         dao.updateDetail(
@@ -72,7 +95,6 @@ class RoomCatalogStore(
             cookbookId = scope.cookbookId,
             recipeId = detail.id,
             detailJson = json.encodeToString(detail),
-            detailUpdatedAt = detail.updatedAt,
         )
     }
 

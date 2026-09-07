@@ -73,5 +73,4 @@ data class RecipeEntity(
     val listPosition: Int,
     val summaryJson: String,
     val detailJson: String? = null,
-    val detailUpdatedAt: String? = null,
 )
