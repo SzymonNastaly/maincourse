@@ -164,6 +164,7 @@ private fun ProtectedApp(
 
     LaunchedEffect(state.phase, state.user.id, state.activeCookbookId, state.recipeStatus, state.recipes, current) {
         val detailRoute = current as? RecipeDestination ?: return@LaunchedEffect
+        if (backStack.lastOrNull() != detailRoute) return@LaunchedEffect
         val scopeChanged = detailRoute.cookbookId != state.activeCookbookId
         val unavailableHere = state.detail?.recipeId == detailRoute.recipeId &&
             state.detail.status == DetailStatus.UNAVAILABLE
@@ -171,10 +172,8 @@ private fun ProtectedApp(
             state.recipeStatus != LoadStatus.LOADING &&
             state.recipes.none { it.id == detailRoute.recipeId }
         if (scopeChanged || (authoritativelyMissing && !unavailableHere)) {
-            if (backStack.lastOrNull() == detailRoute) {
-                backStack.removeLastOrNull()
-                actions.closeRecipe()
-            }
+            backStack.removeLastOrNull()
+            actions.closeRecipe()
         } else if (state.detail?.recipeId != detailRoute.recipeId &&
             state.recipes.any { it.id == detailRoute.recipeId }
         ) {

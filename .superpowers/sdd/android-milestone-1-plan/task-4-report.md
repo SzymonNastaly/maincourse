@@ -377,3 +377,50 @@ $ bin/android-gradle :app:assembleRelease :app:lintRelease --console=plain
 BUILD SUCCESSFUL in 19s
 exit 0
 ```
+
+## Round 3 review amendments
+
+- The direct-user-change regression now changes cookbook scope and removes the
+  old recipe, so it necessarily exercises the stale effect's pop path.
+- The route identity guard is now an early return before both removal and
+  `openRecipe`; a stale effect can neither pop the reset Recipes destination nor
+  start the old user's detail when identifiers happen to match.
+- Re-review confirmed the cancelled image-preparation test verifies the internal
+  serialized holder is empty after cleanup through the existing
+  `@VisibleForTesting` accessor, rather than inferring that solely from directory
+  removal; its focused device test was rerun unchanged.
+
+### Round 3 RED/GREEN evidence
+
+```text
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.MainCourseAppTest#changingUserFromDetailDoesNotOpenTheOldRouteWhenIdentifiersMatch \
+  --console=plain
+expected:<1> but was:<2> (stale detail open)
+BUILD FAILED
+exit 1
+
+# With the route guard deliberately removed to validate the revised pop test:
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.MainCourseAppTest#changingUserFromDetailDoesNotPopTheResetRecipesDestination \
+  --console=plain
+BUILD FAILED
+exit 1
+
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.MainCourseAppTest \
+  --console=plain
+30 tests, 0 failures
+BUILD SUCCESSFUL in 59s
+exit 0
+
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.data.images.SessionImagesTest#cancelledOldUserPreparationCannotPublishAfterCleanup \
+  --console=plain
+BUILD SUCCESSFUL in 3s
+exit 0
+
+$ bin/android-gradle :app:assembleDebug :app:lintDebug --console=plain
+BUILD SUCCESSFUL in 8s
+exit 0
+```

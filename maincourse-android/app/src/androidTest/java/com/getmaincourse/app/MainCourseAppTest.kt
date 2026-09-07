@@ -494,10 +494,28 @@ class MainCourseAppTest {
         show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
         compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
 
-        show(readyState().copy(user = USER.copy(id = 8L, email = "other@example.test")))
+        show(
+            readyState(cookbookId = 2L, recipes = emptyList()).copy(
+                user = USER.copy(id = 8L, email = "other@example.test"),
+            ),
+        )
 
         compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
         compose.onNodeWithTag("nav_Recipes").assertIsSelected()
+    }
+
+    @Test
+    fun changingUserFromDetailDoesNotOpenTheOldRouteWhenIdentifiersMatch() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        assertEquals(1, recorder.openRecipeCount)
+
+        show(readyState().copy(user = USER.copy(id = 8L, email = "other@example.test")))
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+        assertEquals(1, recorder.openRecipeCount)
     }
 
     @Test
