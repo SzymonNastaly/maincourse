@@ -20,6 +20,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -218,21 +219,29 @@ class SessionController(
             admission = Admission.CLEANING
             token = session?.token
             launched = scope.launch(start = CoroutineStart.LAZY) {
-                beginCleanup(SessionPhase.SIGNING_OUT)
+                val callerContext = currentCoroutineContext()
+                val ownerJob = callerContext[Job]
                 var revokeFailure: Throwable? = null
-                if (revoke && token != null) {
-                    try {
-                        withTimeout(revokeTimeoutMillis) { api.signOut(token) }
-                    } catch (_: TimeoutCancellationException) {
-                        // Local removal is authoritative for logout.
-                    } catch (failure: CancellationException) {
-                        revokeFailure = failure
-                    } catch (_: Throwable) {
-                        // Local removal is authoritative for logout.
+                try {
+                    withContext(NonCancellable) {
+                        beginCleanup(SessionPhase.SIGNING_OUT, ownerJob)
                     }
+                    if (revoke && token != null) {
+                        try {
+                            withTimeout(revokeTimeoutMillis) { api.signOut(token) }
+                        } catch (_: TimeoutCancellationException) {
+                            // Local removal is authoritative for logout.
+                        } catch (failure: CancellationException) {
+                            revokeFailure = failure
+                        } catch (_: Throwable) {
+                            // Local removal is authoritative for logout.
+                        }
+                    }
+                } finally {
+                    withContext(NonCancellable) { finishCleanup(finalAuthError = null) }
                 }
-                finishCleanup(finalAuthError = null)
                 revokeFailure?.let { throw it }
+                callerContext.ensureActive()
             }
             cleanupJob = launched
         }
@@ -350,8 +359,12 @@ class SessionController(
                 hadCachedMembership = cached.isNotEmpty()
                 if (cached.isNotEmpty()) {
                     val storedSelection = catalogRepository.selectedCookbookId(context.response.user.id)
-                    val selected = chooseCookbook(cached, storedSelection)
-                    activateCookbook(context, selected.id, catalogVersion = requestVersion)
+                    reconcileCatalogSelection(
+                        context = context,
+                        memberships = cached,
+                        catalogVersion = requestVersion,
+                        fallbackPreferredId = storedSelection,
+                    )
                 }
             }
         } catch (failure: CancellationException) {
@@ -386,13 +399,15 @@ class SessionController(
                 }
                 return
             }
-            val preferred = mutableState.value.activeCookbookId
-            val selected = chooseCookbook(remote, preferred)
-            activateCookbook(context, selected.id, catalogVersion = requestVersion)
-                ?.let { startRecipeRefresh(it).join() }
+            val activation = reconcileCatalogSelection(
+                context = context,
+                memberships = remote,
+                catalogVersion = requestVersion,
+            ) ?: return
+            startRecipeRefresh(activation).join()
             transition.withLock {
                 if (isCurrentCatalogLocked(context, requestVersion) &&
-                    mutableState.value.activeCookbookId == selected.id
+                    mutableState.value.activeCookbookId == activation.recipeScope.cookbookId
                 ) {
                     mutableState.value = mutableState.value.copy(
                         catalogStatus = LoadStatus.FRESH,
@@ -441,14 +456,67 @@ class SessionController(
         allowForbiddenRecovery: Boolean = true,
         catalogVersion: Long? = null,
     ): Activation? = cookbookTransition.withLock {
-        if (requestVersion != cookbookRequest.get()) return@withLock null
-        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
+        activateCookbookLocked(
+            context,
+            cookbookId,
+            requestVersion,
+            allowForbiddenRecovery,
+            catalogVersion,
+        )
+    }
+
+    private suspend fun reconcileCatalogSelection(
+        context: UserContext,
+        memberships: List<Cookbook>,
+        catalogVersion: Long,
+        fallbackPreferredId: Long? = null,
+    ): Activation? = cookbookTransition.withLock {
+        val selection = transition.withLock {
+            if (!isCurrentCatalogLocked(context, catalogVersion)) return@withLock null
+            val requestVersion = cookbookRequest.get()
+            val activeCookbookId = mutableState.value.activeCookbookId
+            val selected = chooseCookbook(memberships, activeCookbookId ?: fallbackPreferredId)
+            if (selected.id == activeCookbookId) {
+                mutableState.value = mutableState.value.copy(cookbooks = memberships)
+                CatalogSelection(
+                    selected.id,
+                    requestVersion,
+                    Activation(
+                        context = context,
+                        recipeScope = RecipeScope(context.response.user.id, selected.id),
+                        cookbookGeneration = cookbookGeneration,
+                        requestVersion = requestVersion,
+                        allowForbiddenRecovery = true,
+                    ),
+                )
+            } else {
+                CatalogSelection(selected.id, requestVersion)
+            }
+        } ?: return@withLock null
+        selection.currentActivation ?: activateCookbookLocked(
+            context = context,
+            cookbookId = selection.cookbookId,
+            requestVersion = selection.requestVersion,
+            allowForbiddenRecovery = true,
+            catalogVersion = catalogVersion,
+        )
+    }
+
+    private suspend fun activateCookbookLocked(
+        context: UserContext,
+        cookbookId: Long,
+        requestVersion: Long,
+        allowForbiddenRecovery: Boolean,
+        catalogVersion: Long?,
+    ): Activation? {
+        if (requestVersion != cookbookRequest.get()) return null
+        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return null
         if (!isCurrent(context)) return null
-        if (!retryPendingPurge(context)) return@withLock null
+        if (!retryPendingPurge(context)) return null
         val currentJob = currentCoroutineContext()[Job]
         cancelJobs(trackedSnapshot(cookbookJobs).filterNot { it == currentJob })
-        if (requestVersion != cookbookRequest.get()) return@withLock null
-        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
+        if (requestVersion != cookbookRequest.get()) return null
+        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return null
         val version = transition.withLock {
             if (!isCurrentLocked(context)) return@withLock null
             if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
@@ -468,12 +536,12 @@ class SessionController(
         } ?: return null
 
         val recipeScope = RecipeScope(context.response.user.id, cookbookId)
-        return@withLock try {
+        return try {
             catalogRepository.selectCookbook(context.response.user.id, cookbookId)
             val cached = catalogRepository.cachedRecipes(recipeScope)
             val memberships = catalogRepository.cachedCookbooks(context.response.user.id)
-            if (requestVersion != cookbookRequest.get()) return@withLock null
-            if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
+            if (requestVersion != cookbookRequest.get()) return null
+            if (catalogVersion != null && catalogVersion != catalogRequest.get()) return null
             transition.withLock {
                 if (isCurrentLocked(context, cookbookId, version) &&
                     (catalogVersion == null || catalogVersion == catalogRequest.get())
@@ -676,12 +744,18 @@ class SessionController(
         if (!retryPendingPurge(context)) return
         transition.withLock {
             if (isCurrentLocked(context, recipeScope.cookbookId, bumpedGeneration)) {
+                val settledRecipeStatus = if (mutableState.value.recipesFetched) {
+                    LoadStatus.FRESH
+                } else {
+                    LoadStatus.DEGRADED
+                }
                 mutableState.value = mutableState.value.copy(
+                    recipeStatus = settledRecipeStatus,
                     message = mutableState.value.message.takeIf {
-                        mutableState.value.catalogStatus.isFailure() || mutableState.value.recipeStatus.isFailure()
+                        mutableState.value.catalogStatus.isFailure() || settledRecipeStatus.isFailure()
                     },
                     canRetry = mutableState.value.catalogStatus.isFailure() ||
-                        mutableState.value.recipeStatus.isFailure(),
+                        settledRecipeStatus.isFailure(),
                 )
             }
         }
@@ -870,13 +944,13 @@ class SessionController(
             session?.let { UserContext(it, userGeneration) }
         } ?: return null
         if (!isExpired(context.response)) return context
-        cleanupProtectedState(null)
+        cleanupProtectedState(SESSION_EXPIRED_MESSAGE)
         return null
     }
 
     private suspend fun invalidateAuthenticatedSession(context: UserContext, message: String?) {
         if (!isCurrent(context)) return
-        cleanupProtectedState(message ?: "Your session has expired")
+        cleanupProtectedState(message ?: SESSION_EXPIRED_MESSAGE)
     }
 
     private suspend fun cleanupProtectedState(finalAuthError: String?, restoring: Boolean = false) {
@@ -889,12 +963,22 @@ class SessionController(
             }
         }
         if (!admitted) return
-        beginCleanup(if (restoring) SessionPhase.RESTORING else SessionPhase.SIGNING_OUT)
-        finishCleanup(finalAuthError)
+        val callerContext = currentCoroutineContext()
+        val ownerJob = callerContext[Job]
+        withContext(NonCancellable) {
+            try {
+                beginCleanup(
+                    if (restoring) SessionPhase.RESTORING else SessionPhase.SIGNING_OUT,
+                    ownerJob,
+                )
+            } finally {
+                finishCleanup(finalAuthError)
+            }
+        }
+        callerContext.ensureActive()
     }
 
-    private suspend fun beginCleanup(phase: SessionPhase) {
-        val current = currentCoroutineContext()[Job]
+    private suspend fun beginCleanup(phase: SessionPhase, ownerJob: Job?) {
         val jobs = transition.withLock {
             userGeneration++
             cookbookGeneration++
@@ -906,7 +990,7 @@ class SessionController(
             mutableState.value = SessionState(phase = phase)
             val tracked = trackedSnapshot(authenticatedJobs) + trackedSnapshot(catalogJobs) + trackedSnapshot(cookbookJobs) +
                 trackedSnapshot(detailJobs) + listOfNotNull(authAttempt, restoreJob)
-            tracked.distinct().filterNot { it == current }
+            tracked.distinct().filterNot { it == ownerJob }
         }
         cancelJobs(jobs)
     }
@@ -1025,6 +1109,12 @@ class SessionController(
         val allowForbiddenRecovery: Boolean,
     )
 
+    private data class CatalogSelection(
+        val cookbookId: Long,
+        val requestVersion: Long,
+        val currentActivation: Activation? = null,
+    )
+
     private sealed interface PendingPurge {
         val userGeneration: Long
 
@@ -1044,5 +1134,6 @@ class SessionController(
 
     private companion object {
         const val COMPLETED_IMPORT_STATUS = "completed"
+        const val SESSION_EXPIRED_MESSAGE = "Your session has expired"
     }
 }

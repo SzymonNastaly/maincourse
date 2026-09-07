@@ -165,7 +165,8 @@ private fun ProtectedApp(
     LaunchedEffect(state.phase, state.user.id, state.activeCookbookId, state.recipeStatus, state.recipes, current) {
         val detailRoute = current as? RecipeDestination ?: return@LaunchedEffect
         if (backStack.lastOrNull() != detailRoute) return@LaunchedEffect
-        val scopeChanged = detailRoute.cookbookId != state.activeCookbookId
+        val scopeUndecided = state.activeCookbookId == null && state.phase == SessionPhase.LOADING_COOKBOOKS
+        val scopeChanged = !scopeUndecided && detailRoute.cookbookId != state.activeCookbookId
         val unavailableHere = state.detail?.recipeId == detailRoute.recipeId &&
             state.detail.status == DetailStatus.UNAVAILABLE
         val authoritativelyMissing = state.recipesFetched &&
@@ -297,6 +298,9 @@ private fun ProtectedApp(
                                 }
                             RecipeDetailScreen(
                                 detailState = displayedDetail,
+                                importFailed = state.recipes.firstOrNull {
+                                    it.id == destination.recipeId
+                                }?.importStatus == "failed",
                                 imageLoader = imageLoader,
                                 resolveImage = resolveImage,
                                 onRetry = {

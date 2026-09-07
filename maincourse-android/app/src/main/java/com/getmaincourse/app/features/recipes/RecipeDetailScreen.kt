@@ -37,6 +37,7 @@ import com.getmaincourse.app.ui.theme.MainCourseShapes
 @Composable
 fun RecipeDetailScreen(
     detailState: RecipeDetailState?,
+    importFailed: Boolean,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     onRetry: () -> Unit,
@@ -73,7 +74,9 @@ fun RecipeDetailScreen(
                 when (detailState?.status) {
                     DetailStatus.ERROR -> RetryState(stringResource(R.string.recipe_load_error), onRetry)
                     DetailStatus.UNAVAILABLE -> RetryState(stringResource(R.string.recipe_unavailable), onRetry)
-                    DetailStatus.NOT_READY -> Feedback(stringResource(R.string.recipe_processing))
+                    DetailStatus.NOT_READY -> Feedback(
+                        stringResource(if (importFailed) R.string.recipe_failed else R.string.recipe_processing),
+                    )
                     else -> Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }

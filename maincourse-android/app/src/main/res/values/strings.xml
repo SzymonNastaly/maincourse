@@ -7,14 +7,10 @@
     <string name="design_system">Design system</string>
     <string name="back">Back</string>
     <string name="preview_badge">ANDROID PREVIEW</string>
-    <string name="recipes_preview_title">A place for everything you love to cook.</string>
-    <string name="recipes_preview_body">This is the foundation of MainCourse for Android. Sign-in and your cookbooks are coming in the next milestone.</string>
     <string name="shopping_preview_title">From your cookbook to your basket.</string>
     <string name="shopping_preview_body">Your shopping list will live here, with ingredients from your recipes and offline check-off. Nothing is connected yet.</string>
     <string name="search_preview_title">Find the recipe you had in mind.</string>
     <string name="search_preview_body">Search across recipe names, ingredients, and instructions is coming after cookbook sync.</string>
-    <string name="settings_preview_title">Make yourself at home.</string>
-    <string name="settings_preview_body">Account, cookbook, and subscription settings will be added as those features arrive. This preview does not sign in or send data.</string>
     <string name="explore_design">Explore the design system</string>
     <string name="native_foundation">Native Android. Familiar MainCourse.</string>
     <string name="foundation_description">Material controls, a quiet grey canvas, and one deep-green accent.</string>

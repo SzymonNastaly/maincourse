@@ -23,6 +23,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
@@ -175,6 +176,103 @@ class SessionControllerTest {
     }
 
     @Test
+    fun sameCookbookDiscoveryKeepsVisibleRecipesAndDetailWhileRefreshing() = runTest {
+        val discoveryStarted = CompletableDeferred<Unit>()
+        val releaseDiscovery = CompletableDeferred<Unit>()
+        val refreshStarted = CompletableDeferred<Unit>()
+        val releaseRefresh = CompletableDeferred<Unit>()
+        val recipeScope = RecipeScope(USER.id, PERSONAL.id)
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            selectCookbook(USER.id, PERSONAL.id)
+            replaceRecipes(recipeScope, listOf(SOUP))
+            saveDetail(recipeScope, SOUP_DETAIL)
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = {
+                discoveryStarted.complete(Unit)
+                releaseDiscovery.await()
+                listOf(PERSONAL)
+            }
+            recipesBlock = { _, _ ->
+                refreshStarted.complete(Unit)
+                releaseRefresh.await()
+                listOf(SOUP)
+            }
+            recipeBlock = { _, _, _ -> SOUP_DETAIL }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+
+        val restoring = controller.restore()
+        discoveryStarted.await()
+        controller.openRecipe(SOUP.id).join()
+        assertEquals(DetailStatus.FRESH, controller.state.value.detail?.status)
+
+        releaseDiscovery.complete(Unit)
+        refreshStarted.await()
+
+        assertEquals(listOf(SOUP), controller.state.value.recipes)
+        assertEquals(DetailStatus.FRESH, controller.state.value.detail?.status)
+
+        releaseRefresh.complete(Unit)
+        restoring.join()
+    }
+
+    @Test
+    fun slowDiscoveryDoesNotOverrideAConcurrentExplicitCookbookSwitch() = runTest {
+        val discoveryStarted = CompletableDeferred<Unit>()
+        val releaseDiscovery = CompletableDeferred<Unit>()
+        val detailStarted = CompletableDeferred<Unit>()
+        val detailCancellationObserved = CompletableDeferred<Unit>()
+        val releaseDetail = CompletableDeferred<Unit>()
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL, SHARED))
+            selectCookbook(USER.id, PERSONAL.id)
+            replaceRecipes(RecipeScope(USER.id, PERSONAL.id), listOf(SOUP))
+            replaceRecipes(RecipeScope(USER.id, SHARED.id), listOf(SALAD))
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = {
+                discoveryStarted.complete(Unit)
+                releaseDiscovery.await()
+                listOf(PERSONAL, SHARED)
+            }
+            recipesBlock = { _, cookbookId ->
+                if (cookbookId == SHARED.id) listOf(SALAD) else listOf(SOUP)
+            }
+            recipeBlock = { _, _, _ ->
+                detailStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } catch (failure: CancellationException) {
+                    detailCancellationObserved.complete(Unit)
+                    withContext(NonCancellable) { releaseDetail.await() }
+                    throw failure
+                }
+            }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+
+        val restoring = controller.restore()
+        discoveryStarted.await()
+        val detail = controller.openRecipe(SOUP.id)
+        detailStarted.await()
+        val switching = controller.switchCookbook(SHARED.id)
+        detailCancellationObserved.await()
+
+        releaseDiscovery.complete(Unit)
+        runCurrent()
+        releaseDetail.complete(Unit)
+        detail.join()
+        switching.join()
+        restoring.join()
+
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(SHARED.id, store.selected[USER.id])
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+    }
+
+    @Test
     fun authoritativeMembershipRemovalDropsOldCacheAndFallsBackToPersonal() = runTest {
         val sharedScope = RecipeScope(USER.id, SHARED.id)
         val store = FakeCatalogStore().apply {
@@ -308,6 +406,58 @@ class SessionControllerTest {
     }
 
     @Test
+    fun authenticated401CleanupFinishesWhenItsDetailJobIsCancelledWhileJoiningARefresh() = runTest {
+        val refreshStarted = CompletableDeferred<Unit>()
+        val refreshCancellationObserved = CompletableDeferred<Unit>()
+        val releaseRefresh = CompletableDeferred<Unit>()
+        var recipeCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                recipeCalls++
+                if (recipeCalls == 1) {
+                    listOf(SOUP)
+                } else {
+                    refreshStarted.complete(Unit)
+                    try {
+                        awaitCancellation()
+                    } catch (failure: CancellationException) {
+                        refreshCancellationObserved.complete(Unit)
+                        withContext(NonCancellable) { releaseRefresh.await() }
+                        throw failure
+                    }
+                }
+            }
+            recipeBlock = { _, _, _ -> throw ApiFailure(401, "expired") }
+        }
+        val sessionStore = FakeSessionStore(SESSION)
+        val store = FakeCatalogStore()
+        var imageCleanups = 0
+        val controller = controller(api, sessionStore, store) { imageCleanups++ }
+        controller.restore().join()
+
+        val refresh = controller.refresh()
+        refreshStarted.await()
+        val expiredDetail = controller.openRecipe(SOUP.id)
+        refreshCancellationObserved.await()
+        val close = controller.closeRecipe()
+        runCurrent()
+        releaseRefresh.complete(Unit)
+        refresh.join()
+        expiredDetail.join()
+        close.join()
+
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertTrue(sessionStore.cleared)
+        assertTrue(store.cleared)
+        assertEquals(1, imageCleanups)
+
+        api.recipesBlock = { _, _ -> emptyList() }
+        controller.signIn(SIGN_IN).join()
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+    }
+
+    @Test
     fun forbiddenCookbookIsPurgedAndFailedRediscoveryCannotExposeItsCache() = runTest {
         var discoveries = 0
         val api = FakeApi().apply {
@@ -389,6 +539,36 @@ class SessionControllerTest {
         assertTrue(controller.state.value.recipes.isEmpty())
         assertEquals(DetailStatus.UNAVAILABLE, controller.state.value.detail?.status)
         assertTrue(store.recipes(RecipeScope(USER.id, PERSONAL.id)).items.isEmpty())
+    }
+
+    @Test
+    fun detail404DuringListRefreshClearsTheRefreshLoadingState() = runTest {
+        val refreshStarted = CompletableDeferred<Unit>()
+        var recipeCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                recipeCalls++
+                if (recipeCalls == 1) {
+                    listOf(SOUP)
+                } else {
+                    refreshStarted.complete(Unit)
+                    awaitCancellation()
+                }
+            }
+            recipeBlock = { _, _, _ -> throw ApiFailure(404, "missing") }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+
+        val refresh = controller.refresh()
+        refreshStarted.await()
+        controller.openRecipe(SOUP.id).join()
+        refresh.join()
+
+        assertTrue(controller.state.value.recipesFetched)
+        assertEquals(LoadStatus.FRESH, controller.state.value.recipeStatus)
+        assertEquals(DetailStatus.UNAVAILABLE, controller.state.value.detail?.status)
     }
 
     @Test
@@ -584,6 +764,110 @@ class SessionControllerTest {
     }
 
     @Test
+    fun cancellingLogoutWhileItJoinsAuthenticatedWorkStillFinishesLocalCleanup() = runTest {
+        val refreshStarted = CompletableDeferred<Unit>()
+        val refreshCancellationObserved = CompletableDeferred<Unit>()
+        val releaseRefresh = CompletableDeferred<Unit>()
+        var recipeCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                recipeCalls++
+                if (recipeCalls == 1) {
+                    listOf(SOUP)
+                } else {
+                    refreshStarted.complete(Unit)
+                    try {
+                        awaitCancellation()
+                    } catch (failure: CancellationException) {
+                        refreshCancellationObserved.complete(Unit)
+                        withContext(NonCancellable) { releaseRefresh.await() }
+                        throw failure
+                    }
+                }
+            }
+        }
+        val sessionStore = FakeSessionStore(SESSION)
+        val store = FakeCatalogStore()
+        var imageCleanups = 0
+        val controller = controller(api, sessionStore, store) { imageCleanups++ }
+        controller.restore().join()
+
+        val refresh = controller.refresh()
+        refreshStarted.await()
+        val logout = controller.logout()
+        refreshCancellationObserved.await()
+        logout.cancel()
+        releaseRefresh.complete(Unit)
+        refresh.join()
+        logout.join()
+
+        assertTrue(logout.isCancelled)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertTrue(sessionStore.cleared)
+        assertTrue(store.cleared)
+        assertEquals(1, imageCleanups)
+
+        api.recipesBlock = { _, _ -> emptyList() }
+        controller.signIn(SIGN_IN).join()
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+    }
+
+    @Test
+    fun cancellingControllerScopeDuringLogoutStillFinishesLocalCleanup() = runTest {
+        val refreshStarted = CompletableDeferred<Unit>()
+        val refreshCancellationObserved = CompletableDeferred<Unit>()
+        val releaseRefresh = CompletableDeferred<Unit>()
+        var recipeCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                recipeCalls++
+                if (recipeCalls == 1) {
+                    listOf(SOUP)
+                } else {
+                    refreshStarted.complete(Unit)
+                    try {
+                        awaitCancellation()
+                    } catch (failure: CancellationException) {
+                        refreshCancellationObserved.complete(Unit)
+                        withContext(NonCancellable) { releaseRefresh.await() }
+                        throw failure
+                    }
+                }
+            }
+        }
+        val sessionStore = FakeSessionStore(SESSION)
+        val store = FakeCatalogStore()
+        val controllerJob = Job()
+        val controllerScope = CoroutineScope(coroutineContext + controllerJob)
+        var imageCleanups = 0
+        val controller = controller(
+            api = api,
+            sessionStore = sessionStore,
+            catalogStore = store,
+            imageCleanup = { imageCleanups++ },
+            controllerScope = controllerScope,
+        )
+        controller.restore().join()
+
+        val refresh = controller.refresh()
+        refreshStarted.await()
+        val logout = controller.logout()
+        refreshCancellationObserved.await()
+        controllerJob.cancel()
+        releaseRefresh.complete(Unit)
+        refresh.join()
+        logout.join()
+
+        assertTrue(logout.isCancelled)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertTrue(sessionStore.cleared)
+        assertTrue(store.cleared)
+        assertEquals(1, imageCleanups)
+    }
+
+    @Test
     fun duplicateAuthenticationSubmissionsAreIgnored() = runTest {
         val response = CompletableDeferred<SessionResponse>()
         val api = FakeApi().apply { signInBlock = { response.await() } }
@@ -680,6 +964,7 @@ class SessionControllerTest {
 
         assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
         assertNull(controller.state.value.user)
+        assertEquals("Your session has expired", controller.state.value.authError)
     }
 
     @Test
@@ -1132,6 +1417,7 @@ class SessionControllerTest {
         catalogStore: FakeCatalogStore = FakeCatalogStore(),
         session: StoredSession? = null,
         clock: Clock = Clock.fixed(NOW, ZoneOffset.UTC),
+        controllerScope: CoroutineScope = this,
         imageCleanup: suspend () -> Unit = {},
     ): SessionController {
         if (session != null) sessionStore.value = session
@@ -1141,7 +1427,7 @@ class SessionControllerTest {
             catalogRepository = CatalogRepository(api, catalogStore),
             baseUrl = BASE_URL,
             clock = clock,
-            scope = this,
+            scope = controllerScope,
             imageCleanup = imageCleanup,
             revokeTimeoutMillis = 100,
         )

@@ -464,6 +464,101 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun restoredDetailWaitsForFreshViewModelCookbookResolutionAndKeepsTheMatchingScope() {
+        val originalState = mutableStateOf(readyState())
+        var viewModelState = originalState
+        val actions = ActionRecorder(originalState)
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme { MainCourseApp(viewModelState.value, actions.actions) }
+            }
+        }
+        compose.onNodeWithText("Vegetable soup").performClick()
+        showIn(originalState, readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+
+        val restoredState = mutableStateOf(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                catalogStatus = LoadStatus.LOADING,
+            ),
+        )
+        compose.runOnIdle { viewModelState = restoredState }
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        showIn(
+            restoredState,
+            readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)),
+        )
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+    }
+
+    @Test
+    fun restoredDetailPopsAfterFreshViewModelResolvesADifferentCookbook() {
+        val originalState = mutableStateOf(readyState())
+        var viewModelState = originalState
+        val actions = ActionRecorder(originalState)
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme { MainCourseApp(viewModelState.value, actions.actions) }
+            }
+        }
+        compose.onNodeWithText("Vegetable soup").performClick()
+        showIn(originalState, readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+
+        val restoredState = mutableStateOf(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                catalogStatus = LoadStatus.LOADING,
+            ),
+        )
+        compose.runOnIdle { viewModelState = restoredState }
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+
+        showIn(restoredState, readyState(cookbookId = 2L, recipes = listOf(SOUP)))
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+    }
+
+    @Test
+    fun restoredFailedImportShowsFailureAfterFreshViewModelResolvesItsScope() {
+        val originalState = mutableStateOf(readyState())
+        var viewModelState = originalState
+        val actions = ActionRecorder(originalState)
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme { MainCourseApp(viewModelState.value, actions.actions) }
+            }
+        }
+        compose.onNodeWithText("Vegetable soup").performClick()
+
+        val restoredState = mutableStateOf(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                catalogStatus = LoadStatus.LOADING,
+            ),
+        )
+        compose.runOnIdle { viewModelState = restoredState }
+        compose.activityRule.scenario.recreate()
+        showIn(
+            restoredState,
+            readyState(
+                recipes = listOf(FAILED.copy(id = SOUP.id, name = SOUP.name)),
+            ).copy(
+                detail = RecipeDetailState(SOUP.id, DetailStatus.NOT_READY),
+            ),
+        )
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_failed)).assertIsDisplayed()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.recipe_processing)).assertCountEquals(0)
+    }
+
+    @Test
     fun sameCookbookRediscoveryKeepsDetailRouteButSwitchingScopeRemovesIt() {
         compose.onNodeWithText("Vegetable soup").performClick()
         show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
@@ -538,6 +633,10 @@ class MainCourseAppTest {
 
     private fun show(value: SessionState) {
         compose.runOnIdle { state.value = value }
+    }
+
+    private fun showIn(target: MutableState<SessionState>, value: SessionState) {
+        compose.runOnIdle { target.value = value }
     }
 
     private class ActionRecorder(private val state: MutableState<SessionState>) {

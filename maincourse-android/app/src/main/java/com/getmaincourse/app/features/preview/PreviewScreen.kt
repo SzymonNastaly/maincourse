@@ -23,21 +23,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.getmaincourse.app.BuildConfig
 import com.getmaincourse.app.Destination
 import com.getmaincourse.app.R
 import com.getmaincourse.app.ui.theme.MainCourseColors
-import com.getmaincourse.app.ui.theme.MainCourseMono
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
 @Composable
 fun PreviewScreen(destination: Destination, onOpenDesignSystem: () -> Unit) {
     val (title, description) = when (destination) {
-        Destination.Recipes -> R.string.recipes_preview_title to R.string.recipes_preview_body
         Destination.Shopping -> R.string.shopping_preview_title to R.string.shopping_preview_body
         Destination.Search -> R.string.search_preview_title to R.string.search_preview_body
-        Destination.Settings -> R.string.settings_preview_title to R.string.settings_preview_body
-        Destination.DesignSystem -> error("The gallery has its own destination")
+        else -> error("Only preview destinations use PreviewScreen")
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -84,14 +80,6 @@ fun PreviewScreen(destination: Destination, onOpenDesignSystem: () -> Unit) {
                         Button(onClick = onOpenDesignSystem, shape = MainCourseShapes.Control) {
                             Text(stringResource(R.string.explore_design))
                         }
-                    }
-                }
-            }
-            if (destination == Destination.Settings) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.preview_version), style = MaterialTheme.typography.labelMedium)
-                        Text(BuildConfig.VERSION_NAME, fontFamily = MainCourseMono, color = MainCourseColors.Body)
                     }
                 }
             }
