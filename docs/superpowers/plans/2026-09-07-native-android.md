@@ -11,7 +11,7 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | Milestone | Status | Outcome |
 |---|---|---|
 | 0. Enablement and scaffold | Complete | Native preview, local tooling, CI definition, and local verification complete; external accounts tracked in #92 |
-| 1. First vertical slice | In progress | Design approved; implementation tasks in #93 for email session through cached recipe list/detail |
+| 1. First vertical slice | Local gate passed; review underway | Email session through cached recipe list/detail passed local API 37 acceptance; final branch review is underway in #93 |
 | 2. Identity and account | Planned | Complete sign-in, onboarding, account, and preferences |
 | 3. Recipe workflows | Planned | Search, editing, imports, cooking, and recipe actions |
 | 4. Shopping list | Planned | Durable offline shopping workflow |
@@ -20,9 +20,9 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | 7. Notifications | Planned | FCM registration, delivery, tracking, and routing |
 | 8. Release | Planned | Production hardening and Play release |
 
-Milestone 0's local scaffold gate passed on 2026-09-07. Milestone 1's design is
-approved and implementation is tracked in #93; authentication and recipe data
-are not implemented yet.
+Milestone 0's local scaffold gate passed on 2026-09-07. Milestone 1's local
+acceptance gate also passed on 2026-09-07; final whole-branch review is underway
+in #93, so the milestone is not yet recorded as fully complete.
 External service configuration remains open in #92 and does not block Milestone 1.
 
 ### Working sequence while Play registration waits
@@ -131,8 +131,12 @@ Secrets and downloaded console configuration stay out of documentation and sourc
 
 ## Milestone 1: First Real Vertical Slice
 
-**Design:** `docs/superpowers/specs/2026-09-07-android-milestone-1-design.md`.
+**Status:** Local acceptance gate passed on 2026-09-07; final branch review is
+underway.
+
+**Design:** [`docs/superpowers/specs/2026-09-07-android-milestone-1-design.md`](../specs/2026-09-07-android-milestone-1-design.md).
 **Implementation:** [issue #93](https://github.com/SzymonNastaly/maincourse/issues/93).
+**Cleanup follow-up:** [issue #94](https://github.com/SzymonNastaly/maincourse/issues/94).
 
 **Dependencies:** Rails API and local Android tooling only. Validate against a
 local Rails server and emulator; no Play account, physical phone, provider
@@ -149,6 +153,31 @@ credentials, billing, or push configuration is needed.
 **Gate:**
 - A new or returning email user can authenticate, discover/switch cookbooks, browse cached recipes, refresh, and open detail on phone and tablet.
 - Cold start, offline start with cache, empty state, server failure, `401`, and `403` are exercised without cross-user or cross-cookbook leakage.
+
+**Local verification recorded on 2026-09-07:**
+- The clean Android gate passed debug and minified unsigned release builds,
+  debug/release lint, 67 JVM tests, and 59 device tests (126 total, no failures).
+  Runtime device evidence is from the local API 37 emulator only; this is not a
+  remote-CI or physical-device claim.
+- The real `MainActivity` and local Rails server passed signup, rejected and
+  successful login, restart/session restore, cookbook discovery/switching,
+  cached list and previously opened detail under true airplane-mode network
+  loss, an explicit connection state for unopened detail, empty/server-down
+  recovery, and authenticated `401`, cookbook `403`, and recipe `404` recovery.
+- Phone and tablet layouts were inspected at normal size; the tablet was also
+  inspected at 200% text under a dark system appearance. The app remained light
+  and usable. The real app was left installed and signed in only to a dedicated
+  local development account.
+- The unchanged Rails auth/cookbook/recipe contract suite remained green at 91
+  tests and 271 assertions. No Rails code changed, and it was not rerun after the
+  Android-only acceptance fixes.
+- Release remains unsigned and fixed to the public HTTPS API. Provider auth,
+  Play signing/distribution, remote CI, and physical-device validation remain
+  independent gates in #92. The owner-recorded Android OAuth client ID is not
+  integrated yet.
+- Logout and purge coordinate local session, Room, and image removal, but do not
+  promise flawless deletion across process death or an operating-system disk
+  failure. The cross-process cleanup/purge protocol remains follow-up #94.
 
 ## Milestone 2: Identity And Account
 
@@ -344,11 +373,18 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
 | 2026-09-07 | Shopping is the only durable mutation outbox initially, and only for retry-safe operations. |
 | 2026-09-07 | External console enablement starts in Milestone 0 and is tracked in [issue #92](https://github.com/SzymonNastaly/maincourse/issues/92). |
 | 2026-09-07 | Develop emulator-first while owner Play registration/hardware waits: 1 → 2 core → 3–5; provider tracks as configured; 7 may precede 6. Keep physical-device and Play gates explicit without blocking unrelated implementation. |
+| 2026-09-07 | Milestone 1 local acceptance passed on the API 37 emulator with the real Rails API and `MainActivity`; final branch review, remote CI, physical-device, provider, and Play gates remain distinct. |
 
 ## Handoff
 
-- Milestone 0 is complete. The preview app is intentionally disconnected from Rails; do not treat its sample controls as product features.
-- Active product slice: Milestone 1 email/session/cookbook discovery and switching/recipe list and detail/cache. The user approved its design; execute the plan in [#93](https://github.com/SzymonNastaly/maincourse/issues/93).
+- Milestone 0 is complete. Milestone 1's auth-first native email/session,
+  cookbook switching, and cached recipe list/detail slice has passed its local
+  acceptance gate; final whole-branch review is still underway in
+  [#93](https://github.com/SzymonNastaly/maincourse/issues/93).
+- Next while Play access waits: proceed with Milestone 2 onboarding and
+  account/preferences independently, integrate Google/Apple when their own
+  provider configuration is ready, and continue Milestones 3–5 without treating
+  provider or Play gates as blockers. All external tracks remain open in #92.
 - Play registration is temporarily owner-blocked. Follow the working sequence above; local OAuth SHA-1 discovery and Google Cloud/Firebase configuration do not depend on Play access.
 - Before implementation work, consult the milestone's GitHub issues and update this roadmap only when scope, sequencing, gates, or decisions change.
 - Do not mark a milestone complete from code presence alone; its gate and listed verification must have recorded evidence.

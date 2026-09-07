@@ -2,7 +2,10 @@
 
 **Every recipe you love. In one place.**
 
-MainCourse is a recipe manager for iPhone and iPad. Save recipes from websites, Instagram, TikTok, YouTube, or photos of cookbook pages — then plan your week and turn it into a single shopping list grouped by aisle.
+MainCourse is a recipe manager with iPhone/iPad clients and a native Android
+client in development. Save recipes from websites, Instagram, TikTok, YouTube,
+or photos of cookbook pages — then plan your week and turn it into a single
+shopping list grouped by aisle.
 
 <p align="center">
   <img src="docs/images/hero-devices.png" alt="MainCourse on iPad and iPhone" width="600" />
@@ -41,7 +44,10 @@ MainCourse has a shared Rails backend and three client surfaces:
 
 - **Rails 8.1 backend and web app** (`app/`, `config/`, `db/`) — Ruby 3.4.7, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web UI. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
 - **SwiftUI iOS app** (`hauptgang-ios/`) — Offline-first iPhone and iPad client. Generated with XcodeGen, uses RevenueCat for subscriptions.
-- **Kotlin/Jetpack Compose Android app** (`maincourse-android/`) - Android 10+, Material 3 with the MainCourse theme. Currently a native preview shell; product features follow the [Android roadmap](docs/superpowers/plans/2026-09-07-native-android.md).
+- **Kotlin/Jetpack Compose Android app** (`maincourse-android/`) — Android 10+
+  native client with email authentication and cookbook-scoped cached recipe
+  list/detail browsing. Shopping and Search remain previews; later product work
+  follows the [Android roadmap](docs/superpowers/plans/2026-09-07-native-android.md).
 
 The app was originally called Hauptgang, so `hauptgang` still appears throughout the codebase — directory names, Swift module and target names, and the Rails app module. Only the user-facing branding changed.
 
@@ -62,7 +68,8 @@ The iOS project file is generated — run `xcodegen` inside `hauptgang-ios/` aft
 
 Open `maincourse-android/` in Android Studio for Android development. See
 [`docs/android.md`](docs/android.md) for SDK setup, build commands, and design
-conventions. Android builds do not require Rails or provider credentials yet.
+conventions. Android builds and automated tests do not require Rails or provider
+credentials; live email/recipe integration uses a local or public Rails API.
 
 ### Quality checks
 
