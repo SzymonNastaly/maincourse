@@ -11,7 +11,7 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | Milestone | Status | Outcome |
 |---|---|---|
 | 0. Enablement and scaffold | Complete | Native preview, local tooling, CI definition, and local verification complete; external accounts tracked in #92 |
-| 1. First vertical slice | Local gate passed; review underway | Email session through cached recipe list/detail passed local API 37 acceptance; final branch review is underway in #93 |
+| 1. First vertical slice | Complete | Email session through cached recipe list/detail passed local API 37 acceptance and final code review; evidence in #93 |
 | 2. Identity and account | Planned | Complete sign-in, onboarding, account, and preferences |
 | 3. Recipe workflows | Planned | Search, editing, imports, cooking, and recipe actions |
 | 4. Shopping list | Planned | Durable offline shopping workflow |
@@ -20,10 +20,10 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | 7. Notifications | Planned | FCM registration, delivery, tracking, and routing |
 | 8. Release | Planned | Production hardening and Play release |
 
-Milestone 0's local scaffold gate passed on 2026-09-07. Milestone 1's local
-acceptance gate also passed on 2026-09-07; final whole-branch review is underway
-in #93, so the milestone is not yet recorded as fully complete.
-External service configuration remains open in #92 and does not block Milestone 1.
+Milestones 0 and 1 are complete. Milestone 1's local acceptance gate and final
+code review passed on 2026-09-07; implementation and evidence are recorded in
+#93. External service configuration remains open in #92 and does not block the
+next core product work.
 
 ### Working sequence while Play registration waits
 
@@ -131,8 +131,7 @@ Secrets and downloaded console configuration stay out of documentation and sourc
 
 ## Milestone 1: First Real Vertical Slice
 
-**Status:** Local acceptance gate passed on 2026-09-07; final branch review is
-underway.
+**Status:** Complete. Local acceptance and final code review passed on 2026-09-07.
 
 **Design:** [`docs/superpowers/specs/2026-09-07-android-milestone-1-design.md`](../specs/2026-09-07-android-milestone-1-design.md).
 **Implementation:** [issue #93](https://github.com/SzymonNastaly/maincourse/issues/93).
@@ -156,7 +155,7 @@ credentials, billing, or push configuration is needed.
 
 **Local verification recorded on 2026-09-07:**
 - The clean Android gate passed debug and minified unsigned release builds,
-  debug/release lint, 67 JVM tests, and 59 device tests (126 total, no failures).
+  debug/release lint, 73 JVM tests, and 62 device tests (135 total, no failures).
   Runtime device evidence is from the local API 37 emulator only; this is not a
   remote-CI or physical-device claim.
 - The real `MainActivity` and local Rails server passed signup, rejected and
@@ -178,6 +177,10 @@ credentials, billing, or push configuration is needed.
 - Logout and purge coordinate local session, Room, and image removal, but do not
   promise flawless deletion across process death or an operating-system disk
   failure. The cross-process cleanup/purge protocol remains follow-up #94.
+- Final review and scoped re-review accepted the implementation after regression
+  fixes for cleanup cancellation, concurrent cookbook selection, and restored
+  detail navigation. The final code fix is commit `31eaf60`; the fresh full gate
+  includes those changes.
 
 ## Milestone 2: Identity And Account
 
@@ -373,13 +376,13 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
 | 2026-09-07 | Shopping is the only durable mutation outbox initially, and only for retry-safe operations. |
 | 2026-09-07 | External console enablement starts in Milestone 0 and is tracked in [issue #92](https://github.com/SzymonNastaly/maincourse/issues/92). |
 | 2026-09-07 | Develop emulator-first while owner Play registration/hardware waits: 1 → 2 core → 3–5; provider tracks as configured; 7 may precede 6. Keep physical-device and Play gates explicit without blocking unrelated implementation. |
-| 2026-09-07 | Milestone 1 local acceptance passed on the API 37 emulator with the real Rails API and `MainActivity`; final branch review, remote CI, physical-device, provider, and Play gates remain distinct. |
+| 2026-09-07 | Milestone 1 local acceptance and final code review passed with the API 37 emulator, real Rails API, and `MainActivity`; remote CI, physical-device, provider, and Play gates remain distinct. |
 
 ## Handoff
 
-- Milestone 0 is complete. Milestone 1's auth-first native email/session,
-  cookbook switching, and cached recipe list/detail slice has passed its local
-  acceptance gate; final whole-branch review is still underway in
+- Milestones 0 and 1 are complete. The auth-first native email/session,
+  cookbook switching, and cached recipe list/detail slice passed its local
+  acceptance gate and final code review. Evidence and integration tracking are in
   [#93](https://github.com/SzymonNastaly/maincourse/issues/93).
 - Next while Play access waits: proceed with Milestone 2 onboarding and
   account/preferences independently, integrate Google/Apple when their own
