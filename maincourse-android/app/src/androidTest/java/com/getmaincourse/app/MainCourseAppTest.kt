@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertCountEquals
@@ -42,6 +44,10 @@ import com.getmaincourse.app.features.session.LoadStatus
 import com.getmaincourse.app.features.session.RecipeDetailState
 import com.getmaincourse.app.features.session.SessionPhase
 import com.getmaincourse.app.features.session.SessionState
+import com.getmaincourse.app.features.onboarding.OnboardingState
+import com.getmaincourse.app.features.onboarding.OnboardingStep
+import com.getmaincourse.app.features.settings.AccountOperation
+import com.getmaincourse.app.features.settings.AccountState
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -57,16 +63,22 @@ class MainCourseAppTest {
     val compose = createAndroidComposeRule<MainCourseTestActivity>()
 
     private lateinit var state: MutableState<SessionState>
+    private lateinit var onboardingState: MutableState<OnboardingState>
+    private lateinit var accountState: MutableState<AccountState>
+    private lateinit var preparingAuthentication: MutableState<Boolean>
     private lateinit var recorder: ActionRecorder
 
     @Before
     fun setUp() {
         state = mutableStateOf(readyState())
+        onboardingState = mutableStateOf(OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE))
+        accountState = mutableStateOf(AccountState())
+        preparingAuthentication = mutableStateOf(false)
         recorder = ActionRecorder(state)
         compose.runOnIdle {
             MainCourseTestContent.content = {
                 MainCourseTheme {
-                    MainCourseApp(state.value, recorder.actions)
+                    TestApp()
                 }
             }
         }
@@ -185,7 +197,13 @@ class MainCourseAppTest {
             MainCourseTestContent.content = {
                 MainCourseTheme {
                     Box(Modifier.requiredWidth(800.dp).requiredHeight(1000.dp)) {
-                        MainCourseApp(SessionState(phase = SessionPhase.SIGNED_OUT), recorder.actions)
+                        MainCourseApp(
+                            state = SessionState(phase = SessionPhase.SIGNED_OUT),
+                            onboardingState = OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE),
+                            accountState = AccountState(),
+                            isPreparingAuthentication = false,
+                            actions = recorder.actions,
+                        )
                     }
                 }
             }
@@ -194,6 +212,49 @@ class MainCourseAppTest {
         val widthPixels = compose.onNodeWithTag("auth_form").fetchSemanticsNode().boundsInRoot.width
         val density = compose.activity.resources.displayMetrics.density
         assertEquals(true, widthPixels / density <= 440.5f)
+    }
+
+    @Test
+    fun sessionRestoreAlwaysPrecedesFirstRunOnboardingAndAStoredUserBypassesIt() {
+        onboardingState.value = OnboardingState(isLoading = false, step = OnboardingStep.WELCOME)
+        show(SessionState(phase = SessionPhase.RESTORING))
+        compose.onNodeWithText(compose.activity.getString(R.string.startup_loading)).assertIsDisplayed()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.onboarding_get_started)).assertCountEquals(0)
+
+        show(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                catalogStatus = LoadStatus.ERROR,
+            ),
+        )
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.onboarding_get_started)).assertCountEquals(0)
+    }
+
+    @Test
+    fun completedOnboardingUsesStandaloneSignIn() {
+        onboardingState.value = OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE)
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+
+        compose.onNodeWithTag("auth_email").assertIsDisplayed()
+        compose.onNodeWithTag("auth_name").assertDoesNotExist()
+    }
+
+    @Test
+    fun preparingAuthenticationKeepsTheEmbeddedFormWhenTheDraftChanges() {
+        onboardingState.value = OnboardingState(isLoading = false, step = OnboardingStep.AUTH)
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+        compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
+
+        compose.runOnIdle {
+            preparingAuthentication.value = true
+            onboardingState.value = OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE)
+        }
+
+        compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
+        compose.onNodeWithTag("auth_name").assertIsDisplayed()
+        compose.onNodeWithTag("auth_submit").assertIsNotEnabled()
     }
 
     @Test
@@ -370,6 +431,77 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun settingsEditsTrimmedNameAndKeepsDialogOpenForAnError() {
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.edit_name)).performClick()
+        compose.onNodeWithTag("edit_name_input").performTextClearance()
+        compose.onNodeWithTag("edit_name_input").performTextInput("  Ada  ")
+        compose.onNodeWithText(compose.activity.getString(R.string.save)).performClick()
+
+        assertEquals("Ada", recorder.updatedName)
+        accountState.value = AccountState(error = "Could not update account")
+        compose.onNodeWithText("Could not update account").assertIsDisplayed()
+        compose.onNodeWithTag("edit_name_input").assertTextContains("  Ada  ")
+
+        compose.onNodeWithTag("edit_name_input").performTextClearance()
+        compose.onNodeWithTag("edit_name_input").performTextInput("x".repeat(51))
+        compose.onNodeWithText(compose.activity.getString(R.string.save)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun remindersWaitForTheServerValueAndExplainAndroidDelivery() {
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("recipe_reminders").performClick()
+        assertEquals(true, recorder.updatedReminders)
+        compose.onNodeWithTag("recipe_reminders").assertIsOff()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_reminders_help)).assertIsDisplayed()
+
+        accountState.value = AccountState(error = "Could not update account")
+        compose.onNodeWithText("Could not update account").assertIsDisplayed()
+        compose.onNodeWithTag("recipe_reminders").assertIsOff()
+
+        accountState.value = AccountState(operation = AccountOperation.SAVING)
+        compose.onNodeWithTag("recipe_reminders").assertIsNotEnabled()
+    }
+
+    @Test
+    fun acceptedAccountValueWithLocalPersistenceFailureOffersSaveRetry() {
+        show(readyState().copy(user = USER.copy(lifecycleNotificationsEnabled = true)))
+        accountState.value = AccountState(
+            error = "Account updated, but could not save it on this device",
+            canRetryPersistence = true,
+        )
+        compose.onNodeWithTag("nav_Settings").performClick()
+
+        compose.onNodeWithTag("recipe_reminders").assertIsOn()
+        compose.onNodeWithText(compose.activity.getString(R.string.retry_save)).performClick()
+        assertEquals(1, recorder.retryAccountPersistenceCount)
+    }
+
+    @Test
+    fun deleteRequiresExactPhraseAndNeverAutoSubmitsAfterRecreation() {
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.manage_account)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.delete_account)).performClick()
+        compose.onNodeWithTag("delete_account_button").assertIsNotEnabled()
+        compose.onNodeWithTag("delete_confirmation").performTextInput("delete")
+        compose.onNodeWithTag("delete_account_button").assertIsNotEnabled()
+        compose.onNodeWithTag("delete_confirmation").performTextClearance()
+        compose.onNodeWithTag("delete_confirmation").performTextInput("DELETE")
+        compose.activityRule.scenario.recreate()
+        assertEquals(0, recorder.deleteAccountCount)
+        compose.onNodeWithTag("delete_account_button").assertIsEnabled().performClick()
+        assertEquals(1, recorder.deleteAccountCount)
+
+        accountState.value = AccountState(operation = AccountOperation.DELETING)
+        compose.onNodeWithTag("delete_account_button").assertIsNotEnabled()
+        accountState.value = AccountState(error = "Deletion could not be confirmed")
+        compose.onNodeWithText("Deletion could not be confirmed").assertIsDisplayed()
+        compose.onNodeWithTag("delete_account_button").assertIsEnabled().performClick()
+        assertEquals(2, recorder.deleteAccountCount)
+    }
+
+    @Test
     fun protectedRestoreAndCleanupFailuresOfferTheirRecoveryActions() {
         show(
             SessionState(
@@ -397,7 +529,15 @@ class MainCourseAppTest {
                 val density = LocalDensity.current
                 CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
                     Box(Modifier.requiredWidth(500.dp).requiredHeight(150.dp)) {
-                        MainCourseTheme { MainCourseApp(failed, recorder.actions) }
+                        MainCourseTheme {
+                            MainCourseApp(
+                                state = failed,
+                                onboardingState = onboardingState.value,
+                                accountState = accountState.value,
+                                isPreparingAuthentication = false,
+                                actions = recorder.actions,
+                            )
+                        }
                     }
                 }
             }
@@ -470,7 +610,15 @@ class MainCourseAppTest {
         val actions = ActionRecorder(originalState)
         compose.runOnIdle {
             MainCourseTestContent.content = {
-                MainCourseTheme { MainCourseApp(viewModelState.value, actions.actions) }
+                MainCourseTheme {
+                    MainCourseApp(
+                        viewModelState.value,
+                        onboardingState.value,
+                        accountState.value,
+                        false,
+                        actions.actions,
+                    )
+                }
             }
         }
         compose.onNodeWithText("Vegetable soup").performClick()
@@ -502,7 +650,15 @@ class MainCourseAppTest {
         val actions = ActionRecorder(originalState)
         compose.runOnIdle {
             MainCourseTestContent.content = {
-                MainCourseTheme { MainCourseApp(viewModelState.value, actions.actions) }
+                MainCourseTheme {
+                    MainCourseApp(
+                        viewModelState.value,
+                        onboardingState.value,
+                        accountState.value,
+                        false,
+                        actions.actions,
+                    )
+                }
             }
         }
         compose.onNodeWithText("Vegetable soup").performClick()
@@ -530,7 +686,15 @@ class MainCourseAppTest {
         val actions = ActionRecorder(originalState)
         compose.runOnIdle {
             MainCourseTestContent.content = {
-                MainCourseTheme { MainCourseApp(viewModelState.value, actions.actions) }
+                MainCourseTheme {
+                    MainCourseApp(
+                        viewModelState.value,
+                        onboardingState.value,
+                        accountState.value,
+                        false,
+                        actions.actions,
+                    )
+                }
             }
         }
         compose.onNodeWithText("Vegetable soup").performClick()
@@ -635,6 +799,17 @@ class MainCourseAppTest {
         compose.runOnIdle { state.value = value }
     }
 
+    @androidx.compose.runtime.Composable
+    private fun TestApp() {
+        MainCourseApp(
+            state = state.value,
+            onboardingState = onboardingState.value,
+            accountState = accountState.value,
+            isPreparingAuthentication = preparingAuthentication.value,
+            actions = recorder.actions,
+        )
+    }
+
     private fun showIn(target: MutableState<SessionState>, value: SessionState) {
         compose.runOnIdle { target.value = value }
     }
@@ -651,6 +826,10 @@ class MainCourseAppTest {
         var logoutCount = 0
         var restoreCount = 0
         var resetCount = 0
+        var updatedName: String? = null
+        var updatedReminders: Boolean? = null
+        var retryAccountPersistenceCount = 0
+        var deleteAccountCount = 0
         var afterSignIn: () -> Unit = {}
         var afterSignUp: () -> Unit = {}
         var afterRefresh: () -> Unit = {}
@@ -677,6 +856,10 @@ class MainCourseAppTest {
                 openRecipeCount++
             },
             closeRecipe = { state.value = state.value.copy(detail = null) },
+            updateName = { updatedName = it },
+            updateLifecycleNotifications = { updatedReminders = it },
+            retryAccountPersistence = { retryAccountPersistenceCount++ },
+            deleteAccount = { deleteAccountCount++ },
             logout = { logoutCount++ },
             reset = { resetCount++ },
         )

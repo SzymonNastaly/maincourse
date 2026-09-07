@@ -33,7 +33,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -50,6 +54,9 @@ import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.features.auth.AuthScreen
 import com.getmaincourse.app.features.designsystem.DesignSystemScreen
+import com.getmaincourse.app.features.onboarding.OnboardingScreen
+import com.getmaincourse.app.features.onboarding.OnboardingState
+import com.getmaincourse.app.features.onboarding.OnboardingStep
 import com.getmaincourse.app.features.preview.PreviewScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
 import com.getmaincourse.app.features.recipes.RecipesScreen
@@ -59,6 +66,9 @@ import com.getmaincourse.app.features.session.LoadStatus
 import com.getmaincourse.app.features.session.DetailStatus
 import com.getmaincourse.app.features.session.RecipeDetailState
 import com.getmaincourse.app.features.settings.SettingsScreen
+import com.getmaincourse.app.features.settings.AccountState
+import com.getmaincourse.app.features.settings.DeleteAccountScreen
+import com.getmaincourse.app.features.settings.ManageAccountScreen
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import kotlinx.serialization.Serializable
 
@@ -74,14 +84,35 @@ enum class Destination(@get:StringRes val title: Int, @get:DrawableRes val icon:
 @Serializable
 data class RecipeDestination(val cookbookId: Long, val recipeId: Long) : NavKey
 
+@Serializable
+data class ManageAccountDestination(val userId: Long) : NavKey
+
+@Serializable
+data class DeleteAccountDestination(val userId: Long) : NavKey
+
 data class MainCourseActions(
     val restore: () -> Unit = {},
     val signIn: (SignInRequest) -> Unit = {},
     val signUp: (SignUpRequest) -> Unit = {},
+    val startOnboarding: () -> Unit = {},
+    val advanceOnboarding: () -> Unit = {},
+    val backOnboarding: () -> Unit = {},
+    val skipOnboarding: () -> Unit = {},
+    val useExistingAccount: () -> Unit = {},
+    val updateOnboardingHousehold: (Int) -> Unit = {},
+    val updateOnboardingSaving: (String) -> Unit = {},
+    val updateOnboardingDiet: (String) -> Unit = {},
+    val retryOnboardingPersistence: () -> Unit = {},
+    val continueOnboardingWithoutSaving: () -> Unit = {},
     val switchCookbook: (Long) -> Unit = {},
     val refresh: () -> Unit = {},
     val openRecipe: (Long) -> Unit = {},
     val closeRecipe: () -> Unit = {},
+    val updateName: (String) -> Unit = {},
+    val updateLifecycleNotifications: (Boolean) -> Unit = {},
+    val retryAccountPersistence: () -> Unit = {},
+    val deleteAccount: () -> Unit = {},
+    val clearAccountError: () -> Unit = {},
     val logout: () -> Unit = {},
     val reset: () -> Unit = {},
 )
@@ -93,27 +124,18 @@ private val topLevelDestinations = listOf(
 @Composable
 fun MainCourseApp(
     state: SessionState,
+    onboardingState: OnboardingState,
+    accountState: AccountState,
+    isPreparingAuthentication: Boolean,
     actions: MainCourseActions,
     imageLoader: ImageLoader? = null,
     resolveImage: (String?) -> String? = { it },
 ) {
-    val showingAuthentication = state.phase == SessionPhase.SIGNED_OUT ||
-        (state.phase == SessionPhase.LOADING_COOKBOOKS && state.user == null)
-    if (showingAuthentication) {
-        AuthScreen(
-            isSubmitting = state.phase == SessionPhase.LOADING_COOKBOOKS,
-            error = state.authError,
-            onSignIn = actions.signIn,
-            onSignUp = actions.signUp,
-        )
-        return
-    }
-
     val authenticatedUser = state.user
     if (authenticatedUser != null &&
         (state.phase == SessionPhase.LOADING_COOKBOOKS || state.phase == SessionPhase.READY)
     ) {
-        ProtectedApp(state, actions, imageLoader, resolveImage)
+        ProtectedApp(state, accountState, actions, imageLoader, resolveImage)
         return
     }
 
@@ -132,7 +154,47 @@ fun MainCourseApp(
             onReset = actions.reset,
             retryLabel = R.string.retry_cleanup,
         )
-        SessionPhase.SIGNED_OUT, SessionPhase.LOADING_COOKBOOKS, SessionPhase.READY -> Unit
+        SessionPhase.SIGNED_OUT, SessionPhase.LOADING_COOKBOOKS -> {
+            if (onboardingState.isLoading) {
+                StartupScreen(R.string.startup_loading)
+            } else {
+                var stableStep by remember { mutableStateOf(onboardingState.step) }
+                SideEffect {
+                    if (!isPreparingAuthentication) stableStep = onboardingState.step
+                }
+                val presentedState = onboardingState.copy(
+                    step = if (isPreparingAuthentication) stableStep else onboardingState.step,
+                )
+                if (presentedState.step == OnboardingStep.COMPLETE) {
+                    AuthScreen(
+                        isSubmitting = isPreparingAuthentication || state.phase == SessionPhase.LOADING_COOKBOOKS,
+                        error = state.authError,
+                        onSignIn = actions.signIn,
+                        onSignUp = actions.signUp,
+                    )
+                } else {
+                    OnboardingScreen(
+                        state = presentedState,
+                        isPreparingAuthentication = isPreparingAuthentication ||
+                            state.phase == SessionPhase.LOADING_COOKBOOKS,
+                        authError = state.authError,
+                        onStart = actions.startOnboarding,
+                        onBack = actions.backOnboarding,
+                        onSkip = actions.skipOnboarding,
+                        onExistingAccount = actions.useExistingAccount,
+                        onAdvance = actions.advanceOnboarding,
+                        onHouseholdChanged = actions.updateOnboardingHousehold,
+                        onSavingChanged = actions.updateOnboardingSaving,
+                        onDietChanged = actions.updateOnboardingDiet,
+                        onRetryPersistence = actions.retryOnboardingPersistence,
+                        onContinueWithoutSaving = actions.continueOnboardingWithoutSaving,
+                        onSignIn = actions.signIn,
+                        onSignUp = actions.signUp,
+                    )
+                }
+            }
+        }
+        SessionPhase.READY -> Unit
     }
 }
 
@@ -140,6 +202,7 @@ fun MainCourseApp(
 @Composable
 private fun ProtectedApp(
     state: SessionState,
+    accountState: AccountState,
     actions: MainCourseActions,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
@@ -212,13 +275,17 @@ private fun ProtectedApp(
                                 when (current) {
                                     is Destination -> stringResource(current.title)
                                     is RecipeDestination -> state.detail?.recipe?.name ?: stringResource(R.string.recipes)
+                                    is ManageAccountDestination -> stringResource(R.string.manage_account)
+                                    is DeleteAccountDestination -> stringResource(R.string.delete_account)
                                     else -> stringResource(R.string.app_name)
                                 },
                             )
                         },
                         colors = TopAppBarDefaults.topAppBarColors(containerColor = MainCourseColors.Canvas),
                         navigationIcon = {
-                            if (current is RecipeDestination || current == Destination.DesignSystem) {
+                            if (current is RecipeDestination || current == Destination.DesignSystem ||
+                                current is ManageAccountDestination || current is DeleteAccountDestination
+                            ) {
                                 IconButton(
                                     onClick = {
                                         backStack.removeLastOrNull()
@@ -280,7 +347,20 @@ private fun ProtectedApp(
                                         }
                                     },
                                 )
-                                Destination.Settings -> SettingsScreen(user, { backStack.add(Destination.DesignSystem) }, actions.logout)
+                                Destination.Settings -> SettingsScreen(
+                                    user = user,
+                                    accountState = accountState,
+                                    onUpdateName = actions.updateName,
+                                    onUpdateLifecycleNotifications = actions.updateLifecycleNotifications,
+                                    onRetryAccountPersistence = actions.retryAccountPersistence,
+                                    onClearAccountError = actions.clearAccountError,
+                                    onOpenManageAccount = {
+                                        actions.clearAccountError()
+                                        backStack.add(ManageAccountDestination(user.id))
+                                    },
+                                    onOpenDesignSystem = { backStack.add(Destination.DesignSystem) },
+                                    onLogout = actions.logout,
+                                )
                                 Destination.DesignSystem -> DesignSystemScreen()
                                 Destination.Shopping, Destination.Search -> PreviewScreen(destination) {
                                     backStack.add(Destination.DesignSystem)
@@ -311,6 +391,23 @@ private fun ProtectedApp(
                                     }
                                 },
                             )
+                        }
+                        entry<ManageAccountDestination> { destination ->
+                            if (destination.userId == user.id) {
+                                ManageAccountScreen(user) {
+                                    actions.clearAccountError()
+                                    backStack.add(DeleteAccountDestination(user.id))
+                                }
+                            }
+                        }
+                        entry<DeleteAccountDestination> { destination ->
+                            if (destination.userId == user.id) {
+                                DeleteAccountScreen(
+                                    accountState = accountState,
+                                    onDeleteAccount = actions.deleteAccount,
+                                    onClearError = actions.clearAccountError,
+                                )
+                            }
                         }
                     },
                 )

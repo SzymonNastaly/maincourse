@@ -57,6 +57,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             MainCourseTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
+                val onboardingState by viewModel.onboardingState.collectAsStateWithLifecycle()
+                val accountState by viewModel.accountState.collectAsStateWithLifecycle()
+                val isPreparingAuthentication by viewModel.isPreparingAuthentication.collectAsStateWithLifecycle()
                 val userId = state.user?.id
                 var imageLoader by remember(userId) { mutableStateOf<coil3.ImageLoader?>(null) }
                 LaunchedEffect(userId) {
@@ -73,14 +76,32 @@ class MainActivity : ComponentActivity() {
                 }
                 MainCourseApp(
                     state = state,
+                    onboardingState = onboardingState,
+                    accountState = accountState,
+                    isPreparingAuthentication = isPreparingAuthentication,
                     actions = MainCourseActions(
                         restore = { viewModel.restore() },
                         signIn = { viewModel.signIn(it) },
                         signUp = { viewModel.signUp(it) },
+                        startOnboarding = { viewModel.startOnboarding() },
+                        advanceOnboarding = { viewModel.advanceOnboarding() },
+                        backOnboarding = { viewModel.backOnboarding() },
+                        skipOnboarding = { viewModel.skipOnboarding() },
+                        useExistingAccount = { viewModel.useExistingAccount() },
+                        updateOnboardingHousehold = { viewModel.updateOnboardingHousehold(it) },
+                        updateOnboardingSaving = { viewModel.updateOnboardingSaving(it) },
+                        updateOnboardingDiet = { viewModel.updateOnboardingDiet(it) },
+                        retryOnboardingPersistence = { viewModel.retryOnboardingPersistence() },
+                        continueOnboardingWithoutSaving = { viewModel.continueOnboardingWithoutSaving() },
                         switchCookbook = { viewModel.switchCookbook(it) },
                         refresh = { viewModel.refresh() },
                         openRecipe = { viewModel.openRecipe(it) },
                         closeRecipe = { viewModel.closeRecipe() },
+                        updateName = { viewModel.updateName(it) },
+                        updateLifecycleNotifications = { viewModel.updateLifecycleNotifications(it) },
+                        retryAccountPersistence = { viewModel.retryAccountPersistence() },
+                        deleteAccount = { viewModel.deleteAccount() },
+                        clearAccountError = { viewModel.clearAccountError() },
                         logout = { viewModel.logout() },
                         reset = { viewModel.reset() },
                     ),

@@ -7,6 +7,7 @@ import com.getmaincourse.app.data.cache.MainCourseDatabase
 import com.getmaincourse.app.data.cache.RoomCatalogStore
 import com.getmaincourse.app.data.images.SessionImages
 import com.getmaincourse.app.data.network.OkHttpMainCourseApi
+import com.getmaincourse.app.data.onboarding.AtomicOnboardingStore
 import com.getmaincourse.app.data.session.EncryptedSessionStore
 import com.getmaincourse.app.features.session.CatalogRepository
 import com.getmaincourse.app.features.session.MainCourseViewModel
@@ -28,6 +29,7 @@ class AppContainer(application: Application) {
     private val database = MainCourseDatabase.open(application)
     private val sessionStore = EncryptedSessionStore(application)
     private val api = OkHttpMainCourseApi(BuildConfig.API_BASE_URL.toHttpUrl(), OkHttpClient())
+    private val onboardingStore = AtomicOnboardingStore(application, BuildConfig.API_BASE_URL)
     private val catalogRepository = CatalogRepository(
         api = api,
         store = RoomCatalogStore(database),
@@ -42,6 +44,7 @@ class AppContainer(application: Application) {
                 api = api,
                 sessionStore = sessionStore,
                 catalogRepository = catalogRepository,
+                onboardingStore = onboardingStore,
                 baseUrl = BuildConfig.API_BASE_URL,
                 clock = Clock.systemUTC(),
                 imageCleanup = { images.clear() },

@@ -52,10 +52,11 @@ import com.getmaincourse.app.ui.theme.MainCourseShapes
 fun AuthScreen(
     isSubmitting: Boolean,
     error: String?,
+    startsInSignUpMode: Boolean = false,
     onSignIn: (SignInRequest) -> Unit,
     onSignUp: (SignUpRequest) -> Unit,
 ) {
-    var signup by rememberSaveable { mutableStateOf(false) }
+    var signup by rememberSaveable { mutableStateOf(startsInSignUpMode) }
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
