@@ -8,6 +8,7 @@ import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.network.MainCourseApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
@@ -26,11 +27,13 @@ class CatalogRepository(
     suspend fun discoverCookbooks(
         session: SessionResponse,
         excludingCookbookId: Long? = null,
+        canCommit: () -> Boolean = { true },
     ): List<Cookbook> {
         val items = api.cookbooks(session.token).filterNot { it.id == excludingCookbookId }
         currentCoroutineContext().ensureActive()
         writes.withLock {
             currentCoroutineContext().ensureActive()
+            if (!canCommit()) throw CancellationException("Catalog discovery was replaced")
             store.replaceCookbooks(session.user.id, items)
         }
         return items

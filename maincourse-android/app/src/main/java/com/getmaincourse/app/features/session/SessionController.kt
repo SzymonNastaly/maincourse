@@ -43,9 +43,11 @@ class SessionController(
     val state: StateFlow<SessionState> = mutableState.asStateFlow()
 
     private val transition = Mutex()
+    private val catalogTransition = Mutex()
     private val cookbookTransition = Mutex()
     private val jobsLock = Any()
     private val authenticatedJobs = mutableSetOf<Job>()
+    private val catalogJobs = mutableSetOf<Job>()
     private val cookbookJobs = mutableSetOf<Job>()
     private val detailJobs = mutableSetOf<Job>()
     private var authAttempt: Job? = null
@@ -56,6 +58,7 @@ class SessionController(
     private var userGeneration = 0L
     private var cookbookGeneration = 0L
     private var detailGeneration = 0L
+    private val catalogRequest = AtomicLong()
     private val cookbookRequest = AtomicLong()
     private val detailRequest = AtomicLong()
     private var pendingPurge: PendingPurge? = null
@@ -323,17 +326,32 @@ class SessionController(
         return startCatalogLoad(context)
     }
 
-    private fun startCatalogLoad(context: UserContext): Job = tracked(authenticatedJobs) {
-        if (!retryPendingPurge(context)) return@tracked
+    private fun startCatalogLoad(context: UserContext): Job {
+        val requestVersion = catalogRequest.incrementAndGet()
+        return scope.launch {
+            val work = catalogTransition.withLock {
+                if (!isCurrentCatalog(context, requestVersion)) return@withLock null
+                cancelJobs(trackedSnapshot(catalogJobs))
+                if (!isCurrentCatalog(context, requestVersion)) return@withLock null
+                tracked(catalogJobs, also = authenticatedJobs) {
+                    performCatalogLoad(context, requestVersion)
+                }
+            }
+            work?.join()
+        }
+    }
+
+    private suspend fun performCatalogLoad(context: UserContext, requestVersion: Long) {
+        if (!retryPendingPurge(context)) return
         var hadCachedMembership = false
         try {
             val cached = catalogRepository.cachedCookbooks(context.response.user.id)
-            if (isCurrent(context)) {
+            if (isCurrentCatalog(context, requestVersion)) {
                 hadCachedMembership = cached.isNotEmpty()
                 if (cached.isNotEmpty()) {
                     val storedSelection = catalogRepository.selectedCookbookId(context.response.user.id)
                     val selected = chooseCookbook(cached, storedSelection)
-                    activateCookbook(context, selected.id)
+                    activateCookbook(context, selected.id, catalogVersion = requestVersion)
                 }
             }
         } catch (failure: CancellationException) {
@@ -343,12 +361,14 @@ class SessionController(
         }
 
         try {
-            val remote = catalogRepository.discoverCookbooks(context.response)
-            if (!isCurrent(context)) return@tracked
+            val remote = catalogRepository.discoverCookbooks(context.response) {
+                requestVersion == catalogRequest.get()
+            }
+            if (!isCurrentCatalog(context, requestVersion)) return
             if (remote.isEmpty()) {
                 cancelJobs(cookbookJobs)
                 transition.withLock {
-                    if (isCurrentLocked(context)) {
+                    if (isCurrentCatalogLocked(context, requestVersion)) {
                         cookbookGeneration++
                         mutableState.value = mutableState.value.copy(
                             phase = SessionPhase.READY,
@@ -364,13 +384,16 @@ class SessionController(
                         )
                     }
                 }
-                return@tracked
+                return
             }
             val preferred = mutableState.value.activeCookbookId
             val selected = chooseCookbook(remote, preferred)
-            activateCookbook(context, selected.id)?.let { startRecipeRefresh(it).join() }
+            activateCookbook(context, selected.id, catalogVersion = requestVersion)
+                ?.let { startRecipeRefresh(it).join() }
             transition.withLock {
-                if (isCurrentLocked(context) && mutableState.value.activeCookbookId == selected.id) {
+                if (isCurrentCatalogLocked(context, requestVersion) &&
+                    mutableState.value.activeCookbookId == selected.id
+                ) {
                     mutableState.value = mutableState.value.copy(
                         catalogStatus = LoadStatus.FRESH,
                         message = mutableState.value.message.takeIf {
@@ -383,11 +406,12 @@ class SessionController(
         } catch (failure: CancellationException) {
             throw failure
         } catch (failure: Throwable) {
+            if (!isCurrentCatalog(context, requestVersion)) return
             if (failure is ApiFailure && failure.status == 401) {
                 invalidateAuthenticatedSession(context, failure.message)
             } else {
                 transition.withLock {
-                    if (isCurrentLocked(context)) {
+                    if (isCurrentCatalogLocked(context, requestVersion)) {
                         val hasVisibleCache = mutableState.value.activeCookbookId != null || hadCachedMembership
                         mutableState.value = mutableState.value.copy(
                             phase = if (hasVisibleCache) SessionPhase.READY else SessionPhase.LOADING_COOKBOOKS,
@@ -415,15 +439,19 @@ class SessionController(
         cookbookId: Long,
         requestVersion: Long = cookbookRequest.incrementAndGet(),
         allowForbiddenRecovery: Boolean = true,
+        catalogVersion: Long? = null,
     ): Activation? = cookbookTransition.withLock {
         if (requestVersion != cookbookRequest.get()) return@withLock null
+        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
         if (!isCurrent(context)) return null
         if (!retryPendingPurge(context)) return@withLock null
         val currentJob = currentCoroutineContext()[Job]
         cancelJobs(trackedSnapshot(cookbookJobs).filterNot { it == currentJob })
         if (requestVersion != cookbookRequest.get()) return@withLock null
+        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
         val version = transition.withLock {
             if (!isCurrentLocked(context)) return@withLock null
+            if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
             cookbookGeneration++
             detailGeneration++
             mutableState.value = mutableState.value.copy(
@@ -445,8 +473,11 @@ class SessionController(
             val cached = catalogRepository.cachedRecipes(recipeScope)
             val memberships = catalogRepository.cachedCookbooks(context.response.user.id)
             if (requestVersion != cookbookRequest.get()) return@withLock null
+            if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
             transition.withLock {
-                if (isCurrentLocked(context, cookbookId, version)) {
+                if (isCurrentLocked(context, cookbookId, version) &&
+                    (catalogVersion == null || catalogVersion == catalogRequest.get())
+                ) {
                     mutableState.value = mutableState.value.copy(
                         phase = SessionPhase.READY,
                         cookbooks = memberships,
@@ -868,11 +899,12 @@ class SessionController(
             userGeneration++
             cookbookGeneration++
             detailGeneration++
+            catalogRequest.incrementAndGet()
             detailRequest.incrementAndGet()
             session = null
             pendingPurge = null
             mutableState.value = SessionState(phase = phase)
-            val tracked = trackedSnapshot(authenticatedJobs) + trackedSnapshot(cookbookJobs) +
+            val tracked = trackedSnapshot(authenticatedJobs) + trackedSnapshot(catalogJobs) + trackedSnapshot(cookbookJobs) +
                 trackedSnapshot(detailJobs) + listOfNotNull(authAttempt, restoreJob)
             tracked.distinct().filterNot { it == current }
         }
@@ -916,8 +948,14 @@ class SessionController(
 
     private suspend fun isCurrent(context: UserContext): Boolean = transition.withLock { isCurrentLocked(context) }
 
+    private suspend fun isCurrentCatalog(context: UserContext, requestVersion: Long): Boolean =
+        transition.withLock { isCurrentCatalogLocked(context, requestVersion) }
+
     private fun isCurrentLocked(context: UserContext): Boolean =
         session === context.response && userGeneration == context.generation
+
+    private fun isCurrentCatalogLocked(context: UserContext, requestVersion: Long): Boolean =
+        isCurrentLocked(context) && requestVersion == catalogRequest.get()
 
     private fun isCurrentLocked(context: UserContext, cookbookId: Long, cookbookVersion: Long): Boolean =
         isCurrentLocked(context) && mutableState.value.activeCookbookId == cookbookId &&

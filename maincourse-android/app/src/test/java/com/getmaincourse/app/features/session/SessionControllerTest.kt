@@ -96,6 +96,85 @@ class SessionControllerTest {
     }
 
     @Test
+    fun newerCatalogRefreshPreventsDelayedDiscoveryFromPruningItsStateAndCache() = runTest {
+        val firstDiscoveryStarted = CompletableDeferred<Unit>()
+        val releaseFirstDiscovery = CompletableDeferred<Unit>()
+        var discoveries = 0
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(RecipeScope(USER.id, PERSONAL.id), listOf(SOUP))
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = {
+                discoveries++
+                if (discoveries == 1) {
+                    firstDiscoveryStarted.complete(Unit)
+                    withContext(NonCancellable) { releaseFirstDiscovery.await() }
+                    listOf(PERSONAL)
+                } else {
+                    listOf(SHARED)
+                }
+            }
+            recipesBlock = { _, cookbookId -> if (cookbookId == SHARED.id) listOf(SALAD) else listOf(SOUP) }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+
+        val restoring = controller.restore()
+        firstDiscoveryStarted.await()
+        val retry = controller.refresh()
+        runCurrent()
+        releaseFirstDiscovery.complete(Unit)
+        restoring.join()
+        retry.join()
+
+        assertEquals(2, discoveries)
+        assertEquals(LoadStatus.FRESH, controller.state.value.catalogStatus)
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+        assertEquals(listOf(SHARED.id), store.memberships(USER.id))
+        assertTrue(store.recipes(RecipeScope(USER.id, PERSONAL.id)).items.isEmpty())
+    }
+
+    @Test
+    fun newerCatalogRefreshPreventsDelayedFailureFromDegradingFreshState() = runTest {
+        val firstDiscoveryStarted = CompletableDeferred<Unit>()
+        val releaseFirstDiscovery = CompletableDeferred<Unit>()
+        var discoveries = 0
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(RecipeScope(USER.id, PERSONAL.id), listOf(SOUP))
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = {
+                discoveries++
+                if (discoveries == 1) {
+                    firstDiscoveryStarted.complete(Unit)
+                    withContext(NonCancellable) { releaseFirstDiscovery.await() }
+                    throw IOException("old offline response")
+                }
+                listOf(SHARED)
+            }
+            recipesBlock = { _, _ -> listOf(SALAD) }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+
+        val restoring = controller.restore()
+        firstDiscoveryStarted.await()
+        val retry = controller.refresh()
+        runCurrent()
+        releaseFirstDiscovery.complete(Unit)
+        restoring.join()
+        retry.join()
+
+        assertEquals(2, discoveries)
+        assertEquals(LoadStatus.FRESH, controller.state.value.catalogStatus)
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+        assertNull(controller.state.value.message)
+        assertFalse(controller.state.value.canRetry)
+    }
+
+    @Test
     fun authoritativeMembershipRemovalDropsOldCacheAndFallsBackToPersonal() = runTest {
         val sharedScope = RecipeScope(USER.id, SHARED.id)
         val store = FakeCatalogStore().apply {
