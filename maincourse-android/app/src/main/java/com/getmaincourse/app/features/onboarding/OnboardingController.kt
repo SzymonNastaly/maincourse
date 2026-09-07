@@ -137,18 +137,27 @@ class OnboardingController(
                 mutableState.value.step == OnboardingStep.AUTH && it.isCompleteDraft()
             } ?: return@withLock null
             val key = current.submissionKey()
-            val job = synchronized(submissionLock) {
+            synchronized(submissionLock) {
                 val existing = submission?.takeIf { it.key == key }
-                when (existing?.status) {
+                val job = when (existing?.status) {
                     SubmissionStatus.RUNNING -> existing.job
                     SubmissionStatus.SUCCEEDED -> null
                     SubmissionStatus.FAILED, null -> startSubmissionLocked(current, key)
                 }
+                PreparedAuthentication(key, submissionGeneration, job)
             }
-            PreparedAuthentication(current.deviceId, job)
         } ?: return null
         prepared.job?.join()
-        return prepared.deviceId
+        return operationMutex.withLock {
+            val current = record?.takeIf {
+                mutableState.value.step == OnboardingStep.AUTH && it.isCompleteDraft() &&
+                    it.submissionKey() == prepared.key
+            } ?: return@withLock null
+            val stillOwned = synchronized(submissionLock) {
+                submissionGeneration == prepared.submissionGeneration
+            }
+            current.deviceId.takeIf { stillOwned }
+        }
     }
 
     suspend fun authenticationSucceeded() {
@@ -175,10 +184,10 @@ class OnboardingController(
         savingEnabled = true
         record = restored?.takeIf { it.origin == origin && it.isControllerValid() }
         mutableState.value = record?.toState() ?: OnboardingState(isLoading = false)
-        record?.takeIf { it.step == OnboardingStep.AUTH && it.isCompleteDraft() }?.let(::ensureSubmission)
     }
 
     private suspend fun publishAndPersist(updated: OnboardingRecord) {
+        restoreFailed = false
         record = updated
         mutableState.value = updated.toState(
             persistenceError = mutableState.value.persistenceError,
@@ -208,6 +217,7 @@ class OnboardingController(
     private suspend fun consumeLocked() {
         invalidateSubmission()
         val completed = completedRecord()
+        restoreFailed = false
         record = completed
         mutableState.value = completed.toState(
             persistenceError = mutableState.value.persistenceError,
@@ -325,7 +335,11 @@ class OnboardingController(
     private fun List<String>.toggled(value: String): List<String> =
         if (value in this) filterNot { it == value } else (this + value).distinct().sorted()
 
-    private data class PreparedAuthentication(val deviceId: String?, val job: Job?)
+    private data class PreparedAuthentication(
+        val key: SubmissionKey,
+        val submissionGeneration: Long,
+        val job: Job?,
+    )
 
     private data class SubmissionKey(
         val deviceId: String,

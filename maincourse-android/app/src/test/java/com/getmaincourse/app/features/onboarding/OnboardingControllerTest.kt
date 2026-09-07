@@ -180,6 +180,44 @@ class OnboardingControllerTest {
     }
 
     @Test
+    fun retryAfterFailedReadPersistsTheNewLiveDraftInsteadOfReadingDiskAgain() = runTest {
+        val store = FakeStore().apply {
+            readFailure = IOException("read unavailable")
+            writeFailure = IOException("write unavailable")
+        }
+        val controller = controller(store = store)
+        controller.restore().join()
+        controller.start().join()
+        controller.updateHousehold(3).join()
+        store.writeFailure = null
+
+        controller.retryPersistence().join()
+
+        assertEquals(1, store.readCalls)
+        assertEquals(3, store.value?.householdSize)
+        assertNull(controller.state.value.persistenceError)
+    }
+
+    @Test
+    fun retryAfterFailedReadPersistsLiveCompletionInsteadOfReopeningOldAuthDraft() = runTest {
+        val store = FakeStore(draft(step = OnboardingStep.AUTH)).apply {
+            readFailure = IOException("read unavailable")
+            writeFailure = IOException("write unavailable")
+        }
+        val controller = controller(store = store)
+        controller.restore().join()
+        controller.complete().join()
+        store.readFailure = null
+        store.writeFailure = null
+
+        controller.retryPersistence().join()
+
+        assertEquals(1, store.readCalls)
+        assertEquals(completed(), store.value)
+        assertEquals(OnboardingStep.COMPLETE, controller.state.value.step)
+    }
+
+    @Test
     fun continueWithoutSavingAllowsProgressAndStopsFurtherWrites() = runTest {
         val store = FakeStore().apply { writeFailure = IOException("disk") }
         val controller = controller(store = store)
@@ -273,6 +311,22 @@ class OnboardingControllerTest {
     }
 
     @Test
+    fun restoredAuthDraftWaitsForExplicitAuthenticationPreparationBeforeSubmitting() = runTest {
+        val api = FakeApi()
+        val controller = controller(
+            api = api,
+            store = FakeStore(draft(step = OnboardingStep.AUTH)),
+        )
+
+        controller.restore().join()
+        runCurrent()
+
+        assertTrue(api.requests.isEmpty())
+        assertEquals(DEVICE_ID, controller.prepareAuthentication())
+        assertEquals(1, api.requests.size)
+    }
+
+    @Test
     fun submissionUsesOneFiveSecondBudgetFromEntryToAuthPreparation() = runTest {
         val api = FakeApi().apply { submitBlock = { awaitCancellation() } }
         val controller = controller(api = api)
@@ -309,6 +363,8 @@ class OnboardingControllerTest {
         assertEquals(1, api.requests.size)
         release.complete(OnboardingResponse(1, DEVICE_ID, api.requests.single().answers))
         advanceUntilIdle()
+        assertEquals(DEVICE_ID, controller.prepareAuthentication())
+        assertEquals(1, api.requests.size)
     }
 
     @Test
@@ -384,6 +440,22 @@ class OnboardingControllerTest {
         assertEquals(OnboardingStep.COMPLETE, controller.state.value.step)
     }
 
+    @Test
+    fun authenticationPreparationDoesNotReturnAnIdentifierConsumedWhileJoining() = runTest {
+        val api = FakeApi().apply { submitBlock = { awaitCancellation() } }
+        val controller = controller(api = api)
+        reachDiet(controller)
+        controller.advance().join()
+        runCurrent()
+        val preparing = async { controller.prepareAuthentication() }
+        runCurrent()
+
+        controller.skip().join()
+
+        assertNull(preparing.await())
+        assertEquals(OnboardingStep.COMPLETE, controller.state.value.step)
+    }
+
     private suspend fun reachDiet(controller: OnboardingController) {
         controller.restore().join()
         controller.start().join()
@@ -406,12 +478,18 @@ class OnboardingControllerTest {
 
     private class FakeStore(initial: OnboardingRecord? = null) : OnboardingStore {
         var value = initial
+        var readFailure: Throwable? = null
         var writeFailure: Throwable? = null
+        var readCalls = 0
         var writeCalls = 0
         var beforeWrite: suspend (OnboardingRecord) -> Unit = {}
         val writes = mutableListOf<OnboardingRecord>()
 
-        override suspend fun read() = value
+        override suspend fun read(): OnboardingRecord? {
+            readCalls++
+            readFailure?.let { throw it }
+            return value
+        }
 
         override suspend fun write(record: OnboardingRecord) {
             writeCalls++
