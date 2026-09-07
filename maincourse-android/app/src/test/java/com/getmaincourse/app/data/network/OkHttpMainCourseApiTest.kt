@@ -1,5 +1,9 @@
 package com.getmaincourse.app.data.network
 
+import com.getmaincourse.app.data.model.AccountAttributes
+import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.OnboardingAnswers
+import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import java.net.InetAddress
@@ -20,6 +24,7 @@ import okhttp3.EventListener
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -116,6 +121,7 @@ class OkHttpMainCourseApiTest {
                 password = "password123",
                 passwordConfirmation = "password123",
                 deviceName = "Pixel 9",
+                onboardingDeviceId = "install-43",
             ),
         )
 
@@ -129,12 +135,231 @@ class OkHttpMainCourseApiTest {
                   "email":"sam@example.com",
                   "password":"password123",
                   "password_confirmation":"password123",
-                  "device_name":"Pixel 9"
+                  "device_name":"Pixel 9",
+                  "onboarding_device_id":"install-43"
                 }
                 """.trimIndent(),
             ),
             Json.parseToJsonElement(request.body.readUtf8()),
         )
+    }
+
+    @Test
+    fun updateAccountUnwrapsUserAndNameOnlyPayloadOmitsUnsetPreferenceAndCookbook() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                200,
+                """
+                {
+                  "user": {
+                    "id": 42,
+                    "name": "Ada",
+                    "email": "ada@example.com",
+                    "lifecycle_notifications_enabled": true
+                  }
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        val user = api.updateAccount(
+            "account-token",
+            AccountUpdateRequest(AccountAttributes(name = "Ada")),
+        )
+
+        assertEquals(42L, user.id)
+        assertEquals("Ada", user.name)
+        assertTrue(user.lifecycleNotificationsEnabled)
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api/v1/account", request.path)
+        assertEquals("Bearer account-token", request.getHeader("Authorization"))
+        assertNull(request.getHeader("X-Cookbook-Id"))
+        assertEquals("""{"user":{"name":"Ada"}}""", request.body.readUtf8())
+    }
+
+    @Test
+    fun updateAccountSendsFalseLifecyclePreferenceRatherThanOmittingIt() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                200,
+                """
+                {
+                  "user": {
+                    "id": 42,
+                    "name": "Ada",
+                    "email": "ada@example.com",
+                    "lifecycle_notifications_enabled": false
+                  }
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        val user = api.updateAccount(
+            "account-token",
+            AccountUpdateRequest(AccountAttributes(lifecycleNotificationsEnabled = false)),
+        )
+
+        assertFalse(user.lifecycleNotificationsEnabled)
+        val request = server.takeRequest()
+        assertEquals(
+            """{"user":{"lifecycle_notifications_enabled":false}}""",
+            request.body.readUtf8(),
+        )
+    }
+
+    @Test
+    fun deleteAccountAcceptsEmpty204AndOmitsCookbookContext() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        api.deleteAccount("delete-token")
+
+        val request = server.takeRequest()
+        assertEquals("DELETE", request.method)
+        assertEquals("/api/v1/account", request.path)
+        assertEquals("Bearer delete-token", request.getHeader("Authorization"))
+        assertNull(request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun submitOnboardingSendsExactRailsValuesWithRequiredEmptyDietAndNoProtectedHeaders() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                201,
+                """
+                {
+                  "id": 81,
+                  "device_id": "install-81",
+                  "answers": {
+                    "household_size": 3,
+                    "save_today": ["screenshots", "browser_bookmarks", "notes", "recipe_apps", "cookbooks", "dont_save"],
+                    "diet": []
+                  }
+                }
+                """.trimIndent(),
+            ),
+        )
+        val answers = OnboardingAnswers(
+            householdSize = 3,
+            saveToday = listOf(
+                "screenshots",
+                "browser_bookmarks",
+                "notes",
+                "recipe_apps",
+                "cookbooks",
+                "dont_save",
+            ),
+        )
+
+        val response = api.submitOnboarding(OnboardingRequest("install-81", answers))
+
+        assertEquals(81L, response.id)
+        assertEquals("install-81", response.deviceId)
+        assertEquals(answers, response.answers)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/onboarding_response", request.path)
+        assertNull(request.getHeader("Authorization"))
+        assertNull(request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            Json.parseToJsonElement(
+                """
+                {
+                  "device_id":"install-81",
+                  "answers": {
+                    "household_size":3,
+                    "save_today":["screenshots","browser_bookmarks","notes","recipe_apps","cookbooks","dont_save"],
+                    "diet":[]
+                  }
+                }
+                """.trimIndent(),
+            ),
+            Json.parseToJsonElement(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun accountAndOnboardingFailuresPreserve401422429And5xxBoundaries() = runBlocking {
+        server.enqueue(jsonResponse(401, """{"error":"Session invalid"}"""))
+        server.enqueue(jsonResponse(422, """{"errors":["Name is too long"]}"""))
+        server.enqueue(
+            jsonResponse(
+                429,
+                """{"error":"Too many onboarding submissions. Try again later."}""",
+            ),
+        )
+        server.enqueue(MockResponse().setResponseCode(503).setBody("unavailable"))
+
+        val unauthorized = captureApiFailure {
+            api.updateAccount("expired", AccountUpdateRequest(AccountAttributes(name = "Ada")))
+        }
+        val invalid = captureApiFailure {
+            api.updateAccount("valid", AccountUpdateRequest(AccountAttributes(name = "A".repeat(51))))
+        }
+        val rateLimited = captureApiFailure {
+            api.submitOnboarding(OnboardingRequest("install-rate", OnboardingAnswers(diet = emptyList())))
+        }
+        val unavailable = captureApiFailure { api.deleteAccount("valid") }
+
+        assertEquals(401, unauthorized.status)
+        assertEquals("Session invalid", unauthorized.message)
+        assertEquals(422, invalid.status)
+        assertEquals("Name is too long", invalid.message)
+        assertEquals(429, rateLimited.status)
+        assertEquals("Too many onboarding submissions. Try again later.", rateLimited.message)
+        assertEquals(503, unavailable.status)
+        assertEquals("Request failed with HTTP status 503", unavailable.message)
+    }
+
+    @Test
+    fun accountMutationIsNotRetriedWhenConnectionDropsAfterRequest() = runBlocking {
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
+
+        val failure = captureApiFailure {
+            api.updateAccount("account-token", AccountUpdateRequest(AccountAttributes(name = "Ada")))
+        }
+
+        assertNull(failure.status)
+        assertEquals("Network request failed", failure.message)
+        assertEquals(1, server.requestCount)
+        assertEquals("PATCH", server.takeRequest().method)
+    }
+
+    @Test
+    fun cancellingOnboardingRequestCancelsCallAndPreservesCancellation() = runBlocking {
+        val callCancelled = CountDownLatch(1)
+        val trackedApi = OkHttpMainCourseApi(
+            server.url("/"),
+            OkHttpClient.Builder()
+                .eventListener(
+                    object : EventListener() {
+                        override fun canceled(call: Call) {
+                            callCancelled.countDown()
+                        }
+                    },
+                )
+                .build(),
+        )
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+
+        val request = async(Dispatchers.Default) {
+            trackedApi.submitOnboarding(
+                OnboardingRequest("install-cancel", OnboardingAnswers(diet = emptyList())),
+            )
+        }
+        assertNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+        request.cancel()
+
+        assertTrue("The active OkHttp call was not cancelled", callCancelled.await(1, TimeUnit.SECONDS))
+        request.cancelAndJoin()
+        assertTrue(request.isCancelled)
+        try {
+            request.await()
+            fail("Expected CancellationException")
+        } catch (_: CancellationException) {
+            // Expected: cancellation must not be wrapped in ApiFailure.
+        }
     }
 
     @Test

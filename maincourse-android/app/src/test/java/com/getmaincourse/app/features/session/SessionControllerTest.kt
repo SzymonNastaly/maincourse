@@ -3,8 +3,11 @@ package com.getmaincourse.app.features.session
 import com.getmaincourse.app.data.cache.CachedRecipes
 import com.getmaincourse.app.data.cache.CatalogStore
 import com.getmaincourse.app.data.cache.RecipeScope
+import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.CookbookMember
+import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
@@ -1563,6 +1566,16 @@ class SessionControllerTest {
 
         override suspend fun signUp(request: SignUpRequest) = signUpBlock(request)
         override suspend fun signOut(token: String) = signOutBlock(token)
+        override suspend fun updateAccount(token: String, request: AccountUpdateRequest): User =
+            error("Unused in session controller tests")
+
+        override suspend fun deleteAccount(token: String) {
+            error("Unused in session controller tests")
+        }
+
+        override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse =
+            error("Unused in session controller tests")
+
         override suspend fun cookbooks(token: String) = cookbooksBlock(token)
         override suspend fun recipes(token: String, cookbookId: Long) = recipesBlock(token, cookbookId)
         override suspend fun recipe(token: String, cookbookId: Long, recipeId: Long): RecipeDetail {

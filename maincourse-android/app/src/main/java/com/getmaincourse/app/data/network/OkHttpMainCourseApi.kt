@@ -1,6 +1,10 @@
 package com.getmaincourse.app.data.network
 
+import com.getmaincourse.app.data.model.AccountResponse
+import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
@@ -62,6 +66,31 @@ class OkHttpMainCourseApi(
             throw withContext(Dispatchers.Default) { response.toApiFailure() }
         }
     }
+
+    override suspend fun updateAccount(token: String, request: AccountUpdateRequest) =
+        executeJson<AccountResponse>(
+            authenticatedRequestBuilder("api/v1/account", token)
+                .patch(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
+                .build(),
+        ).user
+
+    override suspend fun deleteAccount(token: String) {
+        val response = execute(
+            authenticatedRequestBuilder("api/v1/account", token)
+                .delete()
+                .build(),
+        )
+        if (!response.isSuccessful) {
+            throw withContext(Dispatchers.Default) { response.toApiFailure() }
+        }
+    }
+
+    override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse =
+        executeJson(
+            requestBuilder("api/v1/onboarding_response")
+                .post(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
+                .build(),
+        )
 
     override suspend fun cookbooks(token: String): List<Cookbook> =
         executeJson(
