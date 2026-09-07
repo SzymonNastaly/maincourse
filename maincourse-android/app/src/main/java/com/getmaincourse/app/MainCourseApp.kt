@@ -171,8 +171,10 @@ private fun ProtectedApp(
             state.recipeStatus != LoadStatus.LOADING &&
             state.recipes.none { it.id == detailRoute.recipeId }
         if (scopeChanged || (authoritativelyMissing && !unavailableHere)) {
-            backStack.removeLastOrNull()
-            actions.closeRecipe()
+            if (backStack.lastOrNull() == detailRoute) {
+                backStack.removeLastOrNull()
+                actions.closeRecipe()
+            }
         } else if (state.detail?.recipeId != detailRoute.recipeId &&
             state.recipes.any { it.id == detailRoute.recipeId }
         ) {
@@ -286,8 +288,10 @@ private fun ProtectedApp(
                             }
                         }
                         entry<RecipeDestination> { destination ->
+                            val awaitingListRecovery = state.detail?.recipeId != destination.recipeId &&
+                                !state.recipesFetched && state.recipeStatus.isFailure()
                             val displayedDetail = state.detail?.takeIf { it.recipeId == destination.recipeId }
-                                ?: if (!state.recipesFetched && state.recipeStatus.isFailure()) {
+                                ?: if (awaitingListRecovery) {
                                     RecipeDetailState(destination.recipeId, DetailStatus.ERROR)
                                 } else {
                                     null
@@ -296,7 +300,13 @@ private fun ProtectedApp(
                                 detailState = displayedDetail,
                                 imageLoader = imageLoader,
                                 resolveImage = resolveImage,
-                                onRetry = { actions.openRecipe(destination.recipeId) },
+                                onRetry = {
+                                    if (awaitingListRecovery) {
+                                        actions.refresh()
+                                    } else {
+                                        actions.openRecipe(destination.recipeId)
+                                    }
+                                },
                             )
                         }
                     },

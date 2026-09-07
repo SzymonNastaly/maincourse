@@ -327,3 +327,53 @@ layout were visible. Emulator size, density, and font scale were restored to
 physical defaults and 1.0 afterward. Screenshots are outside the repository as
 `task4-round1-phone.png`, `task4-round1-tablet.png`, and
 `task4-round1-tablet-large.png`.
+
+## Round 2 review amendments
+
+- A synthesized restored-detail error with no fetched recipe summary now retries
+  through `refresh()` rather than the coordinator-rejected `openRecipe(id)`.
+  When refresh returns the summary, the retained typed route's existing effect
+  starts the detail load.
+- The detail invalidation effect verifies the captured route is still the top
+  back-stack entry before removing it. A direct authenticated-user change can
+  therefore reset to Recipes without a stale effect popping that destination.
+- The cancelled image-preparation regression now checks the serialized holder
+  through a `@VisibleForTesting` internal accessor after cleanup, in addition to
+  verifying directory removal.
+
+### Round 2 RED/GREEN evidence
+
+```text
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.MainCourseAppTest#restoredUnfetchedDetailRetryRefreshesListThenOpensReturnedRecipe \
+  --console=plain
+expected:<1> but was:<0> (refresh was not invoked)
+BUILD FAILED
+exit 1
+
+$ bin/android-gradle :app:compileDebugAndroidTestKotlin --console=plain
+SessionImagesTest.kt: Unresolved reference 'preparedUserIdForTest'
+BUILD FAILED
+exit 1
+
+$ bin/android-gradle :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.getmaincourse.app.MainCourseAppTest,com.getmaincourse.app.data.images.SessionImagesTest \
+  --console=plain
+BUILD SUCCESSFUL in 57s
+exit 0
+```
+
+### Round 2 final verification
+
+```text
+$ bin/android-test --device
+BUILD SUCCESSFUL in 59s
+exit 0
+
+JUnit XML: 61 JVM tests + 58 device tests = 119 tests,
+0 failures, 0 errors, 0 skipped.
+
+$ bin/android-gradle :app:assembleRelease :app:lintRelease --console=plain
+BUILD SUCCESSFUL in 19s
+exit 0
+```

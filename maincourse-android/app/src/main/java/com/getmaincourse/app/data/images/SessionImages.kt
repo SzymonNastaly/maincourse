@@ -1,6 +1,7 @@
 package com.getmaincourse.app.data.images
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
@@ -89,6 +90,11 @@ class SessionImages internal constructor(
             }
             firstFailure?.let { throw it }
         }
+    }
+
+    @VisibleForTesting
+    internal suspend fun preparedUserIdForTest(): Long? = withContext(ioDispatcher) {
+        mutex.withLock { holder?.userId }
     }
 
     private fun prepareDirectory(userId: Long): File {

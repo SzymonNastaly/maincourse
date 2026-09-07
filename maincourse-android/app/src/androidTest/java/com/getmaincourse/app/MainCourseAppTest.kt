@@ -245,7 +245,7 @@ class MainCourseAppTest {
     }
 
     @Test
-    fun restoredUnfetchedDetailShowsRetryInsteadOfAnInfiniteSpinner() {
+    fun restoredUnfetchedDetailRetryRefreshesListThenOpensReturnedRecipe() {
         compose.onNodeWithText("Vegetable soup").performClick()
         show(
             readyState(recipes = emptyList()).copy(
@@ -256,7 +256,12 @@ class MainCourseAppTest {
         )
 
         compose.onNodeWithText("Recipe could not be loaded. Check your connection and retry.").assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.retry)).assertIsDisplayed()
+        recorder.afterRefresh = { state.value = readyState() }
+        compose.onNodeWithText(compose.activity.getString(R.string.retry)).performClick()
+        compose.waitForIdle()
+
+        assertEquals(1, recorder.refreshCount)
+        assertEquals(2, recorder.openRecipeCount)
     }
 
     @Test
@@ -484,6 +489,18 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun changingUserFromDetailDoesNotPopTheResetRecipesDestination() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+
+        show(readyState().copy(user = USER.copy(id = 8L, email = "other@example.test")))
+
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+        compose.onNodeWithTag("nav_Recipes").assertIsSelected()
+    }
+
+    @Test
     fun topLevelNavigationAndWidthAdaptationRemainAvailable() {
         listOf("Shopping", "Search", "Settings", "Recipes").forEach { destination ->
             compose.onNodeWithTag("nav_$destination").performClick().assertIsSelected()
@@ -515,6 +532,7 @@ class MainCourseAppTest {
         var resetCount = 0
         var afterSignIn: () -> Unit = {}
         var afterSignUp: () -> Unit = {}
+        var afterRefresh: () -> Unit = {}
 
         val actions = MainCourseActions(
             restore = { restoreCount++ },
@@ -529,7 +547,10 @@ class MainCourseAppTest {
                 afterSignUp()
             },
             switchCookbook = { switchedCookbook = it },
-            refresh = { refreshCount++ },
+            refresh = {
+                refreshCount++
+                afterRefresh()
+            },
             openRecipe = {
                 openedRecipe = it
                 openRecipeCount++

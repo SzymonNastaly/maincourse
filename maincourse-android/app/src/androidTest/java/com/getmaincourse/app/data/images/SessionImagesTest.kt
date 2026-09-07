@@ -149,6 +149,7 @@ class SessionImagesTest {
         cleanup.await()
 
         assertFalse(images!!.cacheDirectory.exists())
+        assertNull(images!!.preparedUserIdForTest())
     }
 
     private fun testImages(
