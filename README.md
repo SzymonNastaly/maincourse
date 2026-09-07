@@ -37,10 +37,11 @@ MainCourse turns your meal plan into a single, consolidated shopping list
 
 ## Architecture
 
-MainCourse is split into two main pieces:
+MainCourse has a shared Rails backend and three client surfaces:
 
-- **Rails 8.1 API backend** (`app/`, `config/`, `db/`) — Ruby 3.4.7, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web admin views. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
+- **Rails 8.1 backend and web app** (`app/`, `config/`, `db/`) — Ruby 3.4.7, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web UI. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
 - **SwiftUI iOS app** (`hauptgang-ios/`) — Offline-first iPhone and iPad client. Generated with XcodeGen, uses RevenueCat for subscriptions.
+- **Kotlin/Jetpack Compose Android app** (`maincourse-android/`) - Android 10+, Material 3 with the MainCourse theme. Currently a native preview shell; product features follow the [Android roadmap](docs/superpowers/plans/2026-09-07-native-android.md).
 
 The app was originally called Hauptgang, so `hauptgang` still appears throughout the codebase — directory names, Swift module and target names, and the Rails app module. Only the user-facing branding changed.
 
@@ -59,6 +60,10 @@ bin/dev                    # start the Rails dev server
 
 The iOS project file is generated — run `xcodegen` inside `hauptgang-ios/` after changing `project.yml`.
 
+Open `maincourse-android/` in Android Studio for Android development. See
+[`docs/android.md`](docs/android.md) for SDK setup, build commands, and design
+conventions. Android builds do not require Rails or provider credentials yet.
+
 ### Quality checks
 
 ```bash
@@ -66,9 +71,13 @@ bin/ci             # full CI suite: style, security, tests
 bin/rubocop -a     # auto-fix Ruby style
 bin/rails test     # Rails tests
 bin/ios-test       # iOS tests (auto-finds simulator, macOS only)
+bin/android-build  # Android debug APK
+bin/android-test   # Android JVM tests and lint
+bin/android-test --device  # Also run Compose tests on a running emulator/device
 ```
 
 `bin/ci` runs rubocop, brakeman, bundler-audit, importmap audit, iOS linting, Rails tests, system tests, and seed verification.
+Android has a separate GitHub Actions workflow for builds, lint, and emulator tests.
 
 A regression test suite for recipe extractors using cached HTML snapshots is documented in [`docs/recipe-import-corpus.md`](docs/recipe-import-corpus.md) — see the `recipe_corpus:*` rake tasks.
 

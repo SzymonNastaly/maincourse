@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ $# -eq 1 && ( "$1" == "-h" || "$1" == "--help" ) ]]; then
+  cat <<'EOF'
+Usage: bin/android-test [--device] [GRADLE_ARGS...]
+
+Run testDebugUnitTest and lintDebug. A leading --device also runs
+connectedDebugAndroidTest; all remaining arguments are passed to Gradle.
+EOF
+  exit 0
+fi
+
+TASKS=(testDebugUnitTest lintDebug)
+if [[ ${1:-} == "--device" ]]; then
+  TASKS+=(connectedDebugAndroidTest)
+  shift
+fi
+
+exec "$SCRIPT_DIR/android-gradle" "${TASKS[@]}" "$@"

@@ -1,0 +1,75 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+ANDROID_ROOT="$REPO_ROOT/maincourse-android"
+GRADLEW="$ANDROID_ROOT/gradlew"
+
+usage() {
+  cat <<'EOF'
+Usage: bin/android-gradle [GRADLE_ARGS...]
+
+Run the checked-in Android Gradle wrapper. All arguments are passed to Gradle.
+Environment: JAVA_HOME and ANDROID_HOME take precedence; ANDROID_SDK_ROOT is
+used when ANDROID_HOME is unset.
+EOF
+}
+
+if [[ $# -eq 1 && ( "$1" == "-h" || "$1" == "--help" ) ]]; then
+  usage
+  exit 0
+fi
+
+if [[ ${JAVA_HOME+x} ]]; then
+  if [[ -z "$JAVA_HOME" || ! -x "$JAVA_HOME/bin/java" ]]; then
+    echo "Error: JAVA_HOME does not contain an executable bin/java: ${JAVA_HOME:-<empty>}" >&2
+    exit 1
+  fi
+else
+  STUDIO_JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+  if [[ -x "$STUDIO_JAVA_HOME/bin/java" ]]; then
+    export JAVA_HOME="$STUDIO_JAVA_HOME"
+  elif ! command -v java >/dev/null 2>&1; then
+    echo "Error: Java was not found. Set JAVA_HOME to a JDK 25 installation." >&2
+    exit 1
+  fi
+fi
+
+if [[ ${ANDROID_HOME+x} ]]; then
+  if [[ -z "$ANDROID_HOME" || ! -d "$ANDROID_HOME" ]]; then
+    echo "Error: ANDROID_HOME is not a directory: ${ANDROID_HOME:-<empty>}" >&2
+    exit 1
+  fi
+elif [[ ${ANDROID_SDK_ROOT+x} ]]; then
+  if [[ -z "$ANDROID_SDK_ROOT" || ! -d "$ANDROID_SDK_ROOT" ]]; then
+    echo "Error: ANDROID_SDK_ROOT is not a directory: ${ANDROID_SDK_ROOT:-<empty>}" >&2
+    exit 1
+  fi
+  export ANDROID_HOME="$ANDROID_SDK_ROOT"
+else
+  if [[ -n ${HOME:-} ]]; then
+    SDK_CANDIDATES=(
+      "$HOME/Library/Android/sdk"
+      "$HOME/Android/Sdk"
+    )
+    for sdk in "${SDK_CANDIDATES[@]}"; do
+      if [[ -d "$sdk" ]]; then
+        export ANDROID_HOME="$sdk"
+        break
+      fi
+    done
+  fi
+
+  if [[ ! ${ANDROID_HOME+x} ]]; then
+    echo "Error: Android SDK was not found. Set ANDROID_HOME or ANDROID_SDK_ROOT." >&2
+    exit 1
+  fi
+fi
+
+if [[ ! -x "$GRADLEW" ]]; then
+  echo "Error: Android Gradle wrapper is missing or not executable: $GRADLEW" >&2
+  exit 1
+fi
+
+exec "$GRADLEW" --project-dir "$ANDROID_ROOT" "$@"

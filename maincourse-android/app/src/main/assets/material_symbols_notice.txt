@@ -1,0 +1,19 @@
+Material Symbols Outlined
+
+Source: https://github.com/google/material-design-icons
+Revision: 0cbb08816df07faaae3dca060d4ebb10b66c214f
+
+The following official 24dp outlined Android vector sources were used:
+
+symbols/android/menu_book/materialsymbolsoutlined/menu_book_24px.xml
+symbols/android/shopping_basket/materialsymbolsoutlined/shopping_basket_24px.xml
+symbols/android/search/materialsymbolsoutlined/search_24px.xml
+symbols/android/settings/materialsymbolsoutlined/settings_24px.xml
+symbols/android/arrow_back/materialsymbolsoutlined/arrow_back_24px.xml
+
+Local modifications: resource files were renamed, the source theme tint was
+removed for Compose tinting, and path fill colors were changed from
+@android:color/white to @android:color/black. Path geometry is unchanged.
+
+Licensed under the Apache License, Version 2.0. The full license is packaged
+in material_symbols_license.txt.

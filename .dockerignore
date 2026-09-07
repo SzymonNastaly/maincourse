@@ -41,6 +41,7 @@
 
 # The native client is released separately and is not part of the Rails image.
 /hauptgang-ios/
+/maincourse-android/
 
 # Ignore Kamal files.
 /config/deploy*.yml
