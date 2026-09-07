@@ -3,6 +3,7 @@ package com.getmaincourse.app.features.session
 import com.getmaincourse.app.data.cache.CachedRecipes
 import com.getmaincourse.app.data.cache.CatalogStore
 import com.getmaincourse.app.data.cache.RecipeScope
+import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.CookbookMember
@@ -18,6 +19,7 @@ import com.getmaincourse.app.data.network.ApiFailure
 import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
+import com.getmaincourse.app.features.settings.AccountOperation
 import java.io.IOException
 import java.time.Clock
 import java.time.Instant
@@ -1414,6 +1416,425 @@ class SessionControllerTest {
         assertTrue(controller.state.value.canRetry)
     }
 
+    @Test
+    fun accountNameUpdatePersistsAuthoritativeUserWithoutChangingCredentialsAndRestores() = runTest {
+        val updated = USER.copy(name = "Ada")
+        val api = FakeApi().apply { updateAccountBlock = { _, _ -> updated } }
+        val sessionStore = FakeSessionStore(SESSION)
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+
+        controller.updateName("Ada").join()
+
+        assertEquals(updated, controller.state.value.user)
+        assertEquals(SESSION.response.token, sessionStore.value?.response?.token)
+        assertEquals(SESSION.response.expiresAt, sessionStore.value?.response?.expiresAt)
+        assertEquals(updated, sessionStore.value?.response?.user)
+        assertEquals(AccountOperation.IDLE, controller.accountState.value.operation)
+
+        val restored = controller(api = api, sessionStore = sessionStore)
+        restored.restore().join()
+        assertEquals(updated, restored.state.value.user)
+    }
+
+    @Test
+    fun profileReplacementDoesNotInvalidateConcurrentRecipeSuccess() = runTest {
+        val refreshStarted = CompletableDeferred<Unit>()
+        val releaseRefresh = CompletableDeferred<Unit>()
+        var recipeCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                recipeCalls++
+                if (recipeCalls == 1) listOf(SOUP) else {
+                    refreshStarted.complete(Unit)
+                    releaseRefresh.await()
+                    listOf(SALAD)
+                }
+            }
+            updateAccountBlock = { _, _ -> USER.copy(name = "Ada") }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+
+        val refresh = controller.refresh()
+        refreshStarted.await()
+        controller.updateName("Ada").join()
+        releaseRefresh.complete(Unit)
+        refresh.join()
+
+        assertEquals("Ada", controller.state.value.user?.name)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+        assertEquals(LoadStatus.FRESH, controller.state.value.recipeStatus)
+    }
+
+    @Test
+    fun cookbookSwitchDoesNotCancelAccountSave() = runTest {
+        val updateStarted = CompletableDeferred<Unit>()
+        val releaseUpdate = CompletableDeferred<Unit>()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL, SHARED) }
+            recipesBlock = { _, cookbookId -> if (cookbookId == PERSONAL.id) listOf(SOUP) else listOf(SALAD) }
+            updateAccountBlock = { _, _ ->
+                updateStarted.complete(Unit)
+                releaseUpdate.await()
+                USER.copy(name = "Ada")
+            }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+
+        val saving = controller.updateName("Ada")
+        updateStarted.await()
+        controller.switchCookbook(SHARED.id).join()
+        releaseUpdate.complete(Unit)
+        saving.join()
+
+        assertEquals("Ada", controller.state.value.user?.name)
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+    }
+
+    @Test
+    fun blockedAccountWriteCannotResurrectOldSessionAcrossLogoutAndLaterLogin() = runTest {
+        val writeStarted = CompletableDeferred<Unit>()
+        val releaseWrite = CompletableDeferred<Unit>()
+        val updated = USER.copy(name = "Ada")
+        val nextUser = User(8, "Next", "next@example.com", false)
+        val nextSession = SESSION.response.copy(token = "next-token", user = nextUser)
+        val sessionStore = FakeSessionStore(SESSION).apply {
+            beforeWrite = { written ->
+                if (written.response.user == updated) {
+                    writeStarted.complete(Unit)
+                    withContext(NonCancellable) { releaseWrite.await() }
+                }
+            }
+        }
+        val api = FakeApi().apply {
+            updateAccountBlock = { _, _ -> updated }
+            signInBlock = { nextSession }
+        }
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+
+        val saving = controller.updateName("Ada")
+        writeStarted.await()
+        val logout = controller.logout()
+        runCurrent()
+        assertEquals(SessionPhase.SIGNING_OUT, controller.state.value.phase)
+        releaseWrite.complete(Unit)
+        saving.join()
+        logout.join()
+        controller.signIn(SIGN_IN).join()
+
+        assertEquals(nextUser, controller.state.value.user)
+        assertEquals(nextSession, sessionStore.value?.response)
+        assertEquals(AccountOperation.IDLE, controller.accountState.value.operation)
+    }
+
+    @Test
+    fun rejectedPreferenceUpdateIsNotOptimisticAndRetainsAccount() = runTest {
+        val requestStarted = CompletableDeferred<AccountUpdateRequest>()
+        val releaseRequest = CompletableDeferred<Unit>()
+        val api = FakeApi().apply {
+            updateAccountBlock = { _, request ->
+                requestStarted.complete(request)
+                releaseRequest.await()
+                throw ApiFailure(422, "Preference was rejected")
+            }
+        }
+        val sessionStore = FakeSessionStore(SESSION)
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+
+        val saving = controller.updateLifecycleNotifications(false)
+        val request = requestStarted.await()
+        assertEquals(AccountAttributes(lifecycleNotificationsEnabled = false), request.user)
+        assertEquals(true, controller.state.value.user?.lifecycleNotificationsEnabled)
+        assertEquals(AccountOperation.SAVING, controller.accountState.value.operation)
+        releaseRequest.complete(Unit)
+        saving.join()
+
+        assertEquals(USER, controller.state.value.user)
+        assertEquals(SESSION, sessionStore.value)
+        assertEquals("Preference was rejected", controller.accountState.value.error)
+        assertFalse(controller.accountState.value.canRetryPersistence)
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+    }
+
+    @Test
+    fun acceptedAccountUpdateWithFailedEncryptedWriteRetriesOnlyPersistence() = runTest {
+        val updated = USER.copy(name = "Ada")
+        val sessionStore = FakeSessionStore(SESSION).apply { writeFailure = IOException("disk full") }
+        val api = FakeApi().apply { updateAccountBlock = { _, _ -> updated } }
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+
+        controller.updateName("Ada").join()
+
+        assertEquals(updated, controller.state.value.user)
+        assertEquals(SESSION, sessionStore.value)
+        assertTrue(controller.accountState.value.canRetryPersistence)
+        assertTrue(controller.accountState.value.error?.contains("updated") == true)
+        assertEquals(1, api.updateAccountCalls)
+
+        sessionStore.writeFailure = null
+        controller.retryAccountPersistence().join()
+
+        assertEquals(updated, sessionStore.value?.response?.user)
+        assertEquals(1, api.updateAccountCalls)
+        assertFalse(controller.accountState.value.canRetryPersistence)
+        assertNull(controller.accountState.value.error)
+    }
+
+    @Test
+    fun duplicateAccountMutationAndNoOpValuesDoNotIssueExtraPatches() = runTest {
+        val updateStarted = CompletableDeferred<Unit>()
+        val releaseUpdate = CompletableDeferred<Unit>()
+        val api = FakeApi().apply {
+            updateAccountBlock = { _, _ ->
+                updateStarted.complete(Unit)
+                releaseUpdate.await()
+                USER.copy(name = "Ada")
+            }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+
+        controller.updateName(USER.name!!).join()
+        controller.updateLifecycleNotifications(USER.lifecycleNotificationsEnabled).join()
+        assertEquals(0, api.updateAccountCalls)
+
+        val first = controller.updateName("Ada")
+        updateStarted.await()
+        controller.updateLifecycleNotifications(false).join()
+        controller.updateName("Grace").join()
+        assertEquals(1, api.updateAccountCalls)
+        releaseUpdate.complete(Unit)
+        first.join()
+        assertEquals("Ada", controller.state.value.user?.name)
+    }
+
+    @Test
+    fun account422AndTransportErrorsRetainSessionAndRecipeFeedback() = runTest {
+        val api = FakeApi().apply { recipesBlock = { _, _ -> throw IOException("recipe offline") } }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        val originalRecipeMessage = controller.state.value.message
+        assertEquals("Could not refresh recipes", originalRecipeMessage)
+
+        api.updateAccountBlock = { _, _ -> throw ApiFailure(422, "Name is invalid") }
+        controller.updateName("Ada").join()
+        assertEquals("Name is invalid", controller.accountState.value.error)
+        assertEquals(USER, controller.state.value.user)
+        assertEquals(originalRecipeMessage, controller.state.value.message)
+
+        api.updateAccountBlock = { _, _ -> throw IOException("offline") }
+        controller.updateName("Ada").join()
+        assertEquals("Could not update account", controller.accountState.value.error)
+        assertEquals(USER, controller.state.value.user)
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+    }
+
+    @Test
+    fun account401RunsProtectedCleanup() = runTest {
+        val sessionStore = FakeSessionStore(SESSION)
+        val catalogStore = FakeCatalogStore()
+        var imageCleanups = 0
+        val api = FakeApi().apply { updateAccountBlock = { _, _ -> throw ApiFailure(401, "expired") } }
+        val controller = controller(api, sessionStore, catalogStore, session = SESSION) { imageCleanups++ }
+        controller.restore().join()
+
+        controller.updateName("Ada").join()
+
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertNull(controller.state.value.user)
+        assertTrue(sessionStore.cleared)
+        assertTrue(catalogStore.cleared)
+        assertEquals(1, imageCleanups)
+        assertEquals(AccountOperation.IDLE, controller.accountState.value.operation)
+        assertNull(controller.accountState.value.error)
+    }
+
+    @Test
+    fun mismatchedAccountResponseCannotReplaceOrPersistCurrentUser() = runTest {
+        val sessionStore = FakeSessionStore(SESSION)
+        val api = FakeApi().apply {
+            updateAccountBlock = { _, _ -> User(99, "Other", "other@example.com", false) }
+        }
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+
+        controller.updateName("Ada").join()
+
+        assertEquals(USER, controller.state.value.user)
+        assertEquals(SESSION, sessionStore.value)
+        assertEquals("The server returned a different account", controller.accountState.value.error)
+    }
+
+    @Test
+    fun successfulDeletionPurgesWithoutRevocationAndAllowsLaterAuthentication() = runTest {
+        val sessionStore = FakeSessionStore(SESSION)
+        val catalogStore = FakeCatalogStore()
+        var imageCleanups = 0
+        val api = FakeApi().apply {
+            deleteAccountBlock = {}
+            cookbooksBlock = { listOf(PERSONAL) }
+        }
+        val controller = controller(api, sessionStore, catalogStore, session = SESSION) { imageCleanups++ }
+        controller.restore().join()
+
+        controller.deleteAccount().join()
+
+        assertEquals(1, api.deleteAccountCalls)
+        assertEquals(0, api.signOutCalls)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertTrue(sessionStore.cleared)
+        assertTrue(catalogStore.cleared)
+        assertEquals(1, imageCleanups)
+
+        controller.signIn(SIGN_IN).join()
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+    }
+
+    @Test
+    fun deletionFailureAndAmbiguousTimeoutRetainSessionWithoutAutomaticRetry() = runTest {
+        val api = FakeApi().apply { deleteAccountBlock = { throw ApiFailure(500, "Delete failed") } }
+        val sessionStore = FakeSessionStore(SESSION)
+        val controller = controller(
+            api = api,
+            sessionStore = sessionStore,
+            session = SESSION,
+            deleteTimeoutMillis = 100,
+        )
+        controller.restore().join()
+
+        controller.deleteAccount().join()
+        assertEquals("Delete failed", controller.accountState.value.error)
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+        assertEquals(SESSION, sessionStore.value)
+
+        api.deleteAccountBlock = { throw IOException("connection lost") }
+        controller.deleteAccount().join()
+        assertTrue(controller.accountState.value.error?.contains("could not be confirmed") == true)
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+
+        api.deleteAccountBlock = { awaitCancellation() }
+        controller.deleteAccount().join()
+        assertTrue(controller.accountState.value.error?.contains("could not be confirmed") == true)
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+        assertEquals(3, api.deleteAccountCalls)
+        assertFalse(sessionStore.cleared)
+    }
+
+    @Test
+    fun deletion401InvalidatesSessionWithoutClaimingConfirmedDeletion() = runTest {
+        val api = FakeApi().apply { deleteAccountBlock = { throw ApiFailure(401, "expired") } }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+
+        controller.deleteAccount().join()
+
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertEquals("expired", controller.state.value.authError)
+        assertNull(controller.accountState.value.error)
+    }
+
+    @Test
+    fun callerCancellationAfterServerAcceptedDeletionCannotSkipCleanup() = runTest {
+        val cleanupStarted = CompletableDeferred<Unit>()
+        val releaseCleanup = CompletableDeferred<Unit>()
+        val sessionStore = FakeSessionStore(SESSION).apply {
+            beforeClear = {
+                cleanupStarted.complete(Unit)
+                withContext(NonCancellable) { releaseCleanup.await() }
+            }
+        }
+        val catalogStore = FakeCatalogStore()
+        var imageCleanups = 0
+        val api = FakeApi().apply { deleteAccountBlock = {} }
+        val controller = controller(api, sessionStore, catalogStore, session = SESSION) { imageCleanups++ }
+        controller.restore().join()
+
+        val deleting = controller.deleteAccount()
+        cleanupStarted.await()
+        deleting.cancel()
+        releaseCleanup.complete(Unit)
+        deleting.join()
+
+        assertTrue(deleting.isCancelled)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertTrue(sessionStore.cleared)
+        assertTrue(catalogStore.cleared)
+        assertEquals(1, imageCleanups)
+    }
+
+    @Test
+    fun deletionBlocksCompetingAccountSubmissions() = runTest {
+        val deleteStarted = CompletableDeferred<Unit>()
+        val releaseDelete = CompletableDeferred<Unit>()
+        val api = FakeApi().apply {
+            deleteAccountBlock = {
+                deleteStarted.complete(Unit)
+                releaseDelete.await()
+            }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+
+        val deletion = controller.deleteAccount()
+        deleteStarted.await()
+        assertEquals(AccountOperation.DELETING, controller.accountState.value.operation)
+        controller.deleteAccount().join()
+        controller.updateName("Ada").join()
+        assertEquals(1, api.deleteAccountCalls)
+        assertEquals(0, api.updateAccountCalls)
+        releaseDelete.complete(Unit)
+        deletion.join()
+    }
+
+    @Test
+    fun racingAccount401AndLogoutCompletesWithoutSelfJoinOrResurrection() = runTest {
+        val accountStarted = CompletableDeferred<Unit>()
+        val releaseAccount = CompletableDeferred<Unit>()
+        val sessionStore = FakeSessionStore(SESSION)
+        val api = FakeApi().apply {
+            updateAccountBlock = { _, _ ->
+                accountStarted.complete(Unit)
+                withContext(NonCancellable) { releaseAccount.await() }
+                throw ApiFailure(401, "expired")
+            }
+        }
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+
+        val account = controller.updateName("Ada")
+        accountStarted.await()
+        val logout = controller.logout()
+        runCurrent()
+        releaseAccount.complete(Unit)
+        account.join()
+        logout.join()
+
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertNull(sessionStore.value)
+        assertEquals(AccountOperation.IDLE, controller.accountState.value.operation)
+    }
+
+    @Test
+    fun clearAccountErrorDoesNotDiscardAcceptedPersistenceRetry() = runTest {
+        val sessionStore = FakeSessionStore(SESSION).apply { writeFailure = IOException("disk") }
+        val api = FakeApi().apply { updateAccountBlock = { _, _ -> USER.copy(name = "Ada") } }
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+        controller.updateName("Ada").join()
+
+        controller.clearAccountError().join()
+
+        assertNull(controller.accountState.value.error)
+        assertTrue(controller.accountState.value.canRetryPersistence)
+    }
+
     private fun CoroutineScope.controller(
         api: FakeApi = FakeApi(),
         sessionStore: FakeSessionStore = FakeSessionStore(null),
@@ -1421,6 +1842,7 @@ class SessionControllerTest {
         session: StoredSession? = null,
         clock: Clock = Clock.fixed(NOW, ZoneOffset.UTC),
         controllerScope: CoroutineScope = this,
+        deleteTimeoutMillis: Long = 30_000,
         imageCleanup: suspend () -> Unit = {},
     ): SessionController {
         if (session != null) sessionStore.value = session
@@ -1433,6 +1855,7 @@ class SessionControllerTest {
             scope = controllerScope,
             imageCleanup = imageCleanup,
             revokeTimeoutMillis = 100,
+            deleteTimeoutMillis = deleteTimeoutMillis,
         )
     }
 
@@ -1449,6 +1872,8 @@ class SessionControllerTest {
         var cleared = false
         var readCalls = 0
         var beforeRead: suspend () -> Unit = {}
+        var beforeWrite: suspend (StoredSession) -> Unit = {}
+        var beforeClear: suspend () -> Unit = {}
 
         override suspend fun read(): StoredSession? {
             readCalls++
@@ -1460,11 +1885,13 @@ class SessionControllerTest {
 
         override suspend fun write(session: StoredSession) {
             writeFailure?.let { throw it }
+            beforeWrite(session)
             value = session
         }
 
         override suspend fun clear() {
             clearFailure?.let { throw it }
+            beforeClear()
             value = null
             cleared = true
         }
@@ -1551,6 +1978,9 @@ class SessionControllerTest {
 
     private class FakeApi : MainCourseApi {
         var signInCalls = 0
+        var signOutCalls = 0
+        var updateAccountCalls = 0
+        var deleteAccountCalls = 0
         var recipeCalls = 0
         var signInBlock: suspend (SignInRequest) -> SessionResponse = { SESSION.response }
         var signUpBlock: suspend (SignUpRequest) -> SessionResponse = { SESSION.response }
@@ -1558,6 +1988,8 @@ class SessionControllerTest {
         var cookbooksBlock: suspend (String) -> List<Cookbook> = { listOf(PERSONAL) }
         var recipesBlock: suspend (String, Long) -> List<RecipeSummary> = { _, _ -> emptyList() }
         var recipeBlock: suspend (String, Long, Long) -> RecipeDetail = { _, _, _ -> SOUP_DETAIL }
+        var updateAccountBlock: suspend (String, AccountUpdateRequest) -> User = { _, _ -> USER }
+        var deleteAccountBlock: suspend (String) -> Unit = {}
 
         override suspend fun signIn(request: SignInRequest): SessionResponse {
             signInCalls++
@@ -1565,12 +1997,18 @@ class SessionControllerTest {
         }
 
         override suspend fun signUp(request: SignUpRequest) = signUpBlock(request)
-        override suspend fun signOut(token: String) = signOutBlock(token)
-        override suspend fun updateAccount(token: String, request: AccountUpdateRequest): User =
-            error("Unused in session controller tests")
+        override suspend fun signOut(token: String) {
+            signOutCalls++
+            signOutBlock(token)
+        }
+        override suspend fun updateAccount(token: String, request: AccountUpdateRequest): User {
+            updateAccountCalls++
+            return updateAccountBlock(token, request)
+        }
 
         override suspend fun deleteAccount(token: String) {
-            error("Unused in session controller tests")
+            deleteAccountCalls++
+            deleteAccountBlock(token)
         }
 
         override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse =

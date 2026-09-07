@@ -27,6 +27,7 @@ class MainCourseViewModel(
     )
 
     val state = controller.state
+    val accountState = controller.accountState
 
     init {
         controller.restore()
@@ -39,6 +40,11 @@ class MainCourseViewModel(
     fun refresh() = controller.refresh()
     fun openRecipe(id: Long) = controller.openRecipe(id)
     fun closeRecipe() = controller.closeRecipe()
+    fun updateName(name: String) = controller.updateName(name)
+    fun updateLifecycleNotifications(enabled: Boolean) = controller.updateLifecycleNotifications(enabled)
+    fun retryAccountPersistence() = controller.retryAccountPersistence()
+    fun deleteAccount() = controller.deleteAccount()
+    fun clearAccountError() = controller.clearAccountError()
     fun logout() = controller.logout()
     fun reset() = controller.reset()
     fun checkExpiry() = controller.checkExpiry()

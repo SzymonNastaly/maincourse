@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.session
 
 import com.getmaincourse.app.data.cache.RecipeScope
+import com.getmaincourse.app.data.model.AccountAttributes
+import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.SignInRequest
@@ -9,6 +11,8 @@ import com.getmaincourse.app.data.network.ApiFailure
 import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
+import com.getmaincourse.app.features.settings.AccountOperation
+import com.getmaincourse.app.features.settings.AccountState
 import java.time.Clock
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
@@ -39,11 +43,15 @@ class SessionController(
     private val scope: CoroutineScope,
     private val imageCleanup: suspend () -> Unit,
     private val revokeTimeoutMillis: Long = 5_000,
+    private val deleteTimeoutMillis: Long = 30_000,
 ) {
     private val mutableState = MutableStateFlow(SessionState())
     val state: StateFlow<SessionState> = mutableState.asStateFlow()
+    private val mutableAccountState = MutableStateFlow(AccountState())
+    val accountState: StateFlow<AccountState> = mutableAccountState.asStateFlow()
 
     private val transition = Mutex()
+    private val credentialTransition = Mutex()
     private val catalogTransition = Mutex()
     private val cookbookTransition = Mutex()
     private val jobsLock = Any()
@@ -54,6 +62,7 @@ class SessionController(
     private var authAttempt: Job? = null
     private var restoreJob: Job? = null
     private var cleanupJob: Job? = null
+    private var accountJob: Job? = null
     private var admission = Admission.INITIAL
     private var session: SessionResponse? = null
     private var userGeneration = 0L
@@ -63,6 +72,7 @@ class SessionController(
     private val cookbookRequest = AtomicLong()
     private val detailRequest = AtomicLong()
     private var pendingPurge: PendingPurge? = null
+    private var pendingAccountPersistence: PendingAccountPersistence? = null
 
     fun restore(): Job {
         lateinit var launched: Job
@@ -202,12 +212,188 @@ class SessionController(
         }
     }
 
+    fun updateName(name: String): Job = updateAccount(AccountAttributes(name = name))
+
+    fun updateLifecycleNotifications(enabled: Boolean): Job =
+        updateAccount(AccountAttributes(lifecycleNotificationsEnabled = enabled))
+
+    fun retryAccountPersistence(): Job = launchAccountOperation(AccountOperation.SAVING) {
+        val persistence = transition.withLock {
+            pendingAccountPersistence?.takeIf { isCurrentLocked(it.context) }
+        } ?: return@launchAccountOperation
+        persistAcceptedAccount(persistence)
+    }
+
+    fun deleteAccount(): Job = launchAccountOperation(AccountOperation.DELETING) {
+        performAccountDeletion()
+    }
+
+    fun clearAccountError(): Job = scope.launch {
+        transition.withLock {
+            mutableAccountState.value = mutableAccountState.value.copy(error = null)
+        }
+    }
+
     fun logout(): Job = requestCleanup(revoke = true)
 
     fun reset(): Job = requestCleanup(revoke = false)
 
     fun checkExpiry(): Job = scope.launch {
         activeContextOrExpire()
+    }
+
+    private fun updateAccount(attributes: AccountAttributes): Job {
+        require(attributes.name != null || attributes.lifecycleNotificationsEnabled != null) {
+            "Account attributes cannot be empty"
+        }
+        return launchAccountOperation(AccountOperation.SAVING) {
+            performAccountUpdate(attributes)
+        }
+    }
+
+    private suspend fun performAccountUpdate(attributes: AccountAttributes) {
+        val context = activeContextOrExpire() ?: return
+        val currentUser = context.response.user
+        if (attributes.name == currentUser.name && attributes.lifecycleNotificationsEnabled == null) return
+        if (attributes.lifecycleNotificationsEnabled == currentUser.lifecycleNotificationsEnabled && attributes.name == null) {
+            return
+        }
+
+        val updatedUser = try {
+            api.updateAccount(context.identity.token, AccountUpdateRequest(attributes))
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (failure: Throwable) {
+            if (failure is ApiFailure && failure.status == 401) {
+                invalidateAuthenticatedSession(context, failure.message)
+            } else {
+                setAccountError(context, failure.userMessage("Could not update account"))
+            }
+            return
+        }
+
+        if (updatedUser.id != context.identity.userId) {
+            setAccountError(context, "The server returned a different account")
+            return
+        }
+
+        val persistence = transition.withLock {
+            if (!isCurrentLocked(context)) return@withLock null
+            val acceptedResponse = checkNotNull(session).copy(user = updatedUser)
+            session = acceptedResponse
+            mutableState.value = mutableState.value.copy(user = updatedUser)
+            PendingAccountPersistence(context, StoredSession(baseUrl, acceptedResponse)).also {
+                pendingAccountPersistence = it
+            }
+        } ?: return
+        persistAcceptedAccount(persistence)
+    }
+
+    private suspend fun persistAcceptedAccount(persistence: PendingAccountPersistence) {
+        try {
+            credentialTransition.withLock {
+                val mayWrite = transition.withLock {
+                    isCurrentLocked(persistence.context) && pendingAccountPersistence == persistence
+                }
+                if (!mayWrite) return
+                sessionStore.write(persistence.storedSession)
+            }
+        } catch (failure: CancellationException) {
+            withContext(NonCancellable) { markAccountPersistenceFailure(persistence) }
+            throw failure
+        } catch (_: Throwable) {
+            markAccountPersistenceFailure(persistence)
+            return
+        }
+
+        transition.withLock {
+            if (isCurrentLocked(persistence.context) && pendingAccountPersistence == persistence) {
+                pendingAccountPersistence = null
+                mutableAccountState.value = mutableAccountState.value.copy(
+                    error = null,
+                    canRetryPersistence = false,
+                )
+            }
+        }
+    }
+
+    private suspend fun markAccountPersistenceFailure(persistence: PendingAccountPersistence) {
+        transition.withLock {
+            if (isCurrentLocked(persistence.context) && pendingAccountPersistence == persistence) {
+                mutableAccountState.value = mutableAccountState.value.copy(
+                    error = "Account updated, but could not save it on this device",
+                    canRetryPersistence = true,
+                )
+            }
+        }
+    }
+
+    private suspend fun performAccountDeletion() {
+        val context = activeContextOrExpire() ?: return
+        try {
+            withTimeout(deleteTimeoutMillis) { api.deleteAccount(context.identity.token) }
+            cleanupProtectedState(finalAuthError = null)
+        } catch (_: TimeoutCancellationException) {
+            setAccountError(context, DELETION_AMBIGUOUS_MESSAGE)
+        } catch (failure: CancellationException) {
+            withContext(NonCancellable) {
+                setAccountError(context, DELETION_AMBIGUOUS_MESSAGE)
+            }
+            throw failure
+        } catch (failure: Throwable) {
+            when {
+                failure is ApiFailure && failure.status == 401 ->
+                    invalidateAuthenticatedSession(context, failure.message)
+                failure is ApiFailure ->
+                    setAccountError(context, failure.userMessage("Could not delete account"))
+                else -> setAccountError(context, DELETION_AMBIGUOUS_MESSAGE)
+            }
+        }
+    }
+
+    private suspend fun setAccountError(context: UserContext, message: String) {
+        transition.withLock {
+            if (isCurrentLocked(context)) {
+                mutableAccountState.value = mutableAccountState.value.copy(error = message)
+            }
+        }
+    }
+
+    private fun launchAccountOperation(
+        operation: AccountOperation,
+        block: suspend () -> Unit,
+    ): Job {
+        lateinit var launched: Job
+        synchronized(jobsLock) {
+            if (admission != Admission.AUTHENTICATED || accountJob?.isActive == true) return completedJob()
+            launched = scope.launch(start = CoroutineStart.LAZY) {
+                transition.withLock {
+                    mutableAccountState.value = mutableAccountState.value.copy(
+                        operation = operation,
+                        error = null,
+                    )
+                }
+                try {
+                    block()
+                } finally {
+                    withContext(NonCancellable) {
+                        transition.withLock {
+                            mutableAccountState.value = mutableAccountState.value.copy(
+                                operation = AccountOperation.IDLE,
+                            )
+                        }
+                        synchronized(jobsLock) {
+                            authenticatedJobs.remove(launched)
+                            if (accountJob == launched) accountJob = null
+                        }
+                    }
+                }
+            }
+            accountJob = launched
+            authenticatedJobs += launched
+        }
+        launched.start()
+        return launched
     }
 
     private fun requestCleanup(revoke: Boolean): Job {
@@ -273,7 +459,9 @@ class SessionController(
                     return@launch
                 }
                 try {
-                    sessionStore.write(StoredSession(baseUrl, response))
+                    credentialTransition.withLock {
+                        sessionStore.write(StoredSession(baseUrl, response))
+                    }
                 } catch (failure: CancellationException) {
                     throw failure
                 } catch (failure: Throwable) {
@@ -321,6 +509,7 @@ class SessionController(
             }
             if (!accepted) return@withLock null
             session = response
+            pendingAccountPersistence = null
             userGeneration++
             cookbookGeneration++
             detailGeneration++
@@ -330,7 +519,11 @@ class SessionController(
                 catalogStatus = LoadStatus.LOADING,
                 canReset = true,
             )
-            UserContext(response, userGeneration)
+            mutableAccountState.value = AccountState()
+            UserContext(
+                response = response,
+                identity = SessionIdentity(userGeneration, response.user.id, response.token),
+            )
         } ?: return null
         return startCatalogLoad(context)
     }
@@ -941,7 +1134,12 @@ class SessionController(
     private suspend fun activeContextOrExpire(): UserContext? {
         if (synchronized(jobsLock) { admission != Admission.AUTHENTICATED }) return null
         val context = transition.withLock {
-            session?.let { UserContext(it, userGeneration) }
+            session?.let {
+                UserContext(
+                    response = it,
+                    identity = SessionIdentity(userGeneration, it.user.id, it.token),
+                )
+            }
         } ?: return null
         if (!isExpired(context.response)) return context
         cleanupProtectedState(SESSION_EXPIRED_MESSAGE)
@@ -987,7 +1185,9 @@ class SessionController(
             detailRequest.incrementAndGet()
             session = null
             pendingPurge = null
+            pendingAccountPersistence = null
             mutableState.value = SessionState(phase = phase)
+            mutableAccountState.value = AccountState()
             val tracked = trackedSnapshot(authenticatedJobs) + trackedSnapshot(catalogJobs) + trackedSnapshot(cookbookJobs) +
                 trackedSnapshot(detailJobs) + listOfNotNull(authAttempt, restoreJob)
             tracked.distinct().filterNot { it == ownerJob }
@@ -998,7 +1198,7 @@ class SessionController(
     private suspend fun finishCleanup(finalAuthError: String?) = withContext(NonCancellable) {
         val failures = buildList {
             try {
-                sessionStore.clear()
+                credentialTransition.withLock { sessionStore.clear() }
             } catch (failure: Throwable) {
                 add(failure)
             }
@@ -1036,7 +1236,9 @@ class SessionController(
         transition.withLock { isCurrentCatalogLocked(context, requestVersion) }
 
     private fun isCurrentLocked(context: UserContext): Boolean =
-        session === context.response && userGeneration == context.generation
+        userGeneration == context.identity.generation &&
+            session?.user?.id == context.identity.userId &&
+            session?.token == context.identity.token
 
     private fun isCurrentCatalogLocked(context: UserContext, requestVersion: Long): Boolean =
         isCurrentLocked(context) && requestVersion == catalogRequest.get()
@@ -1099,7 +1301,23 @@ class SessionController(
     private fun Throwable.userMessage(fallback: String): String =
         if (this is ApiFailure) message?.takeIf { it.isNotBlank() } ?: fallback else fallback
 
-    private data class UserContext(val response: SessionResponse, val generation: Long)
+    private data class SessionIdentity(
+        val generation: Long,
+        val userId: Long,
+        val token: String,
+    )
+
+    private data class UserContext(
+        val response: SessionResponse,
+        val identity: SessionIdentity,
+    ) {
+        val generation: Long get() = identity.generation
+    }
+
+    private data class PendingAccountPersistence(
+        val context: UserContext,
+        val storedSession: StoredSession,
+    )
 
     private data class Activation(
         val context: UserContext,
@@ -1135,5 +1353,7 @@ class SessionController(
     private companion object {
         const val COMPLETED_IMPORT_STATUS = "completed"
         const val SESSION_EXPIRED_MESSAGE = "Your session has expired"
+        const val DELETION_AMBIGUOUS_MESSAGE =
+            "Account deletion could not be confirmed. Retry deliberately or sign out."
     }
 }
