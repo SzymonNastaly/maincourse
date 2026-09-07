@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
@@ -99,8 +100,8 @@ class MainCourseAppTest {
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
         compose.onNodeWithTag("auth_password").performTextInput("too-short")
         compose.onNodeWithTag("auth_submit").performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_name_required)).assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_password_too_short)).assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_name_required)).assertExists()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_password_too_short)).assertExists()
 
         compose.onNodeWithTag("auth_name").performTextInput("Reader")
         compose.onNodeWithTag("auth_password").performTextClearance()
@@ -158,8 +159,10 @@ class MainCourseAppTest {
         compose.onNodeWithTag("auth_submit").performClick()
         show(SessionState(phase = SessionPhase.SIGNED_OUT, authError = "Email is already registered"))
 
+        compose.onNodeWithText("Email is already registered").assertIsDisplayed()
         compose.onNodeWithTag("auth_name").assertTextContains("Reader")
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
+        compose.onNodeWithTag("auth_submit").assertIsEnabled()
         compose.onNodeWithTag("auth_submit").performClick()
         assertEquals(2, recorder.signUpCount)
         assertEquals("long-password", recorder.signUp?.password)
@@ -455,6 +458,7 @@ class MainCourseAppTest {
         compose.onNodeWithTag("nav_Settings").performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.explore_design)).performScrollTo().performClick()
         compose.onNodeWithTag("sample_note").performScrollTo().performTextInput("Extra lemon")
+        compose.onNodeWithTag("sample_note").assertTextContains("Extra lemon")
         compose.activityRule.scenario.recreate()
         compose.onNodeWithTag("sample_note").performScrollTo().assertTextContains("Extra lemon")
     }

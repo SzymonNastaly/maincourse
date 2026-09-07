@@ -1,10 +1,13 @@
 package com.getmaincourse.app
 
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,10 +25,21 @@ class MainActivity : ComponentActivity() {
         get() = (application as MainCourseApplication).container
 
     private val viewModel by viewModels<MainCourseViewModel> { appContainer.viewModelFactory }
+    private val localNetworkPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) viewModel.refresh()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        if (shouldRequestLocalNetworkAccess(
+                isDebugBuild = BuildConfig.DEBUG,
+                sdkInt = Build.VERSION.SDK_INT,
+                permissionGranted = checkSelfPermission(LOCAL_NETWORK_PERMISSION) == PackageManager.PERMISSION_GRANTED,
+            )
+        ) {
+            localNetworkPermission.launch(LOCAL_NETWORK_PERMISSION)
+        }
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
@@ -72,3 +86,11 @@ class MainActivity : ComponentActivity() {
         viewModel.checkExpiry()
     }
 }
+
+internal fun shouldRequestLocalNetworkAccess(
+    isDebugBuild: Boolean,
+    sdkInt: Int,
+    permissionGranted: Boolean,
+): Boolean = isDebugBuild && sdkInt >= 37 && !permissionGranted
+
+private const val LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
