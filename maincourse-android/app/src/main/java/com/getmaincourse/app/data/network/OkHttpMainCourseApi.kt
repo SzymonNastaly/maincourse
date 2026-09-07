@@ -10,7 +10,9 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -51,12 +53,13 @@ class OkHttpMainCourseApi(
         )
 
     override suspend fun signOut(token: String) {
-        execute(
+        val response = execute(
             authenticatedRequestBuilder("api/v1/session", token)
                 .delete()
                 .build(),
-        ).use { response ->
-            if (!response.isSuccessful) throw response.toApiFailure()
+        )
+        if (!response.isSuccessful) {
+            throw withContext(Dispatchers.Default) { response.toApiFailure() }
         }
     }
 
@@ -75,21 +78,22 @@ class OkHttpMainCourseApi(
             cookbookRequestBuilder("api/v1/recipes/$recipeId", token, cookbookId).get().build(),
         )
 
-    private inline suspend fun <reified T> executeJson(request: Request): T =
-        execute(request).use { response ->
+    private inline suspend fun <reified T> executeJson(request: Request): T {
+        val response = execute(request)
+        return withContext(Dispatchers.Default) {
             if (!response.isSuccessful) throw response.toApiFailure()
 
-            val body = response.body?.string().orEmpty()
             try {
-                json.decodeFromString<T>(body)
+                json.decodeFromString<T>(response.body)
             } catch (_: SerializationException) {
                 throw ApiFailure(null, "Invalid response from server")
             } catch (_: IllegalArgumentException) {
                 throw ApiFailure(null, "Invalid response from server")
             }
         }
+    }
 
-    private suspend fun execute(request: Request): Response =
+    private suspend fun execute(request: Request): BufferedResponse =
         suspendCancellableCoroutine { continuation ->
             val call = client.newCall(request)
             continuation.invokeOnCancellation { call.cancel() }
@@ -97,15 +101,27 @@ class OkHttpMainCourseApi(
                 object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         if (continuation.isActive) {
-                            continuation.resumeWithException(
-                                ApiFailure(null, "Network request failed"),
-                            )
+                            continuation.resumeWithException(ApiFailure(null, "Network request failed"))
                         }
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        continuation.resume(response) { _, unconsumedResponse, _ ->
-                            unconsumedResponse.close()
+                        if (!continuation.isActive) {
+                            response.close()
+                            return
+                        }
+                        try {
+                            val bufferedResponse = response.use {
+                                BufferedResponse(
+                                    status = it.code,
+                                    body = it.body?.string().orEmpty(),
+                                )
+                            }
+                            continuation.resume(bufferedResponse) { _, _, _ -> }
+                        } catch (_: IOException) {
+                            if (continuation.isActive) {
+                                continuation.resumeWithException(ApiFailure(null, "Network request failed"))
+                            }
                         }
                     }
                 },
@@ -128,11 +144,10 @@ class OkHttpMainCourseApi(
         authenticatedRequestBuilder(path, token)
             .header("X-Cookbook-Id", cookbookId.toString())
 
-    private fun Response.toApiFailure(): ApiFailure {
-        val fallback = "Request failed with HTTP status $code"
-        val responseBody = body?.string().orEmpty()
+    private fun BufferedResponse.toApiFailure(): ApiFailure {
+        val fallback = "Request failed with HTTP status $status"
         val apiError = try {
-            json.decodeFromString<ApiErrorBody>(responseBody)
+            json.decodeFromString<ApiErrorBody>(body)
         } catch (_: SerializationException) {
             null
         } catch (_: IllegalArgumentException) {
@@ -141,7 +156,15 @@ class OkHttpMainCourseApi(
         val message = apiError?.error?.takeIf { it.isNotBlank() }
             ?: apiError?.errors?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() }?.joinToString("\n")
             ?: fallback
-        return ApiFailure(code, message)
+        return ApiFailure(status, message)
+    }
+
+    private data class BufferedResponse(
+        val status: Int,
+        val body: String,
+    ) {
+        val isSuccessful: Boolean
+            get() = status in 200..299
     }
 
     @Serializable

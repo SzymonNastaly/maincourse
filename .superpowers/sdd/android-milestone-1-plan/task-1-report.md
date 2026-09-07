@@ -157,3 +157,85 @@ class OkHttpMainCourseApi(
 None. Live Rails integration remains part of the milestone-level verification,
 not Task 1; this boundary is covered with MockWebServer fixtures matching the
 current controllers.
+
+## Review round 1 — main-safe response consumption
+
+### Finding and root cause
+
+The original callback resumed with an open OkHttp `Response`. Consequently,
+`ResponseBody.string()`, successful JSON decoding, and API-error decoding ran
+after resumption on the caller dispatcher. A `viewModelScope` caller could
+therefore block Main while a body streamed. The cancellable continuation also
+stopped owning the active call as soon as response headers were handed off, so
+cancelling while `string()` was blocked did not reliably invoke `Call.cancel()`.
+
+### Fix
+
+- The OkHttp callback now consumes the complete body into a private
+  `BufferedResponse(status, body)` while the cancellable continuation still owns
+  the call, and closes the `Response` with `use` on success or read failure.
+- Cancellation invokes `Call.cancel()` throughout streaming body consumption;
+  an already-cancelled callback closes a received response immediately.
+- Successful JSON decoding and HTTP error-body parsing run on
+  `Dispatchers.Default`, never the caller dispatcher.
+- `ApiFailure` and public `MainCourseApi` signatures remain unchanged.
+- The retry regression now uses two DNS routes: the first cannot connect and
+  the second reaches MockWebServer. With retries disabled the POST fails before
+  reaching the server, rather than relying on ambiguous disconnect behavior.
+
+### Review RED
+
+Command:
+
+```text
+bin/android-gradle testDebugUnitTest --tests '*OkHttpMainCourseApiTest' --console=plain
+```
+
+Observed against the prior response-handoff implementation:
+
+```text
+OkHttpMainCourseApiTest > streamingResponseDoesNotBlockTheCallerDispatcher FAILED
+OkHttpMainCourseApiTest > cancellingStreamingResponseCancelsCallAndPreservesCancellation FAILED
+13 tests completed, 2 failed
+BUILD FAILED
+```
+
+The first test showed the dedicated caller thread unavailable during body
+consumption. The second observed no OkHttp `EventListener.canceled` event after
+coroutine cancellation. The throttled-body fixture was then adjusted to keep
+bytes actively streaming after `responseBodyStart`, rather than merely delaying
+the first byte.
+
+### Review GREEN
+
+Focused command:
+
+```text
+bin/android-gradle testDebugUnitTest --tests '*OkHttpMainCourseApiTest' --console=plain
+```
+
+Observed output:
+
+```text
+> Task :app:testDebugUnitTest
+BUILD SUCCESSFUL in 3s
+26 actionable tasks: 5 executed, 21 up-to-date
+```
+
+Final unit/lint command, run once after the focused cycle and self-review:
+
+```text
+bin/android-test
+```
+
+Observed output:
+
+```text
+> Task :app:testDebugUnitTest
+> Task :app:lintDebug
+BUILD SUCCESSFUL in 2s
+35 actionable tasks: 9 executed, 26 up-to-date
+```
+
+Final JVM result XML reports 15 tests, 0 failures, 0 errors: 13 HTTP boundary
+tests and 2 existing theme tests. No new concerns remain.

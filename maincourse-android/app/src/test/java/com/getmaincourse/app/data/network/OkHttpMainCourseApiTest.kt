@@ -2,16 +2,24 @@ package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
+import java.net.InetAddress
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
+import okhttp3.Call
+import okhttp3.Dns
+import okhttp3.EventListener
+import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -387,11 +395,71 @@ class OkHttpMainCourseApiTest {
     }
 
     @Test
-    fun cancellingCoroutineCancelsCallAndPreservesCancellation() = runBlocking {
-        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+    fun streamingResponseDoesNotBlockTheCallerDispatcher() = runBlocking {
+        val bodyReadStarted = CountDownLatch(1)
+        val trackedApi = OkHttpMainCourseApi(
+            server.url("/"),
+            OkHttpClient.Builder()
+                .eventListener(
+                    object : EventListener() {
+                        override fun responseBodyStart(call: Call) {
+                            bodyReadStarted.countDown()
+                        }
+                    },
+                )
+                .build(),
+        )
+        server.enqueue(
+            jsonResponse(200, "[${" ".repeat(1_000)}]")
+                .throttleBody(100, 100, TimeUnit.MILLISECONDS),
+        )
 
-        val request = async(start = CoroutineStart.UNDISPATCHED) { api.cookbooks("cancel-token") }
-        assertNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+        Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "test-caller-dispatcher")
+        }.asCoroutineDispatcher().use { callerDispatcher ->
+            val request = async(callerDispatcher) { trackedApi.cookbooks("test-token") }
+            assertTrue(bodyReadStarted.await(5, TimeUnit.SECONDS))
+
+            val marker = async(callerDispatcher) { Thread.currentThread().name }
+            val markerThread = withTimeoutOrNull(250) { marker.await() }
+
+            assertFalse(request.isCompleted)
+            assertNotNull(markerThread)
+            assertTrue(markerThread!!.startsWith("test-caller-dispatcher"))
+            assertEquals(emptyList<Any>(), request.await())
+        }
+    }
+
+    @Test
+    fun cancellingStreamingResponseCancelsCallAndPreservesCancellation() = runBlocking {
+        val bodyReadStarted = CountDownLatch(1)
+        val callCancelled = CountDownLatch(1)
+        val trackedApi = OkHttpMainCourseApi(
+            server.url("/"),
+            OkHttpClient.Builder()
+                .eventListener(
+                    object : EventListener() {
+                        override fun responseBodyStart(call: Call) {
+                            bodyReadStarted.countDown()
+                        }
+
+                        override fun canceled(call: Call) {
+                            callCancelled.countDown()
+                        }
+                    },
+                )
+                .build(),
+        )
+        server.enqueue(
+            jsonResponse(200, "[${" ".repeat(1_000)}]")
+                .throttleBody(100, 100, TimeUnit.MILLISECONDS),
+        )
+
+        val request = async(Dispatchers.Default) { trackedApi.cookbooks("cancel-token") }
+        assertTrue(bodyReadStarted.await(5, TimeUnit.SECONDS))
+        request.cancel()
+
+        assertTrue("The active OkHttp call was not cancelled", callCancelled.await(1, TimeUnit.SECONDS))
         request.cancelAndJoin()
 
         assertTrue(request.isCancelled)
@@ -404,8 +472,7 @@ class OkHttpMainCourseApiTest {
     }
 
     @Test
-    fun failedPostIsNotRetriedImplicitly() = runBlocking {
-        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+    fun failedPostDoesNotTryAnotherResolvedRoute() = runBlocking {
         server.enqueue(
             jsonResponse(
                 201,
@@ -423,13 +490,27 @@ class OkHttpMainCourseApiTest {
                 """.trimIndent(),
             ),
         )
+        val retryHost = server.url("/").newBuilder().host("retry.test").build()
+        val multiRouteClient = OkHttpClient.Builder()
+            .connectTimeout(250, TimeUnit.MILLISECONDS)
+            .dns(
+                object : Dns {
+                    override fun lookup(hostname: String): List<InetAddress> =
+                        listOf(
+                            InetAddress.getByName("127.0.0.2"),
+                            InetAddress.getByName("127.0.0.1"),
+                        )
+                },
+            )
+            .build()
+        val noRetryApi = OkHttpMainCourseApi(retryHost, multiRouteClient)
 
         val failure = captureApiFailure {
-            api.signIn(SignInRequest("cook@example.com", "secret", "Pixel 9"))
+            noRetryApi.signIn(SignInRequest("cook@example.com", "secret", "Pixel 9"))
         }
 
         assertNull(failure.status)
-        assertEquals(1, server.requestCount)
+        assertEquals(0, server.requestCount)
     }
 
     private fun jsonResponse(status: Int, body: String): MockResponse =
