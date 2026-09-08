@@ -4,8 +4,10 @@ module Oauth
 
     def self.call(env)
       strategy = env["omniauth.error.strategy"]
-      request_phase = apple_request_phase?(strategy)
-      handle = captured_handle(env, request_phase:)
+      request_phase = strategy&.on_request_path?
+      apple_request_phase = strategy&.name == "apple" && request_phase
+      handle = captured_handle(env, apple_request_phase:)
+      clear_request_phase_session(env, apple: apple_request_phase) if request_phase
       transaction = AppleAuthTransaction.find_by_handle(handle) if strategy&.name == "apple"
 
       return default_failure(env, strategy:, request_phase:) unless transaction
@@ -25,22 +27,25 @@ module Oauth
       ).finish
     end
 
-    def self.captured_handle(env, request_phase:)
+    def self.captured_handle(env, apple_request_phase:)
       return env["omniauth.params"]["android_transaction"] if env["omniauth.params"]
-      return unless request_phase
+      return unless apple_request_phase
 
-      session = env.fetch("rack.session", {})
-      params = session.delete("omniauth.params") || {}
-      session.delete("omniauth.state")
-      session.delete("omniauth.nonce")
-      params["android_transaction"]
+      env.fetch("rack.session", {}).fetch("omniauth.params", {})["android_transaction"]
     end
     private_class_method :captured_handle
 
-    def self.apple_request_phase?(strategy)
-      strategy&.name == "apple" && strategy.on_request_path?
+    def self.clear_request_phase_session(env, apple:)
+      session = env["rack.session"]
+      return unless session
+
+      session.delete("omniauth.params")
+      if apple
+        session.delete("omniauth.state")
+        session.delete("omniauth.nonce")
+      end
     end
-    private_class_method :apple_request_phase?
+    private_class_method :clear_request_phase_session
 
     def self.default_failure(env, strategy:, request_phase:)
       env["omniauth.error.type"] = :authentication_failed if strategy&.name == "apple" && request_phase

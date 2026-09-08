@@ -305,6 +305,32 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     assert_equal "changed-android@example.com", user.identities.apple.find_by!(uid: "known-android-apple").email
   end
 
+  test "an unknown captured Android handle revokes its unused Apple token exactly once" do
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "missing-android-transaction",
+      email: "missing-android-transaction@example.com",
+      name: "Missing Android Transaction",
+      refresh_token: "missing-transaction-refresh-token"
+    )
+    apple_client = FakeAppleClient.new
+
+    assert_no_difference [ "User.count", "Identity.count", "Session.count", "ApiToken.count" ] do
+      Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+        Oauth::AppleClient.stub(:new, apple_client) do
+          post "/auth/apple?android_transaction=garbage-captured-handle"
+          post auth_apple_callback_path
+        end
+      end
+    end
+
+    assert_response :bad_request
+    assert_nil response.location
+    assert_equal [
+      { refresh_token: "missing-transaction-refresh-token", client_id: "app.hauptgang.web" }
+    ], apple_client.revocations
+  end
+
   test "local Android debug handoff redirects only to its stored custom scheme" do
     user = users(:one)
     Identity.create!(provider: "apple", uid: "debug-android-apple", email: "debug-android@example.com", user:)
@@ -536,6 +562,59 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     post auth_apple_callback_path, params: { transaction_id: "callback-handle" }
 
     assert_redirected_to "/auth/failure?message=invalid_credentials&strategy=apple"
+  end
+
+  test "a Google request CSRF failure cannot turn a pending Apple web callback into an Android handoff" do
+    user = users(:one)
+    identity = Identity.create!(provider: "apple", uid: "apple-web-after-google-csrf", email: "old@example.com", user:)
+    transaction, handle = start_android_transaction
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "apple-web-after-google-csrf",
+      email: "updated@example.com",
+      refresh_token: "web-after-google-csrf-token"
+    )
+    previous_forgery_protection = ActionController::Base.allow_forgery_protection
+
+    assert_no_difference [ "User.count", "Identity.count", "ApiToken.count" ] do
+      assert_difference "Session.count", 1 do
+        ActionController::Base.allow_forgery_protection = true
+        OmniAuth.config.test_mode = false
+        https!
+        Rails.application.config.x.oauth.stub(:apple_enabled, true) { get new_session_path }
+        authenticity_token = css_select("form[action='/auth/apple'] input[name='authenticity_token']").sole["value"]
+
+        post "/auth/apple",
+          params: { authenticity_token: },
+          headers: { "HTTP_ORIGIN" => "https://www.example.com" }
+        assert_equal "appleid.apple.com", URI.parse(response.location).host
+        apple_state = request.session["omniauth.state"]
+        apple_nonce = request.session["omniauth.nonce"]
+
+        post "/auth/google_oauth2?android_transaction=#{handle}",
+          headers: { "HTTP_ORIGIN" => "https://attacker.example" }
+        google_failure_location = response.location
+        params_after_google_failure = request.session["omniauth.params"]
+        state_after_google_failure = request.session["omniauth.state"]
+        nonce_after_google_failure = request.session["omniauth.nonce"]
+
+        OmniAuth.config.test_mode = true
+        post auth_apple_callback_path, params: { android_transaction: handle }
+
+        assert_redirected_to root_url
+        assert_equal "/auth/failure?message=ActionController%3A%3AInvalidAuthenticityToken&strategy=google_oauth2",
+          google_failure_location
+        assert_nil params_after_google_failure
+        assert_equal apple_state, state_after_google_failure
+        assert_equal apple_nonce, nonce_after_google_failure
+      end
+    end
+
+    assert_equal "updated@example.com", identity.reload.email
+    assert_nil transaction.reload.user
+    assert_nil transaction.exchange_digest
+  ensure
+    ActionController::Base.allow_forgery_protection = previous_forgery_protection
   end
 
   test "Android confirmation page retains only the handle in fresh POST actions" do

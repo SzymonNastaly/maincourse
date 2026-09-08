@@ -72,9 +72,6 @@ class OmniauthCallbacksController < ApplicationController
 
     def complete_android_apple_handoff(auth, handle)
       prevent_android_response_storage
-      transaction = AppleAuthTransaction.find_by_handle(handle)
-      return render_android_error unless transaction
-
       refresh_token = auth.credentials.refresh_token
       apple_client_id = nil
       identity_persisted = false
@@ -83,6 +80,9 @@ class OmniauthCallbacksController < ApplicationController
 
       begin
         apple_client_id = Oauth::Configuration.apple_services_id
+        transaction = AppleAuthTransaction.find_by_handle(handle)
+        return render_android_error unless transaction
+
         transaction.with_lock do
           transaction.authorizable!
           begin
