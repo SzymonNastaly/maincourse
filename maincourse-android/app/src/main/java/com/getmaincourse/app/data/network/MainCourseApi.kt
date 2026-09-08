@@ -2,6 +2,7 @@ package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -13,6 +14,8 @@ import com.getmaincourse.app.data.model.User
 
 interface MainCourseApi {
     suspend fun signIn(request: SignInRequest): SessionResponse
+
+    suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse
 
     suspend fun signUp(request: SignUpRequest): SessionResponse
 

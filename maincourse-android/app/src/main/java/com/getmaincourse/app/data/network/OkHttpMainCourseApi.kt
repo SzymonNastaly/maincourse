@@ -3,6 +3,7 @@ package com.getmaincourse.app.data.network
 import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -45,6 +46,13 @@ class OkHttpMainCourseApi(
     override suspend fun signIn(request: SignInRequest): SessionResponse =
         executeJson(
             requestBuilder("api/v1/session")
+                .post(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
+                .build(),
+        )
+
+    override suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse =
+        executeJson(
+            requestBuilder("api/v1/oauth_session")
                 .post(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
                 .build(),
         )

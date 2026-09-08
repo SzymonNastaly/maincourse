@@ -2,6 +2,7 @@ package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingAnswers
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.SignInRequest
@@ -49,6 +50,40 @@ class OkHttpMainCourseApiTest {
     @After
     fun tearDown() {
         server.shutdown()
+    }
+
+    @Test
+    fun googleSignInSendsAnonymousExactProviderPayloadAndOmitsAbsentOnboardingId() = runBlocking {
+        server.enqueue(jsonResponse(201, sessionJson()))
+
+        api.signInWithGoogle(GoogleSignInRequest("id-token", "raw-nonce", "Pixel 9"))
+
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/oauth_session", request.path)
+        assertNull(request.getHeader("Authorization"))
+        assertNull(request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            Json.parseToJsonElement(
+                """{"provider":"google","id_token":"id-token","nonce":"raw-nonce","device_name":"Pixel 9"}""",
+            ),
+            Json.parseToJsonElement(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun googleSignInPreservesOAuthFailuresWithoutRetrying() = runBlocking {
+        listOf(401, 409, 503).forEach { status ->
+            server.enqueue(jsonResponse(status, """{"error":"oauth-$status"}"""))
+            val failure = captureApiFailure {
+                api.signInWithGoogle(
+                    GoogleSignInRequest("token-$status", "nonce-$status", "Pixel", "draft-id"),
+                )
+            }
+            assertEquals(status, failure.status)
+            assertEquals("oauth-$status", failure.message)
+        }
+        assertEquals(3, server.requestCount)
     }
 
     @Test
@@ -697,7 +732,7 @@ class OkHttpMainCourseApiTest {
     }
 
     @Test
-    fun failedPostDoesNotTryAnotherResolvedRoute() = runBlocking {
+    fun failedGooglePostDoesNotRetryOrTryAnotherResolvedRoute() = runBlocking {
         server.enqueue(
             jsonResponse(
                 201,
@@ -731,7 +766,7 @@ class OkHttpMainCourseApiTest {
         val noRetryApi = OkHttpMainCourseApi(retryHost, multiRouteClient)
 
         val failure = captureApiFailure {
-            noRetryApi.signIn(SignInRequest("cook@example.com", "secret", "Pixel 9"))
+            noRetryApi.signInWithGoogle(GoogleSignInRequest("token", "nonce", "Pixel 9"))
         }
 
         assertNull(failure.status)
@@ -743,6 +778,9 @@ class OkHttpMainCourseApiTest {
             .setResponseCode(status)
             .setHeader("Content-Type", "application/json")
             .setBody(body)
+
+    private fun sessionJson() =
+        """{"token":"opaque","expires_at":"2026-12-06T10:15:30Z","user":{"id":7,"name":null,"email":"cook@example.com","lifecycle_notifications_enabled":true}}"""
 
     private suspend fun captureApiFailure(block: suspend () -> Unit): ApiFailure =
         try {

@@ -174,6 +174,8 @@ class MainCourseViewModelTest {
         var onSubmitOnboarding: suspend () -> Unit = {}
 
         override suspend fun signIn(request: SignInRequest) = SESSION
+
+        override suspend fun signInWithGoogle(request: com.getmaincourse.app.data.model.GoogleSignInRequest) = SESSION
         override suspend fun signUp(request: SignUpRequest): SessionResponse {
             signUpCalls++
             lastSignUp = request

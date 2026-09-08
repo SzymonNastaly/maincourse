@@ -514,6 +514,8 @@ class OnboardingControllerTest {
         }
 
         override suspend fun signIn(request: SignInRequest): SessionResponse = unused()
+
+        override suspend fun signInWithGoogle(request: com.getmaincourse.app.data.model.GoogleSignInRequest): SessionResponse = unused()
         override suspend fun signUp(request: SignUpRequest): SessionResponse = unused()
         override suspend fun signOut(token: String) = unused<Unit>()
         override suspend fun updateAccount(token: String, request: AccountUpdateRequest): User = unused()

@@ -210,6 +210,8 @@ class MainCourseViewModelActivityTest {
         var deleteResult: CompletableDeferred<Unit>? = null
 
         override suspend fun signIn(request: SignInRequest): SessionResponse = error("unused")
+
+        override suspend fun signInWithGoogle(request: com.getmaincourse.app.data.model.GoogleSignInRequest): SessionResponse = error("unused")
         override suspend fun signUp(request: SignUpRequest): SessionResponse = error("unused")
         override suspend fun signOut(token: String) {
             signOutCalls++
