@@ -256,14 +256,19 @@ gate remains open until all three sign-in methods are verified.
   the chooser was active, explicit retry, and subsequent email login remained
   usable. Phone and tablet layouts at 200% text exposed the Google action.
 - Automated Android build, lint, JVM, and device coverage passed the local code
-  gate. Release compiled minified but remained unsigned. Rails production code
-  was unchanged and its existing OAuth/identity/verifier baseline remained
-  green.
+  gate: 140 JVM and 103 device tests, no failures/errors/skips, debug/release
+  builds and both lint variants. Release compiled minified but remained unsigned.
+  Rails production code was unchanged; its OAuth/identity/verifier baseline
+  passed 17 tests and 66 assertions.
+- Whole-slice review and scoped re-review accepted the Google implementation.
+  Final code fix `5b40576` adds method-specific loading feedback, shared auth
+  preparation, stronger failure/retry tests, and a smaller licensed Google font.
+  The 243-test clean gate includes those fixes.
 - No provider credential was returned, so the owner-recorded Cloud registration,
   consent, returning identity, and live Rails exchange remain unverified. These
   require an owner-added account and explicit authorization; they are distinct
   from the completed implementation gate. Apple/#86 is next, and the full
-  Milestone 2 gate and final branch review remain open.
+  Milestone 2 gate remains open; the local Google code review is complete.
 
 ## Milestone 3: Recipe Workflows
 
