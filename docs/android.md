@@ -14,8 +14,12 @@ is tracked in [issue #93](https://github.com/SzymonNastaly/maincourse/issues/93)
 Milestone 2's onboarding/account core follows its
 [approved design](superpowers/specs/2026-09-08-android-milestone-2-core-design.md)
 and is tracked in [issue #97](https://github.com/SzymonNastaly/maincourse/issues/97).
-Its local core gate has passed; Google and then Apple sign-in remain separate
-provider slices, so Milestone 2 is still in progress.
+Its Google slice follows a separate
+[approved design](superpowers/specs/2026-09-08-android-milestone-2-google-design.md)
+and is tracked in [issue #98](https://github.com/SzymonNastaly/maincourse/issues/98).
+The core and Google implementation gates have passed locally, but a real Google
+account, release-signed Google verification, Apple sign-in, and the full
+Milestone 2 review remain outstanding.
 
 ## Bootstrap Contract
 | Setting | Pinned value |
@@ -38,12 +42,23 @@ provider slices, so Milestone 2 is still in progress.
 | Room / KSP | 2.8.4 / 2.3.11 |
 | Coil | 3.3.0 |
 | Lifecycle | Declared 2.9.4; resolved atomic group 2.10.0 |
+| Credential Manager / Play-services adapter | 1.6.0 / 1.6.0 |
+| Google ID library | 1.2.0 |
+| Fragment | Direct stable compatibility pin 1.9.0 |
 
 The version catalog and Gradle wrapper are the source of truth. This is a pinned
 compatible set: update reviews are deliberate and must validate the set
 together. Lint treats warnings as errors and disables only the time-dependent
 `NewerVersionAvailable`, `AndroidGradlePluginVersion`, and `GradleDependency`
 freshness checks; it does not suppress a blanket baseline.
+
+Credential Manager's Play-services adapter reaches an old Fragment version
+through Biometric. Keep the direct stable Fragment 1.9.0 pin: without it, the
+resolved Fragment 1.5.7 runtime fails the current
+`InvalidFragmentVersionForActivityResult` lint check. The explicit
+`NoCredentialException` handling in the provider adapter is likewise required
+by `CredentialManagerMisuse`; it maps to the same safe unavailable-provider
+message rather than exposing SDK details.
 
 Navigation 3 runtime 1.1.7 aligns the AndroidX Lifecycle atomic group to 2.10.0
 even though the two direct Lifecycle dependencies remain declared at 2.9.4. Do
@@ -75,6 +90,15 @@ owner. Do not add a DI framework for this app's current scale. `MainActivity`
 obtains the lifecycle-retained `MainCourseViewModel`; the view model owns the
 session and onboarding coordinators and starts each restore once. `onResume`
 rechecks session expiry.
+
+Explicit Google sign-in uses Credential Manager's
+`GetSignInWithGoogleOption`; it never opens automatically. `MainActivity` owns
+the foreground chooser and cancels an unresolved attempt when that Activity is
+destroyed. After a valid Google credential returns, the retained view model owns
+the Rails exchange, so that phase may finish across Activity recreation. A new
+Activity or process never restores or relaunches a chooser. Google and email
+share one admission/busy gate, and cancellation restores the existing form and
+its volatile field values.
 
 The protected shell preserves four destinations: Recipes, Shopping, Search, and
 Settings. Recipes and account/preferences Settings are real; Shopping and Search
@@ -160,6 +184,12 @@ rather than claiming success. Cross-process durability for an interrupted
 cleanup or purge is not complete; follow
 [issue #94](https://github.com/SzymonNastaly/maincourse/issues/94) and do not
 promise flawless logout when the operating-system delete fails.
+
+Logout, account deletion, and authenticated-session invalidation also request a
+bounded, best-effort Credential Manager `clearCredentialState`. This clears the
+provider's selection state; it does not revoke Google permissions or remove a
+device account. Its failure never blocks the authoritative Keystore, Room, and
+image cleanup or a later email login.
 
 That same limitation applies after a successful account deletion: ordinary
 in-process cleanup is non-cancellable and tested, but Android does not yet have
@@ -313,8 +343,9 @@ bin/android-gradle :app:installDebug \
 ```
 
 No secrets belong in `BuildConfig`, committed Gradle properties, resources,
-manifests, or logs. Google Services/provider plugins stay disabled until real
-console configuration exists. Release is minified, unsigned in the repository,
+manifests, or logs. The Google Credential Manager integration needs neither the
+Google Services Gradle plugin nor `google-services.json`; both remain absent.
+Release is minified, unsigned in the repository,
 uses the fixed public HTTPS API, and contains neither the local-network
 permission nor a debug URL override. Signing keys and Play App Signing are
 user-owned.
@@ -337,6 +368,12 @@ catalog: Compose's older transitive version uses an input API removed in API 37.
 
 Room, secure-store, API, coordinator, image URL, and theme behavior also have
 JVM or device coverage at their appropriate boundary.
+
+Google tests cover nonce generation, exact anonymous OAuth payloads, no replay,
+SDK credential parsing/error mapping, shared email/provider admission, chooser
+and exchange ownership across recreation, cleanup notification, and both auth
+surfaces. They do not substitute for a real Google account and registered
+package/certificate.
 
 Compose and image device tests run through `MainCourseTestActivity`, a
 non-exported host that exists only in the debug source set and is absent from
@@ -380,6 +417,10 @@ regenerated keystore may require another OAuth client registration.
 Keep the existing web/server client ID: Android will request Google ID tokens
 for that audience so Rails can verify them. The Android client ID is a separate
 package/certificate registration, not a replacement for Rails' web client.
+The public audience currently used by Android is
+`1048887933015-tga3ld77ufb2jfgugh5b5ddgo854uoto.apps.googleusercontent.com`,
+matching `GOOGLE_SERVER_CLIENT_ID` in the iOS project and Rails' Google client
+configuration.
 
 The Android OAuth client ID is public configuration and is recorded in #92
 alongside its package and signing identity. Keep Google Cloud's downloaded OAuth
@@ -393,6 +434,16 @@ actually signs each installed release build. For Play-distributed builds, use
 the **Play App Signing certificate**, not the upload certificate. A locally
 signed release APK can be tested before Play access with its own certificate
 registration once the owner establishes that signing key.
+
+For live verification, install with `adb install -r` so existing MainCourse app
+data survives. Use the real `MainActivity`, tap **Continue with Google**, and
+confirm the real chooser (or Google add-account flow) opens only from that tap.
+Cancel and retry, rotate while the chooser owns the attempt, and confirm the
+email form remains usable. A zero-account emulator verifies only SDK admission,
+cancellation, and recovery. Do not claim provider success until an owner adds a
+test account interactively, authorizes its use and consent, and the returned
+credential completes the Rails exchange. Never automate or record a Google
+password, ID token, nonce, or account identity.
 
 OAuth uses SHA-1 here; Android Digital Asset Links uses **SHA-256**. Production
 links must use the production package/signing identity, never trust the debug
@@ -426,7 +477,8 @@ independent tracks, not a sequence that starts with Play registration:
   verification; publish production `assetlinks.json` for the actual production
   signing certificate once known.
 
-Provider sign-in, billing, FCM, and app-link behavior are not verified until
-their real consoles, signing identities, backend configuration, and device tests
-are in place. The owner has recorded the Android OAuth client ID in #92, but no
-provider sign-in is integrated into the app yet.
+Google sign-in is integrated and its local code/device gate is complete. The
+owner-recorded debug Android OAuth registration in #92 remains live-unverified
+until a real credential is returned for this package and certificate. Successful
+provider identity, release-signed Google, Apple, billing, FCM, and app-link
+behavior retain their respective real-service gates.

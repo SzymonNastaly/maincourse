@@ -12,7 +12,7 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 |---|---|---|
 | 0. Enablement and scaffold | Complete | Native preview, local tooling, CI definition, and local verification complete; external accounts tracked in #92 |
 | 1. First vertical slice | Complete | Email session through cached recipe list/detail passed local API 37 acceptance and final code review; evidence in #93 |
-| 2. Identity and account | In progress | Onboarding/account core passed locally; Google then Apple provider slices remain |
+| 2. Identity and account | In progress | Core and Google implementation gates passed locally; live Google, Apple, release signing, and full review remain |
 | 3. Recipe workflows | Planned | Search, editing, imports, cooking, and recipe actions |
 | 4. Shopping list | Planned | Durable offline shopping workflow |
 | 5. Collaboration | Planned | Shared cookbooks and invitations |
@@ -20,11 +20,11 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | 7. Notifications | Planned | FCM registration, delivery, tracking, and routing |
 | 8. Release | Planned | Production hardening and Play release |
 
-Milestones 0 and 1 are complete. Milestone 2's onboarding/account core passed
-its local gate on 2026-09-08, while Google and then Apple provider work remains;
-the full milestone is not complete. Core implementation and evidence are tracked
-in #97. External service configuration remains open in #92 and does not block
-the next core product work.
+Milestones 0 and 1 are complete. Milestone 2's onboarding/account core and
+Google implementation passed their separate local gates on 2026-09-08. A real
+Google account, release-signed provider verification, Apple sign-in, and the
+full milestone review remain, so the milestone is not complete. Core evidence is
+tracked in #97, Google evidence in #98, and external setup in #92.
 
 ### Working sequence while Play registration waits
 
@@ -186,11 +186,14 @@ credentials, billing, or push configuration is needed.
 ## Milestone 2: Identity And Account
 
 **Status:** In progress. The onboarding/account core passed its local gate and
-final code review on 2026-09-08. Google sign-in is next, followed by Apple; full Milestone 2 remains
-open through real-provider and release-signed verification.
+final code review on 2026-09-08. Google's implementation gate also passed
+locally; owner-controlled real Google identity, Apple, release-signed provider
+verification, and the full milestone review remain.
 
 **Core design:** [`docs/superpowers/specs/2026-09-08-android-milestone-2-core-design.md`](../specs/2026-09-08-android-milestone-2-core-design.md).
 **Implementation:** [issue #97](https://github.com/SzymonNastaly/maincourse/issues/97).
+**Google design:** [`docs/superpowers/specs/2026-09-08-android-milestone-2-google-design.md`](../specs/2026-09-08-android-milestone-2-google-design.md).
+**Google implementation:** [issue #98](https://github.com/SzymonNastaly/maincourse/issues/98).
 
 **Sequence:** Implement onboarding and account/preferences independently of
 provider enablement. Google and Apple can be developed and tested before Play
@@ -242,6 +245,25 @@ gate remains open until all three sign-in methods are verified.
   provider identities, release signing, and the full milestone review remain
   pending. Cross-process cleanup after OS termination or broken storage remains
   the explicit #94 gap.
+
+**Google local verification recorded on 2026-09-08:**
+- Credential Manager 1.6.0 and Google ID 1.2.0 are integrated for an explicit
+  Google button in standalone and onboarding auth. The public web/server client
+  remains the token audience; the Android OAuth client is only the debug
+  package/SHA-1 registration recorded in #92.
+- The real `MainActivity` on the API 37 emulator opened Google's real
+  add-account surface with zero Google accounts. Cancellation, rotation while
+  the chooser was active, explicit retry, and subsequent email login remained
+  usable. Phone and tablet layouts at 200% text exposed the Google action.
+- Automated Android build, lint, JVM, and device coverage passed the local code
+  gate. Release compiled minified but remained unsigned. Rails production code
+  was unchanged and its existing OAuth/identity/verifier baseline remained
+  green.
+- No provider credential was returned, so the owner-recorded Cloud registration,
+  consent, returning identity, and live Rails exchange remain unverified. These
+  require an owner-added account and explicit authorization; they are distinct
+  from the completed implementation gate. Apple/#86 is next, and the full
+  Milestone 2 gate and final branch review remain open.
 
 ## Milestone 3: Recipe Workflows
 
@@ -420,6 +442,7 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
 | 2026-09-07 | Develop emulator-first while owner Play registration/hardware waits: 1 → 2 core → 3–5; provider tracks as configured; 7 may precede 6. Keep physical-device and Play gates explicit without blocking unrelated implementation. |
 | 2026-09-07 | Milestone 1 local acceptance and final code review passed with the API 37 emulator, real Rails API, and `MainActivity`; remote CI, physical-device, provider, and Play gates remain distinct. |
 | 2026-09-08 | Milestone 2 onboarding/account core passed its local Rails/API 37 gate; Google then Apple remain separate required provider slices, so the full milestone stays in progress. |
+| 2026-09-08 | Android Google Credential Manager implementation passed its local code and zero-account chooser gate; real account/consent, release signing, Apple, and full Milestone 2 review remain separate gates. |
 
 ## Handoff
 
@@ -427,10 +450,10 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
   cookbook switching, and cached recipe list/detail slice passed its local
   acceptance gate and final code review. Evidence and integration tracking are in
   [#93](https://github.com/SzymonNastaly/maincourse/issues/93).
-- Milestone 2 onboarding and account/preferences passed their local core gate and final code review;
-  evidence and implementation tracking are in #97. Integrate Google next and
-  Apple afterward when their provider configuration is ready. Full Milestone 2
-  remains in progress through its provider and release-signed gates.
+- Milestone 2 onboarding/account passed its local core gate and final code review;
+  evidence is in #97. Google code and zero-account chooser behavior passed their
+  local gate in #98, but owner-authorized live identity and release-signed checks
+  remain. Apple/#86 is next. Full Milestone 2 and final branch review remain open.
 - Continue Milestones 3–5 without treating provider or Play gates as blockers.
   All external tracks remain open in #92.
 - Play registration is temporarily owner-blocked. Follow the working sequence above; local OAuth SHA-1 discovery and Google Cloud/Firebase configuration do not depend on Play access.

@@ -1,7 +1,8 @@
 # OAuth sign-in
 
 MainCourse supports Sign in with Apple and Google on the Rails web app and the
-native iOS app. Email and password remain available. Provider identity is
+native iOS app, plus Google sign-in in the native Android app. Email and password
+remain available. Provider identity is
 resolved by the stable `(provider, uid)` pair. A verified provider may join an
 existing OAuth-only user with the same email. It does not automatically join a
 password account because password signup does not verify email ownership; the
@@ -14,8 +15,9 @@ Browser sign-in runs through OmniAuth middleware configured in
 `config/initializers/omniauth.rb`. The callback creates the existing database
 `Session` and signed `session_id` cookie.
 
-Native sign-in runs through Apple's `AuthenticationServices` framework or the
-official `GoogleSignIn-iOS` package. iOS sends the signed ID token and a nonce to
+Native sign-in runs through Apple's `AuthenticationServices` framework, the
+official `GoogleSignIn-iOS` package, or Android Credential Manager. The client
+sends the signed ID token and a nonce to
 `POST /api/v1/oauth_session`. Rails verifies the provider signature, issuer,
 audience, expiry, email verification, and nonce before issuing the same opaque
 `ApiToken` used by password login. Apple authorization codes are also exchanged
@@ -80,6 +82,10 @@ match:
    `https://app.getmaincourse.com/auth/google_oauth2/callback` and, for local
    development, `http://localhost:3000/auth/google_oauth2/callback`.
 3. Create an iOS client for bundle ID `app.hauptgang.ios`.
+4. For Android, create an Android client for each installed package/signing
+   certificate pair. The current local debug registration is
+   `com.getmaincourse.app.debug` plus the SHA-1 recorded in issue #92. This
+   client registration is distinct from the web/server token audience.
 
 Add the web client to Rails credentials:
 
@@ -102,6 +108,16 @@ GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.YOUR_IOS_CLIENT_ID
 Run `xcodegen generate` after changing `project.yml`. The native Google button
 is hidden while the placeholder client ID remains.
 
+Android uses Credential Manager 1.6.0, its Play-services adapter 1.6.0, and
+Google ID 1.2.0 with the existing public web/server client ID as the requested
+ID-token audience. The user-initiated `GetSignInWithGoogleOption` chooser is
+Activity-owned; it is never auto-launched or silently replayed after recreation.
+Once a credential is accepted, the retained auth coordinator can complete the
+Rails exchange through the same Keystore session path as email login. Google
+token and nonce remain ephemeral in-memory values. Provider and email actions
+share a busy gate, and cancellation or recoverable SDK/server failure returns to
+the form for an explicit retry.
+
 ## Account deletion
 
 Both Rails account-deletion controllers call `Oauth::AppleTokenRevoker` before
@@ -121,6 +137,15 @@ does not accept localhost web return URLs; use an HTTPS domain registered on
 the Services ID or test after deployment. Native Apple sign-in can authenticate
 against local Rails from the simulator once the Apple capability and Rails
 credentials are configured.
+
+Android Google verification must use the real `MainActivity` and an
+install-preserving debug install. With no Google account, opening the real Google
+add-account surface, cancelling it, rotating, retrying, and then using email
+login validates only chooser admission and recovery. Successful provider login,
+returning-user identity, and the Rails exchange require an owner-controlled test
+account and explicit consent. Release verification additionally requires a
+genuinely signed build whose certificate is registered for
+`com.getmaincourse.app`; the unsigned repository release build is not evidence.
 
 Provider JWKS and Apple token endpoint calls are stubbed in the Rails test
 suite. Run `bin/ci`, `bin/ios-build`, and `bin/ios-test` after authentication

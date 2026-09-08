@@ -39,6 +39,8 @@ These instructions apply to `maincourse-android/`.
   composables.
 - Keep the app light-only with dynamic color disabled.
 - Use native Material sans for text and bundled Plex Mono only for numerics.
+- The Google button is the sole typography/color exception: keep the official
+  full-color G, Google Sans Medium, and provider component colors confined to it.
 - Use 8dp/10dp/12dp control/card/panel radii, flat hairline surfaces, native
   Material behavior, and checked-in Material Symbols vectors.
 - Preserve the four shell destinations: Recipes, Shopping, Search, Settings.
@@ -59,7 +61,13 @@ These instructions apply to `maincourse-android/`.
   cleartext. Debug HTTP is limited to `10.0.2.2`, `localhost`, and `127.0.0.1`;
   use `adb reverse` or HTTPS rather than arbitrary LAN HTTP.
 - Keep Google Services/provider plugins disabled until actual console files are
-  available. Release is unsigned in source control.
+  available. Google Credential Manager sign-in does not require that plugin or
+  `google-services.json`. Release is unsigned in source control.
+- Google sign-in uses Credential Manager and `GetSignInWithGoogleOption` only
+  after an explicit tap. Request the public Rails web/server audience, not the
+  separate package/SHA-1 Android client ID. Keep the chooser Activity-owned and
+  the accepted Rails exchange view-model-owned; never persist or log its token or
+  nonce, and never auto-relaunch after recreation.
 - Preserve `allowBackup="false"`, `fullBackupContent="false"`, and the API 31+
   cloud-backup/device-transfer exclusions.
 - Preserve `X-Cookbook-Id`, user/cookbook data isolation, and the Rails 90-day
