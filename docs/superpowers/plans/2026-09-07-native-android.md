@@ -290,6 +290,11 @@ gate remains open until all three sign-in methods are verified.
   legacy-client guidance, no first-attempt user/session/token creation, a single
   confirmed creation, and unused refresh-token revocation. Native fake-provider
   tests cover a fresh second credential/code/nonce and cancellation recovery.
+- Whole-slice review and scoped re-review passed. Production code is at
+  `eaa1d02`; final regression strengthening is `820e7d8`. Rails CI passed 931
+  tests plus 9 system tests (2 expected corpus skips). The iOS result bundle
+  reports 261 tests: 259 passed and 2 recipe-fixture skips. Android's 140 JVM
+  tests and lint passed for shared-contract continuity.
 - These are implementation gates, not real-provider proof. A registered HTTPS
   callback, owner Apple account, Hide My Email, and the possible absence of the
   one-time Apple name on the second authorization remain acceptance checks.
