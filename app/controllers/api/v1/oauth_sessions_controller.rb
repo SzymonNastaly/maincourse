@@ -9,6 +9,7 @@ module Api
       end
 
       def create
+        account_creation_intent_present = params.key?(:allow_account_creation)
         identity_persisted = false
         raise Oauth::Error, "Missing OAuth nonce" if params[:nonce].blank?
 
@@ -18,10 +19,24 @@ module Api
         else raise Oauth::Error, "Unsupported OAuth provider"
         end
 
-        user = Identity.authenticate!(**identity)
+        user = Identity.authenticate!(
+          **identity,
+          allow_account_creation: params[:allow_account_creation] == true
+        )
         identity_persisted = true
         OnboardingResponse.link_to_user!(device_id: params[:onboarding_device_id], user: user)
         render_authenticated_user(user)
+      rescue Oauth::AccountCreationConfirmationRequiredError
+        if account_creation_intent_present
+          render json: {
+            error: "This Apple sign-in isn't linked to a MainCourse account. Confirm creating a new account to continue.",
+            error_code: "apple_account_creation_confirmation_required"
+          }, status: :conflict
+        else
+          render json: {
+            error: "Update the app to create a new Apple account, or use the prior sign-in method to access an existing account."
+          }, status: :unprocessable_entity
+        end
       rescue Oauth::LinkRequiredError
         render json: {
           error: "An account already exists for this email. Sign in with your password instead.",

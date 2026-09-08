@@ -29,6 +29,13 @@ Record Encryption, so the SQLite database and Litestream backups contain only
 ciphertext. OAuth-only users have a nullable `password_digest`; they can later
 set a password through the existing reset-password flow.
 
+Unknown Apple identities require an explicit new-account confirmation. Returning
+Apple identities continue to sign in normally, as do Google identities. Older
+installed iOS builds can therefore use known Apple identities, but first-time
+Apple account creation requires the updated confirmation UI or the web flow.
+Rejected Apple credentials are not retained or replayed; confirmation starts a
+fresh provider authorization.
+
 ## Apple configuration
 
 In Apple Developer Certificates, Identifiers & Profiles:

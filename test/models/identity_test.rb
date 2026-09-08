@@ -66,6 +66,84 @@ class IdentityTest < ActiveSupport::TestCase
     assert_equal 2, user.identities.count
   end
 
+  test "requires confirmation before creating Apple users with relay or ordinary emails" do
+    [ "private@privaterelay.appleid.com", "ordinary@example.com" ].each_with_index do |email, index|
+      assert_no_difference [ "User.count", "Identity.count" ] do
+        assert_raises Oauth::AccountCreationConfirmationRequiredError do
+          Identity.authenticate!(
+            provider: "apple",
+            uid: "unconfirmed-apple-user-#{index}",
+            email:,
+            email_verified: true
+          )
+        end
+      end
+    end
+  end
+
+  test "creates an Apple user when account creation is explicitly allowed" do
+    assert_difference [ "User.count", "Identity.count" ], 1 do
+      Identity.authenticate!(
+        provider: "apple",
+        uid: "confirmed-apple-user",
+        email: "confirmed@example.com",
+        email_verified: true,
+        allow_account_creation: true
+      )
+    end
+  end
+
+  test "does not treat string true or nil as Apple account creation confirmation" do
+    [ "true", nil ].each_with_index do |allow_account_creation, index|
+      assert_no_difference [ "User.count", "Identity.count" ] do
+        assert_raises Oauth::AccountCreationConfirmationRequiredError do
+          Identity.authenticate!(
+            provider: "apple",
+            uid: "invalid-confirmation-#{index}",
+            email: "invalid-confirmation-#{index}@example.com",
+            email_verified: true,
+            allow_account_creation:
+          )
+        end
+      end
+    end
+  end
+
+  test "finds an existing Apple identity before requiring account creation confirmation" do
+    identity = Identity.create!(
+      user: users(:one),
+      provider: "apple",
+      uid: "stable-apple-id",
+      email: "old-apple@example.com"
+    )
+
+    result = Identity.authenticate!(
+      provider: "apple",
+      uid: identity.uid,
+      email: "new-apple@example.com",
+      email_verified: true
+    )
+
+    assert_equal users(:one), result
+    assert_equal "new-apple@example.com", identity.reload.email
+  end
+
+  test "does not let Apple confirmation bypass a matching password account" do
+    user = users(:one)
+
+    assert_no_difference [ "User.count", "Identity.count" ] do
+      assert_raises Oauth::LinkRequiredError do
+        Identity.authenticate!(
+          provider: "apple",
+          uid: "confirmed-password-conflict",
+          email: user.email_address,
+          email_verified: true,
+          allow_account_creation: true
+        )
+      end
+    end
+  end
+
   test "finds an existing identity by provider uid before considering email" do
     identity = Identity.create!(
       user: users(:one),
@@ -104,7 +182,8 @@ class IdentityTest < ActiveSupport::TestCase
       email: "apple@example.com",
       email_verified: true,
       apple_refresh_token: token,
-      apple_client_id: "app.hauptgang.ios"
+      apple_client_id: "app.hauptgang.ios",
+      allow_account_creation: true
     )
     identity = user.identities.first
     ciphertext = Identity.connection.select_value(

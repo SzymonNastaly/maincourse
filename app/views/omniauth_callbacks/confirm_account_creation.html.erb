@@ -1,0 +1,25 @@
+<% page_title "Confirm Apple account creation" %>
+<% apple_enabled = Rails.application.config.x.oauth.apple_enabled %>
+<% oauth_available_on_host = !Rails.env.production? || request.host == Rails.application.config.x.canonical_host %>
+
+<div class="mb-10 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
+</div>
+
+<h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">Create a separate account?</h1>
+<p class="mb-7 text-[13px] font-light leading-5 text-body">
+  This Apple sign-in isn't connected to a MainCourse account. If you already use MainCourse, sign in the way you used before to keep your recipes. Creating a new account starts a separate cookbook.
+</p>
+
+<div class="space-y-2.5">
+  <%= link_to "Use existing account", new_session_path,
+              class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+
+  <% if apple_enabled && oauth_available_on_host %>
+    <%= button_to "Create new account with Apple", "/auth/apple?allow_account_creation=true",
+                  method: :post,
+                  class: "mc-btn mc-btn-apple w-full py-3 text-[13.5px]",
+                  form: { data: { turbo: false } } %>
+  <% end %>
+</div>

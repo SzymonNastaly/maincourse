@@ -63,6 +63,8 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
   get "auth/google_oauth2/callback", to: "omniauth_callbacks#create"
   post "auth/apple/callback", to: "omniauth_callbacks#create"
+  get "auth/apple/confirm_account_creation", to: "omniauth_callbacks#confirm_account_creation",
+    as: :confirm_apple_account_creation
   get "auth/failure", to: "omniauth_callbacks#failure"
 
   # The cookbook the web UI is scoped to. See CookbookScoped.

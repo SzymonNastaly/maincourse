@@ -1,6 +1,7 @@
 class OmniauthCallbacksController < ApplicationController
   allow_unauthenticated_access
   skip_forgery_protection only: :create
+  layout "authentication", only: :confirm_account_creation
 
   def create
     provider = refresh_token = apple_client_id = nil
@@ -18,12 +19,15 @@ class OmniauthCallbacksController < ApplicationController
       email_verified: auth.info.email_verified,
       name: auth.info.name,
       apple_refresh_token: refresh_token,
-      apple_client_id:
+      apple_client_id:,
+      allow_account_creation: request.env.fetch("omniauth.params", {})["allow_account_creation"] == "true"
     )
     identity_persisted = true
 
     start_new_session_for(user)
     redirect_to after_authentication_url
+  rescue Oauth::AccountCreationConfirmationRequiredError
+    redirect_to confirm_apple_account_creation_path
   rescue Oauth::LinkRequiredError
     redirect_to new_session_path,
       alert: "An account already exists for this email. Sign in with your password instead."
@@ -37,6 +41,9 @@ class OmniauthCallbacksController < ApplicationController
     if provider == "apple" && refresh_token.present? && apple_client_id.present? && !identity_persisted
       Oauth::AppleTokenRevoker.revoke(refresh_token:, client_id: apple_client_id)
     end
+  end
+
+  def confirm_account_creation
   end
 
   def failure

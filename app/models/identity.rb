@@ -17,7 +17,8 @@ class Identity < ApplicationRecord
   scope :apple, -> { where(provider: "apple") }
 
   def self.authenticate!(provider:, uid:, email:, email_verified:, name: nil,
-                         apple_refresh_token: nil, apple_client_id: nil)
+                         apple_refresh_token: nil, apple_client_id: nil,
+                         allow_account_creation: false)
     provider = normalize_value_for(:provider, provider)
     uid = normalize_value_for(:uid, uid)
     email = normalize_value_for(:email, email)
@@ -45,6 +46,11 @@ class Identity < ApplicationRecord
         user.update!(name: normalized_name(name, email)) if user.name.blank?
         user.identities.create!(attributes)
       else
+        if provider == "apple" && allow_account_creation != true
+          raise Oauth::AccountCreationConfirmationRequiredError,
+            "Apple account creation requires confirmation"
+        end
+
         user = User.new(email_address: email, name: normalized_name(name, email))
         user.identities.build(attributes)
         user.save!
