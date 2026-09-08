@@ -111,6 +111,9 @@ is on its request path. It consumes the saved correlation and returns a fixed
 error through the matching stored transaction. It never falls back to callback
 query/body parameters; a missing or unknown handle uses the generic web failure
 route and cannot choose an app return URI.
+Every provider's failed request phase clears the shared `omniauth.params` slot;
+Apple request failures also clear Apple state and nonce. A failed Google request
+must not leave parameters that affect a later Apple callback.
 
 `POST /api/v1/apple_auth_transaction/exchange` accepts `transaction_id`,
 `exchange_code`, RFC 7636 `code_verifier`, `device_name`, and optional
