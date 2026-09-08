@@ -20,25 +20,41 @@ final class MockAppleSignInProvider: AppleSignInProviding {
 @MainActor
 final class BlockingAppleSignInProvider: AppleSignInProviding {
     private(set) var callCount = 0
-    private var continuation: CheckedContinuation<OAuthCredential?, Never>?
+    private var signInStarted = false
+    private var signInStartedContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<OAuthCredential?, Never>?
 
     func signIn() async throws -> OAuthCredential? {
         self.callCount += 1
+        self.signInStarted = true
+        self.signInStartedContinuation?.resume()
+        self.signInStartedContinuation = nil
         return await withCheckedContinuation { continuation in
-            self.continuation = continuation
+            self.releaseContinuation = continuation
         }
     }
 
-    func finish(with credential: OAuthCredential? = nil) {
-        self.continuation?.resume(returning: credential)
-        self.continuation = nil
+    func waitUntilSignInStarted() async {
+        if self.signInStarted {
+            return
+        }
+        await withCheckedContinuation { continuation in
+            self.signInStartedContinuation = continuation
+        }
+    }
+
+    func release(with credential: OAuthCredential? = nil) {
+        self.releaseContinuation?.resume(returning: credential)
+        self.releaseContinuation = nil
     }
 }
 
 @MainActor
 final class BlockingSecondAppleSignInProvider: AppleSignInProviding {
     private var firstCredential: OAuthCredential?
-    private var continuation: CheckedContinuation<OAuthCredential?, Never>?
+    private var secondAttemptStarted = false
+    private var secondAttemptStartedContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<OAuthCredential?, Never>?
     private(set) var callCount = 0
 
     init(firstCredential: OAuthCredential) {
@@ -51,13 +67,25 @@ final class BlockingSecondAppleSignInProvider: AppleSignInProviding {
             self.firstCredential = nil
             return firstCredential
         }
+        self.secondAttemptStarted = true
+        self.secondAttemptStartedContinuation?.resume()
+        self.secondAttemptStartedContinuation = nil
         return await withCheckedContinuation { continuation in
-            self.continuation = continuation
+            self.releaseContinuation = continuation
         }
     }
 
-    func finishSecondAttempt(with credential: OAuthCredential?) {
-        self.continuation?.resume(returning: credential)
-        self.continuation = nil
+    func waitUntilSecondAttemptStarted() async {
+        if self.secondAttemptStarted {
+            return
+        }
+        await withCheckedContinuation { continuation in
+            self.secondAttemptStartedContinuation = continuation
+        }
+    }
+
+    func releaseSecondAttempt(with credential: OAuthCredential?) {
+        self.releaseContinuation?.resume(returning: credential)
+        self.releaseContinuation = nil
     }
 }

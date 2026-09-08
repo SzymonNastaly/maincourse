@@ -121,6 +121,40 @@ class Api::V1::OauthSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_nil response.parsed_body["error_code"]
   end
 
+  test "signs in a known Apple identity when creation intent is omitted or false" do
+    user = users(:one)
+    identity = Identity.create!(
+      provider: "apple",
+      uid: "returning-apple-user",
+      email: "original-apple@example.com",
+      user:
+    )
+
+    [ [ :omitted, nil ], [ :false, false ] ].each do |label, allow_account_creation|
+      params, apple_client = apple_request(
+        uid: identity.uid,
+        email: "returning-#{label}@example.com",
+        nonce: "returning-#{label}-nonce",
+        refresh_token: "returning-#{label}-refresh-token"
+      )
+      params[:allow_account_creation] = allow_account_creation unless label == :omitted
+
+      assert_no_difference [ "User.count", "Identity.count" ] do
+        assert_difference "ApiToken.count", 1 do
+          post_apple_oauth_session(params, apple_client)
+        end
+      end
+
+      assert_response :created
+      refute_includes [ 409, 422 ], response.status
+      assert_equal user.id, response.parsed_body.dig("user", "id")
+      assert_equal user, ApiToken.find_by_raw_token(response.parsed_body["token"]).user
+      assert_equal "returning-#{label}-refresh-token",
+        identity.reload.apple_refresh_token_for("app.hauptgang.ios")
+      assert_empty apple_client.revocations
+    end
+  end
+
   test "accepts only literal JSON true as Apple account creation confirmation" do
     [ "true", nil ].each_with_index do |allow_account_creation, index|
       params, apple_client = apple_request(
@@ -237,13 +271,16 @@ class Api::V1::OauthSessionsControllerTest < ActionDispatch::IntegrationTest
 
   private
     FakeAppleClient = Struct.new(:response, :exchange_arguments, :revocations) do
+      def initialize(response)
+        super(response, nil, [])
+      end
+
       def exchange_code!(code:, client_id:)
         self.exchange_arguments = { code:, client_id: }
         response
       end
 
       def revoke!(refresh_token:, client_id:)
-        self.revocations ||= []
         revocations << { refresh_token:, client_id: }
       end
     end
@@ -264,7 +301,13 @@ class Api::V1::OauthSessionsControllerTest < ActionDispatch::IntegrationTest
       JWT.encode(payload, signing_key, "RS256", kid: @jwk.kid)
     end
 
-    def apple_request(uid: "oauth-user", email:, nonce:, client_signing_key: @key)
+    def apple_request(
+      uid: "oauth-user",
+      email:,
+      nonce:,
+      client_signing_key: @key,
+      refresh_token: "apple-refresh-token"
+    )
       stub_jwks("https://appleid.apple.com/auth/keys")
       client_token = identity_token({
         "iss" => "https://appleid.apple.com",
@@ -284,7 +327,7 @@ class Api::V1::OauthSessionsControllerTest < ActionDispatch::IntegrationTest
       )
       apple_client = FakeAppleClient.new({
         "id_token" => server_token,
-        "refresh_token" => "apple-refresh-token"
+        "refresh_token" => refresh_token
       })
       params = {
         provider: "apple",

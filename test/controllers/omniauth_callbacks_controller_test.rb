@@ -32,7 +32,7 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     assert user.reload.authenticate("password")
   end
 
-  test "captures confirmed Apple account creation intent in the real OmniAuth request phase" do
+  test "captures confirmed Apple account creation intent through the test-mode OmniAuth request phase" do
     OmniAuth.config.mock_auth[:apple] = auth_hash(
       provider: "apple",
       uid: "apple-web-user",

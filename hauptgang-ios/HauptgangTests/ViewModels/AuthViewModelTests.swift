@@ -269,12 +269,10 @@ final class AuthViewModelTests: XCTestCase {
         let confirmation = Task {
             await self.sut.confirmAppleAccountCreation(with: consent, authManager: authManager)
         }
-        for _ in 0 ..< 10 where provider.callCount < 2 {
-            await Task.yield()
-        }
+        await provider.waitUntilSecondAttemptStarted()
         XCTAssertEqual(provider.callCount, 2)
         XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
-        provider.finishSecondAttempt(with: self.appleCredential(suffix: "second"))
+        provider.releaseSecondAttempt(with: self.appleCredential(suffix: "second"))
         let authenticated = await confirmation.value
 
         XCTAssertTrue(authenticated)
@@ -305,14 +303,12 @@ final class AuthViewModelTests: XCTestCase {
         let firstConfirmation = Task {
             await self.sut.confirmAppleAccountCreation(with: consent, authManager: authManager)
         }
-        for _ in 0 ..< 10 where provider.callCount < 2 {
-            await Task.yield()
-        }
+        await provider.waitUntilSecondAttemptStarted()
         let duplicateAuthenticated = await self.sut.confirmAppleAccountCreation(
             with: consent,
             authManager: authManager
         )
-        provider.finishSecondAttempt(with: self.appleCredential(suffix: "second"))
+        provider.releaseSecondAttempt(with: self.appleCredential(suffix: "second"))
         let firstAuthenticated = await firstConfirmation.value
         let reusedAuthenticated = await self.sut.confirmAppleAccountCreation(
             with: consent,
@@ -395,15 +391,13 @@ final class AuthViewModelTests: XCTestCase {
         let authManager = AuthManager(authService: self.mockAuthService)
 
         let firstAttempt = Task { await self.sut.signInWithApple(authManager: authManager) }
-        for _ in 0 ..< 10 where !self.sut.isLoading {
-            await Task.yield()
-        }
+        await provider.waitUntilSignInStarted()
 
         let secondAuthenticated = await self.sut.signInWithApple(authManager: authManager)
 
         XCTAssertFalse(secondAuthenticated)
         XCTAssertEqual(provider.callCount, 1)
-        provider.finish()
+        provider.release()
         _ = await firstAttempt.value
         XCTAssertFalse(self.sut.isLoading)
     }
