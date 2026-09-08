@@ -12,7 +12,7 @@ module Android
 
     assert_response :success
     assert_equal "no-store", response.headers["Cache-Control"]
-    assert_equal "no-referrer", response.headers["Referrer-Policy"]
+    assert_equal "strict-origin", response.headers["Referrer-Policy"]
     assert_select "h1", "Continue with Apple"
     assert_select "form[action='/auth/apple?android_transaction=#{handle}'][method='post'][data-turbo='false']"
     assert_select "form[action='/android/apple/cancel'][method='post'][data-turbo='false'] input[name='transaction_id'][value='#{handle}']"
@@ -28,6 +28,7 @@ module Android
     get "/android/apple/sign_in", params: { transaction_id: handle }
 
     assert_response :success
+    assert_equal "strict-origin", response.headers["Referrer-Policy"]
     assert_select "h1", "HTTPS setup required"
     assert_select "form[action^='/auth/apple']", count: 0
     assert_select "form[action='/android/apple/cancel'][method='post'][data-turbo='false'] input[name='transaction_id'][value='#{handle}']"
@@ -62,7 +63,22 @@ module Android
     assert_equal "no-referrer", response.headers["Referrer-Policy"]
   end
 
-  test "browser cancel accepts its valid CSRF token when no-referrer produces a null origin" do
+  test "browser cancel accepts its valid CSRF token and own origin" do
+    _transaction, handle = start_transaction
+
+    with_forgery_protection do
+      get "/android/apple/sign_in", params: { transaction_id: handle }
+      token = css_select("form[action='/android/apple/cancel'] input[name='authenticity_token']").sole["value"]
+
+      post "/android/apple/cancel",
+        params: { transaction_id: handle, authenticity_token: token },
+        headers: { "HTTP_ORIGIN" => "http://www.example.com" }
+
+      assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=cancelled"
+    end
+  end
+
+  test "browser cancel rejects a null origin even with a valid CSRF token" do
     _transaction, handle = start_transaction
 
     with_forgery_protection do
@@ -73,7 +89,86 @@ module Android
         params: { transaction_id: handle, authenticity_token: token },
         headers: { "HTTP_ORIGIN" => "null" }
 
-      assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=cancelled"
+      assert_response :unprocessable_content
+    end
+  end
+
+  test "HTTPS Apple provider form accepts its token and own origin" do
+    _transaction, handle = start_transaction
+
+    with_forgery_protection_and_real_omniauth do
+      https!
+      get "/android/apple/sign_in", params: { transaction_id: handle }
+      action = "/auth/apple?android_transaction=#{handle}"
+      token = css_select("form[action='#{action}'] input[name='authenticity_token']").sole["value"]
+
+      post action,
+        params: { authenticity_token: token },
+        headers: { "HTTP_ORIGIN" => "https://www.example.com" }
+
+      assert_response :redirect
+      assert_equal "appleid.apple.com", URI.parse(response.location).host
+      assert_equal "/auth/authorize", URI.parse(response.location).path
+      assert_equal "no-store", response.headers["Cache-Control"]
+      assert_equal "no-referrer", response.headers["Referrer-Policy"]
+    end
+  end
+
+  test "invalid Apple request origins and tokens return a fixed app failure" do
+    [
+      [ "null", :valid ],
+      [ "https://attacker.example", :valid ],
+      [ "https://www.example.com", :missing ]
+    ].each do |origin, token_kind|
+      reset!
+      _transaction, handle = start_transaction
+
+      with_forgery_protection_and_real_omniauth do
+        https!
+        get "/android/apple/sign_in", params: { transaction_id: handle }
+        token = css_select("form[action^='/auth/apple'] input[name='authenticity_token']").sole["value"]
+
+        post "/auth/apple?android_transaction=#{handle}",
+          params: { authenticity_token: token_kind == :valid ? token : nil },
+          headers: { "HTTP_ORIGIN" => origin }
+
+        assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=authentication_failed"
+        assert_equal "no-store", response.headers["Cache-Control"]
+        assert_equal "no-referrer", response.headers["Referrer-Policy"]
+
+        post "/auth/apple/callback", params: { error: "access_denied" }
+        assert_equal "/auth/failure", URI.parse(response.location).path
+      end
+    end
+  end
+
+  test "invalid Apple request without a handle keeps the generic failure route" do
+    with_forgery_protection_and_real_omniauth do
+      https!
+      post "/auth/apple", headers: { "HTTP_ORIGIN" => "https://www.example.com" }
+
+      assert_redirected_to "/auth/failure?message=authentication_failed&strategy=apple"
+      refute_match %r{\A(?:com\.getmaincourse|https://app\.getmaincourse\.com/android/auth/apple)}, response.location
+      assert_equal "no-store", response.headers["Cache-Control"]
+      assert_equal "no-referrer", response.headers["Referrer-Policy"]
+    end
+  end
+
+  test "Apple callback parameters cannot supply a missing request-phase handle" do
+    _transaction, handle = start_transaction
+
+    with_forgery_protection_and_real_omniauth do
+      https!
+      post "/auth/apple/callback", params: {
+        android_transaction: handle,
+        error: "access_denied"
+      }
+
+      assert_response :redirect
+      assert_equal "/auth/failure", URI.parse(response.location).path
+      refute_match %r{\A(?:com\.getmaincourse|https://app\.getmaincourse\.com/android/auth/apple)}, response.location
+      assert_equal "no-store", response.headers["Cache-Control"]
+      assert_equal "no-referrer", response.headers["Referrer-Policy"]
     end
   end
 
@@ -123,6 +218,14 @@ module Android
         yield
       ensure
         ActionController::Base.allow_forgery_protection = previous
+      end
+
+      def with_forgery_protection_and_real_omniauth
+        previous_test_mode = OmniAuth.config.test_mode
+        OmniAuth.config.test_mode = false
+        with_forgery_protection { yield }
+      ensure
+        OmniAuth.config.test_mode = previous_test_mode
       end
   end
 end

@@ -4,10 +4,11 @@ module Oauth
 
     def self.call(env)
       strategy = env["omniauth.error.strategy"]
-      handle = env.fetch("omniauth.params", {})["android_transaction"]
+      request_phase = apple_request_phase?(strategy)
+      handle = captured_handle(env, request_phase:)
       transaction = AppleAuthTransaction.find_by_handle(handle) if strategy&.name == "apple"
 
-      return OmniAuth::FailureEndpoint.call(env) unless transaction
+      return default_failure(env, strategy:, request_phase:) unless transaction
 
       error_type = env["omniauth.error.type"].to_s
       error = CANCELLATION_ERRORS.include?(error_type) ? "cancelled" : "authentication_failed"
@@ -23,5 +24,33 @@ module Oauth
         "Referrer-Policy" => "no-referrer"
       ).finish
     end
+
+    def self.captured_handle(env, request_phase:)
+      return env["omniauth.params"]["android_transaction"] if env["omniauth.params"]
+      return unless request_phase
+
+      session = env.fetch("rack.session", {})
+      params = session.delete("omniauth.params") || {}
+      session.delete("omniauth.state")
+      session.delete("omniauth.nonce")
+      params["android_transaction"]
+    end
+    private_class_method :captured_handle
+
+    def self.apple_request_phase?(strategy)
+      strategy&.name == "apple" && strategy.on_request_path?
+    end
+    private_class_method :apple_request_phase?
+
+    def self.default_failure(env, strategy:, request_phase:)
+      env["omniauth.error.type"] = :authentication_failed if strategy&.name == "apple" && request_phase
+      response = OmniAuth::FailureEndpoint.call(env)
+      if strategy&.name == "apple"
+        response[1]["Cache-Control"] = "no-store"
+        response[1]["Referrer-Policy"] = "no-referrer"
+      end
+      response
+    end
+    private_class_method :default_failure
   end
 end

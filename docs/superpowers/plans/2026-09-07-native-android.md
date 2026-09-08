@@ -312,7 +312,10 @@ Milestone 3 rather than waiting for owner-controlled provider and release gates.
 - Rails now owns a digest-only, PKCE-bound, five-minute handoff transaction and
   one-minute single-use exchange. The existing Apple callback uses strict
   Android-only state/nonce handling, preserves explicit account creation, and
-  creates no browser login session. Full Rails CI passed 984 tests plus 9 system
+  creates no browser login session. Browser form pages use `strict-origin` so
+  normal CSRF origin checks work without disclosing handle-bearing URLs; all
+  non-form responses remain `no-referrer`. Full Rails CI passed 989 tests plus
+  9 system
   tests; the only 2 skips were the expected recipe-corpus snapshot skips.
 - The clean Android gate passed debug and minified unsigned release builds,
   debug/release lint, 165 JVM tests, and 109 device tests with no failures,

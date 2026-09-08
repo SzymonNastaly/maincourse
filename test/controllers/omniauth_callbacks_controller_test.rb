@@ -550,9 +550,10 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
+    assert_equal "strict-origin", response.headers["Referrer-Policy"]
     assert_select "h1", "Create a new MainCourse account?"
-    assert_select "form[action='/auth/apple?android_transaction=#{handle}&allow_account_creation=true'][method='post']"
-    assert_select "form[action='/android/apple/cancel'][method='post'] input[name='transaction_id'][value='#{handle}']"
+    assert_select "form[action='/auth/apple?android_transaction=#{handle}&allow_account_creation=true'][method='post'][data-turbo='false']"
+    assert_select "form[action='/android/apple/cancel'][method='post'][data-turbo='false'] input[name='transaction_id'][value='#{handle}']"
     assert_not_includes response.body, "must-not-echo"
   end
 

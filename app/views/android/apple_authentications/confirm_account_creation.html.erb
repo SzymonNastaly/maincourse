@@ -25,7 +25,8 @@
     <%= button_to "Use existing account / Cancel", android_apple_cancel_path,
                   method: :post,
                   params: { transaction_id: @transaction_id },
-                  class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+                  class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]",
+                  form: { data: { turbo: false } } %>
     <%= button_to "Create new account with Apple", "/auth/apple?#{Rack::Utils.build_query(android_transaction: @transaction_id, allow_account_creation: true)}",
                   method: :post,
                   class: "mc-btn mc-btn-apple w-full py-3 text-[13.5px]",

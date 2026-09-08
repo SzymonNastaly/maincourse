@@ -96,6 +96,22 @@ under its row lock and redirects with only `transaction_id` and
 `exchange_code`. Fixed cancellation/failure codes use `transaction_id` and
 `error`; provider payloads are not reflected.
 
+All handoff responses are `Cache-Control: no-store`. Pages containing provider,
+creation, or Cancel forms use `Referrer-Policy: strict-origin`, so browsers can
+send the same-origin value required by Rails/OmniAuth CSRF checks without
+revealing the handle-bearing path or query. Those forms are ordinary top-level
+submissions rather than Turbo fetches. API, provider redirect, callback,
+failure, local error, and static App Link fallback responses use
+`Referrer-Policy: no-referrer`.
+
+OmniAuth stores request parameters in its session before validating the request
+token. If request-phase CSRF validation fails, the failure endpoint may recover
+the Android handle only from that session slot and only while the Apple strategy
+is on its request path. It consumes the saved correlation and returns a fixed
+error through the matching stored transaction. It never falls back to callback
+query/body parameters; a missing or unknown handle uses the generic web failure
+route and cannot choose an app return URI.
+
 `POST /api/v1/apple_auth_transaction/exchange` accepts `transaction_id`,
 `exchange_code`, RFC 7636 `code_verifier`, `device_name`, and optional
 `onboarding_device_id`. Under one transaction it verifies PKCE, authorization,

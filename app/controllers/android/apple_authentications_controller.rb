@@ -58,6 +58,7 @@ module Android
       end
 
       def prepare_provider_page
+        response.headers["Referrer-Policy"] = "strict-origin"
         @setup_issue = if !request.ssl?
           :https
         elsif !Rails.application.config.x.oauth.apple_enabled
@@ -88,15 +89,6 @@ module Android
       def prevent_response_storage
         response.headers["Cache-Control"] = "no-store"
         response.headers["Referrer-Policy"] = "no-referrer"
-      end
-
-      # Chrome reports a null origin when a normal form submission comes from a
-      # no-referrer page. Keep the handoff private while still requiring the
-      # per-session authenticity token for this one browser return action.
-      def valid_request_origin?
-        return true if action_name == "cancel" && request.origin == "null"
-
-        super
       end
   end
 end

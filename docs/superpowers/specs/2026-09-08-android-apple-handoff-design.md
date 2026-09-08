@@ -68,8 +68,10 @@ older than a day opportunistically in the create path at this app's scale.
 
 Add parameter-log filtering for transaction_id, android_transaction,
 exchange_code and code_verifier. Never include raw provider exceptions or
-payloads in user-facing errors. Browser/auth responses use `Cache-Control:
-no-store` and `Referrer-Policy: no-referrer`.
+payloads in user-facing errors. All responses use `Cache-Control: no-store`.
+Browser form pages use `Referrer-Policy: strict-origin`: only the public origin
+can be sent, never the handle/code, and normal CSRF origin checks remain usable.
+API, callback, failure and static return responses use `no-referrer`.
 
 ## Browser and callback
 

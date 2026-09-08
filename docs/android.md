@@ -375,9 +375,13 @@ user-owned.
 The local HTTP server can create an Apple transaction and render its browser
 landing, but it cannot complete real Apple authorization because Apple requires
 a registered HTTPS return URL. The landing says that HTTPS setup is required
-and retains a CSRF-protected Cancel action that returns to the app. Use a real
-registered HTTPS development origin for provider testing; never add a fake
-consent route or weaken production redirects to make localhost appear valid.
+and retains a CSRF-protected, non-Turbo Cancel action that returns to the app.
+Browser pages containing handoff forms use `Referrer-Policy: strict-origin` so
+normal Rails/OmniAuth origin checks work without disclosing the handle-bearing
+path or query; API, callback, failure, and static fallback responses remain
+`no-referrer`. Use a real registered HTTPS development origin for provider
+testing; never add a fake consent route or weaken production redirects to make
+localhost appear valid.
 
 The manifest sets `allowBackup="false"` and `fullBackupContent="false"`. `data_extraction_rules.xml` also excludes every storage
 domain, including device-protected storage, from cloud backup and device transfer on API 31+.
