@@ -73,6 +73,7 @@ class MainCourseViewModel(
     private val mutableAppleCanCancel = MutableStateFlow(false)
 
     val state = controller.state
+    val searchState = controller.searchState
     val accountState = controller.accountState
     val onboardingState = onboarding.state
     val authenticationMethod = mutableAuthenticationMethod.asStateFlow()
@@ -276,6 +277,7 @@ class MainCourseViewModel(
     fun continueOnboardingWithoutSaving() = onboarding.continueWithoutSaving()
     fun switchCookbook(id: Long) = controller.switchCookbook(id)
     fun refresh() = controller.refresh()
+    fun updateSearchQuery(query: String) = controller.updateSearchQuery(query)
     fun openRecipe(id: Long) = controller.openRecipe(id)
     fun closeRecipe() = controller.closeRecipe()
     fun updateName(name: String) = controller.updateName(name)

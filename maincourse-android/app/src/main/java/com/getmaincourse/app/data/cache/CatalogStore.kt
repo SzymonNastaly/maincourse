@@ -3,6 +3,7 @@ package com.getmaincourse.app.data.cache
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.features.search.RecipeSearchDocument
 
 data class RecipeScope(val userId: Long, val cookbookId: Long)
 
@@ -33,7 +34,21 @@ interface CatalogStore {
 
     suspend fun detail(scope: RecipeScope, recipeId: Long): RecipeDetail?
 
-    suspend fun saveDetail(scope: RecipeScope, detail: RecipeDetail)
+    /**
+     * Atomically updates detail and derived summary fields for known completed rows only. This
+     * partial write requires an existing cookbook membership and never prunes peers.
+     */
+    suspend fun saveRecipeDetails(scope: RecipeScope, details: List<RecipeDetail>)
+
+    suspend fun saveDetail(scope: RecipeScope, detail: RecipeDetail) = saveRecipeDetails(scope, listOf(detail))
+
+    suspend fun searchDocuments(scope: RecipeScope): List<RecipeSearchDocument>
+
+    /**
+     * Adds a mutation response to a captured target cookbook without claiming that its recipe
+     * list is complete. [knownSummary] must come from an already-known completed source row.
+     */
+    suspend fun upsertPartialRecipe(scope: RecipeScope, knownSummary: RecipeSummary, detail: RecipeDetail)
 
     suspend fun removeRecipe(scope: RecipeScope, recipeId: Long)
 

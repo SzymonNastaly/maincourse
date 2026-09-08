@@ -52,6 +52,7 @@ import com.getmaincourse.app.features.auth.GoogleAuthenticationLauncher
 import com.getmaincourse.app.features.auth.GoogleCredentialProvider
 import com.getmaincourse.app.features.auth.GoogleSignInCancelledException
 import com.getmaincourse.app.features.auth.GoogleSignInException
+import com.getmaincourse.app.features.search.RecipeSearchDocument
 import com.getmaincourse.app.features.settings.AccountOperation
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import java.time.Clock
@@ -436,14 +437,31 @@ class MainCourseViewModelActivityTest {
     }
 
     private class FakeCatalogStore : CatalogStore {
-        override suspend fun cookbooks(userId: Long) = emptyList<Cookbook>()
-        override suspend fun replaceCookbooks(userId: Long, items: List<Cookbook>) = Unit
+        private val memberships = mutableMapOf<Long, List<Cookbook>>()
+        override suspend fun cookbooks(userId: Long) = memberships[userId].orEmpty()
+        override suspend fun replaceCookbooks(userId: Long, items: List<Cookbook>) {
+            memberships[userId] = items
+        }
         override suspend fun selectedCookbookId(userId: Long): Long? = null
-        override suspend fun selectCookbook(userId: Long, cookbookId: Long) = Unit
+        override suspend fun selectCookbook(userId: Long, cookbookId: Long) {
+            require(memberships[userId].orEmpty().any { it.id == cookbookId })
+        }
         override suspend fun recipes(scope: RecipeScope) = CachedRecipes(emptyList(), false)
-        override suspend fun replaceRecipes(scope: RecipeScope, items: List<RecipeSummary>) = Unit
+        override suspend fun replaceRecipes(scope: RecipeScope, items: List<RecipeSummary>) {
+            require(memberships[scope.userId].orEmpty().any { it.id == scope.cookbookId })
+        }
         override suspend fun detail(scope: RecipeScope, recipeId: Long): RecipeDetail? = null
-        override suspend fun saveDetail(scope: RecipeScope, detail: RecipeDetail) = Unit
+        override suspend fun saveRecipeDetails(scope: RecipeScope, details: List<RecipeDetail>) {
+            require(memberships[scope.userId].orEmpty().any { it.id == scope.cookbookId })
+        }
+        override suspend fun searchDocuments(scope: RecipeScope) = emptyList<RecipeSearchDocument>()
+        override suspend fun upsertPartialRecipe(
+            scope: RecipeScope,
+            knownSummary: RecipeSummary,
+            detail: RecipeDetail,
+        ) {
+            require(memberships[scope.userId].orEmpty().any { it.id == scope.cookbookId })
+        }
         override suspend fun removeRecipe(scope: RecipeScope, recipeId: Long) = Unit
         override suspend fun removeCookbook(scope: RecipeScope) = Unit
         override suspend fun clear() = Unit

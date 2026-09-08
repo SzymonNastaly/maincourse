@@ -15,6 +15,12 @@ interface CatalogDao {
     @Query("SELECT * FROM cookbooks WHERE userId = :userId ORDER BY listPosition")
     suspend fun cookbooks(userId: Long): List<CookbookEntity>
 
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM cookbooks " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId)",
+    )
+    suspend fun hasCookbook(userId: Long, cookbookId: Long): Boolean
+
     @Upsert
     suspend fun upsertCookbooks(items: List<CookbookEntity>)
 
@@ -54,6 +60,12 @@ interface CatalogDao {
 
     @Upsert
     suspend fun upsertRecipes(items: List<RecipeEntity>)
+
+    @Query(
+        "SELECT COALESCE(MAX(listPosition), -1) + 1 FROM recipes " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId",
+    )
+    suspend fun nextRecipePosition(userId: Long, cookbookId: Long): Int
 
     @Query("DELETE FROM recipes WHERE userId = :userId AND cookbookId = :cookbookId")
     suspend fun deleteRecipes(userId: Long, cookbookId: Long)

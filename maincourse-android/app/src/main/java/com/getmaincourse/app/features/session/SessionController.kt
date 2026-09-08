@@ -6,6 +6,7 @@ import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.GoogleSignInRequest
+import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
@@ -13,6 +14,9 @@ import com.getmaincourse.app.data.network.ApiFailure
 import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
+import com.getmaincourse.app.features.search.RecipeSearchCoordinator
+import com.getmaincourse.app.features.search.RecipeSearchState
+import com.getmaincourse.app.features.search.SearchHydrationStatus
 import com.getmaincourse.app.features.settings.AccountOperation
 import com.getmaincourse.app.features.settings.AccountState
 import java.time.Clock
@@ -20,7 +24,9 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
@@ -47,21 +53,33 @@ class SessionController(
     private val credentialStateCleanup: suspend () -> Unit = {},
     private val revokeTimeoutMillis: Long = 5_000,
     private val deleteTimeoutMillis: Long = 30_000,
+    hydrationTimeoutMillis: Long = 120_000,
+    searchDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private val mutableState = MutableStateFlow(SessionState())
     val state: StateFlow<SessionState> = mutableState.asStateFlow()
     private val mutableAccountState = MutableStateFlow(AccountState())
     val accountState: StateFlow<AccountState> = mutableAccountState.asStateFlow()
+    private val search = RecipeSearchCoordinator(
+        scope = scope,
+        loadDocuments = catalogRepository::searchDocuments,
+        searchDispatcher = searchDispatcher,
+    )
+    val searchState: StateFlow<RecipeSearchState> = search.state
+    private val recipeHydrator = RecipeHydrator(catalogRepository, hydrationTimeoutMillis)
 
     private val transition = Mutex()
     private val credentialTransition = Mutex()
     private val catalogTransition = Mutex()
     private val cookbookTransition = Mutex()
+    private val recipeRefreshTransition = Mutex()
     private val jobsLock = Any()
     private val authenticatedJobs = mutableSetOf<Job>()
     private val catalogJobs = mutableSetOf<Job>()
     private val cookbookJobs = mutableSetOf<Job>()
     private val detailJobs = mutableSetOf<Job>()
+    private val recipeRefreshJobs = mutableSetOf<Job>()
+    private val hydrationJobs = mutableSetOf<Job>()
     private var authAttempt: Job? = null
     private var restoreJob: Job? = null
     private var cleanupJob: Job? = null
@@ -74,6 +92,8 @@ class SessionController(
     private val catalogRequest = AtomicLong()
     private val cookbookRequest = AtomicLong()
     private val detailRequest = AtomicLong()
+    private val recipeRefreshRequest = AtomicLong()
+    private val hydrationRequest = AtomicLong()
     private var pendingPurge: PendingPurge? = null
     private var pendingAccountPersistence: PendingAccountPersistence? = null
 
@@ -183,6 +203,8 @@ class SessionController(
             startRecipeRefresh(activation).join()
         }
     }
+
+    fun updateSearchQuery(query: String): Job = search.updateQuery(query)
 
     fun openRecipe(id: Long): Job {
         if (mutableState.value.recipes.none { it.id == id }) return completedJob()
@@ -606,6 +628,7 @@ class SessionController(
             if (!isCurrentCatalog(context, requestVersion)) return
             if (remote.isEmpty()) {
                 cancelJobs(cookbookJobs)
+                search.activate(null)
                 transition.withLock {
                     if (isCurrentCatalogLocked(context, requestVersion)) {
                         cookbookGeneration++
@@ -740,11 +763,9 @@ class SessionController(
         if (!isCurrent(context)) return null
         if (!retryPendingPurge(context)) return null
         val currentJob = currentCoroutineContext()[Job]
-        cancelJobs(trackedSnapshot(cookbookJobs).filterNot { it == currentJob })
-        if (requestVersion != cookbookRequest.get()) return null
-        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return null
         val version = transition.withLock {
             if (!isCurrentLocked(context)) return@withLock null
+            if (requestVersion != cookbookRequest.get()) return@withLock null
             if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
             cookbookGeneration++
             detailGeneration++
@@ -758,8 +779,13 @@ class SessionController(
                 message = null,
                 canRetry = false,
             )
+            search.activate(RecipeScope(context.response.user.id, cookbookId))
             cookbookGeneration
         } ?: return null
+        cancelJobs(trackedSnapshot(cookbookJobs).filterNot { it == currentJob })
+        catalogRepository.invalidateAndJoinRecipeReads()
+        if (requestVersion != cookbookRequest.get()) return null
+        if (catalogVersion != null && catalogVersion != catalogRequest.get()) return null
 
         val recipeScope = RecipeScope(context.response.user.id, cookbookId)
         return try {
@@ -780,6 +806,7 @@ class SessionController(
                         recipesFetched = cached.fetched,
                         recipeStatus = if (cached.fetched) LoadStatus.FRESH else LoadStatus.LOADING,
                     )
+                    search.documentsChanged(recipeScope)
                 }
             }
             Activation(context, recipeScope, version, requestVersion, allowForbiddenRecovery)
@@ -799,20 +826,43 @@ class SessionController(
         }
     }
 
-    private fun startRecipeRefresh(activation: Activation): Job = tracked(cookbookJobs) {
+    private fun startRecipeRefresh(activation: Activation, replacingOwner: Job? = null): Job {
+        val requestVersion = recipeRefreshRequest.incrementAndGet()
+        return scope.launch {
+            val work = recipeRefreshTransition.withLock {
+                val currentJob = currentCoroutineContext()[Job]
+                cancelJobs(
+                    (trackedSnapshot(recipeRefreshJobs) + trackedSnapshot(hydrationJobs))
+                        .filterNot { it == currentJob || it == replacingOwner },
+                )
+                catalogRepository.invalidateAndJoinRecipeReads()
+                if (requestVersion != recipeRefreshRequest.get()) return@withLock null
+                tracked(recipeRefreshJobs, also = cookbookJobs) {
+                    performRecipeRefresh(activation, requestVersion)
+                }
+            }
+            work?.join()
+        }
+    }
+
+    private suspend fun performRecipeRefresh(activation: Activation, requestVersion: Long) {
         val mayRun = transition.withLock {
-            if (isCurrentLocked(activation)) {
+            if (isCurrentLocked(activation) && requestVersion == recipeRefreshRequest.get()) {
                 mutableState.value = mutableState.value.copy(recipeStatus = LoadStatus.LOADING)
                 true
             } else {
                 false
             }
         }
-        if (!mayRun) return@tracked
+        if (!mayRun) return
         try {
-            val items = catalogRepository.refreshRecipes(activation.context.response, activation.recipeScope)
+            val items = catalogRepository.refreshRecipes(activation.context.response, activation.recipeScope) {
+                transition.withLock {
+                    isCurrentLocked(activation) && requestVersion == recipeRefreshRequest.get()
+                }
+            }
             transition.withLock {
-                if (isCurrentLocked(activation)) {
+                if (isCurrentLocked(activation) && requestVersion == recipeRefreshRequest.get()) {
                     val selectedDetail = mutableState.value.detail
                     mutableState.value = mutableState.value.copy(
                         recipes = items,
@@ -831,7 +881,11 @@ class SessionController(
                         message = null,
                         canRetry = false,
                     )
+                    search.documentsChanged(activation.recipeScope)
                 }
+            }
+            if (isCurrentRecipeRefresh(activation, requestVersion)) {
+                startRecipeHydration(activation, items, requestVersion)
             }
         } catch (failure: CancellationException) {
             throw failure
@@ -846,7 +900,7 @@ class SessionController(
                         rediscover = activation.allowForbiddenRecovery,
                     )
                 else -> transition.withLock {
-                    if (isCurrentLocked(activation)) {
+                    if (isCurrentLocked(activation) && requestVersion == recipeRefreshRequest.get()) {
                         val cached = mutableState.value.recipesFetched
                         mutableState.value = mutableState.value.copy(
                             recipeStatus = if (cached) LoadStatus.DEGRADED else LoadStatus.ERROR,
@@ -857,6 +911,87 @@ class SessionController(
                 }
             }
         }
+    }
+
+    private fun startRecipeHydration(
+        activation: Activation,
+        recipes: List<RecipeSummary>,
+        refreshVersion: Long,
+    ): Job {
+        val hydrationVersion = hydrationRequest.incrementAndGet()
+        search.setHydrationStatus(activation.recipeScope, SearchHydrationStatus.HYDRATING)
+        return tracked(hydrationJobs, also = cookbookJobs) {
+            try {
+                recipeHydrator.hydrate(
+                    session = activation.context.response,
+                    scope = activation.recipeScope,
+                    knownRecipes = recipes,
+                    canCommit = {
+                        isCurrentRecipeHydration(activation, refreshVersion, hydrationVersion)
+                    },
+                    onPageSaved = {
+                        publishHydratedRecipes(activation, refreshVersion, hydrationVersion)
+                    },
+                )
+                if (isCurrentRecipeHydration(activation, refreshVersion, hydrationVersion)) {
+                    search.setHydrationStatus(activation.recipeScope, SearchHydrationStatus.COMPLETE)
+                }
+            } catch (_: TimeoutCancellationException) {
+                if (isCurrentRecipeHydration(activation, refreshVersion, hydrationVersion)) {
+                    search.setHydrationStatus(
+                        activation.recipeScope,
+                        SearchHydrationStatus.INCOMPLETE,
+                        "Search details are incomplete. Cached results are still available.",
+                    )
+                }
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Throwable) {
+                if (!isCurrentRecipeHydration(activation, refreshVersion, hydrationVersion)) return@tracked
+                when {
+                    failure is ApiFailure && failure.status == 401 ->
+                        invalidateAuthenticatedSession(activation.context, failure.message)
+                    failure is ApiFailure && failure.status == 403 -> recoverForbiddenCookbook(
+                        activation,
+                        failure.message,
+                        rediscover = activation.allowForbiddenRecovery,
+                    )
+                    else -> search.setHydrationStatus(
+                        activation.recipeScope,
+                        SearchHydrationStatus.INCOMPLETE,
+                        "Search details are incomplete. Cached results are still available.",
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun publishHydratedRecipes(
+        activation: Activation,
+        refreshVersion: Long,
+        hydrationVersion: Long,
+    ) {
+        val cached = catalogRepository.cachedRecipes(activation.recipeScope)
+        transition.withLock {
+            if (isCurrentLocked(activation) && refreshVersion == recipeRefreshRequest.get() &&
+                hydrationVersion == hydrationRequest.get()
+            ) {
+                mutableState.value = mutableState.value.copy(recipes = cached.items)
+                search.documentsChanged(activation.recipeScope)
+            }
+        }
+    }
+
+    private suspend fun isCurrentRecipeRefresh(activation: Activation, refreshVersion: Long): Boolean =
+        transition.withLock { isCurrentLocked(activation) && refreshVersion == recipeRefreshRequest.get() }
+
+    private suspend fun isCurrentRecipeHydration(
+        activation: Activation,
+        refreshVersion: Long,
+        hydrationVersion: Long,
+    ): Boolean = transition.withLock {
+        isCurrentLocked(activation) && refreshVersion == recipeRefreshRequest.get() &&
+            hydrationVersion == hydrationRequest.get()
     }
 
     private fun startDetailLoad(
@@ -889,15 +1024,23 @@ class SessionController(
         if (!mayRequest) return@tracked
 
         try {
-            val detail = catalogRepository.refreshDetail(context.response, recipeScope, recipeId)
+            val detail = catalogRepository.refreshDetail(context.response, recipeScope, recipeId) {
+                transition.withLock {
+                    isCurrentLocked(context, recipeScope.cookbookId, cookbookVersion) &&
+                        detailGeneration == detailVersion && requestVersion == detailRequest.get()
+                }
+            }
+            val refreshedRecipes = runCatching { catalogRepository.cachedRecipes(recipeScope).items }.getOrNull()
             transition.withLock {
                 if (isCurrentLocked(context, recipeScope.cookbookId, cookbookVersion) &&
                     detailGeneration == detailVersion && requestVersion == detailRequest.get() &&
                     mutableState.value.recipes.any { it.id == recipeId }
                 ) {
                     mutableState.value = mutableState.value.copy(
+                        recipes = refreshedRecipes ?: mutableState.value.recipes,
                         detail = RecipeDetailState(recipeId, DetailStatus.FRESH, detail),
                     )
+                    search.documentsChanged(recipeScope)
                 }
             }
         } catch (failure: CancellationException) {
@@ -968,20 +1111,31 @@ class SessionController(
         val (bumpedGeneration, siblings) = transitionResult
         cancelJobs(siblings)
         if (!retryPendingPurge(context)) return
+        search.documentsChanged(recipeScope)
         transition.withLock {
             if (isCurrentLocked(context, recipeScope.cookbookId, bumpedGeneration)) {
-                val settledRecipeStatus = if (mutableState.value.recipesFetched) {
+                val priorRecipeStatus = mutableState.value.recipeStatus
+                val settledRecipeStatus = if (priorRecipeStatus != LoadStatus.LOADING) {
+                    priorRecipeStatus
+                } else if (mutableState.value.recipesFetched) {
                     LoadStatus.FRESH
                 } else {
                     LoadStatus.DEGRADED
                 }
                 mutableState.value = mutableState.value.copy(
                     recipeStatus = settledRecipeStatus,
-                    message = mutableState.value.message.takeIf {
-                        mutableState.value.catalogStatus.isFailure() || settledRecipeStatus.isFailure()
+                    message = if (priorRecipeStatus == LoadStatus.LOADING) {
+                        mutableState.value.message.takeIf {
+                            mutableState.value.catalogStatus.isFailure() || settledRecipeStatus.isFailure()
+                        }
+                    } else {
+                        mutableState.value.message
                     },
-                    canRetry = mutableState.value.catalogStatus.isFailure() ||
-                        settledRecipeStatus.isFailure(),
+                    canRetry = if (priorRecipeStatus == LoadStatus.LOADING) {
+                        mutableState.value.catalogStatus.isFailure() || settledRecipeStatus.isFailure()
+                    } else {
+                        mutableState.value.canRetry
+                    },
                 )
             }
         }
@@ -1012,6 +1166,7 @@ class SessionController(
                 message = message ?: "Cookbook access changed",
                 canRetry = true,
             )
+            search.activate(null)
             trackedSnapshot(cookbookJobs).filterNot { it == currentJob }
         }
         cancelJobs(siblings)
@@ -1057,7 +1212,7 @@ class SessionController(
                     selected.id,
                     allowForbiddenRecovery = false,
                 )?.let { recovered ->
-                    startRecipeRefresh(recovered).join()
+                    startRecipeRefresh(recovered, replacingOwner = currentCoroutineContext()[Job]).join()
                     transition.withLock {
                         if (isCurrentLocked(recovered)) {
                             mutableState.value = mutableState.value.copy(
@@ -1220,16 +1375,20 @@ class SessionController(
             detailGeneration++
             catalogRequest.incrementAndGet()
             detailRequest.incrementAndGet()
+            recipeRefreshRequest.incrementAndGet()
+            hydrationRequest.incrementAndGet()
             session = null
             pendingPurge = null
             pendingAccountPersistence = null
             mutableState.value = SessionState(phase = phase)
             mutableAccountState.value = AccountState()
+            search.clear()
             val tracked = trackedSnapshot(authenticatedJobs) + trackedSnapshot(catalogJobs) + trackedSnapshot(cookbookJobs) +
                 trackedSnapshot(detailJobs) + listOfNotNull(authAttempt, restoreJob)
             tracked.distinct().filterNot { it == ownerJob }
         }
         cancelJobs(jobs)
+        catalogRepository.invalidateAndJoinRecipeReads()
     }
 
     private suspend fun finishCleanup(

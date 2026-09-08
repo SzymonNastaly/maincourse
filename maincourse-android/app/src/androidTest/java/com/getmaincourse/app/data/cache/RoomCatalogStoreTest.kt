@@ -11,6 +11,7 @@ import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTag
 import com.getmaincourse.app.data.model.StructuredIngredient
+import com.getmaincourse.app.features.search.RecipeSearchDocument
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.junit.After
@@ -80,7 +81,10 @@ class RoomCatalogStoreTest {
 
         assertEquals(CachedRecipes(emptyList(), fetched = true), store.recipes(firstScope))
         assertNull(store.detail(firstScope, recipeA.id))
-        assertEquals(listOf(otherUserRecipe), store.recipes(otherUserScope).items)
+        assertEquals(
+            listOf(summaryUpdatedFrom(otherUserRecipe, detail(1, "Other user", "2026-02-01T00:00:00Z"))),
+            store.recipes(otherUserScope).items,
+        )
         assertEquals("Other user", store.detail(otherUserScope, otherUserRecipe.id)?.name)
     }
 
@@ -161,7 +165,10 @@ class RoomCatalogStoreTest {
         store = RoomCatalogStore(database)
 
         assertEquals(10L, store.selectedCookbookId(1))
-        assertEquals(CachedRecipes(listOf(savedSummary), fetched = true), store.recipes(scope))
+        assertEquals(
+            CachedRecipes(listOf(summaryUpdatedFrom(savedSummary, savedDetail)), fetched = true),
+            store.recipes(scope),
+        )
         assertEquals(savedDetail, store.detail(scope, 3))
     }
 
@@ -216,7 +223,10 @@ class RoomCatalogStoreTest {
         )
 
         assertEquals(listOf(expectedCookbook), store.cookbooks(1))
-        assertEquals(CachedRecipes(listOf(expectedSummary), fetched = true), store.recipes(scope))
+        assertEquals(
+            CachedRecipes(listOf(summaryUpdatedFrom(expectedSummary, expectedDetail)), fetched = true),
+            store.recipes(scope),
+        )
         assertEquals(expectedDetail, store.detail(scope, 1))
     }
 
@@ -252,9 +262,131 @@ class RoomCatalogStoreTest {
         dao.upsertRecipes(listOf(corrupt.copy(detailJson = "{")))
 
         assertNull(store.detail(scope, 1))
-        assertEquals(listOf(firstSummary, secondSummary), store.recipes(scope).items)
+        assertEquals(
+            listOf(
+                summaryUpdatedFrom(firstSummary, detail(1, "First", "2026-08-01T00:00:00Z")),
+                summaryUpdatedFrom(secondSummary, secondDetail),
+            ),
+            store.recipes(scope).items,
+        )
         assertEquals(secondDetail, store.detail(scope, 2))
         assertNull(dao.recipe(1, 10, 1)?.detailJson)
+    }
+
+    @Test
+    fun partialDetailsUpdateSummaryAtomicallyWithoutPruningAndSkipUnknownOrPendingRows() = runBlocking {
+        val scope = RecipeScope(1, 10)
+        val completed = summary(1, "Old", updatedAt = "2026-08-01T00:00:00Z")
+        val peer = summary(2, "Peer")
+        val pending = summary(3, "Pending").copy(importStatus = "pending")
+        store.replaceCookbooks(1, listOf(cookbook(10)))
+        store.replaceRecipes(scope, listOf(completed, peer, pending))
+
+        val changed = detail(1, "New", "2026-09-01T00:00:00Z").copy(
+            prepTime = 31,
+            cookTime = 42,
+            favorite = true,
+            coverImageUrl = "images/new.jpg",
+            coverImages = CoverImages("thumb", "card", "hero"),
+        )
+        store.saveRecipeDetails(
+            scope,
+            listOf(
+                changed,
+                detail(3, "Pending must stay pending", "2026-09-01T00:00:00Z"),
+                detail(99, "Unknown", "2026-09-01T00:00:00Z"),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                completed.copy(
+                    name = "New",
+                    prepTime = 31,
+                    cookTime = 42,
+                    favorite = true,
+                    coverImageUrl = "images/new.jpg",
+                    coverImages = CoverImages("thumb", "card", "hero"),
+                    updatedAt = "2026-09-01T00:00:00Z",
+                ),
+                peer,
+                pending,
+            ),
+            store.recipes(scope).items,
+        )
+        assertEquals(changed, store.detail(scope, 1))
+        assertNull(store.detail(scope, 3))
+        assertNull(store.detail(scope, 99))
+    }
+
+    @Test
+    fun olderPartialDetailCannotOverwriteANewerAcknowledgedRevision() = runBlocking {
+        val scope = RecipeScope(1, 10)
+        val acknowledged = summary(1, "Acknowledged", updatedAt = "2026-09-08T12:00:00Z")
+        val acknowledgedDetail = detail(1, "Acknowledged", "2026-09-08T12:00:00Z")
+        store.replaceCookbooks(1, listOf(cookbook(10)))
+        store.replaceRecipes(scope, listOf(acknowledged))
+        store.saveRecipeDetails(scope, listOf(acknowledgedDetail))
+
+        store.saveRecipeDetails(scope, listOf(detail(1, "Old batch", "2026-09-08T11:59:59Z")))
+
+        assertEquals(summaryUpdatedFrom(acknowledged, acknowledgedDetail), store.recipes(scope).items.single())
+        assertEquals(acknowledgedDetail, store.detail(scope, 1))
+    }
+
+    @Test
+    fun searchDocumentsKeepSummaryFallbackWhenOnlyDetailJsonIsCorrupt() = runBlocking {
+        val scope = RecipeScope(1, 10)
+        val fallback = summary(1, "Fallback name")
+        store.replaceCookbooks(1, listOf(cookbook(10)))
+        store.replaceRecipes(scope, listOf(fallback))
+        store.saveRecipeDetails(scope, listOf(detail(1, "Detailed name", "2026-08-02T00:00:00Z")))
+        val dao = database.catalogDao()
+        val entity = dao.recipe(1, 10, 1)!!
+        dao.upsertRecipes(listOf(entity.copy(detailJson = "{")))
+
+        assertEquals(
+            listOf(
+                RecipeSearchDocument(
+                    summaryUpdatedFrom(fallback, detail(1, "Detailed name", "2026-08-02T00:00:00Z")),
+                    null,
+                ),
+            ),
+            store.searchDocuments(scope),
+        )
+        assertNull(dao.recipe(1, 10, 1)?.detailJson)
+    }
+
+    @Test
+    fun partialTargetUpsertRequiresMembershipAndNeverMarksAnUnfetchedListFull() = runBlocking {
+        val sourceSummary = summary(1, "Source", updatedAt = "2026-08-01T00:00:00Z")
+        val movedDetail = detail(1, "Moved", "2026-09-01T00:00:00Z")
+        val target = RecipeScope(1, 20)
+        store.replaceCookbooks(1, listOf(cookbook(10), cookbook(20)))
+
+        store.upsertPartialRecipe(target, sourceSummary, movedDetail)
+
+        assertEquals(listOf("Moved"), store.recipes(target).items.map { it.name })
+        assertFalse(store.recipes(target).fetched)
+        assertEquals(movedDetail, store.detail(target, 1))
+
+        store.replaceRecipes(target, emptyList())
+        assertEquals(CachedRecipes(emptyList(), fetched = true), store.recipes(target))
+        assertNull(store.detail(target, 1))
+
+        val failure = runCatching {
+            store.upsertPartialRecipe(RecipeScope(1, 99), sourceSummary, movedDetail)
+        }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
+    fun partialDetailBatchRequiresKnownCookbookMembershipEvenWhenEmpty() = runBlocking {
+        val failure = runCatching {
+            store.saveRecipeDetails(RecipeScope(1, 99), emptyList())
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
     }
 
     @Test
@@ -334,6 +466,16 @@ class RoomCatalogStoreTest {
         coverImages = CoverImages(thumb = "images/thumb.jpg", card = null, hero = "images/hero.jpg"),
         createdAt = "2025-01-01T00:00:00Z",
         updatedAt = updatedAt,
+    )
+
+    private fun summaryUpdatedFrom(summary: RecipeSummary, detail: RecipeDetail) = summary.copy(
+        name = detail.name,
+        prepTime = detail.prepTime,
+        cookTime = detail.cookTime,
+        favorite = detail.favorite,
+        coverImageUrl = detail.coverImageUrl,
+        coverImages = detail.coverImages,
+        updatedAt = detail.updatedAt,
     )
 
     private suspend fun assertConstraintFailure(block: suspend () -> Unit) {

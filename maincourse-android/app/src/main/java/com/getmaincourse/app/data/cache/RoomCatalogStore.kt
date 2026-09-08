@@ -4,6 +4,8 @@ import androidx.room.withTransaction
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.features.search.RecipeSearchDocument
+import java.time.Instant
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
@@ -89,13 +91,88 @@ class RoomCatalogStore(
         }
     }
 
-    override suspend fun saveDetail(scope: RecipeScope, detail: RecipeDetail) {
-        dao.updateDetail(
-            userId = scope.userId,
-            cookbookId = scope.cookbookId,
-            recipeId = detail.id,
-            detailJson = json.encodeToString(detail),
-        )
+    override suspend fun saveRecipeDetails(scope: RecipeScope, details: List<RecipeDetail>) {
+        database.withTransaction {
+            requireMembership(scope)
+            details.forEach { detail ->
+                val existing = dao.recipe(scope.userId, scope.cookbookId, detail.id) ?: return@forEach
+                val summary = decodeSummary(existing) ?: return@withTransaction
+                if (summary.importStatus != COMPLETED_IMPORT_STATUS) return@forEach
+                val savedDetail = existing.detailJson?.let { encoded ->
+                    runCatching { json.decodeFromString<RecipeDetail>(encoded) }.getOrNull()
+                }
+                if (savedDetail != null && detail.isOlderThan(savedDetail.updatedAt)) return@forEach
+                dao.upsertRecipes(
+                    listOf(
+                        existing.copy(
+                            summaryJson = json.encodeToString(
+                                if (detail.isOlderThan(summary.updatedAt)) summary else summary.updatedFrom(detail),
+                            ),
+                            detailJson = json.encodeToString(detail),
+                        ),
+                    ),
+                )
+            }
+        }
+    }
+
+    override suspend fun searchDocuments(scope: RecipeScope): List<RecipeSearchDocument> = database.withTransaction {
+        val entities = dao.recipes(scope.userId, scope.cookbookId)
+        val documents = mutableListOf<RecipeSearchDocument>()
+        for (entity in entities) {
+            val summary = decodeSummary(entity) ?: return@withTransaction emptyList()
+            val detail = entity.detailJson?.let { encoded ->
+                try {
+                    json.decodeFromString<RecipeDetail>(encoded)
+                } catch (_: SerializationException) {
+                    dao.clearDetailIfInvalid(scope.userId, scope.cookbookId, entity.recipeId, encoded)
+                    null
+                }
+            }
+            documents += RecipeSearchDocument(summary, detail)
+        }
+        documents
+    }
+
+    override suspend fun upsertPartialRecipe(
+        scope: RecipeScope,
+        knownSummary: RecipeSummary,
+        detail: RecipeDetail,
+    ) {
+        require(knownSummary.id == detail.id) { "Summary and detail must identify the same recipe" }
+        require(knownSummary.importStatus == COMPLETED_IMPORT_STATUS) { "Only completed recipes can be moved" }
+        database.withTransaction {
+            requireMembership(scope)
+            val existing = dao.recipe(scope.userId, scope.cookbookId, detail.id)
+            val existingSummary = if (existing == null) {
+                null
+            } else {
+                decodeSummary(existing) ?: return@withTransaction
+            }
+            val savedDetail = existing?.detailJson?.let { encoded ->
+                runCatching { json.decodeFromString<RecipeDetail>(encoded) }.getOrNull()
+            }
+            if ((savedDetail != null && detail.isOlderThan(savedDetail.updatedAt)) ||
+                (existingSummary != null && detail.isOlderThan(existingSummary.updatedAt))
+            ) {
+                return@withTransaction
+            }
+            dao.upsertRecipes(
+                listOf(
+                    RecipeEntity(
+                        userId = scope.userId,
+                        cookbookId = scope.cookbookId,
+                        recipeId = detail.id,
+                        listPosition = existing?.listPosition
+                            ?: dao.nextRecipePosition(scope.userId, scope.cookbookId),
+                        summaryJson = json.encodeToString(
+                            knownSummary.updatedFrom(detail),
+                        ),
+                        detailJson = json.encodeToString(detail),
+                    ),
+                ),
+            )
+        }
     }
 
     override suspend fun removeRecipe(scope: RecipeScope, recipeId: Long) {
@@ -108,5 +185,42 @@ class RoomCatalogStore(
 
     override suspend fun clear() {
         dao.clear()
+    }
+
+    private suspend fun requireMembership(scope: RecipeScope) {
+        require(dao.hasCookbook(scope.userId, scope.cookbookId)) {
+            "Cookbook membership must be stored before recipe details"
+        }
+    }
+
+    private suspend fun decodeSummary(entity: RecipeEntity): RecipeSummary? = try {
+        json.decodeFromString<RecipeSummary>(entity.summaryJson)
+    } catch (_: SerializationException) {
+        dao.invalidateRecipes(entity.userId, entity.cookbookId)
+        null
+    }
+
+    private fun RecipeSummary.updatedFrom(detail: RecipeDetail): RecipeSummary = copy(
+        name = detail.name,
+        prepTime = detail.prepTime,
+        cookTime = detail.cookTime,
+        favorite = detail.favorite,
+        coverImageUrl = detail.coverImageUrl,
+        coverImages = detail.coverImages,
+        updatedAt = detail.updatedAt,
+    )
+
+    private fun RecipeDetail.isOlderThan(revision: String): Boolean {
+        val detailRevision = runCatching { Instant.parse(updatedAt) }.getOrNull()
+        val summaryRevision = runCatching { Instant.parse(revision) }.getOrNull()
+        return if (detailRevision != null && summaryRevision != null) {
+            detailRevision.isBefore(summaryRevision)
+        } else {
+            updatedAt < revision
+        }
+    }
+
+    private companion object {
+        const val COMPLETED_IMPORT_STATUS = "completed"
     }
 }
