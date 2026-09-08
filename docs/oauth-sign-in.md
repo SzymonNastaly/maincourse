@@ -29,12 +29,36 @@ Record Encryption, so the SQLite database and Litestream backups contain only
 ciphertext. OAuth-only users have a nullable `password_digest`; they can later
 set a password through the existing reset-password flow.
 
-Unknown Apple identities require an explicit new-account confirmation. Returning
-Apple identities continue to sign in normally, as do Google identities. Older
-installed iOS builds can therefore use known Apple identities, but first-time
-Apple account creation requires the updated confirmation UI or the web flow.
-Rejected Apple credentials are not retained or replayed; confirmation starts a
-fresh provider authorization.
+## Apple account creation confirmation
+
+Unknown Apple identities require an explicit new-account decision, regardless
+of whether Apple supplies a private-relay or ordinary email address. A normal
+native attempt sends `allow_account_creation: false`; after the user confirms,
+the client obtains a fresh Apple credential, nonce, and single-use authorization
+code and sends the literal JSON boolean `true`. String `"true"`, `null`, and
+other values do not permit creation. The rejected credential is never retained
+or replayed. Rails attempts to revoke any exchanged refresh token that was not
+persisted, including the token from the unconfirmed attempt.
+
+Updated native clients receive HTTP `409` with
+`error_code: "apple_account_creation_confirmation_required"` for an unknown
+Apple identity. Legacy clients that omit `allow_account_creation` receive HTTP
+`422` with an actionable update-or-use-your-prior-sign-in-method message, because
+their parser does not understand the new conflict code. Older installed iOS
+builds can still sign in to known Apple identities; creating a first Apple
+identity requires the updated app or the web flow.
+
+On the web, an unconfirmed callback redirects to a read-only confirmation page.
+Its create action starts a fresh CSRF-protected `POST /auth/apple` request;
+creation intent comes only from OmniAuth's state-validated request-phase
+parameters, not callback query or form parameters.
+
+Returning `(provider, uid)` identities keep their existing owner even if Apple
+later supplies a different email. The established verified same-email rule may
+attach a provider identity to an OAuth-only account, but confirmation does not
+merge accounts, transfer cookbook data, link an unlike email, or bypass a
+password-account conflict. Authenticated account linking remains a separate
+feature.
 
 ## Apple configuration
 
@@ -159,4 +183,8 @@ suite. Run `bin/ci`, `bin/ios-build`, `bin/ios-test`, `bin/android-build`, and
 `bin/android-test` after authentication changes; include
 `bin/android-test --device` when an emulator or device is available. End-to-end
 provider tests still require real Apple/Google accounts and configured provider
-consoles.
+consoles. Apple acceptance must cover a registered HTTPS return URL and a real
+Hide My Email identity. It must also check the displayed account name on the
+fresh confirmed authorization: Apple may omit the name after the first grant,
+especially if revoking the unused first-attempt token does not reset Apple's
+one-time profile disclosure.
