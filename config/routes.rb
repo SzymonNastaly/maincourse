@@ -70,6 +70,13 @@ Rails.application.routes.draw do
     as: :confirm_apple_account_creation
   get "auth/failure", to: "omniauth_callbacks#failure"
 
+  namespace :android do
+    get "apple/sign_in", to: "apple_authentications#sign_in"
+    get "apple/confirm_account_creation", to: "apple_authentications#confirm_account_creation"
+    post "apple/cancel", to: "apple_authentications#cancel"
+    get "auth/apple", to: "apple_authentications#fallback"
+  end
+
   # The cookbook the web UI is scoped to. See CookbookScoped.
   resource :active_cookbook, only: [ :update ]
 

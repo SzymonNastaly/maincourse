@@ -273,6 +273,278 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     assert_match "couldn't sign you in", flash[:alert]
   end
 
+  test "Android Apple handoff authorizes a known identity from the captured request handle only" do
+    user = users(:one)
+    Identity.create!(provider: "apple", uid: "known-android-apple", email: "old-android@example.com", user:)
+    transaction, handle = start_android_transaction
+    _other_transaction, other_handle = start_android_transaction
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "known-android-apple",
+      email: "changed-android@example.com",
+      refresh_token: "android-refresh-token"
+    )
+
+    assert_no_difference [ "User.count", "Identity.count", "Session.count", "ApiToken.count" ] do
+      Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+        post "/auth/apple?android_transaction=#{handle}"
+        post auth_apple_callback_path, params: {
+          android_transaction: other_handle,
+          transaction_id: other_handle,
+          allow_account_creation: "true"
+        }
+      end
+    end
+
+    redirect = URI.parse(response.location)
+    assert_equal "https://app.getmaincourse.com/android/auth/apple", "#{redirect.scheme}://#{redirect.host}#{redirect.path}"
+    assert_equal [ "exchange_code", "transaction_id" ], Rack::Utils.parse_query(redirect.query).keys.sort
+    assert_equal handle, Rack::Utils.parse_query(redirect.query)["transaction_id"]
+    assert_equal user, transaction.reload.user
+    assert_nil AppleAuthTransaction.find_by_handle(other_handle).user
+    assert_equal "changed-android@example.com", user.identities.apple.find_by!(uid: "known-android-apple").email
+  end
+
+  test "local Android debug handoff redirects only to its stored custom scheme" do
+    user = users(:one)
+    Identity.create!(provider: "apple", uid: "debug-android-apple", email: "debug-android@example.com", user:)
+    _transaction, handle = start_android_transaction(callback: "debug")
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "debug-android-apple",
+      email: "debug-android@example.com",
+      refresh_token: "debug-android-token"
+    )
+
+    Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+      post "/auth/apple?android_transaction=#{handle}"
+      post auth_apple_callback_path
+    end
+
+    redirect = URI.parse(response.location)
+    assert_equal "com.getmaincourse.app.debug", redirect.scheme
+    assert_equal "/oauth/apple", redirect.path
+    assert_equal [ "exchange_code", "transaction_id" ], Rack::Utils.parse_query(redirect.query).keys.sort
+  end
+
+  test "a forged first Android creation flag marks confirmation and revokes the unused token" do
+    transaction, handle = start_android_transaction
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "new-forged-android-apple",
+      email: "new-forged-android@example.com",
+      refresh_token: "first-unused-refresh-token"
+    )
+    apple_client = FakeAppleClient.new
+
+    assert_no_difference [ "User.count", "Identity.count", "Session.count", "ApiToken.count" ] do
+      Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+        Oauth::AppleClient.stub(:new, apple_client) do
+          post "/auth/apple?android_transaction=#{handle}&allow_account_creation=true"
+          post auth_apple_callback_path
+        end
+      end
+    end
+
+    assert_redirected_to "/android/apple/confirm_account_creation?transaction_id=#{handle}"
+    assert transaction.reload.confirmation_required?
+    assert_equal [
+      { refresh_token: "first-unused-refresh-token", client_id: "app.hauptgang.web" }
+    ], apple_client.revocations
+  end
+
+  test "a repeated unknown Android callback re-renders confirmation instead of failing" do
+    transaction, handle = start_android_transaction
+    transaction.with_lock { transaction.mark_confirmation_required! }
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "repeat-unknown-android-apple",
+      email: "repeat-unknown-android@example.com",
+      refresh_token: "repeat-unused-refresh-token"
+    )
+    apple_client = FakeAppleClient.new
+
+    assert_no_difference [ "User.count", "Identity.count", "Session.count", "ApiToken.count" ] do
+      Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+        Oauth::AppleClient.stub(:new, apple_client) do
+          post "/auth/apple?android_transaction=#{handle}"
+          post auth_apple_callback_path
+        end
+      end
+    end
+
+    assert_redirected_to "/android/apple/confirm_account_creation?transaction_id=#{handle}"
+    assert transaction.reload.confirmation_required?
+    assert_equal [
+      { refresh_token: "repeat-unused-refresh-token", client_id: "app.hauptgang.web" }
+    ], apple_client.revocations
+  end
+
+  test "confirmed Android creation requires a fresh captured request and creates no browser session" do
+    transaction, handle = start_android_transaction
+    transaction.with_lock { transaction.mark_confirmation_required! }
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "confirmed-android-apple",
+      email: "confirmed-android@example.com",
+      name: "Confirmed Android",
+      refresh_token: "fresh-android-refresh-token"
+    )
+
+    assert_difference [ "User.count", "Identity.count" ], 1 do
+      assert_no_difference [ "Session.count", "ApiToken.count" ] do
+        Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+          post "/auth/apple?android_transaction=#{handle}&allow_account_creation=true"
+          post auth_apple_callback_path
+        end
+      end
+    end
+
+    query = Rack::Utils.parse_query(URI.parse(response.location).query)
+    assert_equal [ "exchange_code", "transaction_id" ], query.keys.sort
+    assert_equal handle, query["transaction_id"]
+    assert_equal "confirmed-android-apple", transaction.reload.user.identities.apple.sole.uid
+  end
+
+  test "an expired Android callback is rejected before Identity side effects and revokes the token" do
+    user = users(:one)
+    identity = Identity.create!(provider: "apple", uid: "expired-android-apple", email: "old-expired@example.com", user:)
+    transaction, handle = start_android_transaction
+    transaction.update_column(:expires_at, 1.minute.ago)
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "expired-android-apple",
+      email: "must-not-persist@example.com",
+      refresh_token: "expired-unused-token"
+    )
+    apple_client = FakeAppleClient.new
+
+    Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+      Oauth::AppleClient.stub(:new, apple_client) do
+        post "/auth/apple?android_transaction=#{handle}"
+        post auth_apple_callback_path
+      end
+    end
+
+    assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=transaction_expired"
+    assert_equal "old-expired@example.com", identity.reload.email
+    assert_nil transaction.reload.authorized_at
+    assert_equal [
+      { refresh_token: "expired-unused-token", client_id: "app.hauptgang.web" }
+    ], apple_client.revocations
+  end
+
+  test "a second Android callback cannot mutate Identity or mint another exchange code" do
+    user = users(:one)
+    identity = Identity.create!(provider: "apple", uid: "once-android-apple", email: "first@example.com", user:)
+    transaction, handle = start_android_transaction
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple", uid: "once-android-apple", email: "accepted@example.com", refresh_token: "accepted-token"
+    )
+
+    Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+      post "/auth/apple?android_transaction=#{handle}"
+      post auth_apple_callback_path
+    end
+    first_exchange_digest = transaction.reload.exchange_digest
+
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple", uid: "once-android-apple", email: "rejected@example.com", refresh_token: "rejected-token"
+    )
+    apple_client = FakeAppleClient.new
+    Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+      Oauth::AppleClient.stub(:new, apple_client) do
+        post "/auth/apple?android_transaction=#{handle}"
+        post auth_apple_callback_path
+      end
+    end
+
+    assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=transaction_unavailable"
+    assert_equal "accepted@example.com", identity.reload.email
+    assert_equal first_exchange_digest, transaction.reload.exchange_digest
+    assert_equal [ { refresh_token: "rejected-token", client_id: "app.hauptgang.web" } ], apple_client.revocations
+  end
+
+  test "a consumed Android transaction is rejected before Identity side effects" do
+    user = users(:one)
+    identity = Identity.create!(provider: "apple", uid: "consumed-android-apple", email: "consumed-old@example.com", user:)
+    transaction, handle = start_android_transaction
+    transaction.update_column(:consumed_at, Time.current)
+    OmniAuth.config.mock_auth[:apple] = auth_hash(
+      provider: "apple",
+      uid: "consumed-android-apple",
+      email: "must-not-update-consumed@example.com",
+      refresh_token: "consumed-unused-token"
+    )
+    apple_client = FakeAppleClient.new
+
+    Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+      Oauth::AppleClient.stub(:new, apple_client) do
+        post "/auth/apple?android_transaction=#{handle}"
+        post auth_apple_callback_path
+      end
+    end
+
+    assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=transaction_unavailable"
+    assert_equal "consumed-old@example.com", identity.reload.email
+    assert_nil transaction.reload.authorized_at
+    assert_equal [ { refresh_token: "consumed-unused-token", client_id: "app.hauptgang.web" } ], apple_client.revocations
+  end
+
+  test "an Android OmniAuth failure uses the captured handle and a fixed error" do
+    transaction, handle = start_android_transaction
+    _other_transaction, other_handle = start_android_transaction
+    OmniAuth.config.mock_auth[:apple] = :invalid_credentials
+
+    assert_no_difference [ "User.count", "Identity.count", "Session.count", "ApiToken.count" ] do
+      post "/auth/apple?android_transaction=#{handle}"
+      post auth_apple_callback_path, params: { android_transaction: other_handle, error: "provider-secret" }
+    end
+
+    assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=authentication_failed"
+    assert_equal "no-store", response.headers["Cache-Control"]
+    assert_equal "no-referrer", response.headers["Referrer-Policy"]
+    assert_nil transaction.reload.authorized_at
+    assert_nil transaction.user
+  end
+
+  test "an Android provider cancellation returns only the fixed cancelled error" do
+    _transaction, handle = start_android_transaction
+    OmniAuth.config.mock_auth[:apple] = :access_denied
+
+    post "/auth/apple?android_transaction=#{handle}"
+    post auth_apple_callback_path, params: { error: "attacker-error" }
+
+    assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=cancelled"
+  end
+
+  test "an Android failure without a known captured handle has no app redirect fallback" do
+    OmniAuth.config.mock_auth[:apple] = :invalid_credentials
+
+    post "/auth/apple?android_transaction=missing-handle"
+    post auth_apple_callback_path, params: { transaction_id: "callback-handle" }
+
+    assert_redirected_to "/auth/failure?message=invalid_credentials&strategy=apple"
+  end
+
+  test "Android confirmation page retains only the handle in fresh POST actions" do
+    transaction, handle = start_android_transaction
+    transaction.with_lock { transaction.mark_confirmation_required! }
+
+    https!
+    get "/android/apple/confirm_account_creation", params: {
+      transaction_id: handle,
+      id_token: "must-not-echo",
+      authorization_code: "must-not-echo"
+    }
+
+    assert_response :success
+    assert_select "h1", "Create a new MainCourse account?"
+    assert_select "form[action='/auth/apple?android_transaction=#{handle}&allow_account_creation=true'][method='post']"
+    assert_select "form[action='/android/apple/cancel'][method='post'] input[name='transaction_id'][value='#{handle}']"
+    assert_not_includes response.body, "must-not-echo"
+  end
+
   private
     class FakeAppleClient
       attr_reader :revocations
@@ -301,5 +573,9 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
       else
         OmniAuth.config.mock_auth.delete(provider)
       end
+    end
+
+    def start_android_transaction(callback: "release")
+      AppleAuthTransaction.start!(code_challenge: "A" * 43, callback:)
     end
 end

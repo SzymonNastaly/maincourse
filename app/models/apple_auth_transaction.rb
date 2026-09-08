@@ -11,6 +11,14 @@ class AppleAuthTransaction < ApplicationRecord
   TRANSACTION_LIFETIME = 5.minutes
   EXCHANGE_LIFETIME = 1.minute
   SQLITE_BUSY_RETRIES = 3
+  HANDOFF_ERROR_CODES = %w[
+    cancelled
+    authentication_failed
+    transaction_expired
+    transaction_unavailable
+    account_link_required
+    provider_unavailable
+  ].freeze
 
   belongs_to :user, optional: true
 

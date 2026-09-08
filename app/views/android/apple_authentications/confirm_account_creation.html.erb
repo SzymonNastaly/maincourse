@@ -1,0 +1,34 @@
+<% page_title "Confirm Apple account creation" %>
+
+<div class="mb-10 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
+</div>
+
+<% if @setup_issue == :https %>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">HTTPS setup required</h1>
+  <p class="mb-7 text-[13px] font-light leading-5 text-body">
+    Continue from a registered HTTPS MainCourse address to use real Apple sign-in.
+  </p>
+<% elsif @setup_issue %>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">Apple sign-in unavailable</h1>
+  <p class="mb-7 text-[13px] font-light leading-5 text-body">
+    Return to MainCourse and choose another sign-in method.
+  </p>
+<% else %>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">Create a new MainCourse account?</h1>
+  <p class="mb-7 text-[13px] font-light leading-5 text-body">
+    This Apple sign-in is not connected to a MainCourse account. If you already use MainCourse, cancel and sign in the way you used before to keep your recipes.
+  </p>
+
+  <div class="space-y-2.5">
+    <%= button_to "Use existing account / Cancel", android_apple_cancel_path,
+                  method: :post,
+                  params: { transaction_id: @transaction_id },
+                  class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+    <%= button_to "Create new account with Apple", "/auth/apple?#{Rack::Utils.build_query(android_transaction: @transaction_id, allow_account_creation: true)}",
+                  method: :post,
+                  class: "mc-btn mc-btn-apple w-full py-3 text-[13.5px]",
+                  form: { data: { turbo: false } } %>
+  </div>
+<% end %>

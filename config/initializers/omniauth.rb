@@ -1,3 +1,6 @@
+require Rails.root.join("lib/omniauth/strategies/main_course_apple")
+require Rails.root.join("lib/oauth/android_apple_failure_endpoint")
+
 credentials = Rails.application.credentials
 
 google_client_id = credentials.dig(:google, :client_id)
@@ -27,18 +30,20 @@ end
 
 if apple_configured || Rails.env.test?
   Rails.application.config.middleware.use OmniAuth::Builder do
-    provider :apple,
+    provider OmniAuth::Strategies::MainCourseApple,
       apple_services_id || "test-apple-services-id",
       "",
       scope: "email name",
       team_id: apple_team_id || "TESTTEAMID",
       key_id: apple_key_id || "TESTKEYID",
-      pem: apple_private_key || "unused-in-test"
+      pem: apple_private_key || "unused-in-test",
+      authorized_client_ids: [ apple_services_id || "test-apple-services-id" ]
   end
 end
 
 OmniAuth.config.allowed_request_methods = [ :post ]
 OmniAuth.config.logger = Rails.logger
+OmniAuth.config.on_failure = Oauth::AndroidAppleFailureEndpoint
 if Rails.env.production?
   OmniAuth.config.full_host = "https://#{Rails.application.config.x.canonical_host}"
 end

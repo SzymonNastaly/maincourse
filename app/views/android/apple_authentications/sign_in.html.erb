@@ -1,0 +1,34 @@
+<% page_title "Continue with Apple" %>
+
+<div class="mb-10 flex items-center gap-2.5">
+  <%= brand_mark size: 28 %>
+  <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
+</div>
+
+<% if @setup_issue == :https %>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">HTTPS setup required</h1>
+  <p class="mb-7 text-[13px] font-light leading-5 text-body">
+    Continue from a registered HTTPS MainCourse address to use real Apple sign-in. A local HTTP server cannot complete Apple's web authorization.
+  </p>
+<% elsif @setup_issue %>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">Apple sign-in unavailable</h1>
+  <p class="mb-7 text-[13px] font-light leading-5 text-body">
+    Apple sign-in is not configured on this address. Return to MainCourse and choose another sign-in method.
+  </p>
+<% else %>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">Continue with Apple</h1>
+  <p class="mb-7 text-[13px] font-light leading-5 text-body">
+    Continue to Apple's secure website. MainCourse will return you to the Android app after Apple verifies your account.
+  </p>
+
+  <div class="space-y-2.5">
+    <%= button_to "Continue with Apple", "/auth/apple?#{Rack::Utils.build_query(android_transaction: @transaction_id)}",
+                  method: :post,
+                  class: "mc-btn mc-btn-apple w-full py-3 text-[13.5px]",
+                  form: { data: { turbo: false } } %>
+    <%= button_to "Cancel", android_apple_cancel_path,
+                  method: :post,
+                  params: { transaction_id: @transaction_id },
+                  class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+  </div>
+<% end %>
