@@ -274,10 +274,14 @@ actor APIClient: APIClientProtocol {
     }
 
     private func conflictError(from json: [String: Any]) -> APIError {
-        guard json["error_code"] as? String == "account_link_required" else {
-            return .unknown
+        switch json["error_code"] as? String {
+        case "account_link_required":
+            .accountLinkRequired
+        case "apple_account_creation_confirmation_required":
+            .appleAccountCreationConfirmationRequired
+        default:
+            .unknown
         }
-        return .accountLinkRequired
     }
 
     private func serverError(statusCode: Int, json: [String: Any]) -> APIError {

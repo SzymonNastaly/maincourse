@@ -5,7 +5,12 @@ import Foundation
 import UIKit
 
 @MainActor
-final class AppleSignInService: ObservableObject {
+protocol AppleSignInProviding: Sendable {
+    func signIn() async throws -> OAuthCredential?
+}
+
+@MainActor
+final class AppleSignInService: ObservableObject, AppleSignInProviding {
     private var rawNonce: String?
     private var activeDelegate: AuthorizationDelegate?
 

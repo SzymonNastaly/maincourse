@@ -10,8 +10,11 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     var deleteAccountResult: Result<Void, Error> = .success(())
     var currentUser: User?
     var updateLifecycleResult: User?
+    var oauthLoginResults: [Result<User, Error>] = []
     private(set) var lastLifecycleValue: Bool?
     private(set) var lastOAuthCredential: OAuthCredential?
+    private(set) var oauthCredentials: [OAuthCredential] = []
+    private(set) var creationIntents: [Bool] = []
 
     func login(email _: String, password _: String) async throws -> User {
         try self.loginResult.get()
@@ -26,8 +29,13 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
         try self.loginResult.get()
     }
 
-    func login(with credential: OAuthCredential) async throws -> User {
+    func login(with credential: OAuthCredential, allowAccountCreation: Bool) async throws -> User {
         self.lastOAuthCredential = credential
+        self.oauthCredentials.append(credential)
+        self.creationIntents.append(allowAccountCreation)
+        if !self.oauthLoginResults.isEmpty {
+            return try self.oauthLoginResults.removeFirst().get()
+        }
         return try self.loginResult.get()
     }
 

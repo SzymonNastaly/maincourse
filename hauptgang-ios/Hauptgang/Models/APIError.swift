@@ -17,6 +17,7 @@ enum APIError: LocalizedError {
     case oauthAuthenticationFailed
     case oauthUnavailable
     case accountLinkRequired
+    case appleAccountCreationConfirmationRequired
     case unknown
 
     var errorDescription: String? {
@@ -53,6 +54,8 @@ enum APIError: LocalizedError {
             "That sign-in provider is temporarily unavailable. Please try again later."
         case .accountLinkRequired:
             "An account already exists for this email. Sign in with your password instead."
+        case .appleAccountCreationConfirmationRequired:
+            "Confirm that you want to create a separate MainCourse account with Apple."
         case .unknown:
             "An unexpected error occurred"
         }
@@ -72,6 +75,8 @@ enum APIError: LocalizedError {
             "Wait a moment and try again, or use email and password."
         case .accountLinkRequired:
             "Use the password reset link on the website if you have forgotten your password."
+        case .appleAccountCreationConfirmationRequired:
+            "Sign in the way you used before to keep your recipes, or confirm creation of a separate cookbook."
         case .serverError:
             "Wait a moment and try again. If the problem persists, contact support."
         default:

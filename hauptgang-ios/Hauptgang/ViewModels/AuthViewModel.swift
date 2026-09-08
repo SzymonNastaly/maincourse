@@ -9,9 +9,11 @@ final class AuthViewModel: ObservableObject {
     @Published var password = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published private(set) var showsAppleAccountCreationConfirmation = false
     @Published var isSignUp = false {
         didSet {
             self.errorMessage = nil
+            self.showsAppleAccountCreationConfirmation = false
             self.nameDirty = false
             self.emailDirty = false
             self.passwordDirty = false
@@ -24,10 +26,16 @@ final class AuthViewModel: ObservableObject {
     @Published var passwordDirty = false
 
     private let authService: AuthServiceProtocol
+    private let appleSignInProvider: AppleSignInProviding
 
-    init(initialIsSignUp: Bool = false, authService: AuthServiceProtocol = AuthService.shared) {
+    init(
+        initialIsSignUp: Bool = false,
+        authService: AuthServiceProtocol = AuthService.shared,
+        appleSignInProvider: AppleSignInProviding = AppleSignInService()
+    ) {
         self.isSignUp = initialIsSignUp
         self.authService = authService
+        self.appleSignInProvider = appleSignInProvider
     }
 
     // MARK: - Validation
@@ -104,6 +112,27 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
+    func signInWithApple(authManager: AuthManager) async -> Bool {
+        guard !self.isLoading else { return false }
+        self.showsAppleAccountCreationConfirmation = false
+        return await self.performAppleSignIn(allowAccountCreation: false, authManager: authManager)
+    }
+
+    func confirmAppleAccountCreation(authManager: AuthManager) async -> Bool {
+        guard self.showsAppleAccountCreationConfirmation, !self.isLoading else { return false }
+        self.showsAppleAccountCreationConfirmation = false
+        return await self.performAppleSignIn(allowAccountCreation: true, authManager: authManager)
+    }
+
+    func cancelAppleAccountCreation() {
+        self.showsAppleAccountCreationConfirmation = false
+    }
+
+    func useExistingAccount() {
+        self.showsAppleAccountCreationConfirmation = false
+        self.isSignUp = false
+    }
+
     func present(_ error: Error) {
         if let localizedError = error as? LocalizedError,
            let description = localizedError.errorDescription {
@@ -120,7 +149,7 @@ final class AuthViewModel: ObservableObject {
         requiresValidForm: Bool = true,
         action: () async throws -> User
     ) async -> Bool {
-        guard !requiresValidForm || self.isFormValid else { return false }
+        guard !self.isLoading, !requiresValidForm || self.isFormValid else { return false }
 
         self.isLoading = true
         self.errorMessage = nil
@@ -134,6 +163,32 @@ final class AuthViewModel: ObservableObject {
             self.errorMessage = error.localizedDescription
         } catch {
             self.errorMessage = "An unexpected error occurred. Please try again."
+        }
+
+        return false
+    }
+
+    private func performAppleSignIn(allowAccountCreation: Bool, authManager: AuthManager) async -> Bool {
+        guard !self.isLoading else { return false }
+
+        self.isLoading = true
+        self.errorMessage = nil
+        defer { self.isLoading = false }
+
+        do {
+            guard let credential = try await self.appleSignInProvider.signIn() else { return false }
+            let user = try await self.authService.login(
+                with: credential,
+                allowAccountCreation: allowAccountCreation
+            )
+            authManager.signIn(user: user)
+            return true
+        } catch APIError.appleAccountCreationConfirmationRequired where !allowAccountCreation {
+            self.showsAppleAccountCreationConfirmation = true
+        } catch let error as APIError {
+            self.errorMessage = error.localizedDescription
+        } catch {
+            self.present(error)
         }
 
         return false

@@ -3,7 +3,6 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
     @StateObject private var viewModel: AuthViewModel
-    @StateObject private var appleSignInService = AppleSignInService()
     @FocusState private var focusedField: Field?
     @State private var isProviderFlowActive = false
     @State private var isPasswordFlowActive = false
@@ -44,6 +43,27 @@ struct LoginView: View {
             case .password: self.viewModel.passwordDirty = true
             case nil: break
             }
+        }
+        .onDisappear(perform: self.viewModel.cancelAppleAccountCreation)
+        .alert(
+            "Create a new MainCourse account?",
+            isPresented: Binding(
+                get: { self.viewModel.showsAppleAccountCreationConfirmation },
+                set: { _ in }
+            )
+        ) {
+            Button("Use existing account") {
+                self.viewModel.useExistingAccount()
+                self.focusedField = .email
+            }
+            Button("Create new account with Apple", action: self.beginConfirmedAppleSignIn)
+            Button("Cancel", role: .cancel, action: self.viewModel.cancelAppleAccountCreation)
+        } message: {
+            Text(
+                "This Apple sign-in isn't connected to a MainCourse account. " +
+                    "If you already use MainCourse, sign in the way you used before to keep your recipes. " +
+                    "Creating a new account starts a separate cookbook."
+            )
         }
     }
 
@@ -344,11 +364,22 @@ struct LoginView: View {
         Task { @MainActor in
             defer { self.isProviderFlowActive = false }
 
-            do {
-                guard let credential = try await self.appleSignInService.signIn() else { return }
-                await self.authenticate(with: credential)
-            } catch {
-                self.viewModel.present(error)
+            let didAuthenticate = await self.viewModel.signInWithApple(authManager: self.authManager)
+            if didAuthenticate {
+                self.onAuthenticated?()
+            }
+        }
+    }
+
+    private func beginConfirmedAppleSignIn() {
+        guard !self.isAuthBusy else { return }
+        self.isProviderFlowActive = true
+
+        Task { @MainActor in
+            defer { self.isProviderFlowActive = false }
+            let didAuthenticate = await self.viewModel.confirmAppleAccountCreation(authManager: self.authManager)
+            if didAuthenticate {
+                self.onAuthenticated?()
             }
         }
     }

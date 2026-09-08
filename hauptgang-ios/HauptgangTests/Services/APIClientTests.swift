@@ -93,6 +93,18 @@ final class APIClientTests: XCTestCase {
         )
     }
 
+    func testOAuthRequest_appleNormalAttemptExplicitlyEncodesCreationIntentFalse() async throws {
+        try await self.assertOAuthRequestCreationIntent(provider: .apple, allowAccountCreation: false, expected: false)
+    }
+
+    func testOAuthRequest_appleConfirmedAttemptExplicitlyEncodesCreationIntentTrue() async throws {
+        try await self.assertOAuthRequestCreationIntent(provider: .apple, allowAccountCreation: true, expected: true)
+    }
+
+    func testOAuthRequest_googleOmitsCreationIntent() async throws {
+        try await self.assertOAuthRequestCreationIntent(provider: .google, allowAccountCreation: false, expected: nil)
+    }
+
     // MARK: - Error Mapping Tests
 
     func testRequest_401WithInvalidError_throwsInvalidCredentials() async throws {
@@ -208,6 +220,36 @@ final class APIClientTests: XCTestCase {
                 // Expected
             } else {
                 XCTFail("Expected accountLinkRequired, got \(error)")
+            }
+        }
+    }
+
+    func testRequest_409ForUnknownAppleIdentity_throwsAccountCreationConfirmationRequired() async throws {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 409,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let body = #"{"error": "Confirmation required", "error_code": "apple_account_creation_confirmation_required"}"#
+                .data(using: .utf8)!
+            return (response, body)
+        }
+
+        do {
+            let _: EmptyDecodable = try await sut.request(
+                endpoint: "oauth_session",
+                method: .post,
+                body: nil,
+                authenticated: false
+            )
+            XCTFail("Expected appleAccountCreationConfirmationRequired error")
+        } catch let error as APIError {
+            if case .appleAccountCreationConfirmationRequired = error {
+                // Expected
+            } else {
+                XCTFail("Expected appleAccountCreationConfirmationRequired, got \(error)")
             }
         }
     }
@@ -399,6 +441,48 @@ final class APIClientTests: XCTestCase {
                 URLQueryItem(name: "from", value: "2026-03-18"),
                 URLQueryItem(name: "to", value: "2026-03-19")
             ],
+            authenticated: false
+        )
+    }
+
+    private func assertOAuthRequestCreationIntent(
+        provider: OAuthProvider,
+        allowAccountCreation: Bool,
+        expected: Bool?
+    ) async throws {
+        MockURLProtocol.requestHandler = { request in
+            let data = try XCTUnwrap(request.httpBody ?? request.httpBodyStream?.readAllData())
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            XCTAssertEqual(json["allow_account_creation"] as? Bool, expected)
+            XCTAssertEqual(json.keys.contains("allow_account_creation"), expected != nil)
+
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, "{}".data(using: .utf8)!)
+        }
+
+        let credential = OAuthCredential(
+            provider: provider,
+            idToken: "identity-token",
+            authorizationCode: provider == .apple ? "authorization-code" : nil,
+            nonce: "nonce",
+            name: nil
+        )
+        let body = OAuthLoginRequest(
+            credential: credential,
+            allowAccountCreation: allowAccountCreation,
+            deviceName: "Test iPhone",
+            onboardingDeviceId: nil
+        )
+
+        let _: EmptyDecodable = try await self.sut.request(
+            endpoint: "oauth_session",
+            method: .post,
+            body: body,
             authenticated: false
         )
     }

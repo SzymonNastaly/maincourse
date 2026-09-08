@@ -194,4 +194,174 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertFalse(authenticated)
         XCTAssertEqual(self.sut.errorMessage, "Could not sign in with that provider. Please try again.")
     }
+
+    func testAppleSignIn_unknownIdentityPresentsConfirmationWithoutAuthenticating() async {
+        let provider = MockAppleSignInProvider(results: [.success(self.appleCredential(suffix: "first"))])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
+        let authManager = AuthManager(authService: self.mockAuthService)
+
+        let authenticated = await self.sut.signInWithApple(authManager: authManager)
+
+        XCTAssertFalse(authenticated)
+        XCTAssertTrue(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertFalse(authManager.authState.isAuthenticated)
+        XCTAssertEqual(provider.callCount, 1)
+        XCTAssertEqual(self.mockAuthService.oauthCredentials.map(\.authorizationCode), ["first-code"])
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false])
+        XCTAssertNil(self.sut.errorMessage)
+    }
+
+    func testCancelAppleAccountCreationClearsConfirmationWithoutAnotherRequest() async {
+        let provider = MockAppleSignInProvider(results: [.success(self.appleCredential(suffix: "first"))])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
+        let authManager = AuthManager(authService: self.mockAuthService)
+        _ = await self.sut.signInWithApple(authManager: authManager)
+
+        self.sut.cancelAppleAccountCreation()
+
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertEqual(provider.callCount, 1)
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false])
+    }
+
+    func testUseExistingAccountKeepsTypedInputAndSwitchesToSignInWithoutAnotherRequest() async {
+        let provider = MockAppleSignInProvider(results: [.success(self.appleCredential(suffix: "first"))])
+        self.sut = AuthViewModel(
+            initialIsSignUp: true,
+            authService: self.mockAuthService,
+            appleSignInProvider: provider
+        )
+        self.sut.name = "Ada"
+        self.sut.email = "ada@example.com"
+        self.sut.password = "typed password"
+        self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
+        let authManager = AuthManager(authService: self.mockAuthService)
+        _ = await self.sut.signInWithApple(authManager: authManager)
+
+        self.sut.useExistingAccount()
+
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertFalse(self.sut.isSignUp)
+        XCTAssertEqual(self.sut.name, "Ada")
+        XCTAssertEqual(self.sut.email, "ada@example.com")
+        XCTAssertEqual(self.sut.password, "typed password")
+        XCTAssertEqual(provider.callCount, 1)
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false])
+    }
+
+    func testConfirmAppleAccountCreationGetsFreshCredentialAndAllowsCreationOnce() async {
+        let provider = MockAppleSignInProvider(results: [
+            .success(self.appleCredential(suffix: "first")),
+            .success(self.appleCredential(suffix: "second"))
+        ])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [
+            .failure(APIError.appleAccountCreationConfirmationRequired),
+            .success(User(id: 42, email: "apple@example.com"))
+        ]
+        let authManager = AuthManager(authService: self.mockAuthService)
+        _ = await self.sut.signInWithApple(authManager: authManager)
+
+        let authenticated = await self.sut.confirmAppleAccountCreation(authManager: authManager)
+
+        XCTAssertTrue(authenticated)
+        XCTAssertTrue(authManager.authState.isAuthenticated)
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertEqual(provider.callCount, 2)
+        XCTAssertEqual(
+            self.mockAuthService.oauthCredentials.map(\.authorizationCode),
+            ["first-code", "second-code"]
+        )
+        XCTAssertEqual(self.mockAuthService.oauthCredentials.map(\.nonce), ["first-nonce", "second-nonce"])
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false, true])
+    }
+
+    func testConfirmAppleAccountCreation_whenSheetIsCanceledReturnsToIdleWithoutPostingAgain() async {
+        let provider = MockAppleSignInProvider(results: [
+            .success(self.appleCredential(suffix: "first")),
+            .success(nil)
+        ])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
+        let authManager = AuthManager(authService: self.mockAuthService)
+        _ = await self.sut.signInWithApple(authManager: authManager)
+
+        let authenticated = await self.sut.confirmAppleAccountCreation(authManager: authManager)
+
+        XCTAssertFalse(authenticated)
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertEqual(provider.callCount, 2)
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false])
+    }
+
+    func testAppleSignIn_providerFailureReturnsToIdleAndShowsError() async {
+        let provider = MockAppleSignInProvider(results: [.failure(MockAuthError.networkError)])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        let authManager = AuthManager(authService: self.mockAuthService)
+
+        let authenticated = await self.sut.signInWithApple(authManager: authManager)
+
+        XCTAssertFalse(authenticated)
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertEqual(self.sut.errorMessage, "Network connection failed")
+        XCTAssertTrue(self.mockAuthService.oauthCredentials.isEmpty)
+    }
+
+    func testAppleSignIn_successfulKnownIdentityDoesNotPresentConfirmation() async {
+        let provider = MockAppleSignInProvider(results: [.success(self.appleCredential(suffix: "known"))])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [.success(User(id: 42, email: "apple@example.com"))]
+        let authManager = AuthManager(authService: self.mockAuthService)
+
+        let authenticated = await self.sut.signInWithApple(authManager: authManager)
+
+        XCTAssertTrue(authenticated)
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertEqual(provider.callCount, 1)
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false])
+    }
+
+    func testAppleSignIn_whileBusyDoesNotLaunchCompetingProviderAttempt() async {
+        let provider = BlockingAppleSignInProvider()
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        let authManager = AuthManager(authService: self.mockAuthService)
+
+        let firstAttempt = Task { await self.sut.signInWithApple(authManager: authManager) }
+        for _ in 0 ..< 10 where !self.sut.isLoading {
+            await Task.yield()
+        }
+
+        let secondAuthenticated = await self.sut.signInWithApple(authManager: authManager)
+
+        XCTAssertFalse(secondAuthenticated)
+        XCTAssertEqual(provider.callCount, 1)
+        provider.finish()
+        _ = await firstAttempt.value
+        XCTAssertFalse(self.sut.isLoading)
+    }
+
+    func testChangingAuthModeClearsPendingAppleConfirmation() async {
+        let provider = MockAppleSignInProvider(results: [.success(self.appleCredential(suffix: "first"))])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
+        let authManager = AuthManager(authService: self.mockAuthService)
+        _ = await self.sut.signInWithApple(authManager: authManager)
+
+        self.sut.isSignUp = true
+
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+    }
+
+    private func appleCredential(suffix: String) -> OAuthCredential {
+        OAuthCredential(
+            provider: .apple,
+            idToken: "\(suffix)-token",
+            authorizationCode: "\(suffix)-code",
+            nonce: "\(suffix)-nonce",
+            name: "Test User"
+        )
+    }
 }

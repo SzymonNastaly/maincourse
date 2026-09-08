@@ -67,15 +67,12 @@ final class AuthService: AuthServiceProtocol {
 
     // MARK: - Provider Login
 
-    func login(with credential: OAuthCredential) async throws -> User {
+    func login(with credential: OAuthCredential, allowAccountCreation: Bool) async throws -> User {
         let deviceName = await getDeviceName()
         let onboardingDeviceId = OnboardingService.deviceIdForAuth()
         let request = OAuthLoginRequest(
-            provider: credential.provider,
-            idToken: credential.idToken,
-            authorizationCode: credential.authorizationCode,
-            nonce: credential.nonce,
-            name: credential.name,
+            credential: credential,
+            allowAccountCreation: allowAccountCreation,
             deviceName: deviceName,
             onboardingDeviceId: onboardingDeviceId
         )
@@ -198,7 +195,7 @@ private struct SignupRequest: Encodable {
     let onboardingDeviceId: String?
 }
 
-private struct OAuthLoginRequest: Encodable {
+struct OAuthLoginRequest: Encodable {
     let provider: OAuthProvider
     let idToken: String
     let authorizationCode: String?
@@ -206,6 +203,23 @@ private struct OAuthLoginRequest: Encodable {
     let name: String?
     let deviceName: String
     let onboardingDeviceId: String?
+    let allowAccountCreation: Bool?
+
+    init(
+        credential: OAuthCredential,
+        allowAccountCreation: Bool,
+        deviceName: String,
+        onboardingDeviceId: String?
+    ) {
+        self.provider = credential.provider
+        self.idToken = credential.idToken
+        self.authorizationCode = credential.authorizationCode
+        self.nonce = credential.nonce
+        self.name = credential.name
+        self.deviceName = deviceName
+        self.onboardingDeviceId = onboardingDeviceId
+        self.allowAccountCreation = credential.provider == .apple ? allowAccountCreation : nil
+    }
 }
 
 private struct AccountUpdateRequest: Encodable {
