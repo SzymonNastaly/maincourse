@@ -30,10 +30,11 @@ internal class RecipeImagePreparer(
         val source = File(userDirectory, ".$key.source")
         val pending = File(userDirectory, ".$key.jpg.tmp")
         val output = File(userDirectory, "$key.jpg")
+        var dimensionsRejected = false
         try {
             open(uri).use { input -> copyBounded(input, source) }
             currentCoroutineContext().ensureActive()
-            val bitmap = decode(source)
+            val bitmap = decode(source) { dimensionsRejected = true }
             try {
                 encodeJpeg(bitmap, pending)
             } finally {
@@ -47,7 +48,12 @@ internal class RecipeImagePreparer(
             pending.delete()
             output.delete()
             if (failure is CancellationException) throw failure
-            throw PreparedRecipeImageUnavailable("This photo could not be prepared. Choose another image.")
+            val message = if (dimensionsRejected) {
+                "This photo's dimensions are too large. Choose another image."
+            } else {
+                "This photo could not be prepared. Choose another image."
+            }
+            throw PreparedRecipeImageUnavailable(message)
         } finally {
             source.delete()
             pending.delete()
@@ -74,22 +80,26 @@ internal class RecipeImagePreparer(
         }
     }
 
-    private fun decode(source: File): Bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(source)) { decoder, info, _ ->
-        val width = info.size.width
-        val height = info.size.height
-        check(width > 0 && height > 0 && width <= MAX_DIMENSION && height <= MAX_DIMENSION &&
-            width.toLong() * height.toLong() <= MAX_PIXELS
-        ) { "Selected image dimensions are unsupported" }
-        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-        val longest = maxOf(width, height)
-        if (longest > TARGET_LONG_EDGE) {
-            val scale = TARGET_LONG_EDGE.toDouble() / longest
-            decoder.setTargetSize(
-                (width * scale).roundToInt().coerceAtLeast(1),
-                (height * scale).roundToInt().coerceAtLeast(1),
-            )
+    private fun decode(source: File, onRejectedDimensions: () -> Unit): Bitmap =
+        ImageDecoder.decodeBitmap(ImageDecoder.createSource(source)) { decoder, info, _ ->
+            val width = info.size.width
+            val height = info.size.height
+            if (width <= 0 || height <= 0 || width > MAX_DIMENSION || height > MAX_DIMENSION ||
+                width.toLong() * height.toLong() > MAX_PIXELS
+            ) {
+                onRejectedDimensions()
+                error("Selected image dimensions are unsupported")
+            }
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            val longest = maxOf(width, height)
+            if (longest > TARGET_LONG_EDGE) {
+                val scale = TARGET_LONG_EDGE.toDouble() / longest
+                decoder.setTargetSize(
+                    (width * scale).roundToInt().coerceAtLeast(1),
+                    (height * scale).roundToInt().coerceAtLeast(1),
+                )
+            }
         }
-    }
 
     private fun encodeJpeg(bitmap: Bitmap, destination: File) {
         var quality = 92

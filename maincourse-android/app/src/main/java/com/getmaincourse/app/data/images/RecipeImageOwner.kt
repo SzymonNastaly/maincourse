@@ -23,22 +23,35 @@ class RecipeImageOwner internal constructor(
 
     private val preparer = RecipeImagePreparer(context.applicationContext.contentResolver, rootDirectory, ioDispatcher)
     private val mutex = Mutex()
+    private val lifecycleLock = Any()
+    private var lifecycleEpoch = 0L
+    private var clearing = false
 
-    suspend fun prepare(userId: Long, uri: Uri): PreparedRecipeImage = mutex.withLock {
-        withContext(ioDispatcher) {
-            rootDirectory.listFiles().orEmpty().filterNot { it.name == "user-$userId" }.forEach { obsolete ->
-                if (obsolete.exists() && !deleteDirectory(obsolete)) error("Could not remove another user's staged images")
-            }
+    suspend fun prepare(userId: Long, uri: Uri): PreparedRecipeImage {
+        val capturedEpoch = synchronized(lifecycleLock) {
+            if (clearing) unavailable()
+            lifecycleEpoch
         }
-        preparer.prepare(userId, uri)
+        return mutex.withLock {
+            if (!ownsEpoch(capturedEpoch)) unavailable()
+            withContext(ioDispatcher) {
+                rootDirectory.listFiles().orEmpty().filterNot { it.name == "user-$userId" }.forEach { obsolete ->
+                    if (obsolete.exists() && !deleteDirectory(obsolete)) error("Could not remove another user's staged images")
+                }
+            }
+            val prepared = preparer.prepare(userId, uri)
+            if (!ownsEpoch(capturedEpoch)) {
+                withContext(ioDispatcher) { runCatching { discardFile(prepared) } }
+                unavailable()
+            }
+            prepared
+        }
     }
 
     suspend fun resolve(image: PreparedRecipeImage, currentUserId: Long): File = mutex.withLock {
         withContext(ioDispatcher) {
-            if (image.userId != currentUserId || !SAFE_KEY.matches(image.key)) unavailable()
-            val expectedRoot = File(rootDirectory, "user-$currentUserId").canonicalFile
-            val file = File(image.path).canonicalFile
-            if (file.parentFile != expectedRoot || file.name != "${image.key}.jpg" || !file.isFile || !file.canRead()) unavailable()
+            val file = ownedFile(image, currentUserId)
+            if (!file.isFile || !file.canRead()) unavailable()
             val signature = FileInputStream(file).use { input ->
                 ByteArray(3).also { if (input.read(it) != it.size) unavailable() }
             }
@@ -47,10 +60,41 @@ class RecipeImageOwner internal constructor(
         }
     }
 
-    suspend fun clear() = mutex.withLock {
-        withContext(ioDispatcher) {
-            if (rootDirectory.exists() && !deleteDirectory(rootDirectory)) error("Could not remove staged recipe images")
+    suspend fun discard(image: PreparedRecipeImage) = mutex.withLock {
+        withContext(ioDispatcher) { discardFile(image) }
+    }
+
+    suspend fun clear() {
+        synchronized(lifecycleLock) {
+            lifecycleEpoch++
+            clearing = true
         }
+        try {
+            mutex.withLock {
+                withContext(ioDispatcher) {
+                    if (rootDirectory.exists() && !deleteDirectory(rootDirectory)) error("Could not remove staged recipe images")
+                }
+            }
+        } finally {
+            synchronized(lifecycleLock) { clearing = false }
+        }
+    }
+
+    private fun ownsEpoch(epoch: Long): Boolean = synchronized(lifecycleLock) {
+        !clearing && lifecycleEpoch == epoch
+    }
+
+    private fun discardFile(image: PreparedRecipeImage) {
+        val file = ownedFile(image, image.userId)
+        if (file.exists() && !file.delete()) error("Could not remove staged recipe image")
+    }
+
+    private fun ownedFile(image: PreparedRecipeImage, currentUserId: Long): File {
+        if (image.userId != currentUserId || !SAFE_KEY.matches(image.key)) unavailable()
+        val expectedRoot = File(rootDirectory, "user-$currentUserId").canonicalFile
+        val file = File(image.path).canonicalFile
+        if (file.parentFile != expectedRoot || file.name != "${image.key}.jpg") unavailable()
+        return file
     }
 
     private fun unavailable(): Nothing = throw PreparedRecipeImageUnavailable("Choose the photo again")

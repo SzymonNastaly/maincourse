@@ -1,5 +1,6 @@
 package com.getmaincourse.app.features.session
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.BuildConfig
@@ -49,6 +50,10 @@ class MainCourseViewModel(
     resolvePreparedImage: suspend (PreparedRecipeImage, Long) -> File = { _, _ ->
         throw PreparedRecipeImageUnavailable("Choose the photo again")
     },
+    prepareRecipeImage: suspend (Long, String) -> PreparedRecipeImage = { _, _ ->
+        throw PreparedRecipeImageUnavailable("Choose the photo again")
+    },
+    discardRecipeImage: suspend (PreparedRecipeImage) -> Unit = {},
     credentialStateCleanup: suspend () -> Unit = {},
     private val appleWaitingTimeoutMillis: Long = 300_000,
     private val appleCallback: String = appleCallbackFor(baseUrl, BuildConfig.DEBUG),
@@ -63,6 +68,8 @@ class MainCourseViewModel(
         imageCleanup = imageCleanup,
         credentialStateCleanup = credentialStateCleanup,
         resolvePreparedImage = resolvePreparedImage,
+        prepareRecipeImage = prepareRecipeImage,
+        discardRecipeImage = discardRecipeImage,
     )
     private val onboarding = OnboardingController(
         store = onboardingStore,
@@ -84,6 +91,7 @@ class MainCourseViewModel(
     val state = controller.state
     val searchState = controller.searchState
     val recipeActionState = controller.recipeActionState
+    val recipeImagePreparationState = controller.recipeImagePreparationState
     val accountState = controller.accountState
     val onboardingState = onboarding.state
     val authenticationMethod = mutableAuthenticationMethod.asStateFlow()
@@ -296,6 +304,8 @@ class MainCourseViewModel(
         controller.addReviewedIngredients(recipeId, items)
     fun retryRecipeReconciliation() = controller.retryRecipeReconciliation()
     fun clearRecipeAction() = controller.clearRecipeAction()
+    fun prepareRecipeImage(uri: Uri) = controller.prepareRecipeImage(uri.toString())
+    fun discardRecipeImage(image: PreparedRecipeImage) = controller.discardRecipeImage(image)
     fun openRecipe(id: Long) = controller.openRecipe(id)
     fun closeRecipe() = controller.closeRecipe()
     fun updateName(name: String) = controller.updateName(name)

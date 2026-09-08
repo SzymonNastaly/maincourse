@@ -3,6 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <application>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.recipe-image-test"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/recipe_image_test_paths" />
+        </provider>
         <activity
             android:name=".MainCourseTestActivity"
             android:exported="false"

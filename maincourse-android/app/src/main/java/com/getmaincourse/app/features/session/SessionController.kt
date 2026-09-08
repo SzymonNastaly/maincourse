@@ -24,6 +24,8 @@ import com.getmaincourse.app.features.recipes.RecipeActionController
 import com.getmaincourse.app.features.recipes.RecipeActionHost
 import com.getmaincourse.app.features.recipes.RecipeActionState
 import com.getmaincourse.app.features.recipes.RecipeEditDraft
+import com.getmaincourse.app.features.recipes.RecipeImagePreparationState
+import com.getmaincourse.app.features.recipes.RecipeImagePreparationStatus
 import com.getmaincourse.app.features.recipes.ShoppingItemInput
 import com.getmaincourse.app.features.settings.AccountOperation
 import com.getmaincourse.app.features.settings.AccountState
@@ -67,6 +69,10 @@ class SessionController(
     resolvePreparedImage: suspend (PreparedRecipeImage, Long) -> File = { _, _ ->
         throw PreparedRecipeImageUnavailable("Choose the photo again")
     },
+    prepareRecipeImage: suspend (Long, String) -> PreparedRecipeImage = { _, _ ->
+        throw PreparedRecipeImageUnavailable("Choose the photo again")
+    },
+    discardRecipeImage: suspend (PreparedRecipeImage) -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow(SessionState())
     val state: StateFlow<SessionState> = mutableState.asStateFlow()
@@ -148,8 +154,8 @@ class SessionController(
                 failure: Throwable,
             ) = retainRecipeActionRemoval(context, scope, recipeId, failure)
 
-            override suspend fun settleRecipeReads(context: RecipeActionContext, recipeId: Long?) =
-                settleRecipeActionReads(context, recipeId)
+            override suspend fun settleRecipeReads(context: RecipeActionContext): Boolean =
+                settleRecipeActionReads(context)
 
             override suspend fun handleAuthorizationFailure(
                 context: RecipeActionContext,
@@ -159,6 +165,13 @@ class SessionController(
         resolvePreparedImage = resolvePreparedImage,
     )
     val recipeActionState: StateFlow<RecipeActionState> = recipeActions.state
+    private val prepareRecipeImageResource = prepareRecipeImage
+    private val discardRecipeImageResource = discardRecipeImage
+    private val mutableRecipeImagePreparationState = MutableStateFlow(RecipeImagePreparationState())
+    val recipeImagePreparationState: StateFlow<RecipeImagePreparationState> =
+        mutableRecipeImagePreparationState.asStateFlow()
+    private val imagePreparationRequest = AtomicLong()
+    private val imagePreparationJobs = mutableSetOf<Job>()
 
     fun restore(): Job {
         lateinit var launched: Job
@@ -283,6 +296,92 @@ class SessionController(
     fun retryRecipeReconciliation(): Job = recipeActions.retryRecipeReconciliation()
 
     fun clearRecipeAction(): Job = recipeActions.clearRecipeAction()
+
+    fun prepareRecipeImage(uri: String): Job = launchRecipeImageOperation { context, requestVersion ->
+        val prior = transition.withLock {
+            if (!isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) ||
+                requestVersion != imagePreparationRequest.get()
+            ) {
+                return@withLock null
+            }
+            val old = mutableRecipeImagePreparationState.value.image
+            mutableRecipeImagePreparationState.value = RecipeImagePreparationState(
+                status = RecipeImagePreparationStatus.PREPARING,
+                scope = context.recipeScope,
+                image = old,
+            )
+            old
+        }
+        if (prior != null) {
+            try {
+                discardRecipeImageResource(prior)
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Throwable) {
+                publishRecipeImageError(context, requestVersion, failure.userMessage("Could not replace the selected photo"))
+                return@launchRecipeImageOperation
+            }
+            transition.withLock {
+                if (isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
+                    requestVersion == imagePreparationRequest.get()
+                ) {
+                    mutableRecipeImagePreparationState.value = mutableRecipeImagePreparationState.value.copy(image = null)
+                }
+            }
+        }
+        val prepared = try {
+            prepareRecipeImageResource(context.userContext.response.user.id, uri)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (failure: Throwable) {
+            publishRecipeImageError(context, requestVersion, failure.userMessage("Could not prepare the selected photo"))
+            return@launchRecipeImageOperation
+        }
+        withContext(NonCancellable) {
+            val accepted = transition.withLock {
+                if (isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
+                    requestVersion == imagePreparationRequest.get()
+                ) {
+                    mutableRecipeImagePreparationState.value = RecipeImagePreparationState(
+                        status = RecipeImagePreparationStatus.READY,
+                        scope = context.recipeScope,
+                        image = prepared,
+                    )
+                    true
+                } else {
+                    false
+                }
+            }
+            if (!accepted) {
+                runCatching { discardRecipeImageResource(prepared) }
+            }
+        }
+        currentCoroutineContext().ensureActive()
+    }
+
+    fun discardRecipeImage(image: PreparedRecipeImage): Job = launchRecipeImageOperation { context, requestVersion ->
+        if (image.userId != context.userContext.response.user.id) return@launchRecipeImageOperation
+        val mayDiscard = transition.withLock {
+            isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
+                requestVersion == imagePreparationRequest.get()
+        }
+        if (!mayDiscard) return@launchRecipeImageOperation
+        try {
+            discardRecipeImageResource(image)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (failure: Throwable) {
+            publishRecipeImageError(context, requestVersion, failure.userMessage("Could not discard the selected photo"))
+            return@launchRecipeImageOperation
+        }
+        transition.withLock {
+            if (isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
+                requestVersion == imagePreparationRequest.get()
+            ) {
+                mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
+            }
+        }
+    }
 
     fun openRecipe(id: Long): Job {
         if (mutableState.value.recipes.none { it.id == id }) return completedJob()
@@ -707,9 +806,14 @@ class SessionController(
             if (remote.isEmpty()) {
                 cancelJobs(cookbookJobs)
                 search.activate(null)
+                var stagedImageToDiscard: PreparedRecipeImage? = null
                 transition.withLock {
                     if (isCurrentCatalogLocked(context, requestVersion)) {
                         cookbookGeneration++
+                        imagePreparationRequest.incrementAndGet()
+                        recipeActions.scopeChanged()
+                        stagedImageToDiscard = mutableRecipeImagePreparationState.value.image
+                        mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
                         mutableState.value = mutableState.value.copy(
                             phase = SessionPhase.READY,
                             cookbooks = emptyList(),
@@ -724,6 +828,7 @@ class SessionController(
                         )
                     }
                 }
+                stagedImageToDiscard?.let { runCatching { discardRecipeImageResource(it) } }
                 return
             }
             val activation = reconcileCatalogSelection(
@@ -841,13 +946,17 @@ class SessionController(
         if (!isCurrent(context)) return null
         if (!retryPendingPurge(context)) return null
         val currentJob = currentCoroutineContext()[Job]
+        var stagedImageToDiscard: PreparedRecipeImage? = null
         val version = transition.withLock {
             if (!isCurrentLocked(context)) return@withLock null
             if (requestVersion != cookbookRequest.get()) return@withLock null
             if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
             cookbookGeneration++
             detailGeneration++
-            recipeActions.reset()
+            imagePreparationRequest.incrementAndGet()
+            recipeActions.scopeChanged()
+            stagedImageToDiscard = mutableRecipeImagePreparationState.value.image
+            mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
             mutableState.value = mutableState.value.copy(
                 phase = SessionPhase.READY,
                 activeCookbookId = cookbookId,
@@ -862,6 +971,7 @@ class SessionController(
             cookbookGeneration
         } ?: return null
         cancelJobs(trackedSnapshot(cookbookJobs).filterNot { it == currentJob })
+        stagedImageToDiscard?.let { runCatching { discardRecipeImageResource(it) } }
         catalogRepository.invalidateAndJoinRecipeReads()
         if (requestVersion != cookbookRequest.get()) return null
         if (catalogVersion != null && catalogVersion != catalogRequest.get()) return null
@@ -1129,6 +1239,60 @@ class SessionController(
         return launched
     }
 
+    private fun launchRecipeImageOperation(
+        block: suspend (RecipeImageOperationContext, Long) -> Unit,
+    ): Job {
+        lateinit var launched: Job
+        val context: RecipeImageOperationContext
+        val requestVersion: Long
+        synchronized(jobsLock) {
+            if (admission != Admission.AUTHENTICATED || imagePreparationJobs.any(Job::isActive)) return completedJob()
+            val response = session ?: return completedJob()
+            val cookbookId = mutableState.value.activeCookbookId ?: return completedJob()
+            context = RecipeImageOperationContext(
+                userContext = UserContext(
+                    response,
+                    SessionIdentity(userGeneration, response.user.id, response.token),
+                ),
+                recipeScope = RecipeScope(response.user.id, cookbookId),
+                cookbookGeneration = cookbookGeneration,
+            )
+            requestVersion = imagePreparationRequest.incrementAndGet()
+            launched = scope.launch(start = CoroutineStart.LAZY) { block(context, requestVersion) }
+            imagePreparationJobs += launched
+            authenticatedJobs += launched
+            cookbookJobs += launched
+            launched.invokeOnCompletion {
+                synchronized(jobsLock) {
+                    imagePreparationJobs.remove(launched)
+                    authenticatedJobs.remove(launched)
+                    cookbookJobs.remove(launched)
+                }
+            }
+        }
+        launched.start()
+        return launched
+    }
+
+    private suspend fun publishRecipeImageError(
+        context: RecipeImageOperationContext,
+        requestVersion: Long,
+        message: String,
+    ) {
+        transition.withLock {
+            if (isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
+                requestVersion == imagePreparationRequest.get()
+            ) {
+                mutableRecipeImagePreparationState.value = RecipeImagePreparationState(
+                    status = RecipeImagePreparationStatus.ERROR,
+                    scope = context.recipeScope,
+                    image = mutableRecipeImagePreparationState.value.image,
+                    message = message,
+                )
+            }
+        }
+    }
+
     private fun isCurrentRecipeActionLocked(context: RecipeActionContext): Boolean =
         userGeneration == context.generation && session?.user?.id == context.userId && session?.token == context.token
 
@@ -1231,31 +1395,41 @@ class SessionController(
         }
     }
 
-    private suspend fun settleRecipeActionReads(context: RecipeActionContext, recipeId: Long?) {
-        val activation = transition.withLock {
+    private suspend fun settleRecipeActionReads(context: RecipeActionContext): Boolean {
+        val recovery = transition.withLock {
             if (!isCurrentRecipeActionLocked(context) || mutableState.value.activeCookbookId != context.scope.cookbookId) {
                 return@withLock null
             }
-            Activation(
-                context = UserContext(
-                    checkNotNull(session),
-                    SessionIdentity(context.generation, context.userId, context.token),
+            RecipeReadRecovery(
+                activation = Activation(
+                    context = UserContext(
+                        checkNotNull(session),
+                        SessionIdentity(context.generation, context.userId, context.token),
+                    ),
+                    recipeScope = context.scope,
+                    cookbookGeneration = cookbookGeneration,
+                    requestVersion = cookbookRequest.get(),
+                    allowForbiddenRecovery = true,
                 ),
-                recipeScope = context.scope,
-                cookbookGeneration = cookbookGeneration,
-                requestVersion = cookbookRequest.get(),
-                allowForbiddenRecovery = true,
+                selectedLoadingRecipeId = mutableState.value.detail
+                    ?.takeIf { it.status == DetailStatus.LOADING }
+                    ?.recipeId,
             )
-        } ?: return
-        if (!retryPendingPurge(activation.context)) return
-        startRecipeRefresh(activation, replacingOwner = currentCoroutineContext()[Job]).join()
+        } ?: return false
+        if (!retryPendingPurge(recovery.activation.context)) return false
+        startRecipeRefresh(recovery.activation, replacingOwner = currentCoroutineContext()[Job]).join()
         val reopen = transition.withLock {
-            recipeId?.takeIf { id ->
-                isCurrentLocked(activation) && mutableState.value.detail?.recipeId == id &&
+            recovery.selectedLoadingRecipeId?.takeIf { id ->
+                isCurrentLocked(recovery.activation) && mutableState.value.detail?.recipeId == id &&
                     mutableState.value.recipes.any { it.id == id }
             }
         }
         if (reopen != null) openRecipe(reopen).join()
+        return transition.withLock {
+            isCurrentLocked(recovery.activation) && pendingPurge == null &&
+                mutableState.value.recipeStatus == LoadStatus.FRESH &&
+                mutableState.value.detail?.status != DetailStatus.LOADING
+        }
     }
 
     private suspend fun handleRecipeActionAuthorizationFailure(
@@ -1437,10 +1611,15 @@ class SessionController(
         rediscover: Boolean,
     ) {
         val currentJob = currentCoroutineContext()[Job]
+        var stagedImageToDiscard: PreparedRecipeImage? = null
         val siblings = transition.withLock {
             if (!isCurrentLocked(activation)) return
             cookbookGeneration++
             detailGeneration++
+            imagePreparationRequest.incrementAndGet()
+            recipeActions.scopeChanged()
+            stagedImageToDiscard = mutableRecipeImagePreparationState.value.image
+            mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
             pendingPurge = PendingPurge.Cookbook(
                 activation.context.generation,
                 activation.recipeScope,
@@ -1460,6 +1639,7 @@ class SessionController(
             trackedSnapshot(cookbookJobs).filterNot { it == currentJob }
         }
         cancelJobs(siblings)
+        stagedImageToDiscard?.let { runCatching { discardRecipeImageResource(it) } }
         if (!retryPendingPurge(activation.context)) return
 
         if (!rediscover) {
@@ -1669,10 +1849,12 @@ class SessionController(
             detailRequest.incrementAndGet()
             recipeRefreshRequest.incrementAndGet()
             hydrationRequest.incrementAndGet()
+            imagePreparationRequest.incrementAndGet()
             session = null
             pendingPurge = null
             pendingAccountPersistence = null
             recipeActions.reset()
+            mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
             mutableState.value = SessionState(phase = phase)
             mutableAccountState.value = AccountState()
             search.clear()
@@ -1842,6 +2024,17 @@ class SessionController(
         val cookbookId: Long,
         val requestVersion: Long,
         val currentActivation: Activation? = null,
+    )
+
+    private data class RecipeReadRecovery(
+        val activation: Activation,
+        val selectedLoadingRecipeId: Long?,
+    )
+
+    private data class RecipeImageOperationContext(
+        val userContext: UserContext,
+        val recipeScope: RecipeScope,
+        val cookbookGeneration: Long,
     )
 
     private sealed interface PendingPurge {

@@ -1,6 +1,7 @@
 package com.getmaincourse.app
 
 import android.app.Application
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.getmaincourse.app.data.cache.MainCourseDatabase
@@ -39,7 +40,7 @@ class AppContainer(application: Application) {
         store = RoomCatalogStore(database),
     )
     val images = SessionImages(application, BuildConfig.API_BASE_URL)
-    val recipeImages = RecipeImageOwner(application)
+    private val recipeImages = RecipeImageOwner(application)
 
     val viewModelFactory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -59,6 +60,8 @@ class AppContainer(application: Application) {
                     )
                 },
                 resolvePreparedImage = recipeImages::resolve,
+                prepareRecipeImage = { userId, uri -> recipeImages.prepare(userId, uri.toUri()) },
+                discardRecipeImage = recipeImages::discard,
                 credentialStateCleanup = googleCredentialSessionCleaner::clear,
             ) as T
         }

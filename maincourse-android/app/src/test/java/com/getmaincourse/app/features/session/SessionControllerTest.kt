@@ -20,12 +20,14 @@ import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.User
+import com.getmaincourse.app.data.images.PreparedRecipeImage
 import com.getmaincourse.app.data.network.ApiFailure
 import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.features.recipes.RecipeActionOutcome
 import com.getmaincourse.app.features.recipes.RecipeEditDraft
 import com.getmaincourse.app.features.recipes.RecipeEditRow
 import com.getmaincourse.app.features.recipes.RecipeEditValues
+import com.getmaincourse.app.features.recipes.RecipeImagePreparationStatus
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.search.RecipeSearchDocument
@@ -49,6 +51,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.ContinuationInterceptor
 import org.junit.Assert.assertEquals
@@ -121,6 +124,16 @@ class SessionControllerTest {
     }
 
     @Test
+    fun successfulMutationOfOneRecipeRedrivesTheDifferentSelectedDetail() = runTest {
+        assertDifferentSelectedDetailIsRedriven(updateFailure = null)
+    }
+
+    @Test
+    fun failedMutationOfOneRecipeRedrivesTheDifferentSelectedDetail() = runTest {
+        assertDifferentSelectedDetailIsRedriven(updateFailure = ApiFailure(422, "invalid"))
+    }
+
+    @Test
     fun logoutJoinsRecipeMutationAndSameUserReloginCannotAcceptItsLateResponse() = runTest {
         val requestStarted = CompletableDeferred<Unit>()
         val releaseResponse = CompletableDeferred<Unit>()
@@ -173,6 +186,178 @@ class SessionControllerTest {
         assertEquals(0, api.moveRecipeCalls)
         assertTrue(controller.state.value.recipes.none { it.id == SOUP.id })
         assertEquals(LoadStatus.ERROR, controller.state.value.recipeStatus)
+
+        controller.retryRecipeReconciliation().join()
+
+        assertEquals(RecipeActionOutcome.RECONCILIATION_REQUIRED, controller.recipeActionState.value.outcome)
+        assertTrue(controller.recipeActionState.value.canRetryReconciliation)
+    }
+
+    @Test
+    fun stagedImagePreparationIsSessionOwnedAndLateLogoutResultIsDiscarded() = runTest {
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/photo.jpg", USER.id, "photo")
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL) }
+                recipesBlock = { _, _ -> listOf(SOUP) }
+            },
+            session = SESSION,
+            prepareRecipeImage = { _, _ ->
+                started.complete(Unit)
+                withContext(NonCancellable) { release.await() }
+                prepared
+            },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.prepareRecipeImage("content://recipe/photo")
+        started.await()
+        val logout = controller.logout()
+        runCurrent()
+        assertFalse(logout.isCompleted)
+        release.complete(Unit)
+        logout.join()
+
+        assertEquals(listOf(prepared), discarded)
+        assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+    }
+
+    @Test
+    fun preparedImageCanBeDiscardedThroughTheSessionFacade() = runTest {
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/photo.jpg", USER.id, "photo")
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL) }
+                recipesBlock = { _, _ -> listOf(SOUP) }
+            },
+            session = SESSION,
+            prepareRecipeImage = { _, _ -> prepared },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.prepareRecipeImage("content://recipe/photo").join()
+        assertEquals(RecipeImagePreparationStatus.READY, controller.recipeImagePreparationState.value.status)
+        controller.discardRecipeImage(prepared).join()
+
+        assertEquals(listOf(prepared), discarded)
+        assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)
+    }
+
+    @Test
+    fun cookbookSwitchJoinsImagePreparationAndDiscardsItsLateCapturedScopeResult() = runTest {
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/photo.jpg", USER.id, "photo")
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL, SHARED) }
+                recipesBlock = { _, cookbookId -> if (cookbookId == PERSONAL.id) listOf(SOUP) else listOf(SALAD) }
+            },
+            session = SESSION,
+            prepareRecipeImage = { _, _ ->
+                started.complete(Unit)
+                withContext(NonCancellable) { release.await() }
+                prepared
+            },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.prepareRecipeImage("content://recipe/photo")
+        started.await()
+        val switching = controller.switchCookbook(SHARED.id)
+        runCurrent()
+        assertFalse(switching.isCompleted)
+        release.complete(Unit)
+        switching.join()
+        advanceUntilIdle()
+
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(prepared), discarded)
+        assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)
+    }
+
+    @Test
+    fun cookbookSwitchDiscardsAnAlreadyPreparedImageFromTheOldScope() = runTest {
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/photo.jpg", USER.id, "photo")
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL, SHARED) }
+                recipesBlock = { _, cookbookId -> if (cookbookId == PERSONAL.id) listOf(SOUP) else listOf(SALAD) }
+            },
+            session = SESSION,
+            prepareRecipeImage = { _, _ -> prepared },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+        controller.prepareRecipeImage("content://recipe/photo").join()
+
+        controller.switchCookbook(SHARED.id).join()
+        advanceUntilIdle()
+
+        assertEquals(listOf(prepared), discarded)
+        assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)
+    }
+
+    @Test
+    fun recipeActionForbiddenWithOfflineRediscoveryDoesNotRemainRunning() = runTest {
+        var cookbookRequests = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = {
+                cookbookRequests++
+                if (cookbookRequests == 1) listOf(PERSONAL) else throw IOException("offline")
+            }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            updateRecipeBlock = { _, _, _, _ -> throw ApiFailure(403, "access changed") }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.saveRecipe(changedDraft(), null).join()
+
+        assertEquals(RecipeActionOutcome.IDLE, controller.recipeActionState.value.outcome)
+        assertNull(controller.state.value.activeCookbookId)
+        assertEquals(LoadStatus.ERROR, controller.state.value.catalogStatus)
+        controller.clearRecipeAction().join()
+        assertEquals(RecipeActionOutcome.IDLE, controller.recipeActionState.value.outcome)
+    }
+
+    @Test
+    fun failedReconciliationRefreshKeepsTheActionRetryable() = runTest {
+        var recipeRequests = 0
+        val store = FakeCatalogStore()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                recipeRequests++
+                if (recipeRequests == 1) listOf(SOUP) else throw IOException("offline")
+            }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+        store.saveFailure = IOException("disk full")
+
+        controller.saveRecipe(changedDraft(), null).join()
+        controller.retryRecipeReconciliation().join()
+
+        assertEquals(RecipeActionOutcome.RECONCILIATION_REQUIRED, controller.recipeActionState.value.outcome)
+        assertTrue(controller.recipeActionState.value.canRetryReconciliation)
+        assertEquals(LoadStatus.DEGRADED, controller.state.value.recipeStatus)
     }
 
     @Test
@@ -2947,6 +3132,41 @@ class SessionControllerTest {
         assertTrue(controller.accountState.value.canRetryPersistence)
     }
 
+    private suspend fun TestScope.assertDifferentSelectedDetailIsRedriven(updateFailure: Throwable?) {
+        val firstDetail = CompletableDeferred<Unit>()
+        var detailCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP, SALAD) }
+            recipeBlock = { _, _, id ->
+                assertEquals(SALAD.id, id)
+                detailCalls++
+                if (detailCalls == 1) {
+                    firstDetail.complete(Unit)
+                    awaitCancellation()
+                }
+                SALAD_DETAIL
+            }
+            updateRecipeBlock = { _, _, _, _ ->
+                updateFailure?.let { throw it }
+                SOUP_DETAIL.copy(name = "Changed soup", updatedAt = "2026-09-08T12:00:00Z")
+            }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+        controller.openRecipe(SALAD.id)
+        firstDetail.await()
+
+        controller.saveRecipe(changedDraft(), null).join()
+        advanceUntilIdle()
+
+        assertEquals(2, detailCalls)
+        assertEquals(SALAD.id, controller.state.value.detail?.recipeId)
+        assertEquals(DetailStatus.FRESH, controller.state.value.detail?.status)
+        assertEquals(SALAD_DETAIL, controller.state.value.detail?.recipe)
+    }
+
     private fun changedDraft() = RecipeEditDraft(
         scope = RecipeScope(USER.id, PERSONAL.id),
         recipeId = SOUP.id,
@@ -2983,6 +3203,8 @@ class SessionControllerTest {
         deleteTimeoutMillis: Long = 30_000,
         hydrationTimeoutMillis: Long = 120_000,
         credentialStateCleanup: suspend () -> Unit = {},
+        prepareRecipeImage: suspend (Long, String) -> PreparedRecipeImage = { _, _ -> error("unused") },
+        discardRecipeImage: suspend (PreparedRecipeImage) -> Unit = {},
         imageCleanup: suspend () -> Unit = {},
     ): SessionController {
         if (session != null) sessionStore.value = session
@@ -2999,6 +3221,8 @@ class SessionControllerTest {
             deleteTimeoutMillis = deleteTimeoutMillis,
             hydrationTimeoutMillis = hydrationTimeoutMillis,
             searchDispatcher = controllerScope.coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+            prepareRecipeImage = prepareRecipeImage,
+            discardRecipeImage = discardRecipeImage,
         )
     }
 
@@ -3051,6 +3275,7 @@ class SessionControllerTest {
         var beforeDetailRead: suspend () -> Unit = {}
         var afterSearchRead: suspend () -> Unit = {}
         var beforeRemoveRecipe: suspend () -> Unit = {}
+        var saveFailure: Throwable? = null
         var removeRecipeFailure: Throwable? = null
         var removeCookbookFailure: Throwable? = null
         var cleared = false
@@ -3092,6 +3317,7 @@ class SessionControllerTest {
         }
 
         override suspend fun saveRecipeDetails(scope: RecipeScope, details: List<RecipeDetail>) {
+            saveFailure?.let { throw it }
             require(scope.cookbookId in memberships(scope.userId)) { "membership must be stored before details" }
             detailBatches += details.map { it.id }
             val current = recipeItems[scope] ?: CachedRecipes(emptyList(), false)
@@ -3307,6 +3533,13 @@ class SessionControllerTest {
             coverImages = null,
             createdAt = "2026-09-01T10:00:00Z",
             updatedAt = "2026-09-07T10:00:00Z",
+        )
+        val SALAD_DETAIL = SOUP_DETAIL.copy(
+            id = SALAD.id,
+            name = SALAD.name,
+            prepTime = SALAD.prepTime,
+            cookTime = SALAD.cookTime,
+            updatedAt = SALAD.updatedAt,
         )
         val SIGN_IN = SignInRequest("cook@example.com", "password", "Pixel")
         val SIGN_UP = SignUpRequest("Cook", "cook@example.com", "password", "password", "Pixel")
