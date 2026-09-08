@@ -9,11 +9,17 @@ import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
+import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.RecipeBatchResponse
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
+import com.getmaincourse.app.data.model.ShoppingItem
+import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
@@ -22,16 +28,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
@@ -140,6 +153,88 @@ class OkHttpMainCourseApi(
             cookbookRequestBuilder("api/v1/recipes/$recipeId", token, cookbookId).get().build(),
         )
 
+    override suspend fun recipeBatch(
+        token: String,
+        cookbookId: Long,
+        cursor: String?,
+    ): RecipeBatchResponse {
+        val url = baseUrl.newBuilder()
+            .addPathSegments("api/v1/recipes/batch")
+            .addQueryParameter("limit", RECIPE_BATCH_LIMIT.toString())
+            .apply { cursor?.let { addQueryParameter("cursor", it) } }
+            .build()
+        return executeJson(cookbookRequestBuilder(url, token, cookbookId).get().build())
+    }
+
+    override suspend fun updateRecipe(
+        token: String,
+        cookbookId: Long,
+        recipeId: Long,
+        request: RecipeUpdateRequest,
+    ): RecipeDetail =
+        executeJson(
+            cookbookRequestBuilder("api/v1/recipes/$recipeId", token, cookbookId)
+                .patch(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
+                .build(),
+        )
+
+    override suspend fun updateRecipeCover(
+        token: String,
+        cookbookId: Long,
+        recipeId: Long,
+        image: File,
+    ): RecipeDetail =
+        executeJson(
+            cookbookRequestBuilder("api/v1/recipes/$recipeId", token, cookbookId)
+                .patch(
+                    MultipartBody.Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart(
+                            "cover_image",
+                            image.name,
+                            image.asRequestBody(JPEG_MEDIA_TYPE),
+                        )
+                        .build(),
+                )
+                .build(),
+        )
+
+    override suspend fun moveRecipe(
+        token: String,
+        sourceCookbookId: Long,
+        recipeId: Long,
+        targetCookbookId: Long,
+    ): RecipeDetail =
+        executeJson(
+            cookbookRequestBuilder("api/v1/recipes/$recipeId", token, sourceCookbookId)
+                .patch(
+                    json.encodeToString(MoveRecipeRequest(targetCookbookId)).toRequestBody(JSON_MEDIA_TYPE),
+                )
+                .build(),
+        )
+
+    override suspend fun deleteRecipe(token: String, cookbookId: Long, recipeId: Long) {
+        val response = execute(
+            cookbookRequestBuilder("api/v1/recipes/$recipeId", token, cookbookId)
+                .delete()
+                .build(),
+        )
+        if (!response.isSuccessful) {
+            throw withContext(Dispatchers.Default) { response.toApiFailure() }
+        }
+    }
+
+    override suspend fun addRecipeIngredients(
+        token: String,
+        cookbookId: Long,
+        request: ShoppingItemsRequest,
+    ): List<ShoppingItem> =
+        executeJson(
+            cookbookRequestBuilder("api/v1/shopping_list_items", token, cookbookId)
+                .post(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
+                .build(),
+        )
+
     private inline suspend fun <reified T> executeJson(request: Request): T {
         val response = execute(request)
         return withContext(Dispatchers.Default) {
@@ -191,8 +286,11 @@ class OkHttpMainCourseApi(
         }
 
     private fun requestBuilder(path: String): Request.Builder =
+        requestBuilder(baseUrl.newBuilder().addPathSegments(path).build())
+
+    private fun requestBuilder(url: HttpUrl): Request.Builder =
         Request.Builder()
-            .url(baseUrl.newBuilder().addPathSegments(path).build())
+            .url(url)
             .header("Accept", JSON_MEDIA_TYPE.toString())
 
     private fun authenticatedRequestBuilder(path: String, token: String): Request.Builder =
@@ -203,22 +301,32 @@ class OkHttpMainCourseApi(
         token: String,
         cookbookId: Long,
     ): Request.Builder =
-        authenticatedRequestBuilder(path, token)
+        cookbookRequestBuilder(baseUrl.newBuilder().addPathSegments(path).build(), token, cookbookId)
+
+    private fun cookbookRequestBuilder(
+        url: HttpUrl,
+        token: String,
+        cookbookId: Long,
+    ): Request.Builder =
+        requestBuilder(url)
+            .header("Authorization", "Bearer $token")
             .header("X-Cookbook-Id", cookbookId.toString())
 
     private fun BufferedResponse.toApiFailure(): ApiFailure {
         val fallback = "Request failed with HTTP status $status"
         val apiError = try {
-            json.decodeFromString<ApiErrorBody>(body)
+            json.parseToJsonElement(body) as? JsonObject
         } catch (_: SerializationException) {
             null
         } catch (_: IllegalArgumentException) {
             null
         }
-        val message = apiError?.error?.takeIf { it.isNotBlank() }
-            ?: apiError?.errors?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() }?.joinToString("\n")
+        val errorCode = apiError.string("error_code")
+        val limit = (apiError?.get("limit") as? JsonPrimitive)?.intOrNull
+        val message = apiError.string("error")
+            ?: apiError?.get("errors")?.errorMessages()?.takeIf { it.isNotEmpty() }?.joinToString("\n")
             ?: fallback
-        return ApiFailure(status, message)
+        return ApiFailure(status, message, errorCode, limit)
     }
 
     private data class BufferedResponse(
@@ -229,15 +337,21 @@ class OkHttpMainCourseApi(
             get() = status in 200..299
     }
 
-    @Serializable
-    private data class ApiErrorBody(
-        val error: String? = null,
-        val errors: List<String>? = null,
-    )
-
     private companion object {
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
+        val JPEG_MEDIA_TYPE = "image/jpeg".toMediaType()
+        const val RECIPE_BATCH_LIMIT = 100
     }
+}
+
+private fun JsonObject?.string(key: String): String? =
+    this?.get(key)?.let { it as? JsonPrimitive }?.contentOrNull?.takeIf { it.isNotBlank() }
+
+private fun JsonElement.errorMessages(): List<String> = when (this) {
+    is JsonPrimitive -> contentOrNull?.takeIf { it.isNotBlank() }?.let(::listOf).orEmpty()
+    is JsonArray -> flatMap { it.errorMessages() }
+    is JsonObject -> get("error")?.errorMessages()?.takeIf { it.isNotEmpty() }
+        ?: values.flatMap { it.errorMessages() }
 }
 
 private fun AppleAuthenticationStartResponse.hasExpectedBrowserUrl(baseUrl: HttpUrl): Boolean {

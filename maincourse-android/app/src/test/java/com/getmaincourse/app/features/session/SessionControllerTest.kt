@@ -10,9 +10,13 @@ import com.getmaincourse.app.data.model.CookbookMember
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
+import com.getmaincourse.app.data.model.RecipeBatchResponse
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
+import com.getmaincourse.app.data.model.ShoppingItem
+import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.User
@@ -21,6 +25,7 @@ import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.settings.AccountOperation
+import java.io.File
 import java.io.IOException
 import java.time.Clock
 import java.time.Instant
@@ -2231,6 +2236,32 @@ class SessionControllerTest {
             recipeCalls++
             return recipeBlock(token, cookbookId, recipeId)
         }
+        override suspend fun recipeBatch(token: String, cookbookId: Long, cursor: String?): RecipeBatchResponse =
+            error("unused")
+        override suspend fun updateRecipe(
+            token: String,
+            cookbookId: Long,
+            recipeId: Long,
+            request: RecipeUpdateRequest,
+        ): RecipeDetail = error("unused")
+        override suspend fun updateRecipeCover(
+            token: String,
+            cookbookId: Long,
+            recipeId: Long,
+            image: File,
+        ): RecipeDetail = error("unused")
+        override suspend fun moveRecipe(
+            token: String,
+            sourceCookbookId: Long,
+            recipeId: Long,
+            targetCookbookId: Long,
+        ): RecipeDetail = error("unused")
+        override suspend fun deleteRecipe(token: String, cookbookId: Long, recipeId: Long) = error("unused")
+        override suspend fun addRecipeIngredients(
+            token: String,
+            cookbookId: Long,
+            request: ShoppingItemsRequest,
+        ): List<ShoppingItem> = error("unused")
     }
 
     private companion object {

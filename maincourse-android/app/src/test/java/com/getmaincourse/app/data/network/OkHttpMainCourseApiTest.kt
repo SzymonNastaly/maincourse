@@ -7,9 +7,13 @@ import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingAnswers
 import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
+import com.getmaincourse.app.data.model.ShoppingItemRequest
+import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import java.net.InetAddress
+import java.nio.file.Files
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -687,6 +691,269 @@ class OkHttpMainCourseApiTest {
     }
 
     @Test
+    fun recipeBatchAlwaysRequestsOneHundredAndEncodesTheOptionalCursor() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                200,
+                """{"recipes":[${recipeDetailJson()}],"next_cursor":"next/value+="}""",
+            ),
+        )
+        server.enqueue(jsonResponse(200, """{"recipes":[],"next_cursor":null}"""))
+
+        val first = api.recipeBatch("batch-token", 77L)
+        val second = api.recipeBatch("batch-token", 77L, "next/value+=")
+
+        assertEquals(listOf(101L), first.recipes.map { it.id })
+        assertEquals("next/value+=", first.nextCursor)
+        assertTrue(second.recipes.isEmpty())
+        assertNull(second.nextCursor)
+        val firstRequest = server.takeRequest()
+        assertEquals("/api/v1/recipes/batch?limit=100", firstRequest.path)
+        assertEquals("Bearer batch-token", firstRequest.getHeader("Authorization"))
+        assertEquals("77", firstRequest.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            "next/value+=",
+            server.takeRequest().requestUrl?.queryParameter("cursor"),
+        )
+    }
+
+    @Test
+    fun updateRecipeSendsCompleteTextSnapshotIncludingNullsAndEmptyArrays() = runBlocking {
+        server.enqueue(jsonResponse(200, recipeDetailJson(name = "Clearable soup")))
+
+        val response = api.updateRecipe(
+            token = "edit-token",
+            cookbookId = 77L,
+            recipeId = 101L,
+            request = RecipeUpdateRequest(
+                name = "Clearable soup",
+                prepTime = null,
+                cookTime = null,
+                servings = null,
+                ingredients = emptyList(),
+                instructions = emptyList(),
+                notes = null,
+                sourceUrl = null,
+            ),
+        )
+
+        assertEquals("Clearable soup", response.name)
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api/v1/recipes/101", request.path)
+        assertEquals("Bearer edit-token", request.getHeader("Authorization"))
+        assertEquals("77", request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            Json.parseToJsonElement(
+                """
+                {
+                  "name":"Clearable soup",
+                  "prep_time":null,
+                  "cook_time":null,
+                  "servings":null,
+                  "ingredients":[],
+                  "instructions":[],
+                  "notes":null,
+                  "source_url":null
+                }
+                """.trimIndent(),
+            ),
+            Json.parseToJsonElement(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun updateRecipeCoverStreamsJpegFileAsAuthenticatedCoverImagePart() = runBlocking {
+        server.enqueue(jsonResponse(200, recipeDetailJson()))
+        val directory = Files.createTempDirectory("maincourse-cover-test").toFile()
+        val image = directory.resolve("cover.jpg").apply { writeBytes("jpeg-stream-body".toByteArray()) }
+
+        try {
+            api.updateRecipeCover("upload-token", 77L, 101L, image)
+
+            val request = server.takeRequest()
+            assertEquals("PATCH", request.method)
+            assertEquals("/api/v1/recipes/101", request.path)
+            assertEquals("Bearer upload-token", request.getHeader("Authorization"))
+            assertEquals("77", request.getHeader("X-Cookbook-Id"))
+            assertTrue(request.getHeader("Content-Type").orEmpty().startsWith("multipart/form-data; boundary="))
+            val body = request.body.readUtf8()
+            assertTrue(body.contains("name=\"cover_image\"; filename=\"cover.jpg\""))
+            assertTrue(body.contains("Content-Type: image/jpeg"))
+            assertTrue(body.contains("jpeg-stream-body"))
+        } finally {
+            image.delete()
+            directory.delete()
+        }
+    }
+
+    @Test
+    fun moveRecipeKeepsSourceCookbookHeaderAndSendsTargetCookbookJson() = runBlocking {
+        server.enqueue(jsonResponse(200, recipeDetailJson()))
+
+        val moved = api.moveRecipe("move-token", 77L, 101L, 88L)
+
+        assertEquals(101L, moved.id)
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api/v1/recipes/101", request.path)
+        assertEquals("Bearer move-token", request.getHeader("Authorization"))
+        assertEquals("77", request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            Json.parseToJsonElement("""{"cookbook_id":88}"""),
+            Json.parseToJsonElement(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun deleteRecipeAccepts204ButPreserves404AsAnApiFailure() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(204))
+        server.enqueue(jsonResponse(404, """{"error":"Recipe not found"}"""))
+
+        api.deleteRecipe("delete-token", 77L, 101L)
+        val failure = captureApiFailure { api.deleteRecipe("delete-token", 77L, 102L) }
+
+        assertEquals(404, failure.status)
+        assertEquals("Recipe not found", failure.message)
+        val successfulRequest = server.takeRequest()
+        assertEquals("DELETE", successfulRequest.method)
+        assertEquals("/api/v1/recipes/101", successfulRequest.path)
+        assertEquals("Bearer delete-token", successfulRequest.getHeader("Authorization"))
+        assertEquals("77", successfulRequest.getHeader("X-Cookbook-Id"))
+        assertEquals("/api/v1/recipes/102", server.takeRequest().path)
+    }
+
+    @Test
+    fun addRecipeIngredientsSendsStableIdsAndParsesTheBareRailsArray() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                201,
+                """
+                [{
+                  "id":901,
+                  "client_id":"stable-row-1",
+                  "name":"Onion",
+                  "details":"2, diced",
+                  "checked_at":null,
+                  "source_recipe_id":101,
+                  "created_at":"2026-09-08T10:00:00.000Z",
+                  "updated_at":"2026-09-08T10:00:00.000Z"
+                }]
+                """.trimIndent(),
+            ),
+        )
+        val payload = ShoppingItemsRequest(
+            items = listOf(
+                ShoppingItemRequest(
+                    clientId = "stable-row-1",
+                    name = "Onion",
+                    details = "2, diced",
+                    checkedAt = null,
+                    sourceRecipeId = 101L,
+                ),
+            ),
+        )
+
+        val items = api.addRecipeIngredients("shopping-token", 77L, payload)
+
+        assertEquals(901L, items.single().id)
+        assertEquals("stable-row-1", items.single().clientId)
+        assertEquals("Onion", items.single().name)
+        assertEquals("2, diced", items.single().details)
+        assertNull(items.single().checkedAt)
+        assertEquals(101L, items.single().sourceRecipeId)
+        assertEquals("2026-09-08T10:00:00.000Z", items.single().createdAt)
+        assertEquals("2026-09-08T10:00:00.000Z", items.single().updatedAt)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/shopping_list_items", request.path)
+        assertEquals("Bearer shopping-token", request.getHeader("Authorization"))
+        assertEquals("77", request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            Json.parseToJsonElement(
+                """
+                {"items":[{
+                  "client_id":"stable-row-1",
+                  "name":"Onion",
+                  "details":"2, diced",
+                  "checked_at":null,
+                  "source_recipe_id":101
+                }]}
+                """.trimIndent(),
+            ),
+            Json.parseToJsonElement(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun objectValidationErrorsDoNotHideTopLevelErrorCodeOrLimit() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                403,
+                """
+                {
+                  "error":"Monthly import limit reached",
+                  "error_code":"import_limit_reached",
+                  "limit":15,
+                  "errors":[{"client_id":"stable-row-1","error":"Recipe not found"}]
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        val failure = captureApiFailure { api.recipeBatch("batch-token", 77L) }
+
+        assertEquals(403, failure.status)
+        assertEquals("Monthly import limit reached", failure.message)
+        assertEquals("import_limit_reached", failure.errorCode)
+        assertEquals(15, failure.limit)
+    }
+
+    @Test
+    fun objectValidationErrorsSupplyAMessageWhenTopLevelErrorIsAbsent() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                422,
+                """{"errors":[{"client_id":"stable-row-1","error":"Recipe not found"}]}""",
+            ),
+        )
+
+        val failure = captureApiFailure {
+            api.addRecipeIngredients(
+                "shopping-token",
+                77L,
+                ShoppingItemsRequest(
+                    listOf(ShoppingItemRequest("stable-row-1", "Onion", null, null, 999L)),
+                ),
+            )
+        }
+
+        assertEquals(422, failure.status)
+        assertEquals("Recipe not found", failure.message)
+        assertNull(failure.errorCode)
+        assertNull(failure.limit)
+    }
+
+    @Test
+    fun recipeMutationIsNotRetriedWhenConnectionDropsAfterRequest() = runBlocking {
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
+
+        val failure = captureApiFailure {
+            api.updateRecipe(
+                "edit-token",
+                77L,
+                101L,
+                RecipeUpdateRequest("Soup", null, null, null, emptyList(), emptyList(), null, null),
+            )
+        }
+
+        assertNull(failure.status)
+        assertEquals("Network request failed", failure.message)
+        assertEquals(1, server.requestCount)
+        assertEquals("PATCH", server.takeRequest().method)
+    }
+
+    @Test
     fun signOutAcceptsEmptySuccessAndOmitsCookbookContext() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(204))
 
@@ -899,6 +1166,28 @@ class OkHttpMainCourseApiTest {
 
     private fun sessionJson() =
         """{"token":"opaque","expires_at":"2026-12-06T10:15:30Z","user":{"id":7,"name":null,"email":"cook@example.com","lifecycle_notifications_enabled":true}}"""
+
+    private fun recipeDetailJson(id: Long = 101L, name: String = "Soup") =
+        """
+        {
+          "id":$id,
+          "name":"$name",
+          "prep_time":null,
+          "cook_time":30,
+          "servings":null,
+          "favorite":false,
+          "ingredients":[],
+          "structured_ingredients":[],
+          "instructions":[],
+          "notes":null,
+          "source_url":null,
+          "tags":[],
+          "cover_image_url":null,
+          "cover_images":null,
+          "created_at":"2026-09-01T08:00:00.000Z",
+          "updated_at":"2026-09-08T08:00:00.000Z"
+        }
+        """.trimIndent()
 
     private suspend fun captureApiFailure(block: suspend () -> Unit): ApiFailure =
         try {
