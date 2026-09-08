@@ -1,0 +1,376 @@
+package com.getmaincourse.app.features.recipes
+
+import com.getmaincourse.app.data.cache.CachedRecipes
+import com.getmaincourse.app.data.cache.CatalogStore
+import com.getmaincourse.app.data.cache.RecipeScope
+import com.getmaincourse.app.data.images.PreparedRecipeImage
+import com.getmaincourse.app.data.images.PreparedRecipeImageUnavailable
+import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartResponse
+import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.GoogleSignInRequest
+import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.OnboardingResponse
+import com.getmaincourse.app.data.model.RecipeBatchResponse
+import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
+import com.getmaincourse.app.data.model.SessionResponse
+import com.getmaincourse.app.data.model.ShoppingItem
+import com.getmaincourse.app.data.model.ShoppingItemsRequest
+import com.getmaincourse.app.data.model.SignInRequest
+import com.getmaincourse.app.data.model.SignUpRequest
+import com.getmaincourse.app.data.model.User
+import com.getmaincourse.app.data.network.ApiFailure
+import com.getmaincourse.app.data.network.MainCourseApi
+import com.getmaincourse.app.features.search.RecipeSearchDocument
+import com.getmaincourse.app.features.session.CatalogRepository
+import java.io.File
+import java.io.IOException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class RecipeActionControllerTest {
+    @Test
+    fun textAcknowledgementIsCommittedBeforeCoverFailureAndPhotoRetryDoesNotRepeatTextPatch() = runTest {
+        val api = FakeApi().apply {
+            updateResult = UPDATED
+            coverFailure = IOException("offline")
+        }
+        val host = FakeHost(this)
+        val store = FakeStore()
+        val staged = PreparedRecipeImage("/private/user-7/photo.jpg", 7, "photo")
+        val image = File.createTempFile("recipe-action", ".jpg").apply { writeBytes(byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte())) }
+        val controller = controller(api, store, host) { _, _ -> image }
+
+        controller.saveRecipe(changedDraft(), staged).join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(1, api.coverCalls)
+        assertEquals(UPDATED, store.detail(SOURCE, RECIPE.id))
+        assertEquals(RecipeActionOutcome.PARTIAL, controller.state.value.outcome)
+        assertTrue(controller.state.value.canRetryPhoto)
+
+        api.coverFailure = null
+        api.coverResult = UPDATED.copy(coverImageUrl = "/cover.jpg", updatedAt = "2026-09-08T12:02:00Z")
+        controller.retryRecipePhoto().join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(2, api.coverCalls)
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        image.delete()
+    }
+
+    @Test
+    fun missingStagedPhotoRequestsAChooseAgainWithoutCallingTheNetwork() = runTest {
+        val api = FakeApi().apply { updateResult = UPDATED }
+        val controller = controller(api, FakeStore(), FakeHost(this)) { _, _ ->
+            throw PreparedRecipeImageUnavailable("Choose the photo again")
+        }
+
+        controller.saveRecipe(changedDraft(), PreparedRecipeImage("/missing", 7, "missing")).join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(0, api.coverCalls)
+        assertEquals(RecipeActionOutcome.PARTIAL, controller.state.value.outcome)
+        assertTrue(controller.state.value.needsPhotoSelection)
+        assertFalse(controller.state.value.canRetryPhoto)
+    }
+
+    @Test
+    fun aNewPhotoMakesAnOtherwiseUnchangedDraftSaveable() = runTest {
+        val api = FakeApi()
+        val image = File.createTempFile("recipe-photo-only", ".jpg").apply {
+            writeBytes(byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte()))
+        }
+        val controller = controller(api, FakeStore(), FakeHost(this)) { _, _ -> image }
+        val changed = changedDraft()
+        val unchanged = changed.copy(values = changed.original)
+
+        controller.saveRecipe(unchanged, PreparedRecipeImage("/private/photo.jpg", 7, "photo")).join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(1, api.coverCalls)
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        image.delete()
+    }
+
+    @Test
+    fun serverAcknowledgedCacheFailureOffersReconciliationWithoutResendingPatch() = runTest {
+        val api = FakeApi().apply { updateResult = UPDATED }
+        val store = FakeStore().apply { saveFailure = IOException("disk full") }
+        val host = FakeHost(this)
+        val controller = controller(api, store, host)
+
+        controller.saveRecipe(changedDraft(), null).join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(RecipeActionOutcome.RECONCILIATION_REQUIRED, controller.state.value.outcome)
+        assertTrue(controller.state.value.canRetryReconciliation)
+        controller.retryRecipeReconciliation().join()
+        assertEquals(1, api.updateCalls)
+        assertEquals(2, host.settleCalls)
+    }
+
+    @Test
+    fun successfulMovePartiallyUpsertsCapturedTargetThenRemovesCapturedSource() = runTest {
+        val api = FakeApi().apply { moveResult = UPDATED }
+        val store = FakeStore()
+        val host = FakeHost(this)
+        val controller = controller(api, store, host)
+
+        controller.moveRecipe(RECIPE.id, TARGET.cookbookId).join()
+
+        assertEquals(UPDATED, store.detail(TARGET, RECIPE.id))
+        assertNull(store.detail(SOURCE, RECIPE.id))
+        assertEquals(listOf(TARGET to RECIPE.id, SOURCE to RECIPE.id), store.mutationOrder)
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+    }
+
+    @Test
+    fun moveNotFoundDoesNotRemoveTheSourceOrInventTheTarget() = runTest {
+        val api = FakeApi().apply { moveFailure = ApiFailure(404, "missing") }
+        val store = FakeStore()
+        val controller = controller(api, store, FakeHost(this))
+
+        controller.moveRecipe(RECIPE.id, TARGET.cookbookId).join()
+
+        assertEquals(RECIPE_DETAIL, store.detail(SOURCE, RECIPE.id))
+        assertNull(store.detail(TARGET, RECIPE.id))
+        assertEquals(RecipeActionOutcome.FAILED, controller.state.value.outcome)
+    }
+
+    @Test
+    fun deleteNotFoundIsAcknowledgedAndALocalRemovalFailureHidesUntilPurgeRecovery() = runTest {
+        val api = FakeApi().apply { deleteFailure = ApiFailure(404, "missing") }
+        val store = FakeStore().apply { removeFailure = IOException("disk full") }
+        val host = FakeHost(this)
+        val controller = controller(api, store, host)
+
+        controller.deleteRecipe(RECIPE.id).join()
+
+        assertEquals(listOf(SOURCE to RECIPE.id), host.pendingRemovals)
+        assertEquals(RecipeActionOutcome.RECONCILIATION_REQUIRED, controller.state.value.outcome)
+        assertTrue(controller.state.value.canRetryReconciliation)
+    }
+
+    @Test
+    fun cookbookSwitchAllowsCapturedScopeCommitButSameUserReloginRejectsTheLateCommit() = runTest {
+        val response = CompletableDeferred<RecipeDetail>()
+        val api = FakeApi().apply { updateBlock = { response.await() } }
+        val switchedHost = FakeHost(this)
+        val switchedStore = FakeStore()
+        val switched = controller(api, switchedStore, switchedHost)
+
+        val switchingAction = switched.saveRecipe(changedDraft(), null)
+        runCurrent()
+        switchedHost.activeScope = TARGET
+        response.complete(UPDATED)
+        switchingAction.join()
+
+        assertEquals(UPDATED, switchedStore.detail(SOURCE, RECIPE.id))
+        assertEquals(0, switchedHost.publishedDetails)
+
+        val reloginResponse = CompletableDeferred<RecipeDetail>()
+        api.updateBlock = { reloginResponse.await() }
+        val reloginHost = FakeHost(this)
+        val reloginStore = FakeStore()
+        val relogin = controller(api, reloginStore, reloginHost)
+        val late = relogin.saveRecipe(changedDraft(), null)
+        runCurrent()
+        reloginHost.generation++
+        reloginResponse.complete(UPDATED)
+        late.join()
+
+        assertEquals(RECIPE_DETAIL, reloginStore.detail(SOURCE, RECIPE.id))
+    }
+
+    @Test
+    fun failedIngredientSubmissionFreezesExactPayloadAndNeverAutomaticallyPostsAgain() = runTest {
+        val api = FakeApi().apply { shoppingFailure = IOException("disconnected") }
+        val controller = controller(api, FakeStore(), FakeHost(this))
+        val payload = listOf(ShoppingItemInput("stable", "onion", "2 cups", null, RECIPE.id))
+
+        controller.addReviewedIngredients(RECIPE.id, payload).join()
+
+        assertEquals(1, api.shoppingRequests.size)
+        assertEquals(payload, controller.state.value.frozenShoppingItems)
+        assertEquals(RecipeActionOutcome.AMBIGUOUS, controller.state.value.outcome)
+        assertEquals("stable", api.shoppingRequests.single().items.single().clientId)
+
+        api.shoppingFailure = null
+        controller.addReviewedIngredients(RECIPE.id, controller.state.value.frozenShoppingItems).join()
+
+        assertEquals(2, api.shoppingRequests.size)
+        assertEquals(api.shoppingRequests[0], api.shoppingRequests[1])
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        assertEquals(1, controller.state.value.acknowledgedCount)
+    }
+
+    @Test
+    fun postMutationReadRecoveryRunsAfterTheMutationPermitIsReleasedOnFailure() = runTest {
+        val api = FakeApi().apply { updateFailure = ApiFailure(422, "invalid") }
+        val store = FakeStore()
+        lateinit var repository: CatalogRepository
+        val host = FakeHost(this).apply {
+            onSettle = { repository.withRecipeRead { } }
+        }
+        repository = CatalogRepository(api, store)
+        val controller = RecipeActionController(api, repository, host) { _, _ -> error("unused") }
+
+        controller.saveRecipe(changedDraft(), null).join()
+
+        assertEquals(1, host.settleCalls)
+        assertEquals(RecipeActionOutcome.FAILED, controller.state.value.outcome)
+    }
+
+    private fun controller(
+        api: FakeApi,
+        store: FakeStore,
+        host: FakeHost,
+        resolve: suspend (PreparedRecipeImage, Long) -> File = { _, _ -> error("unused") },
+    ) = RecipeActionController(api, CatalogRepository(api, store), host, resolve)
+
+    private fun changedDraft() = RecipeEditDraft(
+        SOURCE,
+        RECIPE.id,
+        RecipeEditValues("Soup", "10", "20", "4", listOf(RecipeEditRow("i", "onion")), listOf(RecipeEditRow("s", "cook")), "", ""),
+        RecipeEditValues("Soup!", "", "", "", emptyList(), emptyList(), "", ""),
+    )
+
+    private class FakeHost(private val scope: CoroutineScope) : RecipeActionHost {
+        var generation = 1L
+        var activeScope = SOURCE
+        var settleCalls = 0
+        var publishedDetails = 0
+        var onSettle: suspend () -> Unit = {}
+        val pendingRemovals = mutableListOf<Pair<RecipeScope, Long>>()
+
+        override fun launch(block: suspend (RecipeActionContext) -> Unit): Job {
+            val context = RecipeActionContext(generation, USER.id, TOKEN, activeScope, listOf(RECIPE), setOf(1, 2))
+            return scope.launch { block(context) }
+        }
+
+        override suspend fun prepareMutation(context: RecipeActionContext) = canCommit(context)
+        override suspend fun canCommit(context: RecipeActionContext) = context.generation == generation
+        override suspend fun canPublish(context: RecipeActionContext) = canCommit(context) && activeScope == context.scope
+        override suspend fun publishDetails(context: RecipeActionContext, scope: RecipeScope, recipeId: Long) {
+            if (canPublish(context) && scope == activeScope) publishedDetails++
+        }
+        override suspend fun publishRemoval(context: RecipeActionContext, scope: RecipeScope, recipeId: Long) = Unit
+        override suspend fun publishRemovalCount(context: RecipeActionContext, targetCookbookId: Long?) = Unit
+        override suspend fun retainPendingRemoval(context: RecipeActionContext, scope: RecipeScope, recipeId: Long, failure: Throwable) {
+            pendingRemovals += scope to recipeId
+        }
+        override suspend fun settleRecipeReads(context: RecipeActionContext, recipeId: Long?) {
+            settleCalls++
+            onSettle()
+        }
+        override suspend fun handleAuthorizationFailure(context: RecipeActionContext, failure: ApiFailure): Boolean = false
+    }
+
+    private class FakeStore : CatalogStore {
+        private val details = mutableMapOf((SOURCE to RECIPE.id) to RECIPE_DETAIL)
+        val mutationOrder = mutableListOf<Pair<RecipeScope, Long>>()
+        var saveFailure: Throwable? = null
+        var removeFailure: Throwable? = null
+        override suspend fun cookbooks(userId: Long) = listOf(Cookbook(1, "Source", true, 1, emptyList()), Cookbook(2, "Target", false, 0, emptyList()))
+        override suspend fun replaceCookbooks(userId: Long, items: List<Cookbook>) = Unit
+        override suspend fun selectedCookbookId(userId: Long): Long? = 1
+        override suspend fun selectCookbook(userId: Long, cookbookId: Long) = Unit
+        override suspend fun recipes(scope: RecipeScope) = CachedRecipes(if (scope == SOURCE) listOf(RECIPE) else emptyList(), true)
+        override suspend fun replaceRecipes(scope: RecipeScope, items: List<RecipeSummary>) = Unit
+        override suspend fun detail(scope: RecipeScope, recipeId: Long) = details[scope to recipeId]
+        override suspend fun saveRecipeDetails(scope: RecipeScope, details: List<RecipeDetail>) {
+            saveFailure?.let { throw it }
+            details.forEach { this.details[scope to it.id] = it }
+        }
+        override suspend fun searchDocuments(scope: RecipeScope) = emptyList<RecipeSearchDocument>()
+        override suspend fun upsertPartialRecipe(scope: RecipeScope, knownSummary: RecipeSummary, detail: RecipeDetail) {
+            mutationOrder += scope to detail.id
+            details[scope to detail.id] = detail
+        }
+        override suspend fun removeRecipe(scope: RecipeScope, recipeId: Long) {
+            mutationOrder += scope to recipeId
+            removeFailure?.let { throw it }
+            details.remove(scope to recipeId)
+        }
+        override suspend fun removeCookbook(scope: RecipeScope) = Unit
+        override suspend fun clear() = Unit
+    }
+
+    private class FakeApi : MainCourseApi {
+        var updateCalls = 0
+        var coverCalls = 0
+        var updateResult = UPDATED
+        var coverResult = UPDATED
+        var moveResult = UPDATED
+        var updateFailure: Throwable? = null
+        var coverFailure: Throwable? = null
+        var moveFailure: Throwable? = null
+        var deleteFailure: Throwable? = null
+        var shoppingFailure: Throwable? = null
+        var updateBlock: (suspend () -> RecipeDetail)? = null
+        val shoppingRequests = mutableListOf<ShoppingItemsRequest>()
+        override suspend fun updateRecipe(token: String, cookbookId: Long, recipeId: Long, request: RecipeUpdateRequest): RecipeDetail {
+            updateCalls++
+            updateFailure?.let { throw it }
+            return updateBlock?.invoke() ?: updateResult
+        }
+        override suspend fun updateRecipeCover(token: String, cookbookId: Long, recipeId: Long, image: File): RecipeDetail {
+            coverCalls++
+            coverFailure?.let { throw it }
+            return coverResult
+        }
+        override suspend fun moveRecipe(token: String, sourceCookbookId: Long, recipeId: Long, targetCookbookId: Long): RecipeDetail {
+            moveFailure?.let { throw it }
+            return moveResult
+        }
+        override suspend fun deleteRecipe(token: String, cookbookId: Long, recipeId: Long) { deleteFailure?.let { throw it } }
+        override suspend fun addRecipeIngredients(token: String, cookbookId: Long, request: ShoppingItemsRequest): List<ShoppingItem> {
+            shoppingRequests += request
+            shoppingFailure?.let { throw it }
+            return request.items.mapIndexed { index, item ->
+                ShoppingItem(index.toLong(), item.clientId, item.name, item.details, item.checkedAt, item.sourceRecipeId, "now", "now")
+            }
+        }
+        override suspend fun signIn(request: SignInRequest): SessionResponse = error("unused")
+        override suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse = error("unused")
+        override suspend fun startAppleAuthentication(request: AppleAuthenticationStartRequest): AppleAuthenticationStartResponse = error("unused")
+        override suspend fun exchangeAppleAuthentication(request: AppleAuthenticationExchangeRequest): SessionResponse = error("unused")
+        override suspend fun signUp(request: SignUpRequest): SessionResponse = error("unused")
+        override suspend fun signOut(token: String) = Unit
+        override suspend fun updateAccount(token: String, request: AccountUpdateRequest): User = error("unused")
+        override suspend fun deleteAccount(token: String) = Unit
+        override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse = error("unused")
+        override suspend fun cookbooks(token: String) = emptyList<Cookbook>()
+        override suspend fun recipes(token: String, cookbookId: Long) = emptyList<RecipeSummary>()
+        override suspend fun recipe(token: String, cookbookId: Long, recipeId: Long) = error("unused")
+        override suspend fun recipeBatch(token: String, cookbookId: Long, cursor: String?) = RecipeBatchResponse(emptyList(), null)
+    }
+
+    private companion object {
+        const val TOKEN = "private-token"
+        val USER = User(7, "Cook", "cook@example.com", true)
+        val SOURCE = RecipeScope(USER.id, 1)
+        val TARGET = RecipeScope(USER.id, 2)
+        val RECIPE = RecipeSummary(10, "Soup", 10, 20, false, null, null, "completed", null, "2026-09-08T12:00:00Z")
+        val RECIPE_DETAIL = RecipeDetail(10, "Soup", 10, 20, 4, false, listOf("onion"), emptyList(), listOf("cook"), null, null, emptyList(), null, null, "2026-09-08T10:00:00Z", "2026-09-08T12:00:00Z")
+        val UPDATED = RECIPE_DETAIL.copy(name = "Soup!", ingredients = emptyList(), instructions = emptyList(), updatedAt = "2026-09-08T12:01:00Z")
+    }
+}

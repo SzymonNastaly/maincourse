@@ -22,6 +22,10 @@ import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.User
 import com.getmaincourse.app.data.network.ApiFailure
 import com.getmaincourse.app.data.network.MainCourseApi
+import com.getmaincourse.app.features.recipes.RecipeActionOutcome
+import com.getmaincourse.app.features.recipes.RecipeEditDraft
+import com.getmaincourse.app.features.recipes.RecipeEditRow
+import com.getmaincourse.app.features.recipes.RecipeEditValues
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.search.RecipeSearchDocument
@@ -55,6 +59,122 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionControllerTest {
+    @Test
+    fun failedRecipePatchRedrivesReadsCancelledByTheMutationBarrier() = runTest {
+        val firstSweep = CompletableDeferred<Unit>()
+        var sweeps = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            batchBlock = { _, _, _ ->
+                sweeps++
+                if (sweeps == 1) {
+                    firstSweep.complete(Unit)
+                    awaitCancellation()
+                }
+                RecipeBatchResponse(emptyList(), null)
+            }
+            updateRecipeBlock = { _, _, _, _ -> throw ApiFailure(422, "invalid") }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        firstSweep.await()
+
+        controller.saveRecipe(changedDraft(), null).join()
+        advanceUntilIdle()
+
+        assertEquals(RecipeActionOutcome.FAILED, controller.recipeActionState.value.outcome)
+        assertEquals(LoadStatus.FRESH, controller.state.value.recipeStatus)
+        assertEquals(SearchHydrationStatus.COMPLETE, controller.searchState.value.hydrationStatus)
+        assertTrue(sweeps >= 2)
+    }
+
+    @Test
+    fun failedRecipePatchRedrivesAnInterruptedDetailLoad() = runTest {
+        val firstDetail = CompletableDeferred<Unit>()
+        var detailCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            recipeBlock = { _, _, _ ->
+                detailCalls++
+                if (detailCalls == 1) {
+                    firstDetail.complete(Unit)
+                    awaitCancellation()
+                }
+                SOUP_DETAIL
+            }
+            updateRecipeBlock = { _, _, _, _ -> throw ApiFailure(422, "invalid") }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+        controller.openRecipe(SOUP.id)
+        firstDetail.await()
+
+        controller.saveRecipe(changedDraft(), null).join()
+        advanceUntilIdle()
+
+        assertEquals(2, detailCalls)
+        assertEquals(DetailStatus.FRESH, controller.state.value.detail?.status)
+        assertEquals(SOUP_DETAIL, controller.state.value.detail?.recipe)
+    }
+
+    @Test
+    fun logoutJoinsRecipeMutationAndSameUserReloginCannotAcceptItsLateResponse() = runTest {
+        val requestStarted = CompletableDeferred<Unit>()
+        val releaseResponse = CompletableDeferred<Unit>()
+        val store = FakeCatalogStore()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            updateRecipeBlock = { _, _, _, _ ->
+                requestStarted.complete(Unit)
+                withContext(NonCancellable) { releaseResponse.await() }
+                SOUP_DETAIL.copy(name = "Late", updatedAt = "2026-09-08T12:00:00Z")
+            }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+
+        val mutation = controller.saveRecipe(changedDraft(), null)
+        requestStarted.await()
+        val logout = controller.logout()
+        runCurrent()
+        assertFalse(logout.isCompleted)
+        releaseResponse.complete(Unit)
+        logout.join()
+        mutation.join()
+
+        api.updateRecipeBlock = { _, _, _, _ -> SOUP_DETAIL }
+        controller.signIn(SIGN_IN).join()
+        advanceUntilIdle()
+
+        assertNull(store.detail(RecipeScope(USER.id, PERSONAL.id), SOUP.id))
+        assertEquals(RecipeActionOutcome.IDLE, controller.recipeActionState.value.outcome)
+    }
+
+    @Test
+    fun failedAcknowledgedRemovalPurgeBlocksAConflictingMutation() = runTest {
+        val store = FakeCatalogStore().apply { removeRecipeFailure = IOException("disk full") }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL, SHARED) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.deleteRecipe(SOUP.id).join()
+        controller.moveRecipe(SOUP.id, SHARED.id).join()
+
+        assertEquals(1, api.deleteRecipeCalls)
+        assertEquals(0, api.moveRecipeCalls)
+        assertTrue(controller.state.value.recipes.none { it.id == SOUP.id })
+        assertEquals(LoadStatus.ERROR, controller.state.value.recipeStatus)
+    }
+
     @Test
     fun recipeNamesAreSearchableWhileTheDetailSweepIsStillRunning() = runTest {
         val sweepStarted = CompletableDeferred<Unit>()
@@ -2827,6 +2947,31 @@ class SessionControllerTest {
         assertTrue(controller.accountState.value.canRetryPersistence)
     }
 
+    private fun changedDraft() = RecipeEditDraft(
+        scope = RecipeScope(USER.id, PERSONAL.id),
+        recipeId = SOUP.id,
+        original = RecipeEditValues(
+            "Soup",
+            "10",
+            "20",
+            "4",
+            listOf(RecipeEditRow("ingredient", "1 onion")),
+            listOf(RecipeEditRow("instruction", "Simmer")),
+            "",
+            "",
+        ),
+        values = RecipeEditValues(
+            "Changed soup",
+            "10",
+            "20",
+            "4",
+            listOf(RecipeEditRow("ingredient", "1 onion")),
+            listOf(RecipeEditRow("instruction", "Simmer")),
+            "",
+            "",
+        ),
+    )
+
     private fun CoroutineScope.controller(
         api: FakeApi = FakeApi(),
         sessionStore: FakeSessionStore = FakeSessionStore(null),
@@ -3035,6 +3180,8 @@ class SessionControllerTest {
         var updateAccountCalls = 0
         var deleteAccountCalls = 0
         var recipeCalls = 0
+        var deleteRecipeCalls = 0
+        var moveRecipeCalls = 0
         val batchCursors = mutableListOf<String?>()
         val googleRequests = mutableListOf<GoogleSignInRequest>()
         var signInBlock: suspend (SignInRequest) -> SessionResponse = { SESSION.response }
@@ -3049,6 +3196,9 @@ class SessionControllerTest {
         }
         var updateAccountBlock: suspend (String, AccountUpdateRequest) -> User = { _, _ -> USER }
         var deleteAccountBlock: suspend (String) -> Unit = {}
+        var updateRecipeBlock: suspend (String, Long, Long, RecipeUpdateRequest) -> RecipeDetail = { _, _, _, _ ->
+            SOUP_DETAIL
+        }
 
         override suspend fun signIn(request: SignInRequest): SessionResponse {
             signInCalls++
@@ -3101,7 +3251,7 @@ class SessionControllerTest {
             cookbookId: Long,
             recipeId: Long,
             request: RecipeUpdateRequest,
-        ): RecipeDetail = error("unused")
+        ): RecipeDetail = updateRecipeBlock(token, cookbookId, recipeId, request)
         override suspend fun updateRecipeCover(
             token: String,
             cookbookId: Long,
@@ -3113,8 +3263,13 @@ class SessionControllerTest {
             sourceCookbookId: Long,
             recipeId: Long,
             targetCookbookId: Long,
-        ): RecipeDetail = error("unused")
-        override suspend fun deleteRecipe(token: String, cookbookId: Long, recipeId: Long) = error("unused")
+        ): RecipeDetail {
+            moveRecipeCalls++
+            return SOUP_DETAIL
+        }
+        override suspend fun deleteRecipe(token: String, cookbookId: Long, recipeId: Long) {
+            deleteRecipeCalls++
+        }
         override suspend fun addRecipeIngredients(
             token: String,
             cookbookId: Long,

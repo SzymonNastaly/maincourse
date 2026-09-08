@@ -183,8 +183,9 @@ class OkHttpMainCourseApi(
         cookbookId: Long,
         recipeId: Long,
         image: File,
-    ): RecipeDetail =
-        executeJson(
+    ): RecipeDetail {
+        validateJpegUpload(image)
+        return executeJson(
             cookbookRequestBuilder("api/v1/recipes/$recipeId", token, cookbookId)
                 .patch(
                     MultipartBody.Builder()
@@ -198,6 +199,7 @@ class OkHttpMainCourseApi(
                 )
                 .build(),
         )
+    }
 
     override suspend fun moveRecipe(
         token: String,
@@ -247,6 +249,16 @@ class OkHttpMainCourseApi(
             } catch (_: IllegalArgumentException) {
                 throw ApiFailure(null, "Invalid response from server")
             }
+        }
+    }
+
+    private suspend fun validateJpegUpload(image: File) = withContext(Dispatchers.IO) {
+        require(SAFE_UPLOAD_NAME.matches(image.name)) { "Invalid image filename" }
+        require(image.isFile && image.canRead()) { "Image file is unavailable" }
+        require(image.length() in 3 until MAX_COVER_BYTES) { "Image file has an invalid size" }
+        val signature = image.inputStream().use { input -> ByteArray(3).also { require(input.read(it) == it.size) } }
+        require(signature.contentEquals(byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte()))) {
+            "Image file is not JPEG data"
         }
     }
 
@@ -340,7 +352,9 @@ class OkHttpMainCourseApi(
     private companion object {
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
         val JPEG_MEDIA_TYPE = "image/jpeg".toMediaType()
+        val SAFE_UPLOAD_NAME = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}\\.jpe?g", RegexOption.IGNORE_CASE)
         const val RECIPE_BATCH_LIMIT = 100
+        const val MAX_COVER_BYTES = 15_000_000L
     }
 }
 

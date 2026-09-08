@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.getmaincourse.app.data.cache.MainCourseDatabase
 import com.getmaincourse.app.data.cache.RoomCatalogStore
+import com.getmaincourse.app.data.images.RecipeImageOwner
 import com.getmaincourse.app.data.images.SessionImages
+import com.getmaincourse.app.data.images.clearImageResources
 import com.getmaincourse.app.data.network.OkHttpMainCourseApi
 import com.getmaincourse.app.data.onboarding.AtomicOnboardingStore
 import com.getmaincourse.app.data.session.EncryptedSessionStore
@@ -37,6 +39,7 @@ class AppContainer(application: Application) {
         store = RoomCatalogStore(database),
     )
     val images = SessionImages(application, BuildConfig.API_BASE_URL)
+    val recipeImages = RecipeImageOwner(application)
 
     val viewModelFactory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -49,7 +52,13 @@ class AppContainer(application: Application) {
                 onboardingStore = onboardingStore,
                 baseUrl = BuildConfig.API_BASE_URL,
                 clock = Clock.systemUTC(),
-                imageCleanup = { images.clear() },
+                imageCleanup = {
+                    clearImageResources(
+                        clearDisplayImages = images::clear,
+                        clearStagedImages = recipeImages::clear,
+                    )
+                },
+                resolvePreparedImage = recipeImages::resolve,
                 credentialStateCleanup = googleCredentialSessionCleaner::clear,
             ) as T
         }

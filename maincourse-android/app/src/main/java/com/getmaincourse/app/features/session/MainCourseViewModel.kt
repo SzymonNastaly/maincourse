@@ -3,6 +3,8 @@ package com.getmaincourse.app.features.session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.BuildConfig
+import com.getmaincourse.app.data.images.PreparedRecipeImage
+import com.getmaincourse.app.data.images.PreparedRecipeImageUnavailable
 import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
 import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
 import com.getmaincourse.app.data.model.GoogleSignInRequest
@@ -20,6 +22,9 @@ import com.getmaincourse.app.features.auth.GoogleSignInException
 import com.getmaincourse.app.features.onboarding.OnboardingController
 import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
+import com.getmaincourse.app.features.recipes.RecipeEditDraft
+import com.getmaincourse.app.features.recipes.ShoppingItemInput
+import java.io.File
 import java.time.Clock
 import java.time.Instant
 import java.net.URI
@@ -41,6 +46,9 @@ class MainCourseViewModel(
     baseUrl: String,
     private val clock: Clock,
     imageCleanup: suspend () -> Unit,
+    resolvePreparedImage: suspend (PreparedRecipeImage, Long) -> File = { _, _ ->
+        throw PreparedRecipeImageUnavailable("Choose the photo again")
+    },
     credentialStateCleanup: suspend () -> Unit = {},
     private val appleWaitingTimeoutMillis: Long = 300_000,
     private val appleCallback: String = appleCallbackFor(baseUrl, BuildConfig.DEBUG),
@@ -54,6 +62,7 @@ class MainCourseViewModel(
         scope = viewModelScope,
         imageCleanup = imageCleanup,
         credentialStateCleanup = credentialStateCleanup,
+        resolvePreparedImage = resolvePreparedImage,
     )
     private val onboarding = OnboardingController(
         store = onboardingStore,
@@ -74,6 +83,7 @@ class MainCourseViewModel(
 
     val state = controller.state
     val searchState = controller.searchState
+    val recipeActionState = controller.recipeActionState
     val accountState = controller.accountState
     val onboardingState = onboarding.state
     val authenticationMethod = mutableAuthenticationMethod.asStateFlow()
@@ -278,6 +288,14 @@ class MainCourseViewModel(
     fun switchCookbook(id: Long) = controller.switchCookbook(id)
     fun refresh() = controller.refresh()
     fun updateSearchQuery(query: String) = controller.updateSearchQuery(query)
+    fun saveRecipe(draft: RecipeEditDraft, image: PreparedRecipeImage?) = controller.saveRecipe(draft, image)
+    fun retryRecipePhoto() = controller.retryRecipePhoto()
+    fun moveRecipe(recipeId: Long, targetId: Long) = controller.moveRecipe(recipeId, targetId)
+    fun deleteRecipe(recipeId: Long) = controller.deleteRecipe(recipeId)
+    fun addReviewedIngredients(recipeId: Long, items: List<ShoppingItemInput>) =
+        controller.addReviewedIngredients(recipeId, items)
+    fun retryRecipeReconciliation() = controller.retryRecipeReconciliation()
+    fun clearRecipeAction() = controller.clearRecipeAction()
     fun openRecipe(id: Long) = controller.openRecipe(id)
     fun closeRecipe() = controller.closeRecipe()
     fun updateName(name: String) = controller.updateName(name)

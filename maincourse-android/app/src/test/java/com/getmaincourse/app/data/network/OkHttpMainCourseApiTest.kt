@@ -766,7 +766,9 @@ class OkHttpMainCourseApiTest {
     fun updateRecipeCoverStreamsJpegFileAsAuthenticatedCoverImagePart() = runBlocking {
         server.enqueue(jsonResponse(200, recipeDetailJson()))
         val directory = Files.createTempDirectory("maincourse-cover-test").toFile()
-        val image = directory.resolve("cover.jpg").apply { writeBytes("jpeg-stream-body".toByteArray()) }
+        val image = directory.resolve("cover.jpg").apply {
+            writeBytes(byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte()) + "jpeg-stream-body".toByteArray())
+        }
 
         try {
             api.updateRecipeCover("upload-token", 77L, 101L, image)
@@ -783,6 +785,32 @@ class OkHttpMainCourseApiTest {
             assertTrue(body.contains("jpeg-stream-body"))
         } finally {
             image.delete()
+            directory.delete()
+        }
+    }
+
+    @Test
+    fun updateRecipeCoverRejectsMissingUnsafeOrNonJpegFilesBeforeNetwork() = runBlocking {
+        val directory = Files.createTempDirectory("maincourse-cover-validation").toFile()
+        val missing = directory.resolve("missing.jpg")
+        val unsafe = directory.resolve("not safe.jpg").apply {
+            writeBytes(byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte()))
+        }
+        val fake = directory.resolve("fake.jpg").apply { writeText("not a jpeg") }
+
+        try {
+            listOf(missing, unsafe, fake).forEach { image ->
+                try {
+                    api.updateRecipeCover("upload-token", 77L, 101L, image)
+                    fail("invalid upload should fail before network")
+                } catch (_: IllegalArgumentException) {
+                    // Expected.
+                }
+            }
+            assertEquals(0, server.requestCount)
+        } finally {
+            unsafe.delete()
+            fake.delete()
             directory.delete()
         }
     }
