@@ -9,7 +9,7 @@ import com.getmaincourse.app.data.cache.RoomCatalogStore
 import com.getmaincourse.app.data.images.RecipeImageOwner
 import com.getmaincourse.app.data.images.SessionImages
 import com.getmaincourse.app.data.images.clearImageResources
-import com.getmaincourse.app.data.network.OkHttpMainCourseApi
+import com.getmaincourse.app.data.network.RetrofitMainCourseApi
 import com.getmaincourse.app.data.onboarding.AtomicOnboardingStore
 import com.getmaincourse.app.data.session.EncryptedSessionStore
 import com.getmaincourse.app.features.session.CatalogRepository
@@ -32,7 +32,7 @@ class MainCourseApplication : Application() {
 class AppContainer(application: Application) {
     private val database = MainCourseDatabase.open(application)
     private val sessionStore = EncryptedSessionStore(application)
-    private val api = OkHttpMainCourseApi(BuildConfig.API_BASE_URL.toHttpUrl(), OkHttpClient())
+    private val api = RetrofitMainCourseApi(BuildConfig.API_BASE_URL.toHttpUrl(), OkHttpClient())
     private val onboardingStore = AtomicOnboardingStore(application, BuildConfig.API_BASE_URL)
     private val googleCredentialSessionCleaner = GoogleCredentialSessionCleaner(application)
     private val catalogRepository = CatalogRepository(

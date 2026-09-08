@@ -16,6 +16,13 @@ These instructions apply to `maincourse-android/`.
 
 ## Project Rules
 
+- Prefer established libraries and Android/platform APIs for general-purpose
+  functionality. Check existing dependencies first, then evaluate a maintained
+  library before building an equivalent. Keep custom code focused on MainCourse
+  rules; record a concrete reason when a generic implementation stays custom.
+  Library adoption should reduce maintenance rather than introduce a parallel
+  framework or duplicate a capability already supplied by the platform.
+
 - Keep one `:app` module and package code under `com.getmaincourse.app` by
   feature. Do not add modules or architectural layers speculatively.
 - Release uses `com.getmaincourse.app`; debug uses the `.debug` application ID

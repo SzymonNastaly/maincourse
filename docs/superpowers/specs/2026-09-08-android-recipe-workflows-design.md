@@ -163,6 +163,14 @@ another screen awake. No timer/widget/App Intent feature is added.
 
 ## Ownership and structure
 
+Use established libraries for general-purpose work. Retrofit 3.0.0 with its
+official kotlinx.serialization converter replaces manual HTTP callback,
+request-building and decoding plumbing behind the unchanged MainCourseApi.
+Keep OkHttp 4.12.0, serialization 1.9.0 and explicit per-request headers and
+no-retry policy. ImageDecoder/Coil retain their platform/display roles. The small
+search scorer remains custom because its ranking and normalization are product
+rules; a separate FTS store or broad text package would not replace those rules.
+
 Keep network mutations, search and sweep lifetimes under authenticated session
 ownership. Every request captures user generation, bearer and cookbook; every
 cache write rechecks current scope/mutation ownership. Read sweeps and refreshes
@@ -176,6 +184,9 @@ Add focused `features/search`, recipe action/editor/formatting files, and a
 small image-preparation owner. Extract mutation orchestration to a dedicated
 RecipeActionController with narrow session-owned hooks; do not grow every new
 operation inside SessionController or introduce a general workflow framework.
+Before imports/sharing adds further lifetime work, prefer structured child Jobs
+and scopes to overlapping manual job sets, preserving tested generation and
+write guards. Evaluate this as an isolated lifetime refactor, not a new framework.
 Use existing Room JSON records and membership keys; no search schema migration
 or persistent cursor is required. Saveable draft state is user/cookbook/recipe
 scoped and carries no bearer. Keep app-resource cleanup integrated with the

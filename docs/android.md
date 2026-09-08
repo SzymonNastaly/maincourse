@@ -39,6 +39,7 @@ Link association, and the full Milestone 2 review remain outstanding.
 | Navigation 3 | 1.1.7 |
 | Coroutines / serialization | 1.10.2 / 1.9.0 |
 | OkHttp | 4.12.0 |
+| Retrofit / kotlinx.serialization converter | 3.0.0 / 3.0.0 |
 | Room / KSP | 2.8.4 / 2.3.11 |
 | Coil | 3.3.0 |
 | Lifecycle | Declared 2.9.4; resolved atomic group 2.10.0 |
@@ -63,8 +64,9 @@ message rather than exposing SDK details.
 Navigation 3 runtime 1.1.7 aligns the AndroidX Lifecycle atomic group to 2.10.0
 even though the two direct Lifecycle dependencies remain declared at 2.9.4. Do
 not force one Lifecycle artifact back to 2.9.4: the group must resolve together.
-Milestone 1 uses OkHttp/kotlinx.serialization, Room, Android Keystore storage,
-and a session-owned Coil image loader.
+The API boundary uses Retrofit's official kotlinx.serialization converter over
+the pinned OkHttp client. Room, Android Keystore storage, and a session-owned
+Coil image loader cover their respective persistence and image roles.
 
 ## Source Layout
 Use package-by-feature directories inside
@@ -90,6 +92,16 @@ owner. Do not add a DI framework for this app's current scale. `MainActivity`
 obtains the lifecycle-retained `MainCourseViewModel`; the view model owns the
 session and onboarding coordinators and starts each restore once. `onResume`
 rechecks session expiry.
+
+`MainCourseApi` is the stable domain-facing network contract. Its production
+adapter delegates route, query, JSON, multipart, and coroutine-call plumbing to
+an internal annotated Retrofit service and the official kotlinx.serialization
+converter. Keep bearer and `X-Cookbook-Id` headers explicit per service method;
+anonymous authentication/onboarding calls must not inherit protected headers.
+The adapter retains MainCourse-specific failure decoding, Apple redirect
+validation, JPEG upload preflight, and account-response unwrapping. Its OkHttp
+client disables redirects and connection retries and uses a 30-second call
+timeout; mutations are never retried automatically.
 
 Explicit Google sign-in uses Credential Manager's
 `GetSignInWithGoogleOption`; it never opens automatically. `MainActivity` owns

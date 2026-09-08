@@ -42,7 +42,7 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
-class OkHttpMainCourseApiTest {
+class RetrofitMainCourseApiTest {
     private val handle = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     private val code = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
     private val challenge = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
@@ -54,7 +54,7 @@ class OkHttpMainCourseApiTest {
     fun setUp() {
         server = MockWebServer()
         server.start()
-        api = OkHttpMainCourseApi(server.url("/"))
+        api = RetrofitMainCourseApi(server.url("/"))
     }
 
     @After
@@ -471,7 +471,7 @@ class OkHttpMainCourseApiTest {
     @Test
     fun cancellingOnboardingRequestCancelsCallAndPreservesCancellation() = runBlocking {
         val callCancelled = CountDownLatch(1)
-        val trackedApi = OkHttpMainCourseApi(
+        val trackedApi = RetrofitMainCourseApi(
             server.url("/"),
             OkHttpClient.Builder()
                 .eventListener(
@@ -1055,7 +1055,7 @@ class OkHttpMainCourseApiTest {
     @Test
     fun streamingResponseDoesNotBlockTheCallerDispatcher() = runBlocking {
         val bodyReadStarted = CountDownLatch(1)
-        val trackedApi = OkHttpMainCourseApi(
+        val trackedApi = RetrofitMainCourseApi(
             server.url("/"),
             OkHttpClient.Builder()
                 .eventListener(
@@ -1092,7 +1092,7 @@ class OkHttpMainCourseApiTest {
     fun cancellingStreamingResponseCancelsCallAndPreservesCancellation() = runBlocking {
         val bodyReadStarted = CountDownLatch(1)
         val callCancelled = CountDownLatch(1)
-        val trackedApi = OkHttpMainCourseApi(
+        val trackedApi = RetrofitMainCourseApi(
             server.url("/"),
             OkHttpClient.Builder()
                 .eventListener(
@@ -1176,7 +1176,7 @@ class OkHttpMainCourseApiTest {
                 },
             )
             .build()
-        val noRetryApi = OkHttpMainCourseApi(retryHost, multiRouteClient)
+        val noRetryApi = RetrofitMainCourseApi(retryHost, multiRouteClient)
 
         val failure = captureApiFailure {
             request(noRetryApi)
