@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_03_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_140000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -50,6 +50,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_090000) do
     t.integer "user_id", null: false
     t.index ["token_digest"], name: "index_api_tokens_on_token_digest", unique: true
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
+  end
+
+  create_table "apple_auth_transactions", force: :cascade do |t|
+    t.datetime "authorized_at"
+    t.string "code_challenge", null: false
+    t.datetime "confirmation_required_at"
+    t.datetime "consumed_at"
+    t.datetime "created_at", null: false
+    t.string "exchange_digest"
+    t.datetime "expires_at", null: false
+    t.string "handle_digest", null: false
+    t.string "return_uri", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["exchange_digest"], name: "index_apple_auth_transactions_on_exchange_digest", unique: true
+    t.index ["expires_at"], name: "index_apple_auth_transactions_on_expires_at"
+    t.index ["handle_digest"], name: "index_apple_auth_transactions_on_handle_digest", unique: true
+    t.index ["user_id"], name: "index_apple_auth_transactions_on_user_id"
   end
 
   create_table "cookbook_invitations", force: :cascade do |t|
@@ -297,6 +315,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_090000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "api_tokens", "users"
+  add_foreign_key "apple_auth_transactions", "users", on_delete: :cascade
   add_foreign_key "cookbook_invitations", "cookbooks", on_delete: :cascade
   add_foreign_key "cookbook_invitations", "users", column: "inviter_id", on_delete: :cascade
   add_foreign_key "cookbook_memberships", "cookbooks", on_delete: :cascade

@@ -5,6 +5,9 @@ Rails.application.routes.draw do
       resource :registration, only: [ :create ]
       resource :session, only: [ :create, :destroy ]
       resource :oauth_session, only: [ :create ]
+      resource :apple_auth_transaction, only: [ :create ] do
+        post :exchange
+      end
       resource :account, only: [ :update, :destroy ]
       resource :onboarding_response, only: [ :create ]
       resources :device_tokens, only: [ :create, :destroy ], param: :token, constraints: { token: /[^\/]+/ }
