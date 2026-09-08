@@ -56,7 +56,6 @@ class CatalogRepository(
     ): List<RecipeSummary> {
         val permit = recipeReads.beginRead()
         try {
-            if (!permit.admitted) throw CancellationException("A recipe mutation is active")
             val items = api.recipes(session.token, scope.cookbookId)
             currentCoroutineContext().ensureActive()
             writes.withLock {
@@ -82,7 +81,6 @@ class CatalogRepository(
     ): RecipeDetail {
         val permit = recipeReads.beginRead()
         try {
-            if (!permit.admitted) throw CancellationException("A recipe mutation is active")
             val detail = api.recipe(session.token, scope.cookbookId, recipeId)
             currentCoroutineContext().ensureActive()
             writes.withLock {
@@ -106,21 +104,25 @@ class CatalogRepository(
         cursor: String?,
         knownCompletedIds: Set<Long>,
         canCommit: suspend () -> Boolean,
+        permit: RecipeReadPermit,
     ): RecipeBatchResponse {
-        val permit = recipeReads.beginRead()
-        try {
-            if (!permit.admitted) throw CancellationException("A recipe mutation is active")
-            val page = api.recipeBatch(session.token, scope.cookbookId, cursor)
-            val eligible = page.recipes.filter { it.id in knownCompletedIds }
+        val page = api.recipeBatch(session.token, scope.cookbookId, cursor)
+        val eligible = page.recipes.filter { it.id in knownCompletedIds }
+        currentCoroutineContext().ensureActive()
+        writes.withLock {
             currentCoroutineContext().ensureActive()
-            writes.withLock {
-                currentCoroutineContext().ensureActive()
-                if (!recipeReads.canCommit(permit) || !canCommit()) {
-                    throw CancellationException("Recipe hydration was replaced")
-                }
-                store.saveRecipeDetails(scope, eligible)
+            if (!recipeReads.canCommit(permit) || !canCommit()) {
+                throw CancellationException("Recipe hydration was replaced")
             }
-            return page
+            store.saveRecipeDetails(scope, eligible)
+        }
+        return page
+    }
+
+    internal suspend fun <T> withRecipeRead(block: suspend (RecipeReadPermit) -> T): T {
+        val permit = recipeReads.beginRead()
+        return try {
+            block(permit)
         } finally {
             recipeReads.endRead(permit)
         }
@@ -128,14 +130,12 @@ class CatalogRepository(
 
     internal suspend fun invalidateAndJoinRecipeReads() = recipeReads.invalidateAndJoinReads()
 
-    internal suspend fun beginRecipeMutation(): RecipeMutationPermit = recipeReads.beginMutation()
-
     internal suspend fun <T> withRecipeMutation(block: suspend (RecipeMutationPermit) -> T): T {
-        val permit = beginRecipeMutation()
+        val permit = recipeReads.beginMutation()
         return try {
             block(permit)
         } finally {
-            endRecipeMutation(permit)
+            recipeReads.endMutation(permit)
         }
     }
 
@@ -143,8 +143,10 @@ class CatalogRepository(
         permit: RecipeMutationPermit,
         scope: RecipeScope,
         details: List<RecipeDetail>,
+        canCommit: suspend () -> Boolean,
     ) = writes.withLock {
         recipeReads.requireMutationCanCommit(permit)
+        if (!canCommit()) throw CancellationException("Recipe mutation no longer owns its user")
         store.saveRecipeDetails(scope, details)
     }
 
@@ -153,8 +155,10 @@ class CatalogRepository(
         scope: RecipeScope,
         knownSummary: RecipeSummary,
         detail: RecipeDetail,
+        canCommit: suspend () -> Boolean,
     ) = writes.withLock {
         recipeReads.requireMutationCanCommit(permit)
+        if (!canCommit()) throw CancellationException("Recipe mutation no longer owns its user")
         store.upsertPartialRecipe(scope, knownSummary, detail)
     }
 
@@ -162,12 +166,12 @@ class CatalogRepository(
         permit: RecipeMutationPermit,
         scope: RecipeScope,
         recipeId: Long,
+        canCommit: suspend () -> Boolean,
     ) = writes.withLock {
         recipeReads.requireMutationCanCommit(permit)
+        if (!canCommit()) throw CancellationException("Recipe mutation no longer owns its user")
         store.removeRecipe(scope, recipeId)
     }
-
-    internal fun endRecipeMutation(permit: RecipeMutationPermit) = recipeReads.endMutation(permit)
 
     suspend fun removeRecipe(scope: RecipeScope, recipeId: Long) = writes.withLock {
         currentCoroutineContext().ensureActive()

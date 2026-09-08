@@ -19,25 +19,28 @@ internal class RecipeHydrator(
         val knownCompletedIds = knownRecipes
             .filter { it.importStatus == COMPLETED_IMPORT_STATUS }
             .mapTo(mutableSetOf(), RecipeSummary::id)
-        withTimeout(timeoutMillis) {
-            var cursor: String? = null
-            val seenCursors = mutableSetOf<String>()
-            while (true) {
-                val page = repository.refreshRecipeDetailBatch(
-                    session = session,
-                    scope = scope,
-                    cursor = cursor,
-                    knownCompletedIds = knownCompletedIds,
-                    canCommit = canCommit,
-                )
-                if (page.recipes.isEmpty()) return@withTimeout
-                onPageSaved()
-                val next = page.nextCursor?.takeIf(String::isNotBlank)
-                    ?: throw RecipeHydrationException("Search hydration is incomplete because cursor progress stopped")
-                if (!seenCursors.add(next)) {
-                    throw RecipeHydrationException("Search hydration is incomplete because a cursor repeated")
+        repository.withRecipeRead { permit ->
+            withTimeout(timeoutMillis) {
+                var cursor: String? = null
+                val seenCursors = mutableSetOf<String>()
+                while (true) {
+                    val page = repository.refreshRecipeDetailBatch(
+                        session = session,
+                        scope = scope,
+                        cursor = cursor,
+                        knownCompletedIds = knownCompletedIds,
+                        canCommit = canCommit,
+                        permit = permit,
+                    )
+                    if (page.recipes.isEmpty()) return@withTimeout
+                    onPageSaved()
+                    val next = page.nextCursor?.takeIf(String::isNotBlank)
+                        ?: throw RecipeHydrationException("Search hydration is incomplete because cursor progress stopped")
+                    if (!seenCursors.add(next)) {
+                        throw RecipeHydrationException("Search hydration is incomplete because a cursor repeated")
+                    }
+                    cursor = next
                 }
-                cursor = next
             }
         }
     }

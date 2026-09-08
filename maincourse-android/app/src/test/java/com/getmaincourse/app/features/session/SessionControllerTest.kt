@@ -366,7 +366,7 @@ class SessionControllerTest {
     }
 
     @Test
-    fun mutationBarrierJoinsOldReadsAndRejectsReadsStartedWhileMutationIsPending() = runTest {
+    fun mutationBarrierJoinsOldReadsAndQueuesReadsStartedWhileMutationIsPending() = runTest {
         val oldReadStarted = CompletableDeferred<Unit>()
         val releaseOldRead = CompletableDeferred<Unit>()
         var detailCalls = 0
@@ -390,23 +390,407 @@ class SessionControllerTest {
         val oldRead = async { repository.refreshDetail(SESSION.response, RecipeScope(USER.id, PERSONAL.id), SOUP.id) }
         oldReadStarted.await()
 
-        val beginning = async { repository.beginRecipeMutation() }
+        val mutationEntered = CompletableDeferred<Unit>()
+        val releaseMutation = CompletableDeferred<Unit>()
+        val mutation = async {
+            repository.withRecipeMutation { permit ->
+                mutationEntered.complete(Unit)
+                releaseMutation.await()
+                repository.commitRecipeDetails(
+                    permit,
+                    RecipeScope(USER.id, PERSONAL.id),
+                    listOf(acknowledged),
+                ) { true }
+            }
+        }
         runCurrent()
-        assertFalse(beginning.isCompleted)
+        assertFalse(mutationEntered.isCompleted)
         releaseOldRead.complete(Unit)
         runCatching { oldRead.await() }
-        val permit = beginning.await()
+        mutationEntered.await()
 
         val pendingRead = async {
             repository.refreshDetail(SESSION.response, RecipeScope(USER.id, PERSONAL.id), SOUP.id)
         }
         runCurrent()
-        repository.commitRecipeDetails(permit, RecipeScope(USER.id, PERSONAL.id), listOf(acknowledged))
-        repository.endRecipeMutation(permit)
+        releaseMutation.complete(Unit)
+        mutation.await()
         runCatching { pendingRead.await() }
 
         assertEquals(acknowledged, store.detail(RecipeScope(USER.id, PERSONAL.id), SOUP.id))
         assertEquals("Acknowledged", store.recipes(RecipeScope(USER.id, PERSONAL.id)).items.single().name)
+    }
+
+    @Test
+    fun readInvalidationDoesNotInvalidateTheActiveMutationAndFreshReadsResumeAfterward() = runTest {
+        val scope = RecipeScope(USER.id, PERSONAL.id)
+        val acknowledged = SOUP_DETAIL.copy(name = "Acknowledged", updatedAt = "2026-09-08T10:00:00Z")
+        val fresh = acknowledged.copy(name = "Fresh", updatedAt = "2026-09-08T11:00:00Z")
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(scope, listOf(SOUP))
+        }
+        val api = FakeApi().apply { recipeBlock = { _, _, _ -> fresh } }
+        val repository = CatalogRepository(api, store)
+
+        repository.withRecipeMutation { permit ->
+            repository.invalidateAndJoinRecipeReads()
+            repository.commitRecipeDetails(permit, scope, listOf(acknowledged)) { true }
+        }
+        repository.refreshDetail(SESSION.response, scope, SOUP.id)
+
+        assertEquals(fresh, store.detail(scope, SOUP.id))
+        assertEquals("Fresh", store.recipes(scope).items.single().name)
+    }
+
+    @Test
+    fun readsStartedDuringMutationWaitAndThenUseFreshData() = runTest {
+        val scope = RecipeScope(USER.id, PERSONAL.id)
+        val mutationEntered = CompletableDeferred<Unit>()
+        val releaseMutation = CompletableDeferred<Unit>()
+        val fresh = SOUP_DETAIL.copy(name = "Fresh after mutation", updatedAt = "2026-09-08T11:00:00Z")
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(scope, listOf(SOUP))
+        }
+        val api = FakeApi().apply { recipeBlock = { _, _, _ -> fresh } }
+        val repository = CatalogRepository(api, store)
+        val mutation = async {
+            repository.withRecipeMutation {
+                mutationEntered.complete(Unit)
+                releaseMutation.await()
+            }
+        }
+        mutationEntered.await()
+
+        val read = async { repository.refreshDetail(SESSION.response, scope, SOUP.id) }
+        runCurrent()
+        assertEquals(0, api.recipeCalls)
+        assertFalse(read.isCompleted)
+
+        releaseMutation.complete(Unit)
+        mutation.await()
+        assertEquals(fresh, read.await())
+        assertEquals(fresh, store.detail(scope, SOUP.id))
+    }
+
+    @Test
+    fun queuedReadCanBeCancelledWithoutCallingTheApiOrPoisoningLaterReads() = runTest {
+        val scope = RecipeScope(USER.id, PERSONAL.id)
+        val mutationEntered = CompletableDeferred<Unit>()
+        val releaseMutation = CompletableDeferred<Unit>()
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(scope, listOf(SOUP))
+        }
+        val api = FakeApi()
+        val repository = CatalogRepository(api, store)
+        val mutation = async {
+            repository.withRecipeMutation {
+                mutationEntered.complete(Unit)
+                releaseMutation.await()
+            }
+        }
+        mutationEntered.await()
+        val queuedRead = async { repository.refreshDetail(SESSION.response, scope, SOUP.id) }
+        runCurrent()
+
+        queuedRead.cancel()
+        queuedRead.join()
+        releaseMutation.complete(Unit)
+        mutation.await()
+        assertEquals(0, api.recipeCalls)
+
+        repository.refreshDetail(SESSION.response, scope, SOUP.id)
+        assertEquals(1, api.recipeCalls)
+    }
+
+    @Test
+    fun overlappingMutationsWaitForTheCurrentOwner() = runTest {
+        val repository = CatalogRepository(FakeApi(), FakeCatalogStore())
+        val firstEntered = CompletableDeferred<Unit>()
+        val releaseFirst = CompletableDeferred<Unit>()
+        val secondEntered = CompletableDeferred<Unit>()
+        val first = async {
+            repository.withRecipeMutation {
+                firstEntered.complete(Unit)
+                releaseFirst.await()
+            }
+        }
+        firstEntered.await()
+
+        val second = async {
+            repository.withRecipeMutation { secondEntered.complete(Unit) }
+        }
+        runCurrent()
+        assertFalse(secondEntered.isCompleted)
+
+        releaseFirst.complete(Unit)
+        first.await()
+        second.await()
+        assertTrue(secondEntered.isCompleted)
+    }
+
+    @Test
+    fun cancelledMutationAdmissionWhileJoiningAReadDoesNotLeaveTheGateLocked() = runTest {
+        val oldReadStarted = CompletableDeferred<Unit>()
+        val releaseOldRead = CompletableDeferred<Unit>()
+        val scope = RecipeScope(USER.id, PERSONAL.id)
+        val store = FakeCatalogStore().apply {
+            replaceCookbooks(USER.id, listOf(PERSONAL))
+            replaceRecipes(scope, listOf(SOUP))
+        }
+        val api = FakeApi().apply {
+            recipeBlock = { _, _, _ ->
+                oldReadStarted.complete(Unit)
+                withContext(NonCancellable) { releaseOldRead.await() }
+                SOUP_DETAIL
+            }
+        }
+        val barrier = RecipeReadMutationBarrier()
+        val oldRead = async {
+            val readPermit = barrier.beginRead()
+            try {
+                api.recipe(SESSION.response.token, scope.cookbookId, SOUP.id)
+            } finally {
+                barrier.endRead(readPermit)
+            }
+        }
+        oldReadStarted.await()
+        val cancelledMutation = async { barrier.beginMutation() }
+        runCurrent()
+
+        cancelledMutation.cancel()
+        releaseOldRead.complete(Unit)
+        cancelledMutation.join()
+        runCatching { oldRead.await() }
+
+        val next = barrier.beginMutation()
+        barrier.endMutation(next)
+    }
+
+    @Test
+    fun cookbookSwitchAllowsCapturedTargetCommitAndItsRefreshWaits() = runTest {
+        val source = RecipeScope(USER.id, PERSONAL.id)
+        val mutationEntered = CompletableDeferred<Unit>()
+        val releaseMutation = CompletableDeferred<Unit>()
+        val acknowledged = SOUP_DETAIL.copy(name = "Edited while switching", updatedAt = "2026-09-08T10:00:00Z")
+        val movedSummary = SOUP.copy(name = acknowledged.name, updatedAt = acknowledged.updatedAt)
+        val store = FakeCatalogStore()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL, SHARED) }
+            recipesBlock = { _, cookbookId ->
+                if (cookbookId == PERSONAL.id) listOf(SOUP) else listOf(SALAD, movedSummary)
+            }
+        }
+        val repository = CatalogRepository(api, store)
+        val controller = controller(api = api, catalogStore = store, catalogRepository = repository, session = SESSION)
+        controller.restore().join()
+        val mutation = async {
+            repository.withRecipeMutation { permit ->
+                mutationEntered.complete(Unit)
+                releaseMutation.await()
+                repository.commitPartialRecipe(permit, RecipeScope(USER.id, SHARED.id), SOUP, acknowledged) {
+                    controller.state.value.user?.id == USER.id
+                }
+                repository.commitRecipeRemoval(permit, source, SOUP.id) {
+                    controller.state.value.user?.id == USER.id
+                }
+            }
+        }
+        mutationEntered.await()
+
+        val switching = controller.switchCookbook(SHARED.id)
+        runCurrent()
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertFalse(switching.isCompleted)
+        releaseMutation.complete(Unit)
+        mutation.await()
+        switching.join()
+
+        assertNull(store.detail(source, SOUP.id))
+        assertEquals(acknowledged, store.detail(RecipeScope(USER.id, SHARED.id), SOUP.id))
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD, movedSummary), controller.state.value.recipes)
+    }
+
+    @Test
+    fun queuedRefreshDoesNotRunAfterLogoutAndFreshReadsWorkAfterTheNextLogin() = runTest {
+        val mutationEntered = CompletableDeferred<Unit>()
+        val releaseMutation = CompletableDeferred<Unit>()
+        val store = FakeCatalogStore()
+        val sessionStore = FakeSessionStore(SESSION)
+        var recipeListCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                recipeListCalls++
+                listOf(SOUP)
+            }
+        }
+        val repository = CatalogRepository(api, store)
+        val controller = controller(
+            api = api,
+            sessionStore = sessionStore,
+            catalogStore = store,
+            catalogRepository = repository,
+            session = SESSION,
+        )
+        controller.restore().join()
+        val mutation = async {
+            runCatching {
+                repository.withRecipeMutation { permit ->
+                    mutationEntered.complete(Unit)
+                    releaseMutation.await()
+                    repository.commitRecipeDetails(permit, RecipeScope(USER.id, PERSONAL.id), listOf(SOUP_DETAIL)) {
+                        controller.state.value.user?.id == USER.id
+                    }
+                }
+            }
+        }
+        mutationEntered.await()
+        val queuedRefresh = controller.refresh()
+        runCurrent()
+        assertFalse(queuedRefresh.isCompleted)
+
+        controller.logout().join()
+        releaseMutation.complete(Unit)
+        mutation.await()
+        queuedRefresh.join()
+        assertEquals(1, recipeListCalls)
+        assertTrue(store.cookbooks(USER.id).isEmpty())
+        assertTrue(store.recipes(RecipeScope(USER.id, PERSONAL.id)).items.isEmpty())
+
+        controller.signIn(SIGN_IN).join()
+        advanceUntilIdle()
+        assertEquals(SessionPhase.READY, controller.state.value.phase)
+        assertEquals(listOf(SOUP), controller.state.value.recipes)
+        assertEquals(2, recipeListCalls)
+    }
+
+    @Test
+    fun refreshDoesNotCancelAnIndependentPendingDetailRead() = runTest {
+        val detailStarted = CompletableDeferred<Unit>()
+        val releaseDetail = CompletableDeferred<Unit>()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            recipeBlock = { _, _, _ ->
+                detailStarted.complete(Unit)
+                releaseDetail.await()
+                SOUP_DETAIL
+            }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        val detail = controller.openRecipe(SOUP.id)
+        detailStarted.await()
+
+        controller.refresh().join()
+        releaseDetail.complete(Unit)
+        detail.join()
+
+        assertEquals(DetailStatus.FRESH, controller.state.value.detail?.status)
+        assertEquals(SOUP_DETAIL, controller.state.value.detail?.recipe)
+    }
+
+    @Test
+    fun mutationCancellationSettlesTheOwnedHydrationStatus() = runTest {
+        val sweepStarted = CompletableDeferred<Unit>()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            batchBlock = { _, _, _ ->
+                sweepStarted.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        val repository = CatalogRepository(api, FakeCatalogStore())
+        val controller = controller(api = api, catalogRepository = repository, session = SESSION)
+        controller.restore().join()
+        sweepStarted.await()
+
+        repository.withRecipeMutation {
+            assertEquals(SearchHydrationStatus.INCOMPLETE, controller.searchState.value.hydrationStatus)
+        }
+
+        assertEquals(SearchHydrationStatus.INCOMPLETE, controller.searchState.value.hydrationStatus)
+    }
+
+    @Test
+    fun oldBatchCannotWriteAfterMutationAcknowledgement() = runTest {
+        val sweepStarted = CompletableDeferred<Unit>()
+        val sweepCancelled = CompletableDeferred<Unit>()
+        val releaseSweep = CompletableDeferred<Unit>()
+        val acknowledged = SOUP_DETAIL.copy(name = "Acknowledged", updatedAt = "2026-09-08T10:00:00Z")
+        val oldBatch = SOUP_DETAIL.copy(name = "Old batch", updatedAt = "2026-09-07T10:00:00Z")
+        val store = FakeCatalogStore()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            batchBlock = { _, _, _ ->
+                sweepStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } catch (_: CancellationException) {
+                    sweepCancelled.complete(Unit)
+                    withContext(NonCancellable) { releaseSweep.await() }
+                    RecipeBatchResponse(listOf(oldBatch), null)
+                }
+            }
+        }
+        val repository = CatalogRepository(api, store)
+        val controller = controller(api = api, catalogStore = store, catalogRepository = repository, session = SESSION)
+        controller.restore().join()
+        sweepStarted.await()
+
+        val mutation = async {
+            repository.withRecipeMutation { permit ->
+                repository.commitRecipeDetails(permit, RecipeScope(USER.id, PERSONAL.id), listOf(acknowledged)) {
+                    controller.state.value.user?.id == USER.id
+                }
+            }
+        }
+        sweepCancelled.await()
+        releaseSweep.complete(Unit)
+        mutation.await()
+
+        assertEquals(acknowledged, store.detail(RecipeScope(USER.id, PERSONAL.id), SOUP.id))
+        assertEquals("Acknowledged", store.recipes(RecipeScope(USER.id, PERSONAL.id)).items.single().name)
+    }
+
+    @Test
+    fun detail404SettlesCancelledSweepAndANewerRefreshCanComplete() = runTest {
+        val sweepStarted = CompletableDeferred<Unit>()
+        var sweepCalls = 0
+        var listCalls = 0
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ ->
+                listCalls++
+                if (listCalls == 1) listOf(SOUP) else listOf(SALAD)
+            }
+            recipeBlock = { _, _, _ -> throw ApiFailure(404, "missing") }
+            batchBlock = { _, _, _ ->
+                sweepCalls++
+                if (sweepCalls == 1) {
+                    sweepStarted.complete(Unit)
+                    awaitCancellation()
+                }
+                RecipeBatchResponse(emptyList(), null)
+            }
+        }
+        val controller = controller(api = api, session = SESSION)
+        controller.restore().join()
+        sweepStarted.await()
+
+        controller.openRecipe(SOUP.id).join()
+        assertEquals(SearchHydrationStatus.INCOMPLETE, controller.searchState.value.hydrationStatus)
+
+        controller.refresh().join()
+        advanceUntilIdle()
+        assertEquals(SearchHydrationStatus.COMPLETE, controller.searchState.value.hydrationStatus)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
     }
 
     @Test
@@ -1710,12 +2094,16 @@ class SessionControllerTest {
         val controller = controller(api = api, catalogStore = store, session = SESSION)
         controller.restore().join()
         controller.openRecipe(SOUP.id).join()
+        controller.updateSearchQuery("soup").join()
+        assertTrue(controller.searchState.value.results.isEmpty())
         controller.openRecipe(SALAD.id).join()
 
-        controller.refresh().join()
-
+        assertTrue(store.recipes(RecipeScope(USER.id, PERSONAL.id)).items.any { it.id == SOUP.id })
+        assertTrue(controller.state.value.recipes.none { it.id == SOUP.id })
         assertEquals(SALAD.id, controller.state.value.detail?.recipeId)
         assertEquals(DetailStatus.FRESH, controller.state.value.detail?.status)
+        controller.updateSearchQuery("soup").join()
+        assertTrue(controller.searchState.value.results.isEmpty())
     }
 
     @Test
@@ -2443,6 +2831,7 @@ class SessionControllerTest {
         api: FakeApi = FakeApi(),
         sessionStore: FakeSessionStore = FakeSessionStore(null),
         catalogStore: FakeCatalogStore = FakeCatalogStore(),
+        catalogRepository: CatalogRepository = CatalogRepository(api, catalogStore),
         session: StoredSession? = null,
         clock: Clock = Clock.fixed(NOW, ZoneOffset.UTC),
         controllerScope: CoroutineScope = this,
@@ -2455,7 +2844,7 @@ class SessionControllerTest {
         return SessionController(
             api = api,
             sessionStore = sessionStore,
-            catalogRepository = CatalogRepository(api, catalogStore),
+            catalogRepository = catalogRepository,
             baseUrl = BASE_URL,
             clock = clock,
             scope = controllerScope,

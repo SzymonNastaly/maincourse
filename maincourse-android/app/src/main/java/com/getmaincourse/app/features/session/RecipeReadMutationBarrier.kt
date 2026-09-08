@@ -2,31 +2,32 @@ package com.getmaincourse.app.features.session
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 internal class RecipeReadPermit internal constructor(
     internal val epoch: Long,
-    internal val admitted: Boolean,
     internal val job: Job?,
 )
 
-internal class RecipeMutationPermit internal constructor(internal val epoch: Long)
+internal class RecipeMutationPermit internal constructor(internal val owner: Any)
 
 internal class RecipeReadMutationBarrier {
     private val lock = Any()
+    private val mutationGate = Mutex()
     private val reads = mutableSetOf<Job>()
-    private var epoch = 0L
-    private var mutationPending = false
+    private var readEpoch = 0L
+    private var activeMutation: Any? = null
 
     suspend fun beginRead(): RecipeReadPermit {
         val job = currentCoroutineContext()[Job]
-        return synchronized(lock) {
-            val admitted = !mutationPending
-            if (admitted && job != null) reads += job
-            RecipeReadPermit(epoch, admitted, job)
+        return mutationGate.withLock {
+            synchronized(lock) {
+                if (job != null) reads += job
+                RecipeReadPermit(readEpoch, job)
+            }
         }
     }
 
@@ -35,13 +36,13 @@ internal class RecipeReadMutationBarrier {
     }
 
     fun canCommit(permit: RecipeReadPermit): Boolean = synchronized(lock) {
-        permit.admitted && !mutationPending && permit.epoch == epoch
+        permit.epoch == readEpoch
     }
 
     suspend fun invalidateAndJoinReads() {
         val owner = currentCoroutineContext()[Job]
         val stale = synchronized(lock) {
-            epoch++
+            readEpoch++
             reads.filterNot { it == owner }
         }
         stale.forEach(Job::cancel)
@@ -50,31 +51,44 @@ internal class RecipeReadMutationBarrier {
 
     suspend fun beginMutation(): RecipeMutationPermit {
         val owner = currentCoroutineContext()[Job]
-        val (permit, stale) = synchronized(lock) {
-            check(!mutationPending) { "A recipe mutation is already active" }
-            mutationPending = true
-            epoch++
-            RecipeMutationPermit(epoch) to reads.filterNot { it == owner }
-        }
-        return withContext(NonCancellable) {
+        val mutationOwner = Any()
+        var acquired = false
+        try {
+            mutationGate.lock(mutationOwner)
+            acquired = true
+            val stale = synchronized(lock) {
+                activeMutation = mutationOwner
+                readEpoch++
+                reads.filterNot { it == owner }
+            }
             stale.forEach(Job::cancel)
             stale.forEach { it.cancelAndJoin() }
-            permit
+            return RecipeMutationPermit(mutationOwner)
+        } catch (failure: Throwable) {
+            if (acquired) releaseMutation(mutationOwner)
+            throw failure
         }
     }
 
     fun requireMutationCanCommit(permit: RecipeMutationPermit) {
-        if (!synchronized(lock) { mutationPending && permit.epoch == epoch }) {
+        if (!synchronized(lock) { activeMutation === permit.owner }) {
             throw CancellationException("Recipe mutation was replaced")
         }
     }
 
     fun endMutation(permit: RecipeMutationPermit) {
-        synchronized(lock) {
-            if (mutationPending && permit.epoch == epoch) {
-                mutationPending = false
-                epoch++
+        releaseMutation(permit.owner)
+    }
+
+    private fun releaseMutation(owner: Any) {
+        val shouldUnlock = synchronized(lock) {
+            if (activeMutation === owner) {
+                activeMutation = null
+                true
+            } else {
+                false
             }
         }
+        if (shouldUnlock) mutationGate.unlock(owner)
     }
 }
