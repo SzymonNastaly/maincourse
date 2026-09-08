@@ -251,11 +251,8 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertEqual(self.mockAuthService.creationIntents, [false])
     }
 
-    func testConfirmAppleAccountCreationGetsFreshCredentialAndAllowsCreationOnce() async {
-        let provider = MockAppleSignInProvider(results: [
-            .success(self.appleCredential(suffix: "first")),
-            .success(self.appleCredential(suffix: "second"))
-        ])
+    func testPreparingAppleAccountCreationDismissesConfirmationBeforeFreshProviderAttempt() async throws {
+        let provider = BlockingSecondAppleSignInProvider(firstCredential: self.appleCredential(suffix: "first"))
         self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
         self.mockAuthService.oauthLoginResults = [
             .failure(APIError.appleAccountCreationConfirmationRequired),
@@ -264,7 +261,21 @@ final class AuthViewModelTests: XCTestCase {
         let authManager = AuthManager(authService: self.mockAuthService)
         _ = await self.sut.signInWithApple(authManager: authManager)
 
-        let authenticated = await self.sut.confirmAppleAccountCreation(authManager: authManager)
+        let consent = try XCTUnwrap(self.sut.prepareAppleAccountCreation())
+
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertEqual(provider.callCount, 1)
+
+        let confirmation = Task {
+            await self.sut.confirmAppleAccountCreation(with: consent, authManager: authManager)
+        }
+        for _ in 0 ..< 10 where provider.callCount < 2 {
+            await Task.yield()
+        }
+        XCTAssertEqual(provider.callCount, 2)
+        XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        provider.finishSecondAttempt(with: self.appleCredential(suffix: "second"))
+        let authenticated = await confirmation.value
 
         XCTAssertTrue(authenticated)
         XCTAssertTrue(authManager.authState.isAuthenticated)
@@ -278,7 +289,60 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertEqual(self.mockAuthService.creationIntents, [false, true])
     }
 
-    func testConfirmAppleAccountCreation_whenSheetIsCanceledReturnsToIdleWithoutPostingAgain() async {
+    func testConfirmedAppleAttemptCannotBeDuplicatedOrReused() async throws {
+        let provider = BlockingSecondAppleSignInProvider(firstCredential: self.appleCredential(suffix: "first"))
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [
+            .failure(APIError.appleAccountCreationConfirmationRequired),
+            .success(User(id: 42, email: "apple@example.com"))
+        ]
+        let authManager = AuthManager(authService: self.mockAuthService)
+        _ = await self.sut.signInWithApple(authManager: authManager)
+        let consent = try XCTUnwrap(self.sut.prepareAppleAccountCreation())
+
+        XCTAssertNil(self.sut.prepareAppleAccountCreation())
+
+        let firstConfirmation = Task {
+            await self.sut.confirmAppleAccountCreation(with: consent, authManager: authManager)
+        }
+        for _ in 0 ..< 10 where provider.callCount < 2 {
+            await Task.yield()
+        }
+        let duplicateAuthenticated = await self.sut.confirmAppleAccountCreation(
+            with: consent,
+            authManager: authManager
+        )
+        provider.finishSecondAttempt(with: self.appleCredential(suffix: "second"))
+        let firstAuthenticated = await firstConfirmation.value
+        let reusedAuthenticated = await self.sut.confirmAppleAccountCreation(
+            with: consent,
+            authManager: authManager
+        )
+
+        XCTAssertTrue(firstAuthenticated)
+        XCTAssertFalse(duplicateAuthenticated)
+        XCTAssertFalse(reusedAuthenticated)
+        XCTAssertEqual(provider.callCount, 2)
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false, true])
+    }
+
+    func testCancelInvalidatesReservedAppleAccountCreationWithoutAnotherRequest() async throws {
+        let provider = MockAppleSignInProvider(results: [.success(self.appleCredential(suffix: "first"))])
+        self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
+        self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
+        let authManager = AuthManager(authService: self.mockAuthService)
+        _ = await self.sut.signInWithApple(authManager: authManager)
+        let consent = try XCTUnwrap(self.sut.prepareAppleAccountCreation())
+
+        self.sut.cancelAppleAccountCreation()
+        let authenticated = await self.sut.confirmAppleAccountCreation(with: consent, authManager: authManager)
+
+        XCTAssertFalse(authenticated)
+        XCTAssertEqual(provider.callCount, 1)
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false])
+    }
+
+    func testConfirmAppleAccountCreation_whenSheetIsCanceledReturnsToIdleWithoutPostingAgain() async throws {
         let provider = MockAppleSignInProvider(results: [
             .success(self.appleCredential(suffix: "first")),
             .success(nil)
@@ -287,8 +351,9 @@ final class AuthViewModelTests: XCTestCase {
         self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
         let authManager = AuthManager(authService: self.mockAuthService)
         _ = await self.sut.signInWithApple(authManager: authManager)
+        let consent = try XCTUnwrap(self.sut.prepareAppleAccountCreation())
 
-        let authenticated = await self.sut.confirmAppleAccountCreation(authManager: authManager)
+        let authenticated = await self.sut.confirmAppleAccountCreation(with: consent, authManager: authManager)
 
         XCTAssertFalse(authenticated)
         XCTAssertFalse(self.sut.isLoading)
@@ -343,16 +408,21 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertFalse(self.sut.isLoading)
     }
 
-    func testChangingAuthModeClearsPendingAppleConfirmation() async {
+    func testChangingAuthModeInvalidatesReservedAppleAccountCreation() async throws {
         let provider = MockAppleSignInProvider(results: [.success(self.appleCredential(suffix: "first"))])
         self.sut = AuthViewModel(authService: self.mockAuthService, appleSignInProvider: provider)
         self.mockAuthService.oauthLoginResults = [.failure(APIError.appleAccountCreationConfirmationRequired)]
         let authManager = AuthManager(authService: self.mockAuthService)
         _ = await self.sut.signInWithApple(authManager: authManager)
+        let consent = try XCTUnwrap(self.sut.prepareAppleAccountCreation())
 
         self.sut.isSignUp = true
+        let authenticated = await self.sut.confirmAppleAccountCreation(with: consent, authManager: authManager)
 
         XCTAssertFalse(self.sut.showsAppleAccountCreationConfirmation)
+        XCTAssertFalse(authenticated)
+        XCTAssertEqual(provider.callCount, 1)
+        XCTAssertEqual(self.mockAuthService.creationIntents, [false])
     }
 
     private func appleCredential(suffix: String) -> OAuthCredential {

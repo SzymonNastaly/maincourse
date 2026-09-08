@@ -372,12 +372,17 @@ struct LoginView: View {
     }
 
     private func beginConfirmedAppleSignIn() {
-        guard !self.isAuthBusy else { return }
+        guard !self.isAuthBusy,
+              let consent = self.viewModel.prepareAppleAccountCreation()
+        else { return }
         self.isProviderFlowActive = true
 
         Task { @MainActor in
             defer { self.isProviderFlowActive = false }
-            let didAuthenticate = await self.viewModel.confirmAppleAccountCreation(authManager: self.authManager)
+            let didAuthenticate = await self.viewModel.confirmAppleAccountCreation(
+                with: consent,
+                authManager: self.authManager
+            )
             if didAuthenticate {
                 self.onAuthenticated?()
             }

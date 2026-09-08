@@ -34,3 +34,30 @@ final class BlockingAppleSignInProvider: AppleSignInProviding {
         self.continuation = nil
     }
 }
+
+@MainActor
+final class BlockingSecondAppleSignInProvider: AppleSignInProviding {
+    private var firstCredential: OAuthCredential?
+    private var continuation: CheckedContinuation<OAuthCredential?, Never>?
+    private(set) var callCount = 0
+
+    init(firstCredential: OAuthCredential) {
+        self.firstCredential = firstCredential
+    }
+
+    func signIn() async throws -> OAuthCredential? {
+        self.callCount += 1
+        if let firstCredential {
+            self.firstCredential = nil
+            return firstCredential
+        }
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func finishSecondAttempt(with credential: OAuthCredential?) {
+        self.continuation?.resume(returning: credential)
+        self.continuation = nil
+    }
+}

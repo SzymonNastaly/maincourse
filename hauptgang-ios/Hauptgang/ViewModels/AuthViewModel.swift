@@ -1,6 +1,14 @@
 import Foundation
 import SwiftUI
 
+struct AppleAccountCreationConsent: Equatable, Sendable {
+    fileprivate let id: UUID
+
+    fileprivate init() {
+        self.id = UUID()
+    }
+}
+
 /// Login/signup form state and validation
 @MainActor
 final class AuthViewModel: ObservableObject {
@@ -14,6 +22,7 @@ final class AuthViewModel: ObservableObject {
         didSet {
             self.errorMessage = nil
             self.showsAppleAccountCreationConfirmation = false
+            self.pendingAppleAccountCreationConsent = nil
             self.nameDirty = false
             self.emailDirty = false
             self.passwordDirty = false
@@ -27,6 +36,7 @@ final class AuthViewModel: ObservableObject {
 
     private let authService: AuthServiceProtocol
     private let appleSignInProvider: AppleSignInProviding
+    private var pendingAppleAccountCreationConsent: AppleAccountCreationConsent?
 
     init(
         initialIsSignUp: Bool = false,
@@ -114,22 +124,37 @@ final class AuthViewModel: ObservableObject {
 
     func signInWithApple(authManager: AuthManager) async -> Bool {
         guard !self.isLoading else { return false }
-        self.showsAppleAccountCreationConfirmation = false
+        self.invalidateAppleAccountCreationConsent()
         return await self.performAppleSignIn(allowAccountCreation: false, authManager: authManager)
     }
 
-    func confirmAppleAccountCreation(authManager: AuthManager) async -> Bool {
-        guard self.showsAppleAccountCreationConfirmation, !self.isLoading else { return false }
+    func prepareAppleAccountCreation() -> AppleAccountCreationConsent? {
+        guard self.showsAppleAccountCreationConfirmation,
+              self.pendingAppleAccountCreationConsent == nil,
+              !self.isLoading
+        else { return nil }
+
+        let consent = AppleAccountCreationConsent()
+        self.pendingAppleAccountCreationConsent = consent
         self.showsAppleAccountCreationConfirmation = false
+        return consent
+    }
+
+    func confirmAppleAccountCreation(
+        with consent: AppleAccountCreationConsent,
+        authManager: AuthManager
+    ) async -> Bool {
+        guard self.pendingAppleAccountCreationConsent == consent, !self.isLoading else { return false }
+        self.pendingAppleAccountCreationConsent = nil
         return await self.performAppleSignIn(allowAccountCreation: true, authManager: authManager)
     }
 
     func cancelAppleAccountCreation() {
-        self.showsAppleAccountCreationConfirmation = false
+        self.invalidateAppleAccountCreationConsent()
     }
 
     func useExistingAccount() {
-        self.showsAppleAccountCreationConfirmation = false
+        self.invalidateAppleAccountCreationConsent()
         self.isSignUp = false
     }
 
@@ -184,6 +209,7 @@ final class AuthViewModel: ObservableObject {
             authManager.signIn(user: user)
             return true
         } catch APIError.appleAccountCreationConfirmationRequired where !allowAccountCreation {
+            self.pendingAppleAccountCreationConsent = nil
             self.showsAppleAccountCreationConfirmation = true
         } catch let error as APIError {
             self.errorMessage = error.localizedDescription
@@ -192,6 +218,11 @@ final class AuthViewModel: ObservableObject {
         }
 
         return false
+    }
+
+    private func invalidateAppleAccountCreationConsent() {
+        self.showsAppleAccountCreationConfirmation = false
+        self.pendingAppleAccountCreationConsent = nil
     }
 
     private func isValidEmail(_ email: String) -> Bool {
