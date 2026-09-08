@@ -138,10 +138,11 @@ Account deletion sends one captured-bearer `DELETE /api/v1/account`, without a
 cookbook header or automatic retry. A `204` immediately hides protected content
 and runs the established cancellation-safe credential, Room, and image cleanup;
 it does not send a redundant logout. A `401` invalidates the session but is not
-reported as confirmed deletion. HTTP errors preserve the session, while a
-transport timeout or cancellation is explicitly ambiguous and offers deliberate
-retry or sign out. Shared-cookbook ownership transfer is a Rails account
-contract; Android clears all data owned by the deleted account after success.
+reported as confirmed deletion. HTTP errors preserve the session, while any
+transport-level failure without an HTTP status is explicitly ambiguous and
+offers deliberate retry or sign out. Shared-cookbook ownership transfer is a
+Rails account contract; Android clears all data owned by the deleted account
+after success.
 
 `SessionImages` owns one Coil loader/client for the current user. It reuses that
 user's private disk cache across process restarts, removes obsolete user
@@ -186,11 +187,12 @@ only. Read/write errors expose Retry and Continue without saving and never
 discard a valid encrypted session or recipe cache.
 
 Entering embedded authentication starts one best-effort unauthenticated
-`POST /api/v1/onboarding_response`. An explicit email-auth action joins that
-owned attempt within its single five-second budget, or retries a previously
-failed attempt, then sends the draft UUID as `onboarding_device_id` without
-making analytics submission an authentication prerequisite. Restoring directly
-at the AUTH step does not eagerly post again. Failed authentication retains the
+`POST /api/v1/onboarding_response`. An explicit email-auth action starts the
+first attempt after an AUTH restore, joins an owned running attempt within its
+single five-second budget, or retries a previously failed attempt, then sends the
+draft UUID as `onboarding_device_id` without making analytics submission an
+authentication prerequisite. Restoring directly at the AUTH step does not
+eagerly post again. Failed authentication retains the
 draft and UUID for an explicit retry; a securely stored successful session
 consumes them even if cookbook refresh later fails. There is no background retry
 loop or durable mutation outbox, and a late timeout can leave an anonymous,

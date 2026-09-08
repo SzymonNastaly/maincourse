@@ -472,7 +472,6 @@ class MainCourseAppTest {
     fun acceptedAccountValueWithLocalPersistenceFailureOffersSaveRetry() {
         show(readyState().copy(user = USER.copy(lifecycleNotificationsEnabled = true)))
         accountState.value = AccountState(
-            error = "Account updated, but could not save it on this device",
             canRetryPersistence = true,
         )
         compose.onNodeWithTag("nav_Settings").performClick()
@@ -484,12 +483,36 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun pendingLocalSaveStaysVisibleBesideADismissibleLaterOperationError() {
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.edit_name)).performClick()
+        compose.onNodeWithTag("edit_name_input").performTextClearance()
+        compose.onNodeWithTag("edit_name_input").performTextInput("  Ada draft  ")
+        accountState.value = AccountState(
+            error = "Network request failed",
+            canRetryPersistence = true,
+        )
+
+        compose.onNodeWithText("Network request failed").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.account_save_pending)).assertIsDisplayed()
+        compose.onNodeWithTag("edit_name_input").assertTextContains("  Ada draft  ")
+        compose.onNodeWithText(compose.activity.getString(R.string.cancel)).performClick()
+        compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("account_error"))
+        val clearsBeforeDismiss = recorder.clearAccountErrorCount
+        compose.onNodeWithText(compose.activity.getString(R.string.dismiss)).performClick()
+        assertEquals(clearsBeforeDismiss + 1, recorder.clearAccountErrorCount)
+
+        accountState.value = accountState.value.copy(error = null)
+        compose.onNodeWithText(compose.activity.getString(R.string.account_save_pending)).assertIsDisplayed()
+        compose.onNodeWithTag("account_retry", useUnmergedTree = true).assertIsEnabled()
+    }
+
+    @Test
     fun namePersistenceFailureCanRetryInDialogAndRemainsReachableAfterDismissAndNavigation() {
         compose.onNodeWithTag("nav_Settings").performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.edit_name)).performClick()
         val clearsBeforePersistenceFailure = recorder.clearAccountErrorCount
         accountState.value = AccountState(
-            error = "Account updated, but could not save it on this device",
             canRetryPersistence = true,
         )
 
@@ -527,10 +550,30 @@ class MainCourseAppTest {
 
         accountState.value = AccountState(operation = AccountOperation.DELETING)
         compose.onNodeWithTag("delete_account_button").assertIsNotEnabled()
+        accountState.value = AccountState(operation = AccountOperation.SAVING)
+        compose.onNodeWithTag("delete_account_button").assertIsNotEnabled()
         accountState.value = AccountState(error = "Deletion could not be confirmed")
         compose.onNodeWithText("Deletion could not be confirmed").assertIsDisplayed()
         compose.onNodeWithTag("delete_account_button").assertIsEnabled().performClick()
         assertEquals(2, recorder.deleteAccountCount)
+    }
+
+    @Test
+    fun busyAccountOperationDisablesPendingRetryAndManageDeleteEntries() {
+        accountState.value = AccountState(
+            operation = AccountOperation.SAVING,
+            canRetryPersistence = true,
+        )
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("account_error"))
+
+        compose.onNodeWithTag("account_retry", useUnmergedTree = true).assertIsNotEnabled()
+        compose.onNodeWithText(compose.activity.getString(R.string.manage_account)).assertIsNotEnabled()
+
+        accountState.value = AccountState()
+        compose.onNodeWithText(compose.activity.getString(R.string.manage_account)).performClick()
+        accountState.value = AccountState(operation = AccountOperation.SAVING)
+        compose.onNodeWithText(compose.activity.getString(R.string.delete_account)).assertIsNotEnabled()
     }
 
     @Test

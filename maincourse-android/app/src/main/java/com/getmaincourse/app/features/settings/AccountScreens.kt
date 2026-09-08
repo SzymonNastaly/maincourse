@@ -51,8 +51,18 @@ fun EditNameDialog(
     val trimmed = draft.trim()
     val valid = trimmed.isNotEmpty() && trimmed.length <= 50 && trimmed != user.name
     val busy = accountState.operation != AccountOperation.IDLE
-    LaunchedEffect(user.name, accountState.operation, accountState.error, submittedName) {
-        if (submittedName != null && user.name == submittedName && !busy && accountState.error == null) onDismiss()
+    LaunchedEffect(
+        user.name,
+        accountState.operation,
+        accountState.error,
+        accountState.canRetryPersistence,
+        submittedName,
+    ) {
+        if (submittedName != null && user.name == submittedName && !busy &&
+            accountState.error == null && !accountState.canRetryPersistence
+        ) {
+            onDismiss()
+        }
     }
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
@@ -84,6 +94,11 @@ fun EditNameDialog(
                     )
                 }
                 if (accountState.canRetryPersistence) {
+                    Text(
+                        stringResource(R.string.account_save_pending),
+                        color = MainCourseColors.Danger,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
                     Button(
                         onClick = onRetryPersistence,
                         enabled = !busy,
@@ -118,6 +133,7 @@ fun ManageAccountScreen(
     onClearError: () -> Unit,
     onDeleteAccount: () -> Unit,
 ) {
+    val accountIdle = accountState.operation == AccountOperation.IDLE
     LazyColumn(
         Modifier.fillMaxSize().testTag("manage_account_screen"),
         contentPadding = PaddingValues(20.dp),
@@ -129,16 +145,17 @@ fun ManageAccountScreen(
                 Text(stringResource(R.string.signed_in_as), color = MainCourseColors.Muted)
                 Text(user.email)
                 user.name?.takeIf { it.isNotBlank() }?.let { Text(it, color = MainCourseColors.Body) }
-                TextButton(onClick = onDeleteAccount) {
+                TextButton(onClick = onDeleteAccount, enabled = accountIdle) {
                     Text(stringResource(R.string.delete_account), color = MainCourseColors.Danger)
                 }
                 Text(stringResource(R.string.delete_account_summary), color = MainCourseColors.Body)
                 if (accountState.error != null || accountState.canRetryPersistence) {
                     AccountError(
-                        accountState.error ?: stringResource(R.string.account_save_pending),
-                        accountState.canRetryPersistence,
-                        onRetryPersistence,
-                        onClearError,
+                        error = accountState.error,
+                        canRetryPersistence = accountState.canRetryPersistence,
+                        enabled = accountIdle,
+                        onRetry = onRetryPersistence,
+                        onDismiss = onClearError,
                     )
                 }
             }
@@ -154,6 +171,7 @@ fun DeleteAccountScreen(
     onClearError: () -> Unit,
 ) {
     var confirmation by rememberSaveable { mutableStateOf("") }
+    val accountIdle = accountState.operation == AccountOperation.IDLE
     val deleting = accountState.operation == AccountOperation.DELETING
     LazyColumn(
         Modifier.fillMaxSize().testTag("delete_account_screen"),
@@ -179,7 +197,7 @@ fun DeleteAccountScreen(
                 )
                 Button(
                     onClick = onDeleteAccount,
-                    enabled = confirmation == DELETE_PHRASE && !deleting,
+                    enabled = confirmation == DELETE_PHRASE && accountIdle,
                     modifier = Modifier.fillMaxWidth().testTag("delete_account_button"),
                     shape = MainCourseShapes.Control,
                     colors = ButtonDefaults.buttonColors(containerColor = MainCourseColors.Danger),
@@ -189,10 +207,11 @@ fun DeleteAccountScreen(
                 }
                 if (accountState.error != null || accountState.canRetryPersistence) {
                     AccountError(
-                        accountState.error ?: stringResource(R.string.account_save_pending),
-                        accountState.canRetryPersistence,
-                        onRetryPersistence,
-                        onClearError,
+                        error = accountState.error,
+                        canRetryPersistence = accountState.canRetryPersistence,
+                        enabled = accountIdle,
+                        onRetry = onRetryPersistence,
+                        onDismiss = onClearError,
                     )
                 }
             }

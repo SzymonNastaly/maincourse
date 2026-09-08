@@ -71,8 +71,9 @@ These instructions apply to `maincourse-android/`.
 - Keep onboarding's versioned `AtomicFile` record under `noBackupFilesDir`,
   scoped to API origin. It may contain only the random draft UUID, step,
   validated choices, and completion state. Passwords remain volatile. Restoring
-  AUTH must not eagerly submit; an explicit auth attempt joins/retries the
-  best-effort submission within one five-second budget.
+  AUTH must not eagerly submit; an explicit auth attempt starts the first
+  submission after restore, joins one already running, or retries a failed one
+  within one five-second budget.
 - Onboarding submission is unauthenticated and account operations are
   authenticated but unscoped: neither sends `X-Cookbook-Id`. Do not add
   automatic mutation retries. A server-accepted account update whose encrypted

@@ -122,8 +122,9 @@ fun SettingsScreen(
         if (accountState.error != null || accountState.canRetryPersistence) {
             item {
                 AccountError(
-                    error = accountState.error ?: stringResource(R.string.account_save_pending),
+                    error = accountState.error,
                     canRetryPersistence = accountState.canRetryPersistence,
+                    enabled = !accountBusy,
                     onRetry = onRetryAccountPersistence,
                     onDismiss = onClearAccountError,
                 )
@@ -166,8 +167,9 @@ private fun SettingsRow(title: String, body: String, enabled: Boolean, onClick: 
 
 @Composable
 internal fun AccountError(
-    error: String,
+    error: String?,
     canRetryPersistence: Boolean,
+    enabled: Boolean,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -180,14 +182,17 @@ internal fun AccountError(
             Modifier.fillMaxWidth().padding(16.dp).semantics { liveRegion = LiveRegionMode.Polite },
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(error, color = MainCourseColors.Danger)
+            error?.let { Text(it, color = MainCourseColors.Danger) }
+            if (canRetryPersistence) {
+                Text(stringResource(R.string.account_save_pending), color = MainCourseColors.Danger)
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (canRetryPersistence) {
-                    Button(onClick = onRetry, modifier = Modifier.testTag("account_retry")) {
+                    Button(onClick = onRetry, enabled = enabled, modifier = Modifier.testTag("account_retry")) {
                         Text(stringResource(R.string.retry_save))
                     }
                 }
-                if (!canRetryPersistence) {
+                if (error != null) {
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
                 }
             }

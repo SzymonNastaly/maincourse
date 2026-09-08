@@ -53,6 +53,13 @@ class AtomicOnboardingStoreTest {
     }
 
     @Test
+    fun writeIncludesSchemaVersionInTheRawAtomicRecord() = runBlocking {
+        store.write(draft())
+
+        assertTrue(file.readText().contains("\"schemaVersion\":1"))
+    }
+
+    @Test
     fun corruptJsonReturnsNullAndRemovesOnlyTheOnboardingRecord() = runBlocking {
         file.writeText("{not-json")
 
@@ -64,6 +71,25 @@ class AtomicOnboardingStoreTest {
     fun unknownFieldsAreIgnored() = runBlocking {
         file.writeText(
             """{"schemaVersion":1,"origin":"$ORIGIN","deviceId":"$DEVICE_ID","step":"DIET","householdSize":3,"saveToday":["screenshots"],"diet":["vegan"],"completed":false,"future":true}""",
+        )
+
+        assertEquals(draft(), store.read())
+    }
+
+    @Test
+    fun unsupportedSchemaVersionReturnsNullAndDiscardsTheRecord() = runBlocking {
+        file.writeText(
+            """{"schemaVersion":2,"origin":"$ORIGIN","deviceId":"$DEVICE_ID","step":"DIET","householdSize":3,"saveToday":["screenshots"],"diet":["vegan"],"completed":false}""",
+        )
+
+        assertNull(store.read())
+        assertFalse(file.exists())
+    }
+
+    @Test
+    fun legacyUnversionedV1DraftRemainsReadable() = runBlocking {
+        file.writeText(
+            """{"origin":"$ORIGIN","deviceId":"$DEVICE_ID","step":"DIET","householdSize":3,"saveToday":["screenshots"],"diet":["vegan"],"completed":false}""",
         )
 
         assertEquals(draft(), store.read())

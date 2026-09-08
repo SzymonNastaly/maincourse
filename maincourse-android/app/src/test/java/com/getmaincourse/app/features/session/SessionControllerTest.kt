@@ -1575,7 +1575,7 @@ class SessionControllerTest {
         assertEquals(updated, controller.state.value.user)
         assertEquals(SESSION, sessionStore.value)
         assertTrue(controller.accountState.value.canRetryPersistence)
-        assertTrue(controller.accountState.value.error?.contains("updated") == true)
+        assertNull(controller.accountState.value.error)
         assertEquals(1, api.updateAccountCalls)
 
         sessionStore.writeFailure = null
@@ -1585,6 +1585,30 @@ class SessionControllerTest {
         assertEquals(1, api.updateAccountCalls)
         assertFalse(controller.accountState.value.canRetryPersistence)
         assertNull(controller.accountState.value.error)
+    }
+
+    @Test
+    fun localPersistenceRetryPreservesALaterOperationErrorAndDoesNotRepeatPatch() = runTest {
+        val updated = USER.copy(name = "Ada")
+        val sessionStore = FakeSessionStore(SESSION).apply { writeFailure = IOException("disk full") }
+        val api = FakeApi().apply { updateAccountBlock = { _, _ -> updated } }
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+        controller.updateName("Ada").join()
+        api.updateAccountBlock = { _, _ -> throw IOException("offline") }
+
+        controller.updateLifecycleNotifications(false).join()
+
+        assertEquals("Could not update account", controller.accountState.value.error)
+        assertTrue(controller.accountState.value.canRetryPersistence)
+        sessionStore.writeFailure = null
+
+        controller.retryAccountPersistence().join()
+
+        assertEquals(updated, sessionStore.value?.response?.user)
+        assertEquals(2, api.updateAccountCalls)
+        assertFalse(controller.accountState.value.canRetryPersistence)
+        assertEquals("Could not update account", controller.accountState.value.error)
     }
 
     @Test

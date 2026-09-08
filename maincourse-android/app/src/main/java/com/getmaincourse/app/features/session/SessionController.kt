@@ -217,7 +217,10 @@ class SessionController(
     fun updateLifecycleNotifications(enabled: Boolean): Job =
         updateAccount(AccountAttributes(lifecycleNotificationsEnabled = enabled))
 
-    fun retryAccountPersistence(): Job = launchAccountOperation(AccountOperation.SAVING) {
+    fun retryAccountPersistence(): Job = launchAccountOperation(
+        operation = AccountOperation.SAVING,
+        clearErrorOnStart = false,
+    ) {
         val persistence = transition.withLock {
             pendingAccountPersistence?.takeIf { isCurrentLocked(it.context) }
         } ?: return@launchAccountOperation
@@ -310,7 +313,6 @@ class SessionController(
             if (isCurrentLocked(persistence.context) && pendingAccountPersistence == persistence) {
                 pendingAccountPersistence = null
                 mutableAccountState.value = mutableAccountState.value.copy(
-                    error = null,
                     canRetryPersistence = false,
                 )
             }
@@ -321,7 +323,6 @@ class SessionController(
         transition.withLock {
             if (isCurrentLocked(persistence.context) && pendingAccountPersistence == persistence) {
                 mutableAccountState.value = mutableAccountState.value.copy(
-                    error = "Account updated, but could not save it on this device",
                     canRetryPersistence = true,
                 )
             }
@@ -361,6 +362,7 @@ class SessionController(
 
     private fun launchAccountOperation(
         operation: AccountOperation,
+        clearErrorOnStart: Boolean = true,
         block: suspend () -> Unit,
     ): Job {
         lateinit var launched: Job
@@ -371,7 +373,7 @@ class SessionController(
                     transition.withLock {
                         mutableAccountState.value = mutableAccountState.value.copy(
                             operation = operation,
-                            error = null,
+                            error = if (clearErrorOnStart) null else mutableAccountState.value.error,
                         )
                     }
                     block()

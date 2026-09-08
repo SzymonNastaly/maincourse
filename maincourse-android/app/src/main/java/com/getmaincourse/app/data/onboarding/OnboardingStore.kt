@@ -1,5 +1,8 @@
+@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+
 package com.getmaincourse.app.data.onboarding
 
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -14,6 +17,7 @@ enum class OnboardingStep {
 
 @Serializable
 data class OnboardingRecord(
+    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     val schemaVersion: Int = CURRENT_ONBOARDING_SCHEMA_VERSION,
     val origin: String,
     val deviceId: String?,

@@ -363,6 +363,7 @@ class OnboardingControllerTest {
         assertEquals(1, api.requests.size)
         release.complete(OnboardingResponse(1, DEVICE_ID, api.requests.single().answers))
         advanceUntilIdle()
+        assertEquals(1, api.completedSubmissions)
         assertEquals(DEVICE_ID, controller.prepareAuthentication())
         assertEquals(1, api.requests.size)
     }
@@ -502,13 +503,14 @@ class OnboardingControllerTest {
 
     private class FakeApi : MainCourseApi {
         val requests = mutableListOf<OnboardingRequest>()
+        var completedSubmissions = 0
         var submitBlock: suspend (OnboardingRequest) -> OnboardingResponse = {
             OnboardingResponse(1, it.deviceId, it.answers)
         }
 
         override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse {
             requests += request
-            return submitBlock(request)
+            return submitBlock(request).also { completedSubmissions++ }
         }
 
         override suspend fun signIn(request: SignInRequest): SessionResponse = unused()
