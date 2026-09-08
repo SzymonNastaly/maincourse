@@ -12,5 +12,14 @@ and are used only for the Google authentication action.
 Google Sans Medium in font/google_sans_medium.ttf was downloaded from the
 official Google Fonts stylesheet endpoint on 2026-09-08:
 https://fonts.googleapis.com/css2?family=Google+Sans:wght@500
+The stylesheet resolved the source TrueType font at:
+https://fonts.gstatic.com/s/googlesans/v70/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrw2IKli.ttf
 Google Fonts metadata identifies Google as the designer and the license as OFL.
-The SIL Open Font License 1.1 is included in google_sans_license.txt.
+The original font SHA-256 was
+e9156f50951740b525f8e6d110e0be344214cb6d5fce1e76cd3e828a604997e9. It was
+subset with FontTools 4.64.0 to Latin, Latin Extended, combining marks, general
+punctuation, and common Western symbols; the generated font SHA-256 is
+fcdc56c317339c7510fbc826e9beca1382a11021e92b8efcca176f6abd7bd253. The source
+font name table and OFL copy declare no Reserved Font Name, so its family naming
+is preserved. The exact source copyright notice and SIL Open Font License 1.1
+are included in google_sans_license.txt.

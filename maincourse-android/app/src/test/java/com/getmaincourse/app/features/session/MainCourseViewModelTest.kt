@@ -21,6 +21,7 @@ import com.getmaincourse.app.data.onboarding.OnboardingStep
 import com.getmaincourse.app.data.onboarding.OnboardingStore
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
+import com.getmaincourse.app.features.auth.AuthenticationMethod
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -66,7 +67,7 @@ class MainCourseViewModelTest {
 
         assertEquals(0, api.onboardingCalls)
         val auth = viewModel.signUp(signUpRequest())
-        assertTrue(viewModel.isPreparingAuthentication.value)
+        assertEquals(AuthenticationMethod.EMAIL, viewModel.authenticationMethod.value)
         runCurrent()
         assertEquals(1, api.onboardingCalls)
         assertEquals(0, api.signUpCalls)
@@ -98,7 +99,7 @@ class MainCourseViewModelTest {
         auth.join()
 
         assertEquals(0, api.signUpCalls)
-        assertFalse(viewModel.isPreparingAuthentication.value)
+        assertNull(viewModel.authenticationMethod.value)
         assertEquals(OnboardingStep.COMPLETE, viewModel.onboardingState.value.step)
     }
 
@@ -145,12 +146,12 @@ class MainCourseViewModelTest {
 
         val attempt = checkNotNull(viewModel.beginGoogleAuthentication())
 
-        assertTrue(viewModel.isPreparingAuthentication.value)
+        assertEquals(AuthenticationMethod.GOOGLE, viewModel.authenticationMethod.value)
         assertNull(viewModel.beginGoogleAuthentication())
         viewModel.signIn(SignInRequest("reader@example.test", "password", "Android")).join()
         assertEquals(0, api.signInCalls)
         assertTrue(viewModel.cancelGoogleAuthentication(attempt))
-        assertFalse(viewModel.isPreparingAuthentication.value)
+        assertNull(viewModel.authenticationMethod.value)
     }
 
     @Test
@@ -164,7 +165,7 @@ class MainCourseViewModelTest {
         val email = viewModel.signUp(signUpRequest())
         runCurrent()
 
-        assertTrue(viewModel.isPreparingAuthentication.value)
+        assertEquals(AuthenticationMethod.EMAIL, viewModel.authenticationMethod.value)
         assertNull(viewModel.beginGoogleAuthentication())
         onboardingSubmission.complete(Unit)
         email.join()
@@ -212,7 +213,12 @@ class MainCourseViewModelTest {
 
         assertTrue(api.googleRequests.isEmpty())
         assertEquals("draft-id", store.record?.deviceId)
-        assertFalse(viewModel.isPreparingAuthentication.value)
+        assertNull(viewModel.authenticationMethod.value)
+
+        val replacement = checkNotNull(viewModel.beginGoogleAuthentication())
+        assertFalse(viewModel.cancelGoogleAuthentication(cancelled))
+        assertEquals(AuthenticationMethod.GOOGLE, viewModel.authenticationMethod.value)
+        assertTrue(viewModel.cancelGoogleAuthentication(replacement))
 
         val loggedOut = checkNotNull(viewModel.beginGoogleAuthentication())
         viewModel.logout().join()
@@ -236,7 +242,7 @@ class MainCourseViewModelTest {
         assertEquals(1, api.googleRequests.size)
         assertEquals("Sign in with your password to link this account", viewModel.state.value.authError)
         assertEquals("draft-id", onboardingStore.record?.deviceId)
-        assertFalse(viewModel.isPreparingAuthentication.value)
+        assertNull(viewModel.authenticationMethod.value)
         advanceUntilIdle()
         assertEquals(1, api.googleRequests.size)
 
@@ -258,7 +264,7 @@ class MainCourseViewModelTest {
         val replacement = viewModel(replacementApi, FakeOnboardingStore(null))
         advanceUntilIdle()
 
-        assertFalse(replacement.isPreparingAuthentication.value)
+        assertNull(replacement.authenticationMethod.value)
         assertTrue(replacementApi.googleRequests.isEmpty())
     }
 

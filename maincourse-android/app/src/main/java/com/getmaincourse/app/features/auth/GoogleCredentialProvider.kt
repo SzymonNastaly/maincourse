@@ -6,4 +6,8 @@ interface GoogleCredentialProvider {
 
 class GoogleSignInCancelledException : Exception()
 
-class GoogleSignInException : Exception("Google sign-in is unavailable. Please try again.")
+class GoogleSignInException : Exception(USER_MESSAGE) {
+    companion object {
+        const val USER_MESSAGE = "Google sign-in is unavailable. Please try again."
+    }
+}

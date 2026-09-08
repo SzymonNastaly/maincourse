@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
+import com.getmaincourse.app.features.auth.AuthenticationMethod
 import com.getmaincourse.app.features.auth.AuthScreen
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -44,7 +45,7 @@ import com.getmaincourse.app.ui.theme.MainCourseShapes
 @Composable
 fun OnboardingScreen(
     state: OnboardingState,
-    isPreparingAuthentication: Boolean,
+    authenticationMethod: AuthenticationMethod?,
     authError: String?,
     onStart: () -> Unit,
     onBack: () -> Unit,
@@ -60,6 +61,7 @@ fun OnboardingScreen(
     onSignUp: (SignUpRequest) -> Unit,
     onGoogleSignIn: () -> Unit,
 ) {
+    val isPreparingAuthentication = authenticationMethod != null
     if (state.step == OnboardingStep.WELCOME) {
         Welcome(state, onStart, onExistingAccount, onRetryPersistence, onContinueWithoutSaving)
         return
@@ -75,7 +77,7 @@ fun OnboardingScreen(
             PersistenceError(state, onRetryPersistence, onContinueWithoutSaving)
             AuthScreen(
                 modifier = Modifier.weight(1f),
-                isSubmitting = isPreparingAuthentication,
+                authenticationMethod = authenticationMethod,
                 error = authError,
                 startsInSignUpMode = true,
                 onSignIn = onSignIn,

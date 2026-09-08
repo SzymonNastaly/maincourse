@@ -50,7 +50,7 @@ import com.getmaincourse.app.ui.theme.MainCourseShapes
 @Composable
 fun AuthScreen(
     modifier: Modifier,
-    isSubmitting: Boolean,
+    authenticationMethod: AuthenticationMethod?,
     error: String?,
     startsInSignUpMode: Boolean = false,
     onSignIn: (SignInRequest) -> Unit,
@@ -64,7 +64,7 @@ fun AuthScreen(
     var submitted by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    val busy = isSubmitting
+    val busy = authenticationMethod != null
     val nameInvalid = submitted && signup && name.isBlank()
     val emailInvalid = submitted && !email.isValidEmail()
     val passwordInvalid = submitted && password.isEmpty()
@@ -106,7 +106,11 @@ fun AuthScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MainCourseColors.Body,
             )
-            GoogleSignInButton(isLoading = busy, onClick = onGoogleSignIn)
+            GoogleSignInButton(
+                enabled = !busy,
+                isLoading = authenticationMethod == AuthenticationMethod.GOOGLE,
+                onClick = onGoogleSignIn,
+            )
             if (error != null) {
                 Text(error, color = MainCourseColors.Danger, style = MaterialTheme.typography.bodyMedium)
             }
@@ -173,8 +177,11 @@ fun AuthScreen(
                 modifier = Modifier.fillMaxWidth().testTag("auth_submit"),
                 shape = MainCourseShapes.Control,
             ) {
-                if (busy) {
-                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                if (authenticationMethod == AuthenticationMethod.EMAIL) {
+                    CircularProgressIndicator(
+                        Modifier.size(18.dp).testTag("auth_email_progress"),
+                        strokeWidth = 2.dp,
+                    )
                     Spacer(Modifier.size(8.dp))
                     Text(stringResource(R.string.auth_submitting))
                 } else {
@@ -194,6 +201,11 @@ fun AuthScreen(
             }
         }
     }
+}
+
+enum class AuthenticationMethod {
+    EMAIL,
+    GOOGLE,
 }
 
 private fun String.isValidEmail(): Boolean {

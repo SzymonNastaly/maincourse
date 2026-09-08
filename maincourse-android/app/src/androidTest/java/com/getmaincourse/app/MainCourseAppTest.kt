@@ -41,6 +41,7 @@ import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.data.model.User
+import com.getmaincourse.app.features.auth.AuthenticationMethod
 import com.getmaincourse.app.features.session.DetailStatus
 import com.getmaincourse.app.features.session.LoadStatus
 import com.getmaincourse.app.features.session.RecipeDetailState
@@ -67,7 +68,7 @@ class MainCourseAppTest {
     private lateinit var state: MutableState<SessionState>
     private lateinit var onboardingState: MutableState<OnboardingState>
     private lateinit var accountState: MutableState<AccountState>
-    private lateinit var preparingAuthentication: MutableState<Boolean>
+    private lateinit var authenticationMethod: MutableState<AuthenticationMethod?>
     private lateinit var recorder: ActionRecorder
 
     @Before
@@ -75,7 +76,7 @@ class MainCourseAppTest {
         state = mutableStateOf(readyState())
         onboardingState = mutableStateOf(OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE))
         accountState = mutableStateOf(AccountState())
-        preparingAuthentication = mutableStateOf(false)
+        authenticationMethod = mutableStateOf(null)
         recorder = ActionRecorder(state)
         compose.runOnIdle {
             MainCourseTestContent.content = {
@@ -131,12 +132,15 @@ class MainCourseAppTest {
     fun authenticationLoadingPreventsDuplicateSubmitAndShowsServerError() {
         show(SessionState(phase = SessionPhase.SIGNED_OUT))
         recorder.afterSignIn = {
+            authenticationMethod.value = AuthenticationMethod.EMAIL
             state.value = SessionState(phase = SessionPhase.LOADING_COOKBOOKS, catalogStatus = LoadStatus.LOADING)
         }
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
         compose.onNodeWithTag("auth_password").performTextInput("short")
         compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
         compose.onNodeWithTag("auth_submit").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("auth_email_progress").assertIsDisplayed()
+        compose.onNodeWithTag("auth_google_progress").assertDoesNotExist()
         assertEquals(1, recorder.signInCount)
 
         show(SessionState(phase = SessionPhase.SIGNED_OUT, authError = "Invalid email or password"))
@@ -153,11 +157,13 @@ class MainCourseAppTest {
 
         google.performClick()
         assertEquals(1, recorder.googleCount)
-        compose.runOnIdle { preparingAuthentication.value = true }
+        compose.runOnIdle { authenticationMethod.value = AuthenticationMethod.GOOGLE }
 
         compose.onNodeWithTag("auth_google").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithTag("auth_email").assertIsNotEnabled()
         compose.onNodeWithTag("auth_submit").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("auth_google_progress").assertIsDisplayed()
+        compose.onNodeWithTag("auth_email_progress").assertDoesNotExist()
     }
 
     @Test
@@ -239,7 +245,7 @@ class MainCourseAppTest {
                             state = SessionState(phase = SessionPhase.SIGNED_OUT),
                             onboardingState = OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE),
                             accountState = AccountState(),
-                            isPreparingAuthentication = false,
+                            authenticationMethod = null,
                             actions = recorder.actions,
                         )
                     }
@@ -286,7 +292,7 @@ class MainCourseAppTest {
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
 
         compose.runOnIdle {
-            preparingAuthentication.value = true
+            authenticationMethod.value = AuthenticationMethod.EMAIL
             onboardingState.value = OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE)
         }
 
@@ -645,7 +651,7 @@ class MainCourseAppTest {
                                 state = failed,
                                 onboardingState = onboardingState.value,
                                 accountState = accountState.value,
-                                isPreparingAuthentication = false,
+                                authenticationMethod = null,
                                 actions = recorder.actions,
                             )
                         }
@@ -726,7 +732,7 @@ class MainCourseAppTest {
                         viewModelState.value,
                         onboardingState.value,
                         accountState.value,
-                        false,
+                        null,
                         actions.actions,
                     )
                 }
@@ -766,7 +772,7 @@ class MainCourseAppTest {
                         viewModelState.value,
                         onboardingState.value,
                         accountState.value,
-                        false,
+                        null,
                         actions.actions,
                     )
                 }
@@ -802,7 +808,7 @@ class MainCourseAppTest {
                         viewModelState.value,
                         onboardingState.value,
                         accountState.value,
-                        false,
+                        null,
                         actions.actions,
                     )
                 }
@@ -916,7 +922,7 @@ class MainCourseAppTest {
             state = state.value,
             onboardingState = onboardingState.value,
             accountState = accountState.value,
-            isPreparingAuthentication = preparingAuthentication.value,
+            authenticationMethod = authenticationMethod.value,
             actions = recorder.actions,
         )
     }

@@ -148,6 +148,8 @@ genuinely signed build whose certificate is registered for
 `com.getmaincourse.app`; the unsigned repository release build is not evidence.
 
 Provider JWKS and Apple token endpoint calls are stubbed in the Rails test
-suite. Run `bin/ci`, `bin/ios-build`, and `bin/ios-test` after authentication
-changes. End-to-end provider tests still require real Apple/Google accounts and
-configured provider consoles.
+suite. Run `bin/ci`, `bin/ios-build`, `bin/ios-test`, `bin/android-build`, and
+`bin/android-test` after authentication changes; include
+`bin/android-test --device` when an emulator or device is available. End-to-end
+provider tests still require real Apple/Google accounts and configured provider
+consoles.

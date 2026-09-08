@@ -62,11 +62,23 @@ class AndroidGoogleCredentialProviderTest {
                 CustomCredential(GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL, emptyTokenBundle),
             )
         }
+        val payload = Bundle().apply {
+            putString("id_token", validToken)
+            putString("password", "secret")
+        }
+        val unexpectedWithPayload = captureFailure {
+            AndroidGoogleCredentialProvider.parseCredential(CustomCredential("unexpected.type", payload))
+        }
 
         assertEquals("Google sign-in is unavailable. Please try again.", unexpected.message)
         assertEquals("Google sign-in is unavailable. Please try again.", malformed.message)
         assertEquals("Google sign-in is unavailable. Please try again.", empty.message)
-        assertFalse(malformed.stackTraceToString().contains("secret-provider-payload"))
+        listOf(unexpected, malformed, empty, unexpectedWithPayload).forEach { failure ->
+            listOf(validToken, "secret").forEach { sensitiveValue ->
+                assertFalse(failure.message.orEmpty().contains(sensitiveValue))
+                assertFalse(failure.stackTraceToString().contains(sensitiveValue))
+            }
+        }
     }
 
     @Test

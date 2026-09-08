@@ -8,10 +8,12 @@ import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.data.onboarding.OnboardingStore
 import com.getmaincourse.app.data.session.SessionStore
+import com.getmaincourse.app.features.auth.AuthenticationMethod
+import com.getmaincourse.app.features.auth.GoogleNonce
+import com.getmaincourse.app.features.auth.GoogleSignInException
 import com.getmaincourse.app.features.onboarding.OnboardingController
 import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
-import com.getmaincourse.app.features.auth.GoogleNonce
 import java.time.Clock
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -47,16 +49,15 @@ class MainCourseViewModel(
         origin = baseUrl,
         scope = viewModelScope,
     )
-    private val mutablePreparingAuthentication = MutableStateFlow(false)
+    private val mutableAuthenticationMethod = MutableStateFlow<AuthenticationMethod?>(null)
     private val authenticationLock = Any()
     private var authenticationJob: Job? = null
     private var googleAttempt: GoogleAuthenticationAttempt? = null
-    private var googleAttemptGeneration = 0L
 
     val state = controller.state
     val accountState = controller.accountState
     val onboardingState = onboarding.state
-    val isPreparingAuthentication = mutablePreparingAuthentication.asStateFlow()
+    val authenticationMethod = mutableAuthenticationMethod.asStateFlow()
 
     init {
         onboarding.restore()
@@ -75,48 +76,34 @@ class MainCourseViewModel(
         controller.signUp(request.copy(onboardingDeviceId = it))
     }
     internal fun beginGoogleAuthentication(): GoogleAuthenticationAttempt? = synchronized(authenticationLock) {
-        if (mutablePreparingAuthentication.value || state.value.phase != SessionPhase.SIGNED_OUT) return null
+        if (mutableAuthenticationMethod.value != null || state.value.phase != SessionPhase.SIGNED_OUT) return null
         controller.clearAuthenticationError()
-        GoogleAuthenticationAttempt(++googleAttemptGeneration, GoogleNonce.generate()).also {
+        GoogleAuthenticationAttempt(GoogleNonce.generate()).also {
             googleAttempt = it
-            mutablePreparingAuthentication.value = true
+            mutableAuthenticationMethod.value = AuthenticationMethod.GOOGLE
         }
     }
 
     internal fun finishGoogleAuthentication(attempt: GoogleAuthenticationAttempt, idToken: String): Boolean =
         synchronized(authenticationLock) {
-            if (googleAttempt != attempt || !mutablePreparingAuthentication.value) return false
+            if (googleAttempt != attempt || mutableAuthenticationMethod.value != AuthenticationMethod.GOOGLE) return false
             if (idToken.isBlank()) {
                 googleAttempt = null
-                mutablePreparingAuthentication.value = false
-                controller.reportAuthenticationFailure("Google sign-in is unavailable. Please try again.")
+                mutableAuthenticationMethod.value = null
+                controller.reportAuthenticationFailure(GoogleSignInException.USER_MESSAGE)
                 return false
             }
             googleAttempt = null
-            val startedDraft = onboardingState.value.authDraftIdentity()
-            lateinit var launched: Job
-            launched = viewModelScope.launch(start = CoroutineStart.LAZY) {
-                try {
-                    val deviceId = onboarding.prepareAuthentication()
-                    if (startedDraft != null && deviceId == null &&
-                        onboardingState.value.authDraftIdentity() != startedDraft
-                    ) {
-                        return@launch
-                    }
-                    controller.signInWithGoogle(
-                        GoogleSignInRequest(
-                            idToken = idToken,
-                            nonce = attempt.nonce,
-                            deviceName = "Android",
-                            onboardingDeviceId = deviceId,
-                        ),
-                    ).join()
-                } finally {
-                    finishAuthenticationJob(launched)
-                }
+            launchAuthentication { deviceId ->
+                controller.signInWithGoogle(
+                    GoogleSignInRequest(
+                        idToken = idToken,
+                        nonce = attempt.nonce,
+                        deviceName = "Android",
+                        onboardingDeviceId = deviceId,
+                    ),
+                )
             }
-            authenticationJob = launched
-            launched.start()
             true
         }
 
@@ -126,7 +113,7 @@ class MainCourseViewModel(
     ): Boolean = synchronized(authenticationLock) {
         if (googleAttempt != attempt) return false
         googleAttempt = null
-        mutablePreparingAuthentication.value = false
+        mutableAuthenticationMethod.value = null
         if (error != null) controller.reportAuthenticationFailure(error)
         true
     }
@@ -167,51 +154,54 @@ class MainCourseViewModel(
 
     private fun authenticateWithOnboarding(authenticate: (String?) -> Job): Job {
         synchronized(authenticationLock) {
-            if (mutablePreparingAuthentication.value) return viewModelScope.launch {}
-            val startedDraft = onboardingState.value.authDraftIdentity()
+            if (mutableAuthenticationMethod.value != null) return viewModelScope.launch {}
             controller.clearAuthenticationError()
-            mutablePreparingAuthentication.value = true
-            lateinit var launched: Job
-            launched = viewModelScope.launch(start = CoroutineStart.LAZY) {
-                try {
-                    val deviceId = onboarding.prepareAuthentication()
-                    if (startedDraft != null && deviceId == null &&
-                        onboardingState.value.authDraftIdentity() != startedDraft
-                    ) {
-                        return@launch
-                    }
-                    authenticate(deviceId).join()
-                } finally {
-                    finishAuthenticationJob(launched)
-                }
-            }
-            authenticationJob = launched
-            launched.start()
-            return launched
+            mutableAuthenticationMethod.value = AuthenticationMethod.EMAIL
+            return launchAuthentication(authenticate)
         }
+    }
+
+    private fun launchAuthentication(authenticate: (String?) -> Job): Job {
+        val startedDraft = onboardingState.value.authDraftIdentity()
+        lateinit var launched: Job
+        launched = viewModelScope.launch(start = CoroutineStart.LAZY) {
+            try {
+                val deviceId = onboarding.prepareAuthentication()
+                if (startedDraft != null && deviceId == null &&
+                    onboardingState.value.authDraftIdentity() != startedDraft
+                ) {
+                    return@launch
+                }
+                authenticate(deviceId).join()
+            } finally {
+                finishAuthenticationJob(launched)
+            }
+        }
+        authenticationJob = launched
+        launched.start()
+        return launched
     }
 
     private fun finishAuthenticationJob(job: Job) {
         synchronized(authenticationLock) {
             if (authenticationJob == job) {
                 authenticationJob = null
-                mutablePreparingAuthentication.value = false
+                mutableAuthenticationMethod.value = null
             }
         }
     }
 
     private fun cancelAuthenticationForCleanup() {
         val job = synchronized(authenticationLock) {
-            googleAttemptGeneration++
             googleAttempt = null
-            mutablePreparingAuthentication.value = false
+            mutableAuthenticationMethod.value = null
             authenticationJob.also { authenticationJob = null }
         }
         job?.cancel()
     }
 
     private fun ifPreparingAuthenticationIgnored(action: () -> Job): Job =
-        if (mutablePreparingAuthentication.value) viewModelScope.launch {} else action()
+        if (mutableAuthenticationMethod.value != null) viewModelScope.launch {} else action()
 
     private fun OnboardingState.authDraftIdentity(): AuthDraftIdentity? =
         takeIf { it.step == OnboardingStep.AUTH }?.let {
@@ -226,6 +216,5 @@ class MainCourseViewModel(
 }
 
 internal class GoogleAuthenticationAttempt internal constructor(
-    internal val identity: Long,
     internal val nonce: String,
 )

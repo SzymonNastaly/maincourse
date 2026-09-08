@@ -41,6 +41,7 @@ import com.getmaincourse.app.features.session.SessionPhase
 import com.getmaincourse.app.features.auth.GoogleAuthenticationLauncher
 import com.getmaincourse.app.features.auth.GoogleCredentialProvider
 import com.getmaincourse.app.features.auth.GoogleSignInCancelledException
+import com.getmaincourse.app.features.auth.GoogleSignInException
 import com.getmaincourse.app.features.settings.AccountOperation
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import java.time.Clock
@@ -168,7 +169,7 @@ class MainCourseViewModelActivityTest {
 
         compose.activityRule.scenario.recreate()
         val retained = ViewModelProvider(compose.activity, factory)[MainCourseViewModel::class.java]
-        compose.waitUntil(5_000) { !viewModel.isPreparingAuthentication.value }
+        compose.waitUntil(5_000) { viewModel.authenticationMethod.value == null }
 
         assertSame(viewModel, retained)
         assertEquals(1, requests)
@@ -188,12 +189,46 @@ class MainCourseViewModelActivityTest {
         compose.runOnIdle {
             GoogleAuthenticationLauncher(compose.activity, viewModel, provider).launch()
         }
-        compose.waitUntil(5_000) { !viewModel.isPreparingAuthentication.value }
+        compose.waitUntil(5_000) { viewModel.authenticationMethod.value == null }
 
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
         assertEquals(SessionPhase.SIGNED_OUT, viewModel.state.value.phase)
         assertEquals(null, viewModel.state.value.authError)
         assertEquals(0, api.googleRequests.size)
+    }
+
+    @Test
+    fun providerFailureReturnsSafeFeedbackWithoutCallingTheApi() {
+        showSignedOut()
+        val provider = object : GoogleCredentialProvider {
+            override suspend fun credential(nonce: String): String = throw GoogleSignInException()
+        }
+
+        compose.runOnIdle {
+            GoogleAuthenticationLauncher(compose.activity, viewModel, provider).launch()
+        }
+        compose.waitUntil(5_000) { viewModel.authenticationMethod.value == null }
+
+        assertEquals("Google sign-in is unavailable. Please try again.", viewModel.state.value.authError)
+        assertEquals(0, api.googleRequests.size)
+        assertEquals(SessionPhase.SIGNED_OUT, viewModel.state.value.phase)
+    }
+
+    @Test
+    fun unexpectedProviderFailureReturnsSafeFeedbackWithoutLeakingDetailsOrCallingTheApi() {
+        showSignedOut()
+        val provider = object : GoogleCredentialProvider {
+            override suspend fun credential(nonce: String): String = error("secret provider detail")
+        }
+
+        compose.runOnIdle {
+            GoogleAuthenticationLauncher(compose.activity, viewModel, provider).launch()
+        }
+        compose.waitUntil(5_000) { viewModel.authenticationMethod.value == null }
+
+        assertEquals("Google sign-in is unavailable. Please try again.", viewModel.state.value.authError)
+        assertEquals(0, api.googleRequests.size)
+        assertEquals(SessionPhase.SIGNED_OUT, viewModel.state.value.phase)
     }
 
     @Test
@@ -229,18 +264,23 @@ class MainCourseViewModelActivityTest {
         compose.onNodeWithText(text(R.string.save)).performClick()
     }
 
+    private fun showSignedOut() {
+        compose.runOnIdle { viewModel.logout() }
+        compose.waitUntil(5_000) { viewModel.state.value.phase == SessionPhase.SIGNED_OUT }
+    }
+
     @androidx.compose.runtime.Composable
     private fun ViewModelContent(viewModel: MainCourseViewModel) {
         val state by viewModel.state.collectAsStateWithLifecycle()
         val onboarding by viewModel.onboardingState.collectAsStateWithLifecycle()
         val account by viewModel.accountState.collectAsStateWithLifecycle()
-        val preparing by viewModel.isPreparingAuthentication.collectAsStateWithLifecycle()
+        val authenticationMethod by viewModel.authenticationMethod.collectAsStateWithLifecycle()
         MainCourseTheme {
             MainCourseApp(
                 state = state,
                 onboardingState = onboarding,
                 accountState = account,
-                isPreparingAuthentication = preparing,
+                authenticationMethod = authenticationMethod,
                 actions = MainCourseActions(
                     updateName = { viewModel.updateName(it) },
                     updateLifecycleNotifications = { viewModel.updateLifecycleNotifications(it) },

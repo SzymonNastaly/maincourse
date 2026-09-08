@@ -733,6 +733,21 @@ class OkHttpMainCourseApiTest {
 
     @Test
     fun failedGooglePostDoesNotRetryOrTryAnotherResolvedRoute() = runBlocking {
+        assertFailedPostDoesNotTryAnotherResolvedRoute { api ->
+            api.signInWithGoogle(GoogleSignInRequest("token", "nonce", "Pixel 9"))
+        }
+    }
+
+    @Test
+    fun failedEmailPostDoesNotRetryOrTryAnotherResolvedRoute() = runBlocking {
+        assertFailedPostDoesNotTryAnotherResolvedRoute { api ->
+            api.signIn(SignInRequest("cook@example.com", "secret", "Pixel 9"))
+        }
+    }
+
+    private suspend fun assertFailedPostDoesNotTryAnotherResolvedRoute(
+        request: suspend (MainCourseApi) -> Unit,
+    ) {
         server.enqueue(
             jsonResponse(
                 201,
@@ -766,7 +781,7 @@ class OkHttpMainCourseApiTest {
         val noRetryApi = OkHttpMainCourseApi(retryHost, multiRouteClient)
 
         val failure = captureApiFailure {
-            noRetryApi.signInWithGoogle(GoogleSignInRequest("token", "nonce", "Pixel 9"))
+            request(noRetryApi)
         }
 
         assertNull(failure.status)

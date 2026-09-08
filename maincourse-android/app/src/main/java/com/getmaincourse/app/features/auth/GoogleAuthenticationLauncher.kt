@@ -29,20 +29,17 @@ internal class GoogleAuthenticationLauncher(
         chooserJob = activity.lifecycleScope.launch {
             try {
                 val idToken = provider.credential(attempt.nonce)
-                if (viewModel.finishGoogleAuthentication(attempt, idToken)) {
-                    unresolvedAttempt = null
-                } else if (unresolvedAttempt == attempt) {
-                    unresolvedAttempt = null
-                }
+                viewModel.finishGoogleAuthentication(attempt, idToken)
+                if (unresolvedAttempt == attempt) unresolvedAttempt = null
             } catch (_: GoogleSignInCancelledException) {
                 cancel(attempt)
             } catch (failure: CancellationException) {
                 cancel(attempt)
                 throw failure
             } catch (failure: GoogleSignInException) {
-                cancel(attempt, failure.message)
+                cancel(attempt, failure.message ?: GoogleSignInException.USER_MESSAGE)
             } catch (_: Throwable) {
-                cancel(attempt, GOOGLE_UNAVAILABLE_MESSAGE)
+                cancel(attempt, GoogleSignInException.USER_MESSAGE)
             } finally {
                 chooserJob = null
             }
@@ -60,9 +57,5 @@ internal class GoogleAuthenticationLauncher(
     private fun cancel(attempt: GoogleAuthenticationAttempt, error: String? = null) {
         if (unresolvedAttempt == attempt) unresolvedAttempt = null
         viewModel.cancelGoogleAuthentication(attempt, error)
-    }
-
-    private companion object {
-        const val GOOGLE_UNAVAILABLE_MESSAGE = "Google sign-in is unavailable. Please try again."
     }
 }

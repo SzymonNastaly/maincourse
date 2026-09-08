@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 val onboardingState by viewModel.onboardingState.collectAsStateWithLifecycle()
                 val accountState by viewModel.accountState.collectAsStateWithLifecycle()
-                val isPreparingAuthentication by viewModel.isPreparingAuthentication.collectAsStateWithLifecycle()
+                val authenticationMethod by viewModel.authenticationMethod.collectAsStateWithLifecycle()
                 val userId = state.user?.id
                 var imageLoader by remember(userId) { mutableStateOf<coil3.ImageLoader?>(null) }
                 LaunchedEffect(userId) {
@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
                     state = state,
                     onboardingState = onboardingState,
                     accountState = accountState,
-                    isPreparingAuthentication = isPreparingAuthentication,
+                    authenticationMethod = authenticationMethod,
                     actions = MainCourseActions(
                         restore = { viewModel.restore() },
                         signIn = { viewModel.signIn(it) },

@@ -28,6 +28,7 @@ import com.getmaincourse.app.MainCourseTestContent
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.SignInRequest
+import com.getmaincourse.app.features.auth.AuthenticationMethod
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -185,7 +186,7 @@ class OnboardingScreenTest {
     private fun TestContent(authError: String? = null, isPreparing: Boolean = false) {
         OnboardingScreen(
             state = state.value,
-            isPreparingAuthentication = isPreparing,
+            authenticationMethod = if (isPreparing) AuthenticationMethod.EMAIL else null,
             authError = authError,
             onStart = { recorder.startCount++ },
             onBack = { recorder.backCount++ },

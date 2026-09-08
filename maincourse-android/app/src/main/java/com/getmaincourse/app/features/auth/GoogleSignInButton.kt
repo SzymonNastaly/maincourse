@@ -31,6 +31,7 @@ import com.getmaincourse.app.R
 
 @Composable
 fun GoogleSignInButton(
+    enabled: Boolean,
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -38,7 +39,7 @@ fun GoogleSignInButton(
     val label = stringResource(R.string.auth_continue_google)
     Button(
         onClick = onClick,
-        enabled = !isLoading,
+        enabled = enabled,
         modifier = modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("auth_google")
             .semantics { contentDescription = label }
             .border(1.dp, GoogleButtonBorder, GoogleButtonShape),
@@ -59,7 +60,7 @@ fun GoogleSignInButton(
             )
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(18.dp).testTag("auth_google_progress"),
                     color = GoogleButtonText,
                     strokeWidth = 2.dp,
                 )
@@ -67,7 +68,7 @@ fun GoogleSignInButton(
                 Text(
                     text = label,
                     style = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.google_sans_medium, FontWeight.Medium)),
+                        fontFamily = GoogleButtonFontFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
@@ -82,3 +83,4 @@ private val GoogleButtonBackground = Color(0xFFFFFFFF)
 private val GoogleButtonBorder = Color(0xFF747775)
 private val GoogleButtonText = Color(0xFF1F1F1F)
 private val GoogleButtonShape = RoundedCornerShape(4.dp)
+private val GoogleButtonFontFamily = FontFamily(Font(R.font.google_sans_medium, FontWeight.Medium))

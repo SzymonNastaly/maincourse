@@ -52,6 +52,7 @@ import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
+import com.getmaincourse.app.features.auth.AuthenticationMethod
 import com.getmaincourse.app.features.auth.AuthScreen
 import com.getmaincourse.app.features.designsystem.DesignSystemScreen
 import com.getmaincourse.app.features.onboarding.OnboardingScreen
@@ -127,11 +128,12 @@ fun MainCourseApp(
     state: SessionState,
     onboardingState: OnboardingState,
     accountState: AccountState,
-    isPreparingAuthentication: Boolean,
+    authenticationMethod: AuthenticationMethod?,
     actions: MainCourseActions,
     imageLoader: ImageLoader? = null,
     resolveImage: (String?) -> String? = { it },
 ) {
+    val isPreparingAuthentication = authenticationMethod != null
     val authenticatedUser = state.user
     if (authenticatedUser != null &&
         (state.phase == SessionPhase.LOADING_COOKBOOKS || state.phase == SessionPhase.READY)
@@ -169,7 +171,7 @@ fun MainCourseApp(
                 if (presentedState.step == OnboardingStep.COMPLETE) {
                     AuthScreen(
                         modifier = Modifier.safeDrawingPadding(),
-                        isSubmitting = isPreparingAuthentication || state.phase == SessionPhase.LOADING_COOKBOOKS,
+                        authenticationMethod = authenticationMethod,
                         error = state.authError,
                         onSignIn = actions.signIn,
                         onSignUp = actions.signUp,
@@ -178,8 +180,7 @@ fun MainCourseApp(
                 } else {
                     OnboardingScreen(
                         state = presentedState,
-                        isPreparingAuthentication = isPreparingAuthentication ||
-                            state.phase == SessionPhase.LOADING_COOKBOOKS,
+                        authenticationMethod = authenticationMethod,
                         authError = state.authError,
                         onStart = actions.startOnboarding,
                         onBack = actions.backOnboarding,
