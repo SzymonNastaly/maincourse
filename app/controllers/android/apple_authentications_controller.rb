@@ -10,15 +10,7 @@ module Android
       return redirect_with_error("transaction_unavailable") unless authorizable?
       return redirect_to confirmation_path if @transaction.confirmation_required?
 
-      @setup_issue = if !request.ssl?
-        :https
-      elsif !Rails.application.config.x.oauth.apple_enabled
-        :provider
-      elsif Rails.env.production? && request.host != Rails.application.config.x.canonical_host
-        :host
-      end
-
-      render status: :service_unavailable if @setup_issue == :provider
+      prepare_provider_page
     end
 
     def confirm_account_creation
@@ -27,15 +19,7 @@ module Android
       return redirect_with_error("transaction_unavailable") unless authorizable?
       return render_unavailable unless @transaction.confirmation_required?
 
-      @setup_issue = if !request.ssl?
-        :https
-      elsif !Rails.application.config.x.oauth.apple_enabled
-        :provider
-      elsif Rails.env.production? && request.host != Rails.application.config.x.canonical_host
-        :host
-      end
-
-      render status: :service_unavailable if @setup_issue == :provider
+      prepare_provider_page
     end
 
     def cancel
@@ -71,6 +55,18 @@ module Android
         @heading = "Apple sign-in link unavailable"
         @message = "This Apple sign-in link is invalid or no longer available. Return to MainCourse and start again."
         render :error, status: :bad_request
+      end
+
+      def prepare_provider_page
+        @setup_issue = if !request.ssl?
+          :https
+        elsif !Rails.application.config.x.oauth.apple_enabled
+          :provider
+        elsif Rails.env.production? && request.host != Rails.application.config.x.canonical_host
+          :host
+        end
+
+        render status: :service_unavailable if @setup_issue == :provider
       end
 
       def redirect_with_error(error)

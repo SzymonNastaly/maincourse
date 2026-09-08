@@ -518,6 +518,17 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=cancelled"
   end
 
+  test "Apple's user cancelled authorize failure returns the fixed Android cancelled error" do
+    _transaction, handle = start_android_transaction
+    OmniAuth.config.mock_auth[:apple] = :user_cancelled_authorize
+
+    post "/auth/apple?android_transaction=#{handle}"
+    post auth_apple_callback_path, params: { error: "provider-error-must-not-echo" }
+
+    assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=cancelled"
+    assert_not_includes response.location, "provider-error-must-not-echo"
+  end
+
   test "an Android failure without a known captured handle has no app redirect fallback" do
     OmniAuth.config.mock_auth[:apple] = :invalid_credentials
 

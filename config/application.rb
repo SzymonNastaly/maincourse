@@ -14,7 +14,9 @@ module Hauptgang
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks rubocop])
+    # This extends OmniAuth's third-party namespace and is explicitly required
+    # by the initializer, so Zeitwerk must not infer an `Omniauth` constant.
+    config.autoload_lib(ignore: %w[assets tasks rubocop omniauth])
 
     # Configuration for the application, engines, and railties goes here.
     #

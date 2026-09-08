@@ -1,5 +1,7 @@
 module Oauth
   class AndroidAppleFailureEndpoint
+    CANCELLATION_ERRORS = %w[access_denied user_cancelled_authorize].freeze
+
     def self.call(env)
       strategy = env["omniauth.error.strategy"]
       handle = env.fetch("omniauth.params", {})["android_transaction"]
@@ -7,7 +9,8 @@ module Oauth
 
       return OmniAuth::FailureEndpoint.call(env) unless transaction
 
-      error = env["omniauth.error.type"].to_s == "access_denied" ? "cancelled" : "authentication_failed"
+      error_type = env["omniauth.error.type"].to_s
+      error = CANCELLATION_ERRORS.include?(error_type) ? "cancelled" : "authentication_failed"
       raise ArgumentError unless AppleAuthTransaction::HANDOFF_ERROR_CODES.include?(error)
 
       uri = URI.parse(transaction.return_uri)
