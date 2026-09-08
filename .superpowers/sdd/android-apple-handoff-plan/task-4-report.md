@@ -13,6 +13,8 @@ Scoped runtime/documentation commit: `e14768d` (`Document and verify Android
 Apple handoff`). Existing skill changes and `config/credentials.yml.enc` were
 not read, staged, reverted, or modified.
 
+Round 1 security correction: `935dc30` (`Harden Apple browser request handoff`).
+
 ## Rails gate
 
 Development migration `20260908140000 Create apple auth transactions` was applied
@@ -24,25 +26,31 @@ Final captured command:
 ```text
 bin/ci > tmp/android-apple-ci.log 2>&1
 exit recorded in tmp/android-apple-ci.exit: 0
-984 runs, 2913 assertions, 0 failures, 0 errors, 2 expected corpus skips
+989 runs, 2944 assertions, 0 failures, 0 errors, 2 expected corpus skips
 9 system runs, 41 assertions, 0 failures, 0 errors, 0 skips
-Continuous Integration passed in 24.29s
+Continuous Integration passed in 23.87s
 ```
 
-An earlier full attempt exposed the existing intermittent recipe system-login
-input race (1 failure); its isolated test immediately passed and the fresh full
-gate above passed. The first capture wrapper also used zsh's reserved `status`
-variable and therefore did not write a reliable exit file; the final capture
-uses `rc` and replaces both evidence files.
+Earlier full attempts exposed intermittent system UI timing failures during
+login and drawer visibility (one failure each); each isolated test immediately
+passed and the fresh full gate above passed. The first capture wrapper also used
+zsh's reserved `status` variable and therefore did not write a reliable exit
+file; the final capture uses `rc` and replaces both evidence files.
 
 ## Acceptance fix discovered by the real browser
 
 The first real Chrome run showed the correct HTTP-only “HTTPS setup required”
-message but no browser Cancel action. TDD added the missing action. A second run
-showed that a normal non-Turbo POST from the required `no-referrer` page carries
-`Origin: null`; Rails rejected it with 422 before following the custom scheme.
-The final implementation narrowly accepts null origin only for `cancel`, while
-still requiring the session authenticity token. A missing token remains 422.
+message but no browser Cancel action. TDD added the missing action. A later
+review reproduced the underlying policy issue through the real OmniAuth request
+phase: `Referrer-Policy: no-referrer` makes Chrome send `Origin: null` for both
+Cancel and Continue with Apple, so OmniAuth rejects even a valid token.
+
+The final policy keeps standard Rails/OmniAuth token and origin checks intact.
+Only browser pages containing forms use `strict-origin`, which sends the public
+origin but never the handle-bearing path or query. API, callback, failure, and
+static fallback responses remain `no-referrer`; all remain `no-store`. Every
+provider, creation, and Cancel form that can return to the app is a non-Turbo
+top-level submission. The temporary cancel-only origin override was removed.
 
 ```text
 RED: bin/rails test test/controllers/android/apple_authentications_controller_test.rb:25
@@ -54,6 +62,34 @@ GREEN: bin/rails test test/controllers/android/apple_authentications_controller_
 GREEN focused browser/callback/strategy suite:
        39 runs, 282 assertions, 0 failures/errors/skips
 RuboCop: 2 files inspected, no offenses
+```
+
+### Round 1 review correction
+
+Request-phase tests run with `ActionController` forgery protection on,
+`OmniAuth.config.test_mode = false`, HTTPS, and the actual token rendered into
+the form. A valid same-origin POST reaches Apple's authorization URL. Null or
+wrong origin and a missing token return only the fixed app failure for a valid
+transaction. OmniAuth request-phase fallback reads the handle only from its
+initial session slot and consumes that correlation; callback query/body
+tampering cannot supply it. A missing/unknown handle stays on a fixed generic
+web failure and cannot select an app URI. Confirmation provider and Cancel forms
+are both non-Turbo.
+
+The restarted local server and real Chrome were rechecked after removing the
+origin exception: the HTTP setup page's `strict-origin` policy produced a normal
+same-origin Cancel POST, Rails returned 302 (not 422), `MainActivity` resumed,
+and auth admission cleared. No local TLS proxy or certificate trust was added;
+the HTTPS Continue proof is the real-middleware integration test above, not a
+registered host, provider-consent, or live Apple acceptance claim.
+
+```text
+RED: 13 tests, 45 assertions, 5 failures
+     (old no-referrer form policy, cancel-only null-origin exception, and lost
+      request-phase handle)
+GREEN: 44 focused browser/callback/real-strategy tests,
+       313 assertions, 0 failures/errors/skips
+RuboCop: 4 files inspected, no offenses
 ```
 
 ## Android gate
