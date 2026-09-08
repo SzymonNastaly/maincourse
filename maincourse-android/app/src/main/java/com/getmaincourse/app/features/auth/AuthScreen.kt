@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -50,6 +49,7 @@ import com.getmaincourse.app.ui.theme.MainCourseShapes
 
 @Composable
 fun AuthScreen(
+    modifier: Modifier,
     isSubmitting: Boolean,
     error: String?,
     startsInSignUpMode: Boolean = false,
@@ -90,7 +90,7 @@ fun AuthScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().safeDrawingPadding().navigationBarsPadding().imePadding()
+        modifier = modifier.fillMaxSize().navigationBarsPadding().imePadding()
             .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

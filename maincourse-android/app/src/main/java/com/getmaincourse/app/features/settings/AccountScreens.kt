@@ -43,6 +43,7 @@ fun EditNameDialog(
     user: User,
     accountState: AccountState,
     onSave: (String) -> Unit,
+    onRetryPersistence: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     var draft by rememberSaveable(user.id) { mutableStateOf(user.name.orEmpty()) }
@@ -82,6 +83,15 @@ fun EditNameDialog(
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                     )
                 }
+                if (accountState.canRetryPersistence) {
+                    Button(
+                        onClick = onRetryPersistence,
+                        enabled = !busy,
+                        modifier = Modifier.testTag("edit_name_retry"),
+                    ) {
+                        Text(stringResource(R.string.retry_save))
+                    }
+                }
             }
         },
         confirmButton = {
@@ -101,7 +111,13 @@ fun EditNameDialog(
 }
 
 @Composable
-fun ManageAccountScreen(user: User, onDeleteAccount: () -> Unit) {
+fun ManageAccountScreen(
+    user: User,
+    accountState: AccountState,
+    onRetryPersistence: () -> Unit,
+    onClearError: () -> Unit,
+    onDeleteAccount: () -> Unit,
+) {
     LazyColumn(
         Modifier.fillMaxSize().testTag("manage_account_screen"),
         contentPadding = PaddingValues(20.dp),
@@ -117,6 +133,14 @@ fun ManageAccountScreen(user: User, onDeleteAccount: () -> Unit) {
                     Text(stringResource(R.string.delete_account), color = MainCourseColors.Danger)
                 }
                 Text(stringResource(R.string.delete_account_summary), color = MainCourseColors.Body)
+                if (accountState.error != null || accountState.canRetryPersistence) {
+                    AccountError(
+                        accountState.error ?: stringResource(R.string.account_save_pending),
+                        accountState.canRetryPersistence,
+                        onRetryPersistence,
+                        onClearError,
+                    )
+                }
             }
         }
     }
@@ -126,6 +150,7 @@ fun ManageAccountScreen(user: User, onDeleteAccount: () -> Unit) {
 fun DeleteAccountScreen(
     accountState: AccountState,
     onDeleteAccount: () -> Unit,
+    onRetryPersistence: () -> Unit,
     onClearError: () -> Unit,
 ) {
     var confirmation by rememberSaveable { mutableStateOf("") }
@@ -145,6 +170,7 @@ fun DeleteAccountScreen(
                 OutlinedTextField(
                     value = confirmation,
                     onValueChange = { confirmation = it },
+                    label = { Text(stringResource(R.string.delete_confirmation_prompt)) },
                     enabled = !deleting,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("delete_confirmation"),
@@ -161,8 +187,13 @@ fun DeleteAccountScreen(
                     if (deleting) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                     Text(stringResource(R.string.delete_my_account), Modifier.padding(start = if (deleting) 8.dp else 0.dp))
                 }
-                accountState.error?.let {
-                    AccountError(it, false, onRetry = {}, onDismiss = onClearError)
+                if (accountState.error != null || accountState.canRetryPersistence) {
+                    AccountError(
+                        accountState.error ?: stringResource(R.string.account_save_pending),
+                        accountState.canRetryPersistence,
+                        onRetryPersistence,
+                        onClearError,
+                    )
                 }
             }
         }

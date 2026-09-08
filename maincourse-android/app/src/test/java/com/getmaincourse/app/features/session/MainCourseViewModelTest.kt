@@ -101,6 +101,27 @@ class MainCourseViewModelTest {
     }
 
     @Test
+    fun incompleteRestoredAuthDraftFallsBackToOrdinaryAuthenticationWithoutAnId() = runTest(dispatcher) {
+        val api = FakeApi()
+        val onboardingStore = FakeOnboardingStore(
+            OnboardingRecord(
+                origin = BASE_URL,
+                deviceId = "123e4567-e89b-12d3-a456-426614174000",
+                step = OnboardingStep.AUTH,
+            ),
+        )
+        val viewModel = viewModel(api = api, onboardingStore = onboardingStore)
+        runCurrent()
+
+        viewModel.signUp(signUpRequest()).join()
+        advanceUntilIdle()
+
+        assertEquals(1, api.signUpCalls)
+        assertNull(api.lastSignUp?.onboardingDeviceId)
+        assertEquals(USER, viewModel.state.value.user)
+    }
+
+    @Test
     fun restoredSecureSessionConsumesOnboardingEvenWhenCatalogRefreshFails() = runTest(dispatcher) {
         val api = FakeApi().apply { catalogFailure = true }
         val onboardingStore = FakeOnboardingStore(authDraft())

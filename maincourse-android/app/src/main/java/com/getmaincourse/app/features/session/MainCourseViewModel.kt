@@ -8,6 +8,7 @@ import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.data.onboarding.OnboardingStore
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.features.onboarding.OnboardingController
+import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
 import java.time.Clock
 import kotlinx.coroutines.Job
@@ -98,12 +99,16 @@ class MainCourseViewModel(
     private fun authenticateWithOnboarding(authenticate: (String?) -> Job): Job {
         synchronized(authenticationLock) {
             if (authenticationJob?.isActive == true) return viewModelScope.launch {}
-            val startedFromDraft = onboardingState.value.step == OnboardingStep.AUTH
+            val startedDraft = onboardingState.value.authDraftIdentity()
             mutablePreparingAuthentication.value = true
             val launched = viewModelScope.launch {
                 try {
                     val deviceId = onboarding.prepareAuthentication()
-                    if (startedFromDraft && deviceId == null) return@launch
+                    if (startedDraft != null && deviceId == null &&
+                        onboardingState.value.authDraftIdentity() != startedDraft
+                    ) {
+                        return@launch
+                    }
                     authenticate(deviceId).join()
                 } finally {
                     mutablePreparingAuthentication.value = false
@@ -121,4 +126,15 @@ class MainCourseViewModel(
 
     private fun ifPreparingAuthenticationIgnored(action: () -> Job): Job =
         if (mutablePreparingAuthentication.value) viewModelScope.launch {} else action()
+
+    private fun OnboardingState.authDraftIdentity(): AuthDraftIdentity? =
+        takeIf { it.step == OnboardingStep.AUTH }?.let {
+            AuthDraftIdentity(it.householdSize, it.saveToday, it.diet)
+        }
+
+    private data class AuthDraftIdentity(
+        val householdSize: Int?,
+        val saveToday: List<String>,
+        val diet: List<String>,
+    )
 }

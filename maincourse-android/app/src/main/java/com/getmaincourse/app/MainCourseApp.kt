@@ -167,6 +167,7 @@ fun MainCourseApp(
                 )
                 if (presentedState.step == OnboardingStep.COMPLETE) {
                     AuthScreen(
+                        modifier = Modifier.safeDrawingPadding(),
                         isSubmitting = isPreparingAuthentication || state.phase == SessionPhase.LOADING_COOKBOOKS,
                         error = state.authError,
                         onSignIn = actions.signIn,
@@ -355,7 +356,7 @@ private fun ProtectedApp(
                                     onRetryAccountPersistence = actions.retryAccountPersistence,
                                     onClearAccountError = actions.clearAccountError,
                                     onOpenManageAccount = {
-                                        actions.clearAccountError()
+                                        if (!accountState.canRetryPersistence) actions.clearAccountError()
                                         backStack.add(ManageAccountDestination(user.id))
                                     },
                                     onOpenDesignSystem = { backStack.add(Destination.DesignSystem) },
@@ -394,10 +395,16 @@ private fun ProtectedApp(
                         }
                         entry<ManageAccountDestination> { destination ->
                             if (destination.userId == user.id) {
-                                ManageAccountScreen(user) {
-                                    actions.clearAccountError()
-                                    backStack.add(DeleteAccountDestination(user.id))
-                                }
+                                ManageAccountScreen(
+                                    user = user,
+                                    accountState = accountState,
+                                    onRetryPersistence = actions.retryAccountPersistence,
+                                    onClearError = actions.clearAccountError,
+                                    onDeleteAccount = {
+                                        if (!accountState.canRetryPersistence) actions.clearAccountError()
+                                        backStack.add(DeleteAccountDestination(user.id))
+                                    },
+                                )
                             }
                         }
                         entry<DeleteAccountDestination> { destination ->
@@ -405,6 +412,7 @@ private fun ProtectedApp(
                                 DeleteAccountScreen(
                                     accountState = accountState,
                                     onDeleteAccount = actions.deleteAccount,
+                                    onRetryPersistence = actions.retryAccountPersistence,
                                     onClearError = actions.clearAccountError,
                                 )
                             }

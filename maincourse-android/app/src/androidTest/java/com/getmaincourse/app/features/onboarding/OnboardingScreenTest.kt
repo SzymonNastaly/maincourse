@@ -21,6 +21,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.MainCourseTestActivity
 import com.getmaincourse.app.MainCourseTestContent
@@ -30,6 +31,7 @@ import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -113,6 +115,18 @@ class OnboardingScreenTest {
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
         compose.onNodeWithTag("auth_submit").assertIsNotEnabled()
         compose.onNodeWithContentDescription(text(R.string.back)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun embeddedAuthenticationHeaderIsBelowTheStatusBarInset() {
+        update(OnboardingState(isLoading = false, step = OnboardingStep.AUTH))
+        val statusTop = WindowInsetsCompat.toWindowInsetsCompat(
+            compose.activity.window.decorView.rootWindowInsets,
+        ).getInsets(WindowInsetsCompat.Type.statusBars()).top
+
+        val headerTop = compose.onNodeWithTag("onboarding_header").fetchSemanticsNode().boundsInRoot.top
+
+        assertTrue("header top $headerTop must clear status inset $statusTop", headerTop >= statusTop)
     }
 
     @Test

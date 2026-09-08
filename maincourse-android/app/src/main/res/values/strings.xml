@@ -123,6 +123,7 @@
     <string name="recipe_reminders">Recipe reminders</string>
     <string name="recipe_reminders_help">This setting applies across your account. Android reminder delivery is not enabled yet.</string>
     <string name="retry_save">Retry save</string>
+    <string name="account_save_pending">The account change reached the server but still needs to be saved on this device.</string>
     <string name="manage_account">Manage Account</string>
     <string name="manage_account_help">Account details and permanent deletion</string>
     <string name="delete_account">Delete Account</string>

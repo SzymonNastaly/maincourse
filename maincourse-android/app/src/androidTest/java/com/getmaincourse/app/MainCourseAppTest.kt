@@ -25,8 +25,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.hasTestTag
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.compose.ui.unit.Density
@@ -92,13 +94,13 @@ class MainCourseAppTest {
     @Test
     fun loginValidatesFieldsAndAcceptsAnExistingShortPassword() {
         show(SessionState(phase = SessionPhase.SIGNED_OUT))
-        compose.onNodeWithTag("auth_submit").performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_email_required)).assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_password_required)).assertIsDisplayed()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_email_required)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_password_required)).performScrollTo().assertIsDisplayed()
 
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
         compose.onNodeWithTag("auth_password").performTextInput("short")
-        compose.onNodeWithTag("auth_submit").performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
 
         assertEquals("reader@example.test", recorder.signIn?.email)
         assertEquals("short", recorder.signIn?.password)
@@ -108,17 +110,17 @@ class MainCourseAppTest {
     @Test
     fun signupRequiresNameAndTwelveCharacterPasswordAndConfirmsTheSamePassword() {
         show(SessionState(phase = SessionPhase.SIGNED_OUT))
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_need_account)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_need_account)).performScrollTo().performClick()
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
         compose.onNodeWithTag("auth_password").performTextInput("too-short")
-        compose.onNodeWithTag("auth_submit").performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_name_required)).assertExists()
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_password_too_short)).assertExists()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_name_required)).performScrollTo().assertExists()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_password_too_short)).performScrollTo().assertExists()
 
         compose.onNodeWithTag("auth_name").performTextInput("Reader")
         compose.onNodeWithTag("auth_password").performTextClearance()
         compose.onNodeWithTag("auth_password").performTextInput("long-password")
-        compose.onNodeWithTag("auth_submit").performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
 
         assertEquals("Reader", recorder.signUp?.name)
         assertEquals("long-password", recorder.signUp?.password)
@@ -133,12 +135,12 @@ class MainCourseAppTest {
         }
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
         compose.onNodeWithTag("auth_password").performTextInput("short")
-        compose.onNodeWithTag("auth_submit").performClick()
-        compose.onNodeWithTag("auth_submit").assertIsNotEnabled()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().assertIsNotEnabled()
         assertEquals(1, recorder.signInCount)
 
         show(SessionState(phase = SessionPhase.SIGNED_OUT, authError = "Invalid email or password"))
-        compose.onNodeWithText("Invalid email or password").assertIsDisplayed()
+        compose.onNodeWithText("Invalid email or password").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -149,11 +151,11 @@ class MainCourseAppTest {
         }
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
         compose.onNodeWithTag("auth_password").performTextInput("short")
-        compose.onNodeWithTag("auth_submit").performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
         show(SessionState(phase = SessionPhase.SIGNED_OUT, authError = "Invalid email or password"))
 
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
-        compose.onNodeWithTag("auth_submit").performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
         assertEquals(2, recorder.signInCount)
         assertEquals("short", recorder.signIn?.password)
     }
@@ -164,18 +166,18 @@ class MainCourseAppTest {
         recorder.afterSignUp = {
             state.value = SessionState(phase = SessionPhase.LOADING_COOKBOOKS, catalogStatus = LoadStatus.LOADING)
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.auth_need_account)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.auth_need_account)).performScrollTo().performClick()
         compose.onNodeWithTag("auth_name").performTextInput("Reader")
         compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
         compose.onNodeWithTag("auth_password").performTextInput("long-password")
-        compose.onNodeWithTag("auth_submit").performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
         show(SessionState(phase = SessionPhase.SIGNED_OUT, authError = "Email is already registered"))
 
-        compose.onNodeWithText("Email is already registered").assertIsDisplayed()
+        compose.onNodeWithText("Email is already registered").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("auth_name").assertTextContains("Reader")
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
-        compose.onNodeWithTag("auth_submit").assertIsEnabled()
-        compose.onNodeWithTag("auth_submit").performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().assertIsEnabled()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
         assertEquals(2, recorder.signUpCount)
         assertEquals("long-password", recorder.signUp?.password)
     }
@@ -254,7 +256,7 @@ class MainCourseAppTest {
 
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
         compose.onNodeWithTag("auth_name").assertIsDisplayed()
-        compose.onNodeWithTag("auth_submit").assertIsNotEnabled()
+        compose.onNodeWithTag("auth_submit").performScrollTo().assertIsNotEnabled()
     }
 
     @Test
@@ -451,6 +453,8 @@ class MainCourseAppTest {
     @Test
     fun remindersWaitForTheServerValueAndExplainAndroidDelivery() {
         compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("recipe_reminders")
+            .assertTextContains(compose.activity.getString(R.string.recipe_reminders))
         compose.onNodeWithTag("recipe_reminders").performClick()
         assertEquals(true, recorder.updatedReminders)
         compose.onNodeWithTag("recipe_reminders").assertIsOff()
@@ -474,7 +478,33 @@ class MainCourseAppTest {
         compose.onNodeWithTag("nav_Settings").performClick()
 
         compose.onNodeWithTag("recipe_reminders").assertIsOn()
-        compose.onNodeWithText(compose.activity.getString(R.string.retry_save)).performClick()
+        compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("account_error"))
+        compose.onNodeWithTag("account_retry", useUnmergedTree = true).performClick()
+        assertEquals(1, recorder.retryAccountPersistenceCount)
+    }
+
+    @Test
+    fun namePersistenceFailureCanRetryInDialogAndRemainsReachableAfterDismissAndNavigation() {
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.edit_name)).performClick()
+        val clearsBeforePersistenceFailure = recorder.clearAccountErrorCount
+        accountState.value = AccountState(
+            error = "Account updated, but could not save it on this device",
+            canRetryPersistence = true,
+        )
+
+        compose.onNodeWithTag("edit_name_retry").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.cancel)).assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.cancel)).performClick()
+        assertEquals(clearsBeforePersistenceFailure, recorder.clearAccountErrorCount)
+        compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("account_error"))
+        compose.onNodeWithTag("account_error", useUnmergedTree = true).assertIsDisplayed()
+
+        compose.onNodeWithText(compose.activity.getString(R.string.manage_account)).performClick()
+        assertEquals(clearsBeforePersistenceFailure, recorder.clearAccountErrorCount)
+        pressBack()
+        compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("account_error"))
+        compose.onNodeWithTag("account_retry", useUnmergedTree = true).performClick()
         assertEquals(1, recorder.retryAccountPersistenceCount)
     }
 
@@ -485,6 +515,8 @@ class MainCourseAppTest {
         compose.onNodeWithText(compose.activity.getString(R.string.delete_account)).performClick()
         compose.onNodeWithTag("delete_account_button").assertIsNotEnabled()
         compose.onNodeWithTag("delete_confirmation").performTextInput("delete")
+        compose.onNodeWithTag("delete_confirmation")
+            .assertTextContains(compose.activity.getString(R.string.delete_confirmation_prompt))
         compose.onNodeWithTag("delete_account_button").assertIsNotEnabled()
         compose.onNodeWithTag("delete_confirmation").performTextClearance()
         compose.onNodeWithTag("delete_confirmation").performTextInput("DELETE")
@@ -572,7 +604,7 @@ class MainCourseAppTest {
         compose.onNodeWithTag("auth_password").performTextInput("do-not-save")
         compose.activityRule.scenario.recreate()
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
-        compose.onNodeWithTag("auth_submit").performClick()
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.auth_password_required)).assertIsDisplayed()
         assertEquals(0, recorder.signInCount)
     }
@@ -830,6 +862,7 @@ class MainCourseAppTest {
         var updatedReminders: Boolean? = null
         var retryAccountPersistenceCount = 0
         var deleteAccountCount = 0
+        var clearAccountErrorCount = 0
         var afterSignIn: () -> Unit = {}
         var afterSignUp: () -> Unit = {}
         var afterRefresh: () -> Unit = {}
@@ -860,6 +893,7 @@ class MainCourseAppTest {
             updateLifecycleNotifications = { updatedReminders = it },
             retryAccountPersistence = { retryAccountPersistenceCount++ },
             deleteAccount = { deleteAccountCount++ },
+            clearAccountError = { clearAccountErrorCount++ },
             logout = { logoutCount++ },
             reset = { resetCount++ },
         )

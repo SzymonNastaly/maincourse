@@ -64,7 +64,7 @@ fun OnboardingScreen(
         return
     }
     if (state.step == OnboardingStep.AUTH) {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().safeDrawingPadding().testTag("onboarding_auth_container")) {
             OnboardingHeader(
                 step = state.step,
                 backEnabled = !isPreparingAuthentication,
@@ -73,6 +73,7 @@ fun OnboardingScreen(
             )
             PersistenceError(state, onRetryPersistence, onContinueWithoutSaving)
             AuthScreen(
+                modifier = Modifier.weight(1f),
                 isSubmitting = isPreparingAuthentication,
                 error = authError,
                 startsInSignUpMode = true,
@@ -98,7 +99,6 @@ fun OnboardingScreen(
                 onSavingChanged = onSavingChanged,
                 onDietChanged = onDietChanged,
             )
-            Spacer(Modifier.weight(1f, fill = false))
             Button(
                 onClick = onAdvance,
                 enabled = state.canAdvance() && !isPreparingAuthentication,
@@ -159,7 +159,7 @@ private fun OnboardingHeader(
     onSkip: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        Modifier.fillMaxWidth().padding(vertical = 8.dp).testTag("onboarding_header"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack, enabled = backEnabled) {

@@ -2,6 +2,7 @@ package com.getmaincourse.app.features.settings
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -74,12 +76,20 @@ fun SettingsScreen(
                         body = user.name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.name_not_set),
                         enabled = !accountBusy,
                         onClick = {
-                            onClearAccountError()
+                            if (!accountState.canRetryPersistence) onClearAccountError()
                             editingName = true
                         },
                     )
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier.fillMaxWidth()
+                            .testTag("recipe_reminders")
+                            .toggleable(
+                                value = user.lifecycleNotificationsEnabled,
+                                enabled = !accountBusy,
+                                role = Role.Switch,
+                                onValueChange = onUpdateLifecycleNotifications,
+                            )
+                            .semantics(mergeDescendants = true) {},
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -93,9 +103,8 @@ fun SettingsScreen(
                         }
                         Switch(
                             checked = user.lifecycleNotificationsEnabled,
-                            onCheckedChange = onUpdateLifecycleNotifications,
+                            onCheckedChange = null,
                             enabled = !accountBusy,
-                            modifier = Modifier.testTag("recipe_reminders"),
                         )
                     }
                     SettingsRow(
@@ -110,10 +119,10 @@ fun SettingsScreen(
                 }
             }
         }
-        if (accountState.error != null) {
+        if (accountState.error != null || accountState.canRetryPersistence) {
             item {
                 AccountError(
-                    error = accountState.error,
+                    error = accountState.error ?: stringResource(R.string.account_save_pending),
                     canRetryPersistence = accountState.canRetryPersistence,
                     onRetry = onRetryAccountPersistence,
                     onDismiss = onClearAccountError,
@@ -135,8 +144,9 @@ fun SettingsScreen(
             user = user,
             accountState = accountState,
             onSave = onUpdateName,
+            onRetryPersistence = onRetryAccountPersistence,
             onDismiss = {
-                onClearAccountError()
+                if (!accountState.canRetryPersistence) onClearAccountError()
                 editingName = false
             },
         )
@@ -162,7 +172,7 @@ internal fun AccountError(
     onDismiss: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+        modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth().testTag("account_error"),
         color = MainCourseColors.DangerTint,
         shape = MainCourseShapes.Card,
     ) {
@@ -173,9 +183,13 @@ internal fun AccountError(
             Text(error, color = MainCourseColors.Danger)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (canRetryPersistence) {
-                    Button(onClick = onRetry) { Text(stringResource(R.string.retry_save)) }
+                    Button(onClick = onRetry, modifier = Modifier.testTag("account_retry")) {
+                        Text(stringResource(R.string.retry_save))
+                    }
                 }
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
+                if (!canRetryPersistence) {
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
+                }
             }
         }
     }
