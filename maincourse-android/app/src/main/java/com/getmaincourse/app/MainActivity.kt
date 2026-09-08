@@ -73,9 +73,7 @@ class MainActivity : ComponentActivity() {
                     val command = appleBrowserLaunch ?: return@LaunchedEffect
                     val url = viewModel.consumeAppleBrowserLaunch(command) ?: return@LaunchedEffect
                     try {
-                        startActivity(
-                            Intent(Intent.ACTION_VIEW, url.toUri()).addCategory(Intent.CATEGORY_BROWSABLE),
-                        )
+                        startActivity(appleBrowserIntent(url))
                     } catch (_: RuntimeException) {
                         viewModel.appleBrowserLaunchFailed(command)
                     }
@@ -147,6 +145,11 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
     }
 }
+
+internal fun appleBrowserIntent(url: String): Intent =
+    Intent(Intent.ACTION_VIEW, url.toUri())
+        .addCategory(Intent.CATEGORY_BROWSABLE)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
 internal fun consumeAppleCallbackIntent(
     intent: Intent,

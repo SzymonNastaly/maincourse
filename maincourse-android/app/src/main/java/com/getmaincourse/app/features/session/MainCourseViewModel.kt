@@ -21,7 +21,6 @@ import com.getmaincourse.app.features.onboarding.OnboardingController
 import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
 import java.net.URI
 import java.util.concurrent.atomic.AtomicLong
@@ -161,22 +160,17 @@ class MainCourseViewModel(
                         callback = appleCallback,
                     ),
                 )
-                val now = clock.instant()
-                val serverDeadline = try {
+                try {
                     Instant.parse(response.expiresAt)
                 } catch (_: Throwable) {
-                    Instant.MIN
+                    throw IllegalArgumentException("Invalid Apple authentication response")
                 }
-                val serverLifetime = Duration.between(now, serverDeadline).toMillis()
-                if (serverLifetime <= 0) throw IllegalArgumentException("Expired Apple authentication response")
-                val deadline = minOf(serverDeadline, now.plusMillis(appleWaitingTimeoutMillis))
                 val accepted = synchronized(authenticationLock) {
                     if (appleAttempt != pending || mutableAuthenticationMethod.value != AuthenticationMethod.APPLE) {
                         false
                     } else {
                         appleAttempt = pending.copy(
                             transactionId = response.transactionId,
-                            deadline = deadline,
                             waiting = true,
                         )
                         mutableAppleBrowserLaunch.value = AppleBrowserLaunchCommand(pending.id, response.browserUrl)
@@ -184,7 +178,7 @@ class MainCourseViewModel(
                         true
                     }
                 }
-                if (accepted) scheduleAppleDeadline(pending.id, minOf(serverLifetime, appleWaitingTimeoutMillis))
+                if (accepted) scheduleAppleDeadline(pending.id, appleWaitingTimeoutMillis)
             } catch (failure: kotlinx.coroutines.CancellationException) {
                 throw failure
             } catch (_: Throwable) {
@@ -237,15 +231,6 @@ class MainCourseViewModel(
                 mutableAuthenticationMethod.value != AuthenticationMethod.APPLE
             ) {
                 return false
-            }
-            if (!clock.instant().isBefore(pending.deadline)) {
-                appleAttempt = null
-                mutableAppleBrowserLaunch.value = null
-                mutableAppleCanCancel.value = false
-                mutableAuthenticationMethod.value = null
-                deadline = appleDeadlineJob.also { appleDeadlineJob = null }
-                controller.reportAuthenticationFailure("Apple sign-in expired. Start again.")
-                return@synchronized true
             }
             appleAttempt = null
             mutableAppleBrowserLaunch.value = null
@@ -409,7 +394,6 @@ class MainCourseViewModel(
         val id: Long,
         val verifier: String,
         val transactionId: String? = null,
-        val deadline: Instant = Instant.MIN,
         val waiting: Boolean = false,
     )
 }

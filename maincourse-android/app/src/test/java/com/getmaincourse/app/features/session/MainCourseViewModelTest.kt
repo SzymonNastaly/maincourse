@@ -379,6 +379,7 @@ class MainCourseViewModelTest {
         assertNull(viewModel.authenticationMethod.value)
         assertFalse(viewModel.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE)))
         assertTrue(api.appleExchangeRequests.isEmpty())
+        assertEquals(2, api.appleStartRequests.size)
         assertEquals("Apple sign-in expired. Start again.", viewModel.state.value.authError)
     }
 
@@ -487,10 +488,53 @@ class MainCourseViewModelTest {
         assertEquals("release", appleCallbackFor("https://development.example/", isDebugBuild = true))
     }
 
+    @Test
+    fun serverExpiryUsesAValidFormatButDeviceClockSkewDoesNotChangeTheLocalWaitBudget() = runTest(dispatcher) {
+        listOf(
+            Clock.fixed(Instant.parse("2026-09-07T23:00:00Z"), ZoneOffset.UTC),
+            Clock.fixed(Instant.parse("2026-09-08T01:00:00Z"), ZoneOffset.UTC),
+        ).forEach { skewedClock ->
+            val api = FakeApi()
+            val viewModel = viewModel(
+                api = api,
+                onboardingStore = FakeOnboardingStore(null),
+                clock = skewedClock,
+                appleWaitingTimeoutMillis = 1_000,
+            )
+            advanceUntilIdle()
+
+            assertTrue(viewModel.beginAppleAuthentication())
+            runCurrent()
+            assertTrue(viewModel.appleCanCancel.value)
+            advanceTimeBy(999)
+            runCurrent()
+            assertEquals(AuthenticationMethod.APPLE, viewModel.authenticationMethod.value)
+            advanceTimeBy(1)
+            runCurrent()
+            assertNull(viewModel.authenticationMethod.value)
+            assertTrue(api.appleExchangeRequests.isEmpty())
+        }
+    }
+
+    @Test
+    fun malformedServerExpiryNeverLaunchesTheBrowser() = runTest(dispatcher) {
+        val api = FakeApi().apply { appleExpiresAt = "not-an-instant" }
+        val viewModel = viewModel(api, FakeOnboardingStore(null))
+        advanceUntilIdle()
+
+        viewModel.beginAppleAuthentication()
+        advanceUntilIdle()
+
+        assertNull(viewModel.appleBrowserLaunch.value)
+        assertNull(viewModel.authenticationMethod.value)
+        assertTrue(api.appleExchangeRequests.isEmpty())
+    }
+
     private fun viewModel(
         api: FakeApi,
         onboardingStore: FakeOnboardingStore,
         sessionStore: FakeSessionStore = FakeSessionStore(),
+        clock: Clock = CLOCK,
         appleWaitingTimeoutMillis: Long = 300_000,
     ) = MainCourseViewModel(
         api = api,
@@ -498,7 +542,7 @@ class MainCourseViewModelTest {
         catalogRepository = CatalogRepository(api, FakeCatalogStore()),
         onboardingStore = onboardingStore,
         baseUrl = BASE_URL,
-        clock = CLOCK,
+        clock = clock,
         imageCleanup = {},
         appleWaitingTimeoutMillis = appleWaitingTimeoutMillis,
     )
@@ -534,6 +578,7 @@ class MainCourseViewModelTest {
         var googleFailure: Throwable? = null
         var appleExchangeResult: CompletableDeferred<SessionResponse>? = null
         var appleStartFailure: Throwable? = null
+        var appleExpiresAt = "2026-09-08T00:05:00Z"
         var onSubmitOnboarding: suspend () -> Unit = {}
 
         override suspend fun signIn(request: SignInRequest): SessionResponse {
@@ -551,7 +596,7 @@ class MainCourseViewModelTest {
         ): AppleAuthenticationStartResponse {
             appleStartRequests += request
             appleStartFailure?.let { throw it }
-            return AppleAuthenticationStartResponse(HANDLE, APPLE_BROWSER_URL, "2026-09-08T00:05:00Z")
+            return AppleAuthenticationStartResponse(HANDLE, APPLE_BROWSER_URL, appleExpiresAt)
         }
         override suspend fun exchangeAppleAuthentication(request: AppleAuthenticationExchangeRequest): SessionResponse {
             appleExchangeRequests += request

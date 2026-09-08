@@ -78,6 +78,16 @@ class AppleAuthenticationCallbackParserTest {
     }
 
     @Test
+    fun debugCallbackMatchedByTheManifestStillRejectsAWrongQueryShape() {
+        assertNull(
+            AppleAuthenticationCallbackParser.parse(
+                "com.getmaincourse.app.debug:/oauth/apple?transaction_id=$HANDLE&unexpected=value",
+                isDebugBuild = true,
+            ),
+        )
+    }
+
+    @Test
     fun rejectsOversizedCallbackBeforeParsingItsContents() {
         val callback = "https://app.getmaincourse.com/android/auth/apple?transaction_id=$HANDLE&error=" +
             "cancelled".repeat(300)

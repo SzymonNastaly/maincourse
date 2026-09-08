@@ -16,7 +16,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="com.getmaincourse.app.debug"
-                    android:ssp="/oauth/apple" />
+                    android:sspPrefix="/oauth/apple?" />
             </intent-filter>
         </activity>
     </application>
