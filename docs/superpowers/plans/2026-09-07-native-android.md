@@ -12,7 +12,7 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 |---|---|---|
 | 0. Enablement and scaffold | Complete | Native preview, local tooling, CI definition, and local verification complete; external accounts tracked in #92 |
 | 1. First vertical slice | Complete | Email session through cached recipe list/detail passed local API 37 acceptance and final code review; evidence in #93 |
-| 2. Identity and account | Planned | Complete sign-in, onboarding, account, and preferences |
+| 2. Identity and account | In progress | Onboarding/account core passed locally; Google then Apple provider slices remain |
 | 3. Recipe workflows | Planned | Search, editing, imports, cooking, and recipe actions |
 | 4. Shopping list | Planned | Durable offline shopping workflow |
 | 5. Collaboration | Planned | Shared cookbooks and invitations |
@@ -20,10 +20,11 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | 7. Notifications | Planned | FCM registration, delivery, tracking, and routing |
 | 8. Release | Planned | Production hardening and Play release |
 
-Milestones 0 and 1 are complete. Milestone 1's local acceptance gate and final
-code review passed on 2026-09-07; implementation and evidence are recorded in
-#93. External service configuration remains open in #92 and does not block the
-next core product work.
+Milestones 0 and 1 are complete. Milestone 2's onboarding/account core passed
+its local gate on 2026-09-08, while Google and then Apple provider work remains;
+the full milestone is not complete. Core implementation and evidence are tracked
+in #97. External service configuration remains open in #92 and does not block
+the next core product work.
 
 ### Working sequence while Play registration waits
 
@@ -184,6 +185,13 @@ credentials, billing, or push configuration is needed.
 
 ## Milestone 2: Identity And Account
 
+**Status:** In progress. The onboarding/account core passed its local gate on
+2026-09-08. Google sign-in is next, followed by Apple; full Milestone 2 remains
+open through real-provider and release-signed verification.
+
+**Core design:** [`docs/superpowers/specs/2026-09-08-android-milestone-2-core-design.md`](../specs/2026-09-08-android-milestone-2-core-design.md).
+**Implementation:** [issue #97](https://github.com/SzymonNastaly/maincourse/issues/97).
+
 **Sequence:** Implement onboarding and account/preferences independently of
 provider enablement. Google and Apple can be developed and tested before Play
 registration with the appropriate Cloud/Apple configuration and local signing
@@ -200,6 +208,36 @@ gate remains open until all three sign-in methods are verified.
 **Gate:**
 - Email, Google, and Apple succeed with real provider accounts in debug and release-signed builds.
 - Returning identities reach the same Rails user; private-relay, cancellation, invalid state/nonce, expired handoff, and deletion paths are verified.
+
+**Core local verification recorded on 2026-09-08:**
+- A clean API 37 gate passed debug and minified unsigned release builds,
+  debug/release lint, 122 JVM tests, and 86 device tests with no failures or
+  skips. Release remained fixed to the public HTTPS API, unsigned, and free of
+  provider integrations.
+- The real `MainActivity`, Keystore session, Room cache, and local Rails API
+  passed answered onboarding linked to signup, skip, interrupted AUTH resume,
+  failed signup then explicit retry, and upgrade from a valid Milestone 1
+  session. Server-side inspection confirmed the expected answer attribution and
+  no eager submission when restoring the AUTH step.
+- Name and account-wide recipe-reminder changes survived force-stop and matched
+  Rails. Offline attempts showed recoverable failures; name draft and the last
+  acknowledged reminder value remained intact until explicit retry.
+- A dedicated account deletion returned to signed-out state and rejected later
+  login. Rails transferred its shared cookbook to the dedicated collaborator;
+  that collaborator then signed in and retained the shared recipe. No production
+  account or data was used.
+- Phone and tablet layouts, embedded-auth system insets, keyboard action
+  reachability, and 200% text were inspected on the API 37 emulator. Under dark
+  system appearance the app remained light. Size, density, font, network, and
+  night settings were restored, and the app was left signed in to the populated
+  surviving development account.
+- Rails onboarding/account/session/registration contracts passed 31 tests and
+  73 assertions. Authenticated account `401` and local-cleanup failure are
+  covered by automated fault-injection tests, not claimed as live Rails cases.
+- The core gate does not close Milestone 2. Google then Apple integration, real
+  provider identities, release signing, and the full milestone review remain
+  pending. Cross-process cleanup after OS termination or broken storage remains
+  the explicit #94 gap.
 
 ## Milestone 3: Recipe Workflows
 
@@ -377,6 +415,7 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
 | 2026-09-07 | External console enablement starts in Milestone 0 and is tracked in [issue #92](https://github.com/SzymonNastaly/maincourse/issues/92). |
 | 2026-09-07 | Develop emulator-first while owner Play registration/hardware waits: 1 → 2 core → 3–5; provider tracks as configured; 7 may precede 6. Keep physical-device and Play gates explicit without blocking unrelated implementation. |
 | 2026-09-07 | Milestone 1 local acceptance and final code review passed with the API 37 emulator, real Rails API, and `MainActivity`; remote CI, physical-device, provider, and Play gates remain distinct. |
+| 2026-09-08 | Milestone 2 onboarding/account core passed its local Rails/API 37 gate; Google then Apple remain separate required provider slices, so the full milestone stays in progress. |
 
 ## Handoff
 
@@ -384,10 +423,13 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
   cookbook switching, and cached recipe list/detail slice passed its local
   acceptance gate and final code review. Evidence and integration tracking are in
   [#93](https://github.com/SzymonNastaly/maincourse/issues/93).
-- Next while Play access waits: proceed with Milestone 2 onboarding and
-  account/preferences independently, integrate Google/Apple when their own
-  provider configuration is ready, and continue Milestones 3–5 without treating
-  provider or Play gates as blockers. All external tracks remain open in #92.
+- Milestone 2 onboarding and account/preferences passed their local core gate;
+  evidence and implementation tracking are in #97. Integrate Google next and
+  Apple afterward when their provider configuration is ready. Full Milestone 2
+  remains in progress, and final branch review of the core slice is still
+  controller-owned.
+- Continue Milestones 3–5 without treating provider or Play gates as blockers.
+  All external tracks remain open in #92.
 - Play registration is temporarily owner-blocked. Follow the working sequence above; local OAuth SHA-1 discovery and Google Cloud/Firebase configuration do not depend on Play access.
 - Before implementation work, consult the milestone's GitHub issues and update this roadmap only when scope, sequencing, gates, or decisions change.
 - Do not mark a milestone complete from code presence alone; its gate and listed verification must have recorded evidence.

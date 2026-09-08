@@ -1,8 +1,9 @@
 # Android Development
-`maincourse-android/` is the native Kotlin/Jetpack Compose client. It launches
-into native email signup/sign-in, then provides cookbook-scoped recipe browsing
-with offline cache support and an interactive development gallery. It uses the
-same Rails API and accounts as the web and iOS clients. See
+`maincourse-android/` is the native Kotlin/Jetpack Compose client. It provides
+first-run onboarding, native email signup/sign-in, cookbook-scoped recipe
+browsing with offline cache support, account settings/deletion, and an
+interactive development gallery. It uses the same Rails API and accounts as the
+web and iOS clients. See
 `docs/superpowers/plans/2026-09-07-native-android.md` for the product roadmap and
 [issue #92](https://github.com/SzymonNastaly/maincourse/issues/92) for Android
 external-service setup.
@@ -10,6 +11,11 @@ external-service setup.
 Milestone 1 behavior follows its
 [approved design](superpowers/specs/2026-09-07-android-milestone-1-design.md) and
 is tracked in [issue #93](https://github.com/SzymonNastaly/maincourse/issues/93).
+Milestone 2's onboarding/account core follows its
+[approved design](superpowers/specs/2026-09-08-android-milestone-2-core-design.md)
+and is tracked in [issue #97](https://github.com/SzymonNastaly/maincourse/issues/97).
+Its local core gate has passed; Google and then Apple sign-in remain separate
+provider slices, so Milestone 2 is still in progress.
 
 ## Bootstrap Contract
 | Setting | Pinned value |
@@ -53,24 +59,27 @@ Use package-by-feature directories inside
   owns lifecycle integration, and `MainCourseApp.kt` owns auth-first UI and
   typed navigation.
 - `data/model` mirrors the Rails wire contract; `data/network` is the API
-  boundary; `data/session` owns protected credentials; `data/cache` owns Room;
-  and `data/images` owns image URL and cache policy.
-- `features/auth`, `features/session`, `features/recipes`, and
-  `features/settings` contain the implemented product slice.
+  boundary; `data/session` owns protected credentials; `data/onboarding` owns
+  the nonsecret onboarding draft; `data/cache` owns Room; and `data/images`
+  owns image URL and cache policy.
+- `features/auth`, `features/onboarding`, `features/session`,
+  `features/recipes`, and `features/settings` contain the implemented product
+  slice.
 - `features/preview` contains the explicit Shopping/Search placeholders;
   `features/designsystem` is the development gallery; theme code is under
   `ui/theme`.
 
 `MainCourseApplication` manually constructs one application-level API, encrypted
-session store, Room database/store, repository, and image owner. Do not add a DI
-framework for this app's current scale. `MainActivity` obtains the
-lifecycle-retained `MainCourseViewModel`; the view model owns the session
-coordinator and calls restore once. `onResume` rechecks session expiry.
+session store, onboarding store, Room database/store, repository, and image
+owner. Do not add a DI framework for this app's current scale. `MainActivity`
+obtains the lifecycle-retained `MainCourseViewModel`; the view model owns the
+session and onboarding coordinators and starts each restore once. `onResume`
+rechecks session expiry.
 
 The protected shell preserves four destinations: Recipes, Shopping, Search, and
-Settings. Recipes and minimal account/sign-out Settings are real; Shopping and
-Search remain explicitly labeled previews. The design gallery remains reachable
-from Settings during development.
+Settings. Recipes and account/preferences Settings are real; Shopping and Search
+remain explicitly labeled previews. The design gallery remains reachable from
+Settings during development.
 
 `DesignSystemScreen.kt` is a navigable, interactive token/component gallery for phone/tablet validation, not a production
 destination or substitute for feature tests.
@@ -114,6 +123,26 @@ hides and purges that membership before one bounded rediscovery; a detail `404`
 removes the stale recipe. Cancellation remains cancellation rather than a
 user-visible server error.
 
+Profile updates and deletion are online-only account operations and never send
+`X-Cookbook-Id`. Profile request ownership uses the user generation, user ID,
+and unchanged bearer identity rather than object identity, so replacing the
+server-returned user does not invalidate legitimate recipe work. The returned
+user is authoritative in memory, but the app reports a completed save only
+after serializing it through the encrypted session store. If Rails accepted the
+change and that local write failed, **Retry save** writes the accepted session
+locally without repeating the PATCH. Definite server/network rejection keeps
+the prior acknowledged value and requires a deliberate retry; account errors do
+not overwrite recipe errors.
+
+Account deletion sends one captured-bearer `DELETE /api/v1/account`, without a
+cookbook header or automatic retry. A `204` immediately hides protected content
+and runs the established cancellation-safe credential, Room, and image cleanup;
+it does not send a redundant logout. A `401` invalidates the session but is not
+reported as confirmed deletion. HTTP errors preserve the session, while a
+transport timeout or cancellation is explicitly ambiguous and offers deliberate
+retry or sign out. Shared-cookbook ownership transfer is a Rails account
+contract; Android clears all data owned by the deleted account after success.
+
 `SessionImages` owns one Coil loader/client for the current user. It reuses that
 user's private disk cache across process restarts, removes obsolete user
 directories when preparing another account, and never attaches the API bearer
@@ -130,6 +159,42 @@ rather than claiming success. Cross-process durability for an interrupted
 cleanup or purge is not complete; follow
 [issue #94](https://github.com/SzymonNastaly/maincourse/issues/94) and do not
 promise flawless logout when the operating-system delete fails.
+
+That same limitation applies after a successful account deletion: ordinary
+in-process cleanup is non-cancellable and tested, but Android does not yet have
+a durable marker that guarantees cleanup resumes if the OS kills the process or
+storage itself is broken. This exact cross-process cleanup/purge protocol gap is
+tracked in [issue #94](https://github.com/SzymonNastaly/maincourse/issues/94).
+
+## Onboarding
+
+Onboarding restores alongside session startup, but routing waits for secure
+session restoration: a valid session always opens protected content and marks
+onboarding complete. A signed-out first run shows welcome, household, saving
+habits, diet, then embedded signup. Back retains answers. Skip and the existing-
+account shortcut discard the questionnaire and open standalone authentication;
+sign out or account deletion does not make onboarding repeat.
+
+`AtomicOnboardingStore` writes a versioned JSON record under
+`noBackupFilesDir` with `AtomicFile`. It stores only the API origin, a random
+draft-local UUID, step, validated answer values, and completion state—never a
+password, bearer, hardware identifier, or RevenueCat identifier. The origin
+prevents a debug draft crossing API environments. Writes are serialized so an
+older answer cannot recreate a skipped or consumed draft. Unknown JSON fields
+are tolerated; malformed, wrong-origin, or invalid records reset onboarding
+only. Read/write errors expose Retry and Continue without saving and never
+discard a valid encrypted session or recipe cache.
+
+Entering embedded authentication starts one best-effort unauthenticated
+`POST /api/v1/onboarding_response`. An explicit email-auth action joins that
+owned attempt within its single five-second budget, or retries a previously
+failed attempt, then sends the draft UUID as `onboarding_device_id` without
+making analytics submission an authentication prerequisite. Restoring directly
+at the AUTH step does not eagerly post again. Failed authentication retains the
+draft and UUID for an explicit retry; a securely stored successful session
+consumes them even if cookbook refresh later fails. There is no background retry
+loop or durable mutation outbox, and a late timeout can leave an anonymous,
+unlinked analytics response by design.
 
 ## Theme Contract
 `MainCourseTheme.kt` maps semantic roles from `app/assets/tailwind/application.css` and

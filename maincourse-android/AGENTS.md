@@ -26,9 +26,10 @@ These instructions apply to `maincourse-android/`.
 - Keep the implemented manual application container: one API, encrypted session
   store, Room database/store, repository, and session image owner. Do not add a
   DI framework or speculative layers at this scale.
-- Keep `data/{model,network,session,cache,images}` as the shared data boundary
-  and `features/{auth,session,recipes,settings,preview,designsystem}` as the
-  package-by-feature UI/orchestration layout.
+- Keep `data/{model,network,session,onboarding,cache,images}` as the shared data
+  boundary and
+  `features/{auth,onboarding,session,recipes,settings,preview,designsystem}` as
+  the package-by-feature UI/orchestration layout.
 - Prefer small Compose screens with explicit state and event parameters. Add a
   view model or shared abstraction only when behavior warrants it.
 
@@ -41,8 +42,9 @@ These instructions apply to `maincourse-android/`.
 - Use 8dp/10dp/12dp control/card/panel radii, flat hairline surfaces, native
   Material behavior, and checked-in Material Symbols vectors.
 - Preserve the four shell destinations: Recipes, Shopping, Search, Settings.
-- Recipes and minimal account/sign-out Settings are implemented. Keep Shopping
-  and Search explicitly labeled as previews until their roadmap milestones.
+- Recipes, onboarding, and account/preferences Settings are implemented. Keep
+  Shopping and Search explicitly labeled as previews until their roadmap
+  milestones.
 - Keep `features/designsystem/DesignSystemScreen.kt` navigable and interactive
   from Settings. It is a development gallery, not a real feature.
 - Adapt navigation between compact and expanded widths; do not create a
@@ -66,6 +68,15 @@ These instructions apply to `maincourse-android/`.
 - Keep credentials only in the AES-GCM Android-Keystore-backed atomic session
   file. Do not put tokens in Room, preferences, routes, saved state, logs, or
   image requests.
+- Keep onboarding's versioned `AtomicFile` record under `noBackupFilesDir`,
+  scoped to API origin. It may contain only the random draft UUID, step,
+  validated choices, and completion state. Passwords remain volatile. Restoring
+  AUTH must not eagerly submit; an explicit auth attempt joins/retries the
+  best-effort submission within one five-second budget.
+- Onboarding submission is unauthenticated and account operations are
+  authenticated but unscoped: neither sends `X-Cookbook-Id`. Do not add
+  automatic mutation retries. A server-accepted account update whose encrypted
+  session write failed retries only that local write.
 - Scope Room rows and queries by user and cookbook where applicable. Full list
   responses may replace only their captured scope; detail fetches are partial,
   on-demand updates and must not prune peers. Keep schema exports and require
@@ -77,7 +88,8 @@ These instructions apply to `maincourse-android/`.
   only details successfully fetched after opening are available offline.
 - Cleanup must finish before admitting another account. Treat disk/storage
   deletion failure as recoverable failure, not successful logout. Cross-process
-  cleanup/purge durability remains tracked in
+  cleanup/purge durability after logout or successful account deletion remains
+  tracked in
   [issue #94](https://github.com/SzymonNastaly/maincourse/issues/94).
 
 ## Commands And Verification

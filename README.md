@@ -45,9 +45,10 @@ MainCourse has a shared Rails backend and three client surfaces:
 - **Rails 8.1 backend and web app** (`app/`, `config/`, `db/`) — Ruby 3.4.7, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web UI. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
 - **SwiftUI iOS app** (`hauptgang-ios/`) — Offline-first iPhone and iPad client. Generated with XcodeGen, uses RevenueCat for subscriptions.
 - **Kotlin/Jetpack Compose Android app** (`maincourse-android/`) — Android 10+
-  native client with email authentication and cookbook-scoped cached recipe
-  list/detail browsing. Shopping and Search remain previews; later product work
-  follows the [Android roadmap](docs/superpowers/plans/2026-09-07-native-android.md).
+  native client with onboarding, email authentication, account settings and
+  deletion, plus cookbook-scoped cached recipe list/detail browsing. Shopping
+  and Search remain previews; provider sign-in and later product work follow the
+  [Android roadmap](docs/superpowers/plans/2026-09-07-native-android.md).
 
 The app was originally called Hauptgang, so `hauptgang` still appears throughout the codebase — directory names, Swift module and target names, and the Rails app module. Only the user-facing branding changed.
 
