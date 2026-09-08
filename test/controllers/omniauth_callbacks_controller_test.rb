@@ -599,7 +599,9 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
         nonce_after_google_failure = request.session["omniauth.nonce"]
 
         OmniAuth.config.test_mode = true
-        post auth_apple_callback_path, params: { android_transaction: handle }
+        Oauth::Configuration.stub(:apple_services_id, "app.hauptgang.web") do
+          post auth_apple_callback_path, params: { android_transaction: handle }
+        end
 
         assert_redirected_to root_url
         assert_equal "/auth/failure?message=ActionController%3A%3AInvalidAuthenticityToken&strategy=google_oauth2",
