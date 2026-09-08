@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.getmaincourse.app.features.auth.GoogleAuthenticationLauncher
 import com.getmaincourse.app.features.session.MainCourseViewModel
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import kotlinx.coroutines.CancellationException
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity() {
         get() = (application as MainCourseApplication).container
 
     private val viewModel by viewModels<MainCourseViewModel> { appContainer.viewModelFactory }
+    private lateinit var googleAuthentication: GoogleAuthenticationLauncher
     private var contentInstalled = false
     private val localNetworkPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         installAppContent()
@@ -34,6 +36,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        googleAuthentication = GoogleAuthenticationLauncher(this, viewModel)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
@@ -83,6 +86,7 @@ class MainActivity : ComponentActivity() {
                         restore = { viewModel.restore() },
                         signIn = { viewModel.signIn(it) },
                         signUp = { viewModel.signUp(it) },
+                        googleSignIn = googleAuthentication::launch,
                         startOnboarding = { viewModel.startOnboarding() },
                         advanceOnboarding = { viewModel.advanceOnboarding() },
                         backOnboarding = { viewModel.backOnboarding() },

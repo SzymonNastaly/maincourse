@@ -42,6 +42,7 @@
     <string name="auth_welcome_body">Sign in to browse your cookbooks and saved recipes.</string>
     <string name="auth_sign_in">Sign in</string>
     <string name="auth_create_account">Create account</string>
+    <string name="auth_continue_google">Continue with Google</string>
     <string name="auth_have_account">Already have an account? Sign in</string>
     <string name="auth_need_account">New to MainCourse? Create account</string>
     <string name="auth_name">First name</string>

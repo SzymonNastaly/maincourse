@@ -3,6 +3,7 @@ package com.getmaincourse.app
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -19,6 +20,7 @@ import com.getmaincourse.app.data.cache.CatalogStore
 import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -36,12 +38,16 @@ import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.session.CatalogRepository
 import com.getmaincourse.app.features.session.MainCourseViewModel
 import com.getmaincourse.app.features.session.SessionPhase
+import com.getmaincourse.app.features.auth.GoogleAuthenticationLauncher
+import com.getmaincourse.app.features.auth.GoogleCredentialProvider
+import com.getmaincourse.app.features.auth.GoogleSignInCancelledException
 import com.getmaincourse.app.features.settings.AccountOperation
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -140,6 +146,81 @@ class MainCourseViewModelActivityTest {
         assertEquals(0, api.signOutCalls)
     }
 
+    @Test
+    fun rotationDuringChooserCancelsOnlyTheUnresolvedChooserWithoutAutoLaunch() {
+        compose.runOnIdle { viewModel.logout() }
+        compose.waitUntil(5_000) { viewModel.state.value.phase == SessionPhase.SIGNED_OUT }
+        val chooserStarted = CompletableDeferred<Unit>()
+        var requests = 0
+        val provider = object : GoogleCredentialProvider {
+            override suspend fun credential(nonce: String): String {
+                requests++
+                chooserStarted.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        compose.runOnIdle {
+            val launcher = GoogleAuthenticationLauncher(compose.activity, viewModel, provider)
+            launcher.launch()
+            launcher.launch()
+        }
+        compose.waitUntil(5_000) { chooserStarted.isCompleted }
+
+        compose.activityRule.scenario.recreate()
+        val retained = ViewModelProvider(compose.activity, factory)[MainCourseViewModel::class.java]
+        compose.waitUntil(5_000) { !viewModel.isPreparingAuthentication.value }
+
+        assertSame(viewModel, retained)
+        assertEquals(1, requests)
+        assertEquals(0, api.googleRequests.size)
+        assertEquals(SessionPhase.SIGNED_OUT, viewModel.state.value.phase)
+    }
+
+    @Test
+    fun chooserDismissalReturnsToIdleFormWithoutClearingTypedEmail() {
+        compose.runOnIdle { viewModel.logout() }
+        compose.waitUntil(5_000) { viewModel.state.value.phase == SessionPhase.SIGNED_OUT }
+        compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
+        val provider = object : GoogleCredentialProvider {
+            override suspend fun credential(nonce: String): String = throw GoogleSignInCancelledException()
+        }
+
+        compose.runOnIdle {
+            GoogleAuthenticationLauncher(compose.activity, viewModel, provider).launch()
+        }
+        compose.waitUntil(5_000) { !viewModel.isPreparingAuthentication.value }
+
+        compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
+        assertEquals(SessionPhase.SIGNED_OUT, viewModel.state.value.phase)
+        assertEquals(null, viewModel.state.value.authError)
+        assertEquals(0, api.googleRequests.size)
+    }
+
+    @Test
+    fun rotationAfterChooserResultRetainsOneRailsExchangeAndSecureOutcome() {
+        compose.runOnIdle { viewModel.logout() }
+        compose.waitUntil(5_000) { viewModel.state.value.phase == SessionPhase.SIGNED_OUT }
+        val response = CompletableDeferred<SessionResponse>()
+        api.googleResult = response
+        val provider = object : GoogleCredentialProvider {
+            override suspend fun credential(nonce: String) = "provider-token"
+        }
+        compose.runOnIdle {
+            GoogleAuthenticationLauncher(compose.activity, viewModel, provider).launch()
+        }
+        compose.waitUntil(5_000) { api.googleRequests.size == 1 }
+
+        compose.activityRule.scenario.recreate()
+        val retained = ViewModelProvider(compose.activity, factory)[MainCourseViewModel::class.java]
+        response.complete(SESSION)
+        compose.waitUntil(5_000) { viewModel.state.value.user == USER }
+
+        assertSame(viewModel, retained)
+        assertEquals(1, api.googleRequests.size)
+        assertEquals(SESSION, sessionStore.stored?.response)
+        assertEquals(USER, viewModel.state.value.user)
+    }
+
     private fun openNameEditorAndSave(name: String) {
         compose.onNodeWithTag("nav_Settings").performClick()
         compose.onNodeWithText(text(R.string.edit_name)).performClick()
@@ -208,10 +289,15 @@ class MainCourseViewModelActivityTest {
         var signOutCalls = 0
         var updateResult: CompletableDeferred<User>? = null
         var deleteResult: CompletableDeferred<Unit>? = null
+        var googleResult: CompletableDeferred<SessionResponse>? = null
+        val googleRequests = mutableListOf<GoogleSignInRequest>()
 
         override suspend fun signIn(request: SignInRequest): SessionResponse = error("unused")
 
-        override suspend fun signInWithGoogle(request: com.getmaincourse.app.data.model.GoogleSignInRequest): SessionResponse = error("unused")
+        override suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse {
+            googleRequests += request
+            return googleResult?.await() ?: SESSION
+        }
         override suspend fun signUp(request: SignUpRequest): SessionResponse = error("unused")
         override suspend fun signOut(token: String) {
             signOutCalls++

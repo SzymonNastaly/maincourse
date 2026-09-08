@@ -23,6 +23,7 @@ class AndroidGoogleCredentialProvider(
         } catch (failure: CancellationException) {
             throw failure
         } catch (failure: NoCredentialException) {
+            // Kept explicit for CredentialManagerMisuse lint; mapping matches other provider failures.
             throw mapFailure(failure)
         } catch (failure: GetCredentialException) {
             throw mapFailure(failure)

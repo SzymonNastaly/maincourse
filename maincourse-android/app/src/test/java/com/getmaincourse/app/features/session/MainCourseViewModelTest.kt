@@ -5,6 +5,7 @@ import com.getmaincourse.app.data.cache.CatalogStore
 import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -14,6 +15,7 @@ import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.User
 import com.getmaincourse.app.data.network.MainCourseApi
+import com.getmaincourse.app.data.network.ApiFailure
 import com.getmaincourse.app.data.onboarding.OnboardingRecord
 import com.getmaincourse.app.data.onboarding.OnboardingStep
 import com.getmaincourse.app.data.onboarding.OnboardingStore
@@ -135,6 +137,131 @@ class MainCourseViewModelTest {
         assertEquals(0, api.onboardingCalls)
     }
 
+    @Test
+    fun googleChooserAdmissionIsImmediateAndBlocksDuplicateGoogleAndEmail() = runTest(dispatcher) {
+        val api = FakeApi()
+        val viewModel = viewModel(api, FakeOnboardingStore(null))
+        advanceUntilIdle()
+
+        val attempt = checkNotNull(viewModel.beginGoogleAuthentication())
+
+        assertTrue(viewModel.isPreparingAuthentication.value)
+        assertNull(viewModel.beginGoogleAuthentication())
+        viewModel.signIn(SignInRequest("reader@example.test", "password", "Android")).join()
+        assertEquals(0, api.signInCalls)
+        assertTrue(viewModel.cancelGoogleAuthentication(attempt))
+        assertFalse(viewModel.isPreparingAuthentication.value)
+    }
+
+    @Test
+    fun pendingEmailAuthenticationRejectsGoogleAdmission() = runTest(dispatcher) {
+        val api = FakeApi()
+        val onboardingSubmission = CompletableDeferred<Unit>()
+        api.onSubmitOnboarding = { onboardingSubmission.await() }
+        val viewModel = viewModel(api, FakeOnboardingStore(authDraft()))
+        runCurrent()
+
+        val email = viewModel.signUp(signUpRequest())
+        runCurrent()
+
+        assertTrue(viewModel.isPreparingAuthentication.value)
+        assertNull(viewModel.beginGoogleAuthentication())
+        onboardingSubmission.complete(Unit)
+        email.join()
+    }
+
+    @Test
+    fun acceptedGoogleResultPreparesOnboardingThenExchangesAndSecuresOnce() = runTest(dispatcher) {
+        val api = FakeApi()
+        val onboardingSubmission = CompletableDeferred<Unit>()
+        api.onSubmitOnboarding = { onboardingSubmission.await() }
+        val sessionStore = FakeSessionStore()
+        val viewModel = viewModel(api, FakeOnboardingStore(authDraft()), sessionStore)
+        runCurrent()
+        val attempt = checkNotNull(viewModel.beginGoogleAuthentication())
+
+        assertEquals(0, api.onboardingCalls)
+        assertTrue(viewModel.finishGoogleAuthentication(attempt, "provider-token"))
+        runCurrent()
+        assertEquals(1, api.onboardingCalls)
+        assertEquals(0, api.googleRequests.size)
+
+        onboardingSubmission.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(GoogleSignInRequest("provider-token", attempt.nonce, "Android", "draft-id")),
+            api.googleRequests,
+        )
+        assertEquals(SESSION, sessionStore.stored?.response)
+        assertEquals(USER, viewModel.state.value.user)
+        assertEquals(OnboardingStep.COMPLETE, viewModel.onboardingState.value.step)
+    }
+
+    @Test
+    fun cancelledAndStaleGoogleResultsKeepDraftAndCannotAuthenticate() = runTest(dispatcher) {
+        val store = FakeOnboardingStore(authDraft())
+        val api = FakeApi()
+        val viewModel = viewModel(api, store)
+        runCurrent()
+        val cancelled = checkNotNull(viewModel.beginGoogleAuthentication())
+
+        assertTrue(viewModel.cancelGoogleAuthentication(cancelled))
+        assertFalse(viewModel.finishGoogleAuthentication(cancelled, "stale-token"))
+        advanceUntilIdle()
+
+        assertTrue(api.googleRequests.isEmpty())
+        assertEquals("draft-id", store.record?.deviceId)
+        assertFalse(viewModel.isPreparingAuthentication.value)
+
+        val loggedOut = checkNotNull(viewModel.beginGoogleAuthentication())
+        viewModel.logout().join()
+        assertFalse(viewModel.finishGoogleAuthentication(loggedOut, "late-token"))
+        assertTrue(api.googleRequests.isEmpty())
+    }
+
+    @Test
+    fun googleFailureNeedsAFreshManualAttemptAndPreservesPasswordFormDraft() = runTest(dispatcher) {
+        val api = FakeApi().apply {
+            googleFailure = ApiFailure(409, "Sign in with your password to link this account")
+        }
+        val onboardingStore = FakeOnboardingStore(authDraft())
+        val viewModel = viewModel(api, onboardingStore)
+        advanceUntilIdle()
+        val first = checkNotNull(viewModel.beginGoogleAuthentication())
+
+        assertTrue(viewModel.finishGoogleAuthentication(first, "first-token"))
+        advanceUntilIdle()
+
+        assertEquals(1, api.googleRequests.size)
+        assertEquals("Sign in with your password to link this account", viewModel.state.value.authError)
+        assertEquals("draft-id", onboardingStore.record?.deviceId)
+        assertFalse(viewModel.isPreparingAuthentication.value)
+        advanceUntilIdle()
+        assertEquals(1, api.googleRequests.size)
+
+        api.googleFailure = ApiFailure(503, "Try again later")
+        val second = checkNotNull(viewModel.beginGoogleAuthentication())
+        assertTrue(viewModel.finishGoogleAuthentication(second, "second-token"))
+        advanceUntilIdle()
+        assertEquals(2, api.googleRequests.size)
+    }
+
+    @Test
+    fun aNewViewModelNeverReplaysAnUnfinishedGoogleAttempt() = runTest(dispatcher) {
+        val firstApi = FakeApi()
+        val first = viewModel(firstApi, FakeOnboardingStore(null))
+        advanceUntilIdle()
+        checkNotNull(first.beginGoogleAuthentication())
+
+        val replacementApi = FakeApi()
+        val replacement = viewModel(replacementApi, FakeOnboardingStore(null))
+        advanceUntilIdle()
+
+        assertFalse(replacement.isPreparingAuthentication.value)
+        assertTrue(replacementApi.googleRequests.isEmpty())
+    }
+
     private fun viewModel(
         api: FakeApi,
         onboardingStore: FakeOnboardingStore,
@@ -168,14 +295,24 @@ class MainCourseViewModelTest {
 
     private class FakeApi : MainCourseApi {
         var onboardingCalls = 0
+        var signInCalls = 0
         var signUpCalls = 0
+        val googleRequests = mutableListOf<GoogleSignInRequest>()
         var lastSignUp: SignUpRequest? = null
         var catalogFailure = false
+        var googleFailure: Throwable? = null
         var onSubmitOnboarding: suspend () -> Unit = {}
 
-        override suspend fun signIn(request: SignInRequest) = SESSION
+        override suspend fun signIn(request: SignInRequest): SessionResponse {
+            signInCalls++
+            return SESSION
+        }
 
-        override suspend fun signInWithGoogle(request: com.getmaincourse.app.data.model.GoogleSignInRequest) = SESSION
+        override suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse {
+            googleRequests += request
+            googleFailure?.let { throw it }
+            return SESSION
+        }
         override suspend fun signUp(request: SignUpRequest): SessionResponse {
             signUpCalls++
             lastSignUp = request

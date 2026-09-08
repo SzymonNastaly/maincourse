@@ -7,6 +7,7 @@ import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.CookbookMember
+import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -389,6 +390,68 @@ class SessionControllerTest {
             assertEquals(USER, controller.state.value.user)
             assertEquals(PERSONAL.id, controller.state.value.activeCookbookId)
         }
+    }
+
+    @Test
+    fun googleSignInUsesTheExistingSecureSessionEstablishmentPath() = runTest {
+        val sessionStore = FakeSessionStore(null)
+        val api = FakeApi().apply { cookbooksBlock = { listOf(PERSONAL) } }
+        val controller = controller(api = api, sessionStore = sessionStore)
+        controller.restore().join()
+        sessionStore.cleared = false
+        val request = GoogleSignInRequest("provider-token", "attempt-nonce", "Android", "draft-id")
+
+        controller.signInWithGoogle(request).join()
+
+        assertEquals(listOf(request), api.googleRequests)
+        assertEquals(SESSION, sessionStore.value)
+        assertEquals(USER, controller.state.value.user)
+        assertEquals(PERSONAL.id, controller.state.value.activeCookbookId)
+    }
+
+    @Test
+    fun googleFailuresStaySignedOutWithServerMessageAndNeverReplay() = runTest {
+        for ((status, message) in listOf(
+            409 to "Sign in with your password to link this account",
+            401 to "Google authentication failed",
+            503 to "Google sign-in is temporarily unavailable",
+        )) {
+            val sessionStore = FakeSessionStore(null)
+            val catalogStore = FakeCatalogStore()
+            val api = FakeApi().apply { googleBlock = { throw ApiFailure(status, message) } }
+            val controller = controller(api = api, sessionStore = sessionStore, catalogStore = catalogStore)
+            controller.restore().join()
+            sessionStore.cleared = false
+            catalogStore.cleared = false
+
+            controller.signInWithGoogle(GOOGLE_SIGN_IN).join()
+            advanceUntilIdle()
+
+            assertEquals(1, api.googleRequests.size)
+            assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+            assertEquals(message, controller.state.value.authError)
+            assertFalse(sessionStore.cleared)
+            assertFalse(catalogStore.cleared)
+        }
+    }
+
+    @Test
+    fun expiredGoogleSessionAndFailedSecureWriteNeverExposeTheUser() = runTest {
+        val expiredApi = FakeApi().apply {
+            googleBlock = { SESSION.response.copy(expiresAt = NOW.toString()) }
+        }
+        val expired = controller(api = expiredApi)
+        expired.restore().join()
+        expired.signInWithGoogle(GOOGLE_SIGN_IN).join()
+        assertNull(expired.state.value.user)
+        assertEquals(SessionPhase.SIGNED_OUT, expired.state.value.phase)
+
+        val failingStore = FakeSessionStore(null).apply { writeFailure = IOException("full") }
+        val failedWrite = controller(api = FakeApi(), sessionStore = failingStore)
+        failedWrite.restore().join()
+        failedWrite.signInWithGoogle(GOOGLE_SIGN_IN).join()
+        assertNull(failedWrite.state.value.user)
+        assertEquals(SessionPhase.SIGNED_OUT, failedWrite.state.value.phase)
     }
 
     @Test
@@ -917,6 +980,89 @@ class SessionControllerTest {
         assertTrue(revokeCancelled)
         assertTrue(cleanupObservedClearedStores)
         assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+    }
+
+    @Test
+    fun credentialSelectionCleanupIsNotifiedWithoutGatingCriticalLocalCleanup() = runTest {
+        val providerCleanupStarted = CompletableDeferred<Unit>()
+        val releaseProviderCleanup = CompletableDeferred<Unit>()
+        val sessionStore = FakeSessionStore(SESSION)
+        val catalogStore = FakeCatalogStore()
+        var imageCleanups = 0
+        val controller = controller(
+            sessionStore = sessionStore,
+            catalogStore = catalogStore,
+            session = SESSION,
+            credentialStateCleanup = {
+                providerCleanupStarted.complete(Unit)
+                releaseProviderCleanup.await()
+            },
+            imageCleanup = { imageCleanups++ },
+        )
+        controller.restore().join()
+
+        val logout = controller.logout()
+        providerCleanupStarted.await()
+        runCurrent()
+
+        assertTrue(sessionStore.cleared)
+        assertTrue(catalogStore.cleared)
+        assertEquals(1, imageCleanups)
+        releaseProviderCleanup.complete(Unit)
+        logout.join()
+    }
+
+    @Test
+    fun credentialSelectionCleanupFailureCannotBlockLogoutDeletionOrInvalidation() = runTest {
+        var clearCalls = 0
+        suspend fun failingClear() {
+            clearCalls++
+            throw IOException("Google services unavailable")
+        }
+
+        val logoutStore = FakeSessionStore(SESSION)
+        val logoutCatalog = FakeCatalogStore()
+        val logout = controller(
+            sessionStore = logoutStore,
+            catalogStore = logoutCatalog,
+            session = SESSION,
+            credentialStateCleanup = { failingClear() },
+        )
+        logout.restore().join()
+        logout.logout().join()
+        assertTrue(logoutStore.cleared)
+        assertTrue(logoutCatalog.cleared)
+
+        val deletionStore = FakeSessionStore(SESSION)
+        val deletionCatalog = FakeCatalogStore()
+        val deletion = controller(
+            sessionStore = deletionStore,
+            catalogStore = deletionCatalog,
+            session = SESSION,
+            credentialStateCleanup = { failingClear() },
+        )
+        deletion.restore().join()
+        deletion.deleteAccount().join()
+        assertTrue(deletionStore.cleared)
+        assertTrue(deletionCatalog.cleared)
+
+        val invalidationStore = FakeSessionStore(SESSION)
+        val invalidationCatalog = FakeCatalogStore()
+        val invalidationApi = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> throw ApiFailure(401, "expired") }
+        }
+        val invalidation = controller(
+            api = invalidationApi,
+            sessionStore = invalidationStore,
+            catalogStore = invalidationCatalog,
+            session = SESSION,
+            credentialStateCleanup = { failingClear() },
+        )
+        invalidation.restore().join()
+        assertTrue(invalidationStore.cleared)
+        assertTrue(invalidationCatalog.cleared)
+        assertEquals(3, clearCalls)
     }
 
     @Test
@@ -1891,6 +2037,7 @@ class SessionControllerTest {
         clock: Clock = Clock.fixed(NOW, ZoneOffset.UTC),
         controllerScope: CoroutineScope = this,
         deleteTimeoutMillis: Long = 30_000,
+        credentialStateCleanup: suspend () -> Unit = {},
         imageCleanup: suspend () -> Unit = {},
     ): SessionController {
         if (session != null) sessionStore.value = session
@@ -1902,6 +2049,7 @@ class SessionControllerTest {
             clock = clock,
             scope = controllerScope,
             imageCleanup = imageCleanup,
+            credentialStateCleanup = credentialStateCleanup,
             revokeTimeoutMillis = 100,
             deleteTimeoutMillis = deleteTimeoutMillis,
         )
@@ -2030,7 +2178,9 @@ class SessionControllerTest {
         var updateAccountCalls = 0
         var deleteAccountCalls = 0
         var recipeCalls = 0
+        val googleRequests = mutableListOf<GoogleSignInRequest>()
         var signInBlock: suspend (SignInRequest) -> SessionResponse = { SESSION.response }
+        var googleBlock: suspend (GoogleSignInRequest) -> SessionResponse = { SESSION.response }
         var signUpBlock: suspend (SignUpRequest) -> SessionResponse = { SESSION.response }
         var signOutBlock: suspend (String) -> Unit = {}
         var cookbooksBlock: suspend (String) -> List<Cookbook> = { listOf(PERSONAL) }
@@ -2044,8 +2194,10 @@ class SessionControllerTest {
             return signInBlock(request)
         }
 
-        override suspend fun signInWithGoogle(request: com.getmaincourse.app.data.model.GoogleSignInRequest): SessionResponse =
-            error("Unused in session controller tests")
+        override suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse {
+            googleRequests += request
+            return googleBlock(request)
+        }
 
         override suspend fun signUp(request: SignUpRequest) = signUpBlock(request)
         override suspend fun signOut(token: String) {
@@ -2106,5 +2258,6 @@ class SessionControllerTest {
         )
         val SIGN_IN = SignInRequest("cook@example.com", "password", "Pixel")
         val SIGN_UP = SignUpRequest("Cook", "cook@example.com", "password", "password", "Pixel")
+        val GOOGLE_SIGN_IN = GoogleSignInRequest("provider-token", "attempt-nonce", "Android")
     }
 }

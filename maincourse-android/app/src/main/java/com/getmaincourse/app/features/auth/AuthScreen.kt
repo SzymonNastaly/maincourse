@@ -55,6 +55,7 @@ fun AuthScreen(
     startsInSignUpMode: Boolean = false,
     onSignIn: (SignInRequest) -> Unit,
     onSignUp: (SignUpRequest) -> Unit,
+    onGoogleSignIn: () -> Unit,
 ) {
     var signup by rememberSaveable { mutableStateOf(startsInSignUpMode) }
     var name by rememberSaveable { mutableStateOf("") }
@@ -105,6 +106,7 @@ fun AuthScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MainCourseColors.Body,
             )
+            GoogleSignInButton(isLoading = busy, onClick = onGoogleSignIn)
             if (error != null) {
                 Text(error, color = MainCourseColors.Danger, style = MaterialTheme.typography.bodyMedium)
             }

@@ -1,0 +1,16 @@
+Google Identity button assets
+
+The full-color Google G in drawable-nodpi/google_g_logo.png was downloaded from
+Google's current Sign in with Google branding guidelines on 2026-09-08:
+https://developers.google.com/static/identity/images/g-logo.png
+https://developers.google.com/identity/branding-guidelines
+
+The provider button follows the documented light-button colors, border, text,
+icon size, and Android padding. Google trademarks remain property of Google LLC
+and are used only for the Google authentication action.
+
+Google Sans Medium in font/google_sans_medium.ttf was downloaded from the
+official Google Fonts stylesheet endpoint on 2026-09-08:
+https://fonts.googleapis.com/css2?family=Google+Sans:wght@500
+Google Fonts metadata identifies Google as the designer and the license as OFL.
+The SIL Open Font License 1.1 is included in google_sans_license.txt.

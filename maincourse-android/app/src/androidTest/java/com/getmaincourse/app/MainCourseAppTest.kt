@@ -144,6 +144,42 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun googleButtonPrecedesEmailAndBusyStateDisablesCompetingAuthentication() {
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+        val google = compose.onNodeWithTag("auth_google").performScrollTo().assertIsEnabled()
+        val googleBounds = google.fetchSemanticsNode().boundsInRoot
+        val emailBounds = compose.onNodeWithTag("auth_email").fetchSemanticsNode().boundsInRoot
+        assertEquals(true, googleBounds.bottom <= emailBounds.top)
+
+        google.performClick()
+        assertEquals(1, recorder.googleCount)
+        compose.runOnIdle { preparingAuthentication.value = true }
+
+        compose.onNodeWithTag("auth_google").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("auth_email").assertIsNotEnabled()
+        compose.onNodeWithTag("auth_submit").performScrollTo().assertIsNotEnabled()
+    }
+
+    @Test
+    fun googleFailureKeepsEmailAndPasswordAvailableForPasswordGuidance() {
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+        compose.onNodeWithTag("auth_email").performTextInput("reader@example.test")
+        compose.onNodeWithTag("auth_password").performTextInput("password")
+
+        show(
+            SessionState(
+                phase = SessionPhase.SIGNED_OUT,
+                authError = "Sign in with your password to link this account",
+            ),
+        )
+
+        compose.onNodeWithText("Sign in with your password to link this account").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
+        compose.onNodeWithTag("auth_submit").performScrollTo().performClick()
+        assertEquals("password", recorder.signIn?.password)
+    }
+
+    @Test
     fun loginFieldsSurviveSubmittingAndARejectedResponse() {
         show(SessionState(phase = SessionPhase.SIGNED_OUT))
         recorder.afterSignIn = {
@@ -894,6 +930,7 @@ class MainCourseAppTest {
         var signUp: SignUpRequest? = null
         var signInCount = 0
         var signUpCount = 0
+        var googleCount = 0
         var switchedCookbook: Long? = null
         var openedRecipe: Long? = null
         var openRecipeCount = 0
@@ -922,6 +959,7 @@ class MainCourseAppTest {
                 signUpCount++
                 afterSignUp()
             },
+            googleSignIn = { googleCount++ },
             switchCookbook = { switchedCookbook = it },
             refresh = {
                 refreshCount++

@@ -4,6 +4,7 @@ import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
@@ -42,6 +43,7 @@ class SessionController(
     private val clock: Clock,
     private val scope: CoroutineScope,
     private val imageCleanup: suspend () -> Unit,
+    private val credentialStateCleanup: suspend () -> Unit = {},
     private val revokeTimeoutMillis: Long = 5_000,
     private val deleteTimeoutMillis: Long = 30_000,
 ) {
@@ -114,7 +116,11 @@ class SessionController(
         }
 
         if (stored == null || stored.baseUrl != baseUrl || isExpired(stored.response)) {
-            cleanupProtectedState(finalAuthError = null, restoring = true)
+            cleanupProtectedState(
+                finalAuthError = null,
+                restoring = true,
+                notifyCredentialProvider = stored != null,
+            )
             return
         }
 
@@ -124,6 +130,25 @@ class SessionController(
     fun signIn(request: SignInRequest): Job = authenticate("Could not sign in") { api.signIn(request) }
 
     fun signUp(request: SignUpRequest): Job = authenticate("Could not create account") { api.signUp(request) }
+
+    fun signInWithGoogle(request: GoogleSignInRequest): Job =
+        authenticate("Could not sign in with Google") { api.signInWithGoogle(request) }
+
+    fun clearAuthenticationError() {
+        synchronized(jobsLock) {
+            if (admission == Admission.SIGNED_OUT) {
+                mutableState.value = mutableState.value.copy(authError = null)
+            }
+        }
+    }
+
+    fun reportAuthenticationFailure(message: String) {
+        synchronized(jobsLock) {
+            if (admission == Admission.SIGNED_OUT) {
+                mutableState.value = mutableState.value.copy(authError = message)
+            }
+        }
+    }
 
     fun switchCookbook(id: Long): Job {
         if (mutableState.value.cookbooks.none { it.id == id }) return completedJob()
@@ -428,7 +453,7 @@ class SessionController(
                         }
                     }
                 } finally {
-                    withContext(NonCancellable) { finishCleanup(finalAuthError = null) }
+                    withContext(NonCancellable) { finishCleanup(finalAuthError = null, notifyCredentialProvider = true) }
                 }
                 revokeFailure?.let { throw it }
                 callerContext.ensureActive()
@@ -1155,7 +1180,11 @@ class SessionController(
         cleanupProtectedState(message ?: SESSION_EXPIRED_MESSAGE)
     }
 
-    private suspend fun cleanupProtectedState(finalAuthError: String?, restoring: Boolean = false) {
+    private suspend fun cleanupProtectedState(
+        finalAuthError: String?,
+        restoring: Boolean = false,
+        notifyCredentialProvider: Boolean = true,
+    ) {
         val admitted = synchronized(jobsLock) {
             if (admission == Admission.CLEANING) {
                 false
@@ -1174,7 +1203,7 @@ class SessionController(
                     ownerJob,
                 )
             } finally {
-                finishCleanup(finalAuthError)
+                finishCleanup(finalAuthError, notifyCredentialProvider)
             }
         }
         callerContext.ensureActive()
@@ -1199,7 +1228,18 @@ class SessionController(
         cancelJobs(jobs)
     }
 
-    private suspend fun finishCleanup(finalAuthError: String?) = withContext(NonCancellable) {
+    private suspend fun finishCleanup(
+        finalAuthError: String?,
+        notifyCredentialProvider: Boolean,
+    ) = withContext(NonCancellable) {
+        val providerCleanup = launch(start = CoroutineStart.UNDISPATCHED) {
+            if (!notifyCredentialProvider) return@launch
+            try {
+                credentialStateCleanup()
+            } catch (_: Throwable) {
+                // Provider selection cleanup is bounded best effort and never gates local deletion.
+            }
+        }
         val failures = buildList {
             try {
                 credentialTransition.withLock { sessionStore.clear() }
@@ -1217,6 +1257,7 @@ class SessionController(
                 add(failure)
             }
         }
+        providerCleanup.join()
         transition.withLock {
             mutableState.value = if (failures.isEmpty()) {
                 SessionState(phase = SessionPhase.SIGNED_OUT, authError = finalAuthError)

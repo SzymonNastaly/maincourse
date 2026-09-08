@@ -94,6 +94,7 @@ data class MainCourseActions(
     val restore: () -> Unit = {},
     val signIn: (SignInRequest) -> Unit = {},
     val signUp: (SignUpRequest) -> Unit = {},
+    val googleSignIn: () -> Unit = {},
     val startOnboarding: () -> Unit = {},
     val advanceOnboarding: () -> Unit = {},
     val backOnboarding: () -> Unit = {},
@@ -172,6 +173,7 @@ fun MainCourseApp(
                         error = state.authError,
                         onSignIn = actions.signIn,
                         onSignUp = actions.signUp,
+                        onGoogleSignIn = actions.googleSignIn,
                     )
                 } else {
                     OnboardingScreen(
@@ -191,6 +193,7 @@ fun MainCourseApp(
                         onContinueWithoutSaving = actions.continueOnboardingWithoutSaving,
                         onSignIn = actions.signIn,
                         onSignUp = actions.signUp,
+                        onGoogleSignIn = actions.googleSignIn,
                     )
                 }
             }

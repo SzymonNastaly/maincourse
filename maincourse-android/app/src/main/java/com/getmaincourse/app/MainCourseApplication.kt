@@ -11,6 +11,7 @@ import com.getmaincourse.app.data.onboarding.AtomicOnboardingStore
 import com.getmaincourse.app.data.session.EncryptedSessionStore
 import com.getmaincourse.app.features.session.CatalogRepository
 import com.getmaincourse.app.features.session.MainCourseViewModel
+import com.getmaincourse.app.features.auth.GoogleCredentialSessionCleaner
 import java.time.Clock
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -30,6 +31,7 @@ class AppContainer(application: Application) {
     private val sessionStore = EncryptedSessionStore(application)
     private val api = OkHttpMainCourseApi(BuildConfig.API_BASE_URL.toHttpUrl(), OkHttpClient())
     private val onboardingStore = AtomicOnboardingStore(application, BuildConfig.API_BASE_URL)
+    private val googleCredentialSessionCleaner = GoogleCredentialSessionCleaner(application)
     private val catalogRepository = CatalogRepository(
         api = api,
         store = RoomCatalogStore(database),
@@ -48,6 +50,7 @@ class AppContainer(application: Application) {
                 baseUrl = BuildConfig.API_BASE_URL,
                 clock = Clock.systemUTC(),
                 imageCleanup = { images.clear() },
+                credentialStateCleanup = googleCredentialSessionCleaner::clear,
             ) as T
         }
     }

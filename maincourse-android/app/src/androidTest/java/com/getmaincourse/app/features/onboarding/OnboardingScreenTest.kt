@@ -114,7 +114,17 @@ class OnboardingScreenTest {
 
         compose.onNodeWithTag("auth_email").assertTextContains("reader@example.test")
         compose.onNodeWithTag("auth_submit").assertIsNotEnabled()
+        compose.onNodeWithTag("auth_google").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithContentDescription(text(R.string.back)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun embeddedAuthenticationUsesTheSameGoogleAction() {
+        update(OnboardingState(isLoading = false, step = OnboardingStep.AUTH))
+
+        compose.onNodeWithTag("auth_google").performScrollTo().performClick()
+
+        assertEquals(1, recorder.googleCount)
     }
 
     @Test
@@ -198,6 +208,7 @@ class OnboardingScreenTest {
             onContinueWithoutSaving = { recorder.continueWithoutSavingCount++ },
             onSignIn = { recorder.signIn = it },
             onSignUp = { recorder.signUp = it },
+            onGoogleSignIn = { recorder.googleCount++ },
         )
     }
 
@@ -216,5 +227,6 @@ class OnboardingScreenTest {
         var diet: String? = null
         var signUp: SignUpRequest? = null
         var signIn: SignInRequest? = null
+        var googleCount = 0
     }
 }

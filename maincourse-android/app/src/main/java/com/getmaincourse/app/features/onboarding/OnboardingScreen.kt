@@ -58,6 +58,7 @@ fun OnboardingScreen(
     onContinueWithoutSaving: () -> Unit,
     onSignIn: (SignInRequest) -> Unit,
     onSignUp: (SignUpRequest) -> Unit,
+    onGoogleSignIn: () -> Unit,
 ) {
     if (state.step == OnboardingStep.WELCOME) {
         Welcome(state, onStart, onExistingAccount, onRetryPersistence, onContinueWithoutSaving)
@@ -79,6 +80,7 @@ fun OnboardingScreen(
                 startsInSignUpMode = true,
                 onSignIn = onSignIn,
                 onSignUp = onSignUp,
+                onGoogleSignIn = onGoogleSignIn,
             )
         }
         return
