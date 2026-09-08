@@ -69,6 +69,7 @@ class MainCourseAppTest {
     private lateinit var onboardingState: MutableState<OnboardingState>
     private lateinit var accountState: MutableState<AccountState>
     private lateinit var authenticationMethod: MutableState<AuthenticationMethod?>
+    private lateinit var appleCanCancel: MutableState<Boolean>
     private lateinit var recorder: ActionRecorder
 
     @Before
@@ -77,6 +78,7 @@ class MainCourseAppTest {
         onboardingState = mutableStateOf(OnboardingState(isLoading = false, step = OnboardingStep.COMPLETE))
         accountState = mutableStateOf(AccountState())
         authenticationMethod = mutableStateOf(null)
+        appleCanCancel = mutableStateOf(false)
         recorder = ActionRecorder(state)
         compose.runOnIdle {
             MainCourseTestContent.content = {
@@ -164,6 +166,35 @@ class MainCourseAppTest {
         compose.onNodeWithTag("auth_submit").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithTag("auth_google_progress").assertIsDisplayed()
         compose.onNodeWithTag("auth_email_progress").assertDoesNotExist()
+    }
+
+    @Test
+    fun appleButtonIsAccessibleFullWidthAndShowsOnlyItsOwnWaitingControls() {
+        show(SessionState(phase = SessionPhase.SIGNED_OUT))
+        val apple = compose.onNodeWithTag("auth_apple").performScrollTo().assertIsEnabled()
+        assertEquals(
+            compose.activity.getString(R.string.auth_continue_apple),
+            apple.fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.ContentDescription]
+                .single(),
+        )
+        val googleWidth = compose.onNodeWithTag("auth_google").fetchSemanticsNode().boundsInRoot.width
+        assertEquals(googleWidth, apple.fetchSemanticsNode().boundsInRoot.width, 1f)
+        apple.performClick()
+        assertEquals(1, recorder.appleCount)
+
+        compose.runOnIdle {
+            authenticationMethod.value = AuthenticationMethod.APPLE
+            appleCanCancel.value = true
+        }
+        compose.onNodeWithTag("auth_apple").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("auth_apple_progress").assertIsDisplayed()
+        compose.onNodeWithTag("auth_google_progress").assertDoesNotExist()
+        compose.onNodeWithTag("auth_email").assertIsNotEnabled()
+        compose.onNodeWithTag("auth_cancel_apple").performScrollTo().assertIsEnabled().performClick()
+        assertEquals(1, recorder.cancelAppleCount)
+
+        compose.runOnIdle { appleCanCancel.value = false }
+        compose.onNodeWithTag("auth_cancel_apple").assertDoesNotExist()
     }
 
     @Test
@@ -924,6 +955,7 @@ class MainCourseAppTest {
             accountState = accountState.value,
             authenticationMethod = authenticationMethod.value,
             actions = recorder.actions,
+            appleCanCancel = appleCanCancel.value,
         )
     }
 
@@ -937,6 +969,8 @@ class MainCourseAppTest {
         var signInCount = 0
         var signUpCount = 0
         var googleCount = 0
+        var appleCount = 0
+        var cancelAppleCount = 0
         var switchedCookbook: Long? = null
         var openedRecipe: Long? = null
         var openRecipeCount = 0
@@ -966,6 +1000,8 @@ class MainCourseAppTest {
                 afterSignUp()
             },
             googleSignIn = { googleCount++ },
+            appleSignIn = { appleCount++ },
+            cancelAppleSignIn = { cancelAppleCount++ },
             switchCookbook = { switchedCookbook = it },
             refresh = {
                 refreshCount++

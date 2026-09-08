@@ -2,6 +2,9 @@ package com.getmaincourse.app.features.session
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.getmaincourse.app.BuildConfig
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
@@ -9,14 +12,22 @@ import com.getmaincourse.app.data.network.MainCourseApi
 import com.getmaincourse.app.data.onboarding.OnboardingStore
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.features.auth.AuthenticationMethod
+import com.getmaincourse.app.features.auth.AppleAuthenticationCallback
+import com.getmaincourse.app.features.auth.AppleAuthenticationError
+import com.getmaincourse.app.features.auth.ApplePkce
 import com.getmaincourse.app.features.auth.GoogleNonce
 import com.getmaincourse.app.features.auth.GoogleSignInException
 import com.getmaincourse.app.features.onboarding.OnboardingController
 import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
 import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.net.URI
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
@@ -24,14 +35,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainCourseViewModel(
-    api: MainCourseApi,
+    private val api: MainCourseApi,
     sessionStore: SessionStore,
     catalogRepository: CatalogRepository,
     onboardingStore: OnboardingStore,
     baseUrl: String,
-    clock: Clock,
+    private val clock: Clock,
     imageCleanup: suspend () -> Unit,
     credentialStateCleanup: suspend () -> Unit = {},
+    private val appleWaitingTimeoutMillis: Long = 300_000,
+    private val appleCallback: String = appleCallbackFor(baseUrl, BuildConfig.DEBUG),
 ) : ViewModel() {
     private val controller = SessionController(
         api = api,
@@ -53,11 +66,19 @@ class MainCourseViewModel(
     private val authenticationLock = Any()
     private var authenticationJob: Job? = null
     private var googleAttempt: GoogleAuthenticationAttempt? = null
+    private var appleAttempt: PendingAppleAuthentication? = null
+    private var appleStartJob: Job? = null
+    private var appleDeadlineJob: Job? = null
+    private val appleAttemptIds = AtomicLong()
+    private val mutableAppleBrowserLaunch = MutableStateFlow<AppleBrowserLaunchCommand?>(null)
+    private val mutableAppleCanCancel = MutableStateFlow(false)
 
     val state = controller.state
     val accountState = controller.accountState
     val onboardingState = onboarding.state
     val authenticationMethod = mutableAuthenticationMethod.asStateFlow()
+    val appleBrowserLaunch = mutableAppleBrowserLaunch.asStateFlow()
+    val appleCanCancel = mutableAppleCanCancel.asStateFlow()
 
     init {
         onboarding.restore()
@@ -116,6 +137,141 @@ class MainCourseViewModel(
         mutableAuthenticationMethod.value = null
         if (error != null) controller.reportAuthenticationFailure(error)
         true
+    }
+
+    internal fun beginAppleAuthentication(): Boolean {
+        val pending = synchronized(authenticationLock) {
+            if (mutableAuthenticationMethod.value != null || state.value.phase != SessionPhase.SIGNED_OUT) return false
+            controller.clearAuthenticationError()
+            PendingAppleAuthentication(
+                id = appleAttemptIds.incrementAndGet(),
+                verifier = ApplePkce.generateVerifier(),
+            ).also {
+                appleAttempt = it
+                mutableAuthenticationMethod.value = AuthenticationMethod.APPLE
+                mutableAppleCanCancel.value = false
+            }
+        }
+        lateinit var launched: Job
+        launched = viewModelScope.launch(start = CoroutineStart.LAZY) {
+            try {
+                val response = api.startAppleAuthentication(
+                    AppleAuthenticationStartRequest(
+                        codeChallenge = ApplePkce.challenge(pending.verifier),
+                        callback = appleCallback,
+                    ),
+                )
+                val now = clock.instant()
+                val serverDeadline = try {
+                    Instant.parse(response.expiresAt)
+                } catch (_: Throwable) {
+                    Instant.MIN
+                }
+                val serverLifetime = Duration.between(now, serverDeadline).toMillis()
+                if (serverLifetime <= 0) throw IllegalArgumentException("Expired Apple authentication response")
+                val deadline = minOf(serverDeadline, now.plusMillis(appleWaitingTimeoutMillis))
+                val accepted = synchronized(authenticationLock) {
+                    if (appleAttempt != pending || mutableAuthenticationMethod.value != AuthenticationMethod.APPLE) {
+                        false
+                    } else {
+                        appleAttempt = pending.copy(
+                            transactionId = response.transactionId,
+                            deadline = deadline,
+                            waiting = true,
+                        )
+                        mutableAppleBrowserLaunch.value = AppleBrowserLaunchCommand(pending.id, response.browserUrl)
+                        mutableAppleCanCancel.value = true
+                        true
+                    }
+                }
+                if (accepted) scheduleAppleDeadline(pending.id, minOf(serverLifetime, appleWaitingTimeoutMillis))
+            } catch (failure: kotlinx.coroutines.CancellationException) {
+                throw failure
+            } catch (_: Throwable) {
+                failAppleAttempt(pending.id, "Apple sign-in is unavailable. Please try again.")
+            } finally {
+                synchronized(authenticationLock) {
+                    if (appleStartJob == launched) appleStartJob = null
+                }
+            }
+        }
+        synchronized(authenticationLock) {
+            if (appleAttempt != pending) return false
+            appleStartJob = launched
+        }
+        launched.start()
+        return true
+    }
+
+    internal fun consumeAppleBrowserLaunch(command: AppleBrowserLaunchCommand): String? =
+        synchronized(authenticationLock) {
+            val pending = appleAttempt
+            if (mutableAppleBrowserLaunch.value != command || pending?.id != command.id || !pending.waiting) return null
+            mutableAppleBrowserLaunch.value = null
+            command.url
+        }
+
+    internal fun appleBrowserLaunchFailed(command: AppleBrowserLaunchCommand) {
+        failAppleAttempt(command.id, "No browser is available to continue with Apple.")
+    }
+
+    internal fun cancelAppleAuthentication(): Boolean {
+        val deadline = synchronized(authenticationLock) {
+            val pending = appleAttempt ?: return false
+            if (!pending.waiting || mutableAuthenticationMethod.value != AuthenticationMethod.APPLE) return false
+            appleAttempt = null
+            mutableAppleBrowserLaunch.value = null
+            mutableAppleCanCancel.value = false
+            mutableAuthenticationMethod.value = null
+            appleDeadlineJob.also { appleDeadlineJob = null }
+        }
+        deadline?.cancel()
+        return true
+    }
+
+    internal fun handleAppleAuthenticationCallback(callback: AppleAuthenticationCallback): Boolean {
+        var deadline: Job? = null
+        val accepted = synchronized(authenticationLock) {
+            val pending = appleAttempt
+            if (pending == null || !pending.waiting || pending.transactionId != callback.transactionId ||
+                mutableAuthenticationMethod.value != AuthenticationMethod.APPLE
+            ) {
+                return false
+            }
+            if (!clock.instant().isBefore(pending.deadline)) {
+                appleAttempt = null
+                mutableAppleBrowserLaunch.value = null
+                mutableAppleCanCancel.value = false
+                mutableAuthenticationMethod.value = null
+                deadline = appleDeadlineJob.also { appleDeadlineJob = null }
+                controller.reportAuthenticationFailure("Apple sign-in expired. Start again.")
+                return@synchronized true
+            }
+            appleAttempt = null
+            mutableAppleBrowserLaunch.value = null
+            mutableAppleCanCancel.value = false
+            deadline = appleDeadlineJob.also { appleDeadlineJob = null }
+            when (callback) {
+                is AppleAuthenticationCallback.Error -> {
+                    mutableAuthenticationMethod.value = null
+                    callback.error.userMessage()?.let(controller::reportAuthenticationFailure)
+                }
+                is AppleAuthenticationCallback.Success -> launchAuthentication { deviceId ->
+                    controller.signInWithApple(
+                        AppleAuthenticationExchangeRequest(
+                            transactionId = callback.transactionId,
+                            exchangeCode = callback.exchangeCode,
+                            codeVerifier = pending.verifier,
+                            deviceName = "Android",
+                            onboardingDeviceId = deviceId,
+                        ),
+                    )
+                }
+            }
+            true
+        }
+        deadline?.cancel()
+        return accepted
     }
     fun startOnboarding() = onboarding.start()
     fun advanceOnboarding() = onboarding.advance()
@@ -192,12 +348,47 @@ class MainCourseViewModel(
     }
 
     private fun cancelAuthenticationForCleanup() {
-        val job = synchronized(authenticationLock) {
+        val jobs = synchronized(authenticationLock) {
             googleAttempt = null
+            appleAttempt = null
+            mutableAppleBrowserLaunch.value = null
+            mutableAppleCanCancel.value = false
             mutableAuthenticationMethod.value = null
-            authenticationJob.also { authenticationJob = null }
+            listOfNotNull(authenticationJob, appleStartJob, appleDeadlineJob).also {
+                authenticationJob = null
+                appleStartJob = null
+                appleDeadlineJob = null
+            }
         }
-        job?.cancel()
+        jobs.forEach(Job::cancel)
+    }
+
+    private fun scheduleAppleDeadline(attemptId: Long, timeoutMillis: Long) {
+        val deadline = viewModelScope.launch {
+            delay(timeoutMillis)
+            failAppleAttempt(attemptId, "Apple sign-in expired. Start again.")
+        }
+        synchronized(authenticationLock) {
+            if (appleAttempt?.id == attemptId) {
+                appleDeadlineJob?.cancel()
+                appleDeadlineJob = deadline
+            } else {
+                deadline.cancel()
+            }
+        }
+    }
+
+    private fun failAppleAttempt(attemptId: Long, message: String) {
+        val deadline = synchronized(authenticationLock) {
+            if (appleAttempt?.id != attemptId || mutableAuthenticationMethod.value != AuthenticationMethod.APPLE) return
+            appleAttempt = null
+            mutableAppleBrowserLaunch.value = null
+            mutableAppleCanCancel.value = false
+            mutableAuthenticationMethod.value = null
+            appleDeadlineJob.also { appleDeadlineJob = null }
+        }
+        deadline?.cancel()
+        controller.reportAuthenticationFailure(message)
     }
 
     private fun ifPreparingAuthenticationIgnored(action: () -> Job): Job =
@@ -213,8 +404,43 @@ class MainCourseViewModel(
         val saveToday: List<String>,
         val diet: List<String>,
     )
+
+    private data class PendingAppleAuthentication(
+        val id: Long,
+        val verifier: String,
+        val transactionId: String? = null,
+        val deadline: Instant = Instant.MIN,
+        val waiting: Boolean = false,
+    )
 }
 
 internal class GoogleAuthenticationAttempt internal constructor(
     internal val nonce: String,
 )
+
+class AppleBrowserLaunchCommand internal constructor(
+    internal val id: Long,
+    val url: String,
+)
+
+internal fun appleCallbackFor(baseUrl: String, isDebugBuild: Boolean): String {
+    val uri = try {
+        URI(baseUrl)
+    } catch (_: Exception) {
+        return "release"
+    }
+    return if (isDebugBuild && uri.scheme == "http" && uri.host in setOf("10.0.2.2", "localhost", "127.0.0.1")) {
+        "debug"
+    } else {
+        "release"
+    }
+}
+
+private fun AppleAuthenticationError.userMessage(): String? = when (this) {
+    AppleAuthenticationError.CANCELLED -> null
+    AppleAuthenticationError.AUTHENTICATION_FAILED -> "Could not sign in with Apple. Please try again."
+    AppleAuthenticationError.TRANSACTION_EXPIRED -> "Apple sign-in expired. Start again."
+    AppleAuthenticationError.TRANSACTION_UNAVAILABLE -> "That Apple sign-in can no longer be used. Start again."
+    AppleAuthenticationError.ACCOUNT_LINK_REQUIRED -> "Sign in with your existing method to link this Apple account."
+    AppleAuthenticationError.PROVIDER_UNAVAILABLE -> "Apple sign-in is unavailable. Please try again."
+}

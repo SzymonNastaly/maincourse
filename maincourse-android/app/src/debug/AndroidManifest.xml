@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <application>
         <activity
             android:name=".MainCourseTestActivity"
             android:exported="false"
             android:theme="@style/Theme.MainCourse" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.getmaincourse.app.debug"
+                    android:ssp="/oauth/apple" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

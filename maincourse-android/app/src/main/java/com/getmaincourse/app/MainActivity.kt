@@ -1,5 +1,6 @@
 package com.getmaincourse.app
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -15,8 +16,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.getmaincourse.app.features.auth.GoogleAuthenticationLauncher
+import com.getmaincourse.app.features.auth.AppleAuthenticationCallbackParser
 import com.getmaincourse.app.features.session.MainCourseViewModel
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import kotlinx.coroutines.CancellationException
@@ -37,6 +40,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         googleAuthentication = GoogleAuthenticationLauncher(this, viewModel)
+        consumeAppleCallbackIntent(intent, BuildConfig.DEBUG, viewModel::handleAppleAuthenticationCallback)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
@@ -63,6 +67,19 @@ class MainActivity : ComponentActivity() {
                 val onboardingState by viewModel.onboardingState.collectAsStateWithLifecycle()
                 val accountState by viewModel.accountState.collectAsStateWithLifecycle()
                 val authenticationMethod by viewModel.authenticationMethod.collectAsStateWithLifecycle()
+                val appleBrowserLaunch by viewModel.appleBrowserLaunch.collectAsStateWithLifecycle()
+                val appleCanCancel by viewModel.appleCanCancel.collectAsStateWithLifecycle()
+                LaunchedEffect(appleBrowserLaunch) {
+                    val command = appleBrowserLaunch ?: return@LaunchedEffect
+                    val url = viewModel.consumeAppleBrowserLaunch(command) ?: return@LaunchedEffect
+                    try {
+                        startActivity(
+                            Intent(Intent.ACTION_VIEW, url.toUri()).addCategory(Intent.CATEGORY_BROWSABLE),
+                        )
+                    } catch (_: RuntimeException) {
+                        viewModel.appleBrowserLaunchFailed(command)
+                    }
+                }
                 val userId = state.user?.id
                 var imageLoader by remember(userId) { mutableStateOf<coil3.ImageLoader?>(null) }
                 LaunchedEffect(userId) {
@@ -87,6 +104,8 @@ class MainActivity : ComponentActivity() {
                         signIn = { viewModel.signIn(it) },
                         signUp = { viewModel.signUp(it) },
                         googleSignIn = googleAuthentication::launch,
+                        appleSignIn = { viewModel.beginAppleAuthentication() },
+                        cancelAppleSignIn = { viewModel.cancelAppleAuthentication() },
                         startOnboarding = { viewModel.startOnboarding() },
                         advanceOnboarding = { viewModel.advanceOnboarding() },
                         backOnboarding = { viewModel.backOnboarding() },
@@ -111,6 +130,7 @@ class MainActivity : ComponentActivity() {
                     ),
                     imageLoader = imageLoader,
                     resolveImage = appContainer.images::resolve,
+                    appleCanCancel = appleCanCancel,
                 )
             }
         }
@@ -120,6 +140,25 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (contentInstalled) viewModel.checkExpiry()
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        consumeAppleCallbackIntent(intent, BuildConfig.DEBUG, viewModel::handleAppleAuthenticationCallback)
+        setIntent(intent)
+    }
+}
+
+internal fun consumeAppleCallbackIntent(
+    intent: Intent,
+    isDebugBuild: Boolean,
+    onCallback: (com.getmaincourse.app.features.auth.AppleAuthenticationCallback) -> Unit,
+): Boolean {
+    if (intent.action != Intent.ACTION_VIEW) return false
+    val rawUri = intent.dataString ?: return false
+    intent.data = null
+    val callback = AppleAuthenticationCallbackParser.parse(rawUri, isDebugBuild) ?: return false
+    onCallback(callback)
+    return true
 }
 
 internal fun shouldRequestLocalNetworkAccess(

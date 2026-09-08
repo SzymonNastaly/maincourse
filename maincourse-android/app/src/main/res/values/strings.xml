@@ -43,6 +43,8 @@
     <string name="auth_sign_in">Sign in</string>
     <string name="auth_create_account">Create account</string>
     <string name="auth_continue_google">Continue with Google</string>
+    <string name="auth_continue_apple">Continue with Apple</string>
+    <string name="auth_cancel_apple">Cancel Apple sign-in</string>
     <string name="auth_have_account">Already have an account? Sign in</string>
     <string name="auth_need_account">New to MainCourse? Create account</string>
     <string name="auth_name">First name</string>

@@ -2,6 +2,8 @@ package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingAnswers
 import com.getmaincourse.app.data.model.OnboardingRequest
@@ -37,6 +39,10 @@ import org.junit.Before
 import org.junit.Test
 
 class OkHttpMainCourseApiTest {
+    private val handle = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    private val code = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+    private val challenge = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+    private val verifier = "ddddddddddddddddddddddddddddddddddddddddddd"
     private lateinit var server: MockWebServer
     private lateinit var api: MainCourseApi
 
@@ -84,6 +90,103 @@ class OkHttpMainCourseApiTest {
             assertEquals("oauth-$status", failure.message)
         }
         assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun appleStartSendsAnAnonymousExactPayloadAndAcceptsOnlyTheExpectedBrowserUrl() = runBlocking {
+        server.enqueue(
+            jsonResponse(
+                201,
+                """{"transaction_id":"$handle","browser_url":"${server.url("/android/apple/sign_in?transaction_id=$handle")}","expires_at":"2026-09-08T00:05:00Z"}""",
+            ),
+        )
+
+        val response = api.startAppleAuthentication(AppleAuthenticationStartRequest(challenge, "debug"))
+
+        assertEquals(handle, response.transactionId)
+        assertEquals("2026-09-08T00:05:00Z", response.expiresAt)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/apple_auth_transaction", request.path)
+        assertNull(request.getHeader("Authorization"))
+        assertNull(request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            Json.parseToJsonElement("""{"code_challenge":"$challenge","callback":"debug"}"""),
+            Json.parseToJsonElement(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun appleStartRejectsMalformedOrArbitraryBrowserUrls() = runBlocking {
+        listOf(
+            "https://attacker.example/android/apple/sign_in?transaction_id=$handle",
+            server.url("/wrong?transaction_id=$handle").toString(),
+            server.url("/android/apple/sign_in?transaction_id=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB").toString(),
+            server.url("/android/apple/sign_in?transaction_id=$handle&next=https://attacker.example").toString(),
+        ).forEach { browserUrl ->
+            server.enqueue(
+                jsonResponse(
+                    201,
+                    """{"transaction_id":"$handle","browser_url":"$browserUrl","expires_at":"2026-09-08T00:05:00Z"}""",
+                ),
+            )
+
+            val failure = captureApiFailure {
+                api.startAppleAuthentication(AppleAuthenticationStartRequest(challenge, "debug"))
+            }
+
+            assertNull(failure.status)
+            assertEquals("Invalid response from server", failure.message)
+        }
+        assertEquals(4, server.requestCount)
+    }
+
+    @Test
+    fun appleProviderUnavailableIsRecoverableAndNotRetried() = runBlocking {
+        server.enqueue(jsonResponse(503, """{"error":"Apple sign-in is unavailable"}"""))
+
+        val failure = captureApiFailure {
+            api.startAppleAuthentication(AppleAuthenticationStartRequest(challenge, "release"))
+        }
+
+        assertEquals(503, failure.status)
+        assertEquals("Apple sign-in is unavailable", failure.message)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun appleExchangeSendsOnlyTheEphemeralProofAndDoesNotRetry() = runBlocking {
+        server.enqueue(jsonResponse(201, sessionJson()))
+
+        val response = api.exchangeAppleAuthentication(
+            AppleAuthenticationExchangeRequest(handle, code, verifier, "Android", "draft-id"),
+        )
+
+        assertEquals(7L, response.user.id)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/apple_auth_transaction/exchange", request.path)
+        assertNull(request.getHeader("Authorization"))
+        assertNull(request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            Json.parseToJsonElement(
+                """{"transaction_id":"$handle","exchange_code":"$code","code_verifier":"$verifier","device_name":"Android","onboarding_device_id":"draft-id"}""",
+            ),
+            Json.parseToJsonElement(request.body.readUtf8()),
+        )
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun failedApplePostsAreNeverRetriedAcrossResolvedRoutes() = runBlocking {
+        assertFailedPostDoesNotTryAnotherResolvedRoute { api ->
+            api.startAppleAuthentication(AppleAuthenticationStartRequest(challenge, "release"))
+        }
+        assertFailedPostDoesNotTryAnotherResolvedRoute { api ->
+            api.exchangeAppleAuthentication(
+                AppleAuthenticationExchangeRequest(handle, code, verifier, "Android"),
+            )
+        }
     }
 
     @Test

@@ -129,6 +129,20 @@ class OnboardingScreenTest {
     }
 
     @Test
+    fun embeddedAuthenticationUsesAppleAndShowsCancelOnlyWhileWaiting() {
+        update(OnboardingState(isLoading = false, step = OnboardingStep.AUTH))
+        show(authenticationMethod = AuthenticationMethod.APPLE, appleCanCancel = true)
+
+        compose.onNodeWithTag("auth_apple_progress").assertIsDisplayed()
+        compose.onNodeWithTag("auth_cancel_apple").performScrollTo().performClick()
+        assertEquals(1, recorder.cancelAppleCount)
+
+        show()
+        compose.onNodeWithTag("auth_apple").performScrollTo().performClick()
+        assertEquals(1, recorder.appleCount)
+    }
+
+    @Test
     fun embeddedAuthenticationHeaderIsBelowTheStatusBarInset() {
         update(OnboardingState(isLoading = false, step = OnboardingStep.AUTH))
         val statusTop = WindowInsetsCompat.toWindowInsetsCompat(
@@ -176,17 +190,29 @@ class OnboardingScreenTest {
         compose.runOnIdle { state.value = value }
     }
 
-    private fun show(authError: String? = null, isPreparing: Boolean = false) {
+    private fun show(
+        authError: String? = null,
+        isPreparing: Boolean = false,
+        authenticationMethod: AuthenticationMethod? = if (isPreparing) AuthenticationMethod.EMAIL else null,
+        appleCanCancel: Boolean = false,
+    ) {
         compose.runOnIdle {
-            MainCourseTestContent.content = { MainCourseTheme { TestContent(authError, isPreparing) } }
+            MainCourseTestContent.content = {
+                MainCourseTheme { TestContent(authError, authenticationMethod, appleCanCancel) }
+            }
         }
     }
 
     @androidx.compose.runtime.Composable
-    private fun TestContent(authError: String? = null, isPreparing: Boolean = false) {
+    private fun TestContent(
+        authError: String? = null,
+        authenticationMethod: AuthenticationMethod? = null,
+        appleCanCancel: Boolean = false,
+    ) {
         OnboardingScreen(
             state = state.value,
-            authenticationMethod = if (isPreparing) AuthenticationMethod.EMAIL else null,
+            authenticationMethod = authenticationMethod,
+            appleCanCancel = appleCanCancel,
             authError = authError,
             onStart = { recorder.startCount++ },
             onBack = { recorder.backCount++ },
@@ -210,6 +236,8 @@ class OnboardingScreenTest {
             onSignIn = { recorder.signIn = it },
             onSignUp = { recorder.signUp = it },
             onGoogleSignIn = { recorder.googleCount++ },
+            onAppleSignIn = { recorder.appleCount++ },
+            onCancelAppleSignIn = { recorder.cancelAppleCount++ },
         )
     }
 
@@ -229,5 +257,7 @@ class OnboardingScreenTest {
         var signUp: SignUpRequest? = null
         var signIn: SignInRequest? = null
         var googleCount = 0
+        var appleCount = 0
+        var cancelAppleCount = 0
     }
 }

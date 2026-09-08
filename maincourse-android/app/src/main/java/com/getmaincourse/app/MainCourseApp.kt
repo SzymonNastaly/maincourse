@@ -96,6 +96,8 @@ data class MainCourseActions(
     val signIn: (SignInRequest) -> Unit = {},
     val signUp: (SignUpRequest) -> Unit = {},
     val googleSignIn: () -> Unit = {},
+    val appleSignIn: () -> Unit = {},
+    val cancelAppleSignIn: () -> Unit = {},
     val startOnboarding: () -> Unit = {},
     val advanceOnboarding: () -> Unit = {},
     val backOnboarding: () -> Unit = {},
@@ -132,6 +134,7 @@ fun MainCourseApp(
     actions: MainCourseActions,
     imageLoader: ImageLoader? = null,
     resolveImage: (String?) -> String? = { it },
+    appleCanCancel: Boolean = false,
 ) {
     val isPreparingAuthentication = authenticationMethod != null
     val authenticatedUser = state.user
@@ -176,6 +179,9 @@ fun MainCourseApp(
                         onSignIn = actions.signIn,
                         onSignUp = actions.signUp,
                         onGoogleSignIn = actions.googleSignIn,
+                        onAppleSignIn = actions.appleSignIn,
+                        onCancelAppleSignIn = actions.cancelAppleSignIn,
+                        appleCanCancel = appleCanCancel,
                     )
                 } else {
                     OnboardingScreen(
@@ -195,6 +201,9 @@ fun MainCourseApp(
                         onSignIn = actions.signIn,
                         onSignUp = actions.signUp,
                         onGoogleSignIn = actions.googleSignIn,
+                        onAppleSignIn = actions.appleSignIn,
+                        onCancelAppleSignIn = actions.cancelAppleSignIn,
+                        appleCanCancel = appleCanCancel,
                     )
                 }
             }

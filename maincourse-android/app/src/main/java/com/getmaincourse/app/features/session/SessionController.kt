@@ -3,6 +3,7 @@ package com.getmaincourse.app.features.session
 import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.SessionResponse
@@ -133,6 +134,9 @@ class SessionController(
 
     fun signInWithGoogle(request: GoogleSignInRequest): Job =
         authenticate("Could not sign in with Google") { api.signInWithGoogle(request) }
+
+    fun signInWithApple(request: AppleAuthenticationExchangeRequest): Job =
+        authenticate("Could not sign in with Apple") { api.exchangeAppleAuthentication(request) }
 
     fun clearAuthenticationError() {
         synchronized(jobsLock) {

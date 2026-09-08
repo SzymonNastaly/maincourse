@@ -1,0 +1,7 @@
+Apple logo asset provenance
+
+The white Apple mark in res/drawable/apple_logo_white.xml is copied from the
+existing repository asset app/assets/images/apple-logo-white.svg. It is used
+only inside the black “Continue with Apple” authentication control, following
+Apple's Sign in with Apple button guidance. Apple and the Apple logo are
+trademarks of Apple Inc.

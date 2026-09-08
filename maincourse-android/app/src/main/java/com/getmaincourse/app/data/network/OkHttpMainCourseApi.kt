@@ -2,6 +2,9 @@ package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartResponse
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
@@ -26,6 +29,7 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -53,6 +57,27 @@ class OkHttpMainCourseApi(
     override suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse =
         executeJson(
             requestBuilder("api/v1/oauth_session")
+                .post(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
+                .build(),
+        )
+
+    override suspend fun startAppleAuthentication(
+        request: AppleAuthenticationStartRequest,
+    ): AppleAuthenticationStartResponse {
+        val response = executeJson<AppleAuthenticationStartResponse>(
+            requestBuilder("api/v1/apple_auth_transaction")
+                .post(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
+                .build(),
+        )
+        if (!response.hasExpectedBrowserUrl(baseUrl)) {
+            throw ApiFailure(null, "Invalid response from server")
+        }
+        return response
+    }
+
+    override suspend fun exchangeAppleAuthentication(request: AppleAuthenticationExchangeRequest): SessionResponse =
+        executeJson(
+            requestBuilder("api/v1/apple_auth_transaction/exchange")
                 .post(json.encodeToString(request).toRequestBody(JSON_MEDIA_TYPE))
                 .build(),
         )
@@ -214,3 +239,13 @@ class OkHttpMainCourseApi(
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
     }
 }
+
+private fun AppleAuthenticationStartResponse.hasExpectedBrowserUrl(baseUrl: HttpUrl): Boolean {
+    if (!OPAQUE_APPLE_VALUE.matches(transactionId) || browserUrl.length > 2_048) return false
+    val parsed = browserUrl.toHttpUrlOrNull() ?: return false
+    return parsed.scheme == baseUrl.scheme && parsed.host == baseUrl.host && parsed.port == baseUrl.port &&
+        parsed.username.isEmpty() && parsed.password.isEmpty() && parsed.fragment == null &&
+        parsed.encodedPath == "/android/apple/sign_in" && parsed.encodedQuery == "transaction_id=$transactionId"
+}
+
+private val OPAQUE_APPLE_VALUE = Regex("[A-Za-z0-9_-]{43}")

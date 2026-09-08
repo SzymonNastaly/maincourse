@@ -1,6 +1,9 @@
 package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartResponse
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
@@ -16,6 +19,10 @@ interface MainCourseApi {
     suspend fun signIn(request: SignInRequest): SessionResponse
 
     suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse
+
+    suspend fun startAppleAuthentication(request: AppleAuthenticationStartRequest): AppleAuthenticationStartResponse
+
+    suspend fun exchangeAppleAuthentication(request: AppleAuthenticationExchangeRequest): SessionResponse
 
     suspend fun signUp(request: SignUpRequest): SessionResponse
 

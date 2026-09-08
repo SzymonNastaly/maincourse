@@ -2199,6 +2199,14 @@ class SessionControllerTest {
             return googleBlock(request)
         }
 
+        override suspend fun startAppleAuthentication(
+            request: com.getmaincourse.app.data.model.AppleAuthenticationStartRequest,
+        ): com.getmaincourse.app.data.model.AppleAuthenticationStartResponse = error("unused")
+
+        override suspend fun exchangeAppleAuthentication(
+            request: com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest,
+        ): SessionResponse = error("unused")
+
         override suspend fun signUp(request: SignUpRequest) = signUpBlock(request)
         override suspend fun signOut(token: String) {
             signOutCalls++

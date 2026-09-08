@@ -1,5 +1,7 @@
 package com.getmaincourse.app
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -19,6 +21,9 @@ import com.getmaincourse.app.data.cache.CachedRecipes
 import com.getmaincourse.app.data.cache.CatalogStore
 import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartResponse
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
@@ -52,6 +57,8 @@ import kotlinx.coroutines.awaitCancellation
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -256,6 +263,35 @@ class MainCourseViewModelActivityTest {
         assertEquals(USER, viewModel.state.value.user)
     }
 
+    @Test
+    fun appleWaitingAndConsumedBrowserCommandSurviveRecreationThenNewIntentExchangesOnce() {
+        showSignedOut()
+        compose.runOnIdle { assertTrue(viewModel.beginAppleAuthentication()) }
+        compose.waitUntil(5_000) { viewModel.appleBrowserLaunch.value != null }
+        compose.runOnIdle {
+            val command = checkNotNull(viewModel.appleBrowserLaunch.value)
+            assertEquals(APPLE_BROWSER_URL, viewModel.consumeAppleBrowserLaunch(command))
+            assertEquals(null, viewModel.consumeAppleBrowserLaunch(command))
+        }
+
+        compose.activityRule.scenario.recreate()
+        val retained = ViewModelProvider(compose.activity, factory)[MainCourseViewModel::class.java]
+        assertSame(viewModel, retained)
+        assertEquals(null, viewModel.appleBrowserLaunch.value)
+        assertTrue(viewModel.appleCanCancel.value)
+
+        val callbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse(APPLE_CALLBACK_URL))
+        compose.runOnIdle {
+            assertTrue(consumeAppleCallbackIntent(callbackIntent, true, viewModel::handleAppleAuthenticationCallback))
+            assertFalse(consumeAppleCallbackIntent(callbackIntent, true, viewModel::handleAppleAuthenticationCallback))
+        }
+        compose.waitUntil(5_000) { viewModel.state.value.user == USER }
+
+        assertEquals(1, api.appleExchangeRequests.size)
+        assertEquals(null, callbackIntent.data)
+        assertFalse(viewModel.appleCanCancel.value)
+    }
+
     private fun openNameEditorAndSave(name: String) {
         compose.onNodeWithTag("nav_Settings").performClick()
         compose.onNodeWithText(text(R.string.edit_name)).performClick()
@@ -331,12 +367,23 @@ class MainCourseViewModelActivityTest {
         var deleteResult: CompletableDeferred<Unit>? = null
         var googleResult: CompletableDeferred<SessionResponse>? = null
         val googleRequests = mutableListOf<GoogleSignInRequest>()
+        val appleExchangeRequests = mutableListOf<AppleAuthenticationExchangeRequest>()
 
         override suspend fun signIn(request: SignInRequest): SessionResponse = error("unused")
 
         override suspend fun signInWithGoogle(request: GoogleSignInRequest): SessionResponse {
             googleRequests += request
             return googleResult?.await() ?: SESSION
+        }
+        override suspend fun startAppleAuthentication(
+            request: AppleAuthenticationStartRequest,
+        ): AppleAuthenticationStartResponse =
+            AppleAuthenticationStartResponse(HANDLE, APPLE_BROWSER_URL, "2026-09-08T00:05:00Z")
+        override suspend fun exchangeAppleAuthentication(
+            request: AppleAuthenticationExchangeRequest,
+        ): SessionResponse {
+            appleExchangeRequests += request
+            return SESSION
         }
         override suspend fun signUp(request: SignUpRequest): SessionResponse = error("unused")
         override suspend fun signOut(token: String) {
@@ -373,6 +420,11 @@ class MainCourseViewModelActivityTest {
 
     private companion object {
         const val BASE_URL = "https://example.test/"
+        const val HANDLE = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        const val CODE = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        const val APPLE_BROWSER_URL = "https://example.test/android/apple/sign_in?transaction_id=$HANDLE"
+        const val APPLE_CALLBACK_URL =
+            "com.getmaincourse.app.debug:/oauth/apple?transaction_id=$HANDLE&exchange_code=$CODE"
         val CLOCK: Clock = Clock.fixed(Instant.parse("2026-09-08T00:00:00Z"), ZoneOffset.UTC)
         val USER = User(7, "Reader", "reader@example.test", false)
         val SESSION = SessionResponse("fixture-token", "2026-12-08T00:00:00Z", USER)

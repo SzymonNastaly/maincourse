@@ -4,6 +4,9 @@ import com.getmaincourse.app.data.cache.CachedRecipes
 import com.getmaincourse.app.data.cache.CatalogStore
 import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationExchangeRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartRequest
+import com.getmaincourse.app.data.model.AppleAuthenticationStartResponse
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.GoogleSignInRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
@@ -22,6 +25,8 @@ import com.getmaincourse.app.data.onboarding.OnboardingStore
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.auth.AuthenticationMethod
+import com.getmaincourse.app.features.auth.AppleAuthenticationCallback
+import com.getmaincourse.app.features.auth.ApplePkce
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -30,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -268,10 +274,224 @@ class MainCourseViewModelTest {
         assertTrue(replacementApi.googleRequests.isEmpty())
     }
 
+    @Test
+    fun appleStartSharesAdmissionAndPublishesExactlyOneConsumableBrowserLaunch() = runTest(dispatcher) {
+        val api = FakeApi()
+        val viewModel = viewModel(api, FakeOnboardingStore(null))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.beginAppleAuthentication())
+        assertFalse(viewModel.beginAppleAuthentication())
+        assertNull(viewModel.beginGoogleAuthentication())
+        viewModel.signIn(SignInRequest("reader@example.test", "password", "Android")).join()
+        runCurrent()
+
+        assertEquals(AuthenticationMethod.APPLE, viewModel.authenticationMethod.value)
+        assertEquals(0, api.signInCalls)
+        assertEquals(1, api.appleStartRequests.size)
+        assertEquals("release", api.appleStartRequests.single().callback)
+        val command = checkNotNull(viewModel.appleBrowserLaunch.value)
+        assertEquals(APPLE_BROWSER_URL, viewModel.consumeAppleBrowserLaunch(command))
+        assertNull(viewModel.consumeAppleBrowserLaunch(command))
+        assertNull(viewModel.appleBrowserLaunch.value)
+        assertTrue(viewModel.appleCanCancel.value)
+    }
+
+    @Test
+    fun matchingAppleCallbackPreparesOnboardingThenExchangesAndSecuresExactlyOnce() = runTest(dispatcher) {
+        val api = FakeApi()
+        val submission = CompletableDeferred<Unit>()
+        api.onSubmitOnboarding = { submission.await() }
+        val sessionStore = FakeSessionStore()
+        val viewModel = viewModel(api, FakeOnboardingStore(authDraft()), sessionStore)
+        runCurrent()
+        assertTrue(viewModel.beginAppleAuthentication())
+        runCurrent()
+        val launch = checkNotNull(viewModel.appleBrowserLaunch.value)
+        viewModel.consumeAppleBrowserLaunch(launch)
+
+        assertTrue(viewModel.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE)))
+        assertFalse(viewModel.appleCanCancel.value)
+        assertFalse(viewModel.cancelAppleAuthentication())
+        assertFalse(viewModel.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE)))
+        runCurrent()
+        assertEquals(1, api.onboardingCalls)
+        assertTrue(api.appleExchangeRequests.isEmpty())
+
+        submission.complete(Unit)
+        advanceUntilIdle()
+
+        val exchange = api.appleExchangeRequests.single()
+        assertEquals(HANDLE, exchange.transactionId)
+        assertEquals(CODE, exchange.exchangeCode)
+        assertEquals("draft-id", exchange.onboardingDeviceId)
+        assertEquals(43, exchange.codeVerifier.length)
+        assertEquals(api.appleStartRequests.single().codeChallenge, ApplePkce.challenge(exchange.codeVerifier))
+        assertEquals(SESSION, sessionStore.stored?.response)
+        assertEquals(USER, viewModel.state.value.user)
+        assertNull(viewModel.authenticationMethod.value)
+    }
+
+    @Test
+    fun browserDeadlineAndCancelCannotStopAnAcceptedExchange() = runTest(dispatcher) {
+        val api = FakeApi()
+        val exchange = CompletableDeferred<SessionResponse>()
+        api.appleExchangeResult = exchange
+        val viewModel = viewModel(api, FakeOnboardingStore(null), appleWaitingTimeoutMillis = 1_000)
+        advanceUntilIdle()
+        viewModel.beginAppleAuthentication()
+        runCurrent()
+
+        assertTrue(viewModel.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE)))
+        runCurrent()
+        assertEquals(1, api.appleExchangeRequests.size)
+        assertFalse(viewModel.cancelAppleAuthentication())
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertEquals(AuthenticationMethod.APPLE, viewModel.authenticationMethod.value)
+        assertEquals(1, api.appleExchangeRequests.size)
+
+        exchange.complete(SESSION)
+        advanceUntilIdle()
+        assertEquals(USER, viewModel.state.value.user)
+    }
+
+    @Test
+    fun cancelExpiryWrongHandleAndLateCallbacksNeverExchange() = runTest(dispatcher) {
+        val api = FakeApi()
+        val viewModel = viewModel(api, FakeOnboardingStore(null), appleWaitingTimeoutMillis = 1_000)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.beginAppleAuthentication())
+        runCurrent()
+        assertFalse(
+            viewModel.handleAppleAuthenticationCallback(
+                AppleAuthenticationCallback.Success("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", CODE),
+            ),
+        )
+        assertTrue(viewModel.cancelAppleAuthentication())
+        assertFalse(viewModel.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE)))
+
+        assertTrue(viewModel.beginAppleAuthentication())
+        runCurrent()
+        advanceTimeBy(1_001)
+        runCurrent()
+        assertNull(viewModel.authenticationMethod.value)
+        assertFalse(viewModel.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE)))
+        assertTrue(api.appleExchangeRequests.isEmpty())
+        assertEquals("Apple sign-in expired. Start again.", viewModel.state.value.authError)
+    }
+
+    @Test
+    fun callbackErrorReleasesAdmissionAndRequiresAFreshAttempt() = runTest(dispatcher) {
+        val api = FakeApi()
+        val viewModel = viewModel(api, FakeOnboardingStore(null))
+        advanceUntilIdle()
+        assertTrue(viewModel.beginAppleAuthentication())
+        runCurrent()
+
+        assertTrue(
+            viewModel.handleAppleAuthenticationCallback(
+                AppleAuthenticationCallback.Error(
+                    HANDLE,
+                    com.getmaincourse.app.features.auth.AppleAuthenticationError.PROVIDER_UNAVAILABLE,
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertNull(viewModel.authenticationMethod.value)
+        assertEquals("Apple sign-in is unavailable. Please try again.", viewModel.state.value.authError)
+        assertTrue(api.appleExchangeRequests.isEmpty())
+        assertTrue(viewModel.beginAppleAuthentication())
+    }
+
+    @Test
+    fun browserLaunchFailureReleasesTheSharedAdmission() = runTest(dispatcher) {
+        val api = FakeApi()
+        val viewModel = viewModel(api, FakeOnboardingStore(null))
+        advanceUntilIdle()
+        viewModel.beginAppleAuthentication()
+        runCurrent()
+        val command = checkNotNull(viewModel.appleBrowserLaunch.value)
+        viewModel.consumeAppleBrowserLaunch(command)
+
+        viewModel.appleBrowserLaunchFailed(command)
+
+        assertNull(viewModel.authenticationMethod.value)
+        assertEquals("No browser is available to continue with Apple.", viewModel.state.value.authError)
+        val googleAttempt = checkNotNull(viewModel.beginGoogleAuthentication())
+        assertTrue(viewModel.cancelGoogleAuthentication(googleAttempt))
+    }
+
+    @Test
+    fun providerUnavailableStartReturnsToTheExistingAuthForm() = runTest(dispatcher) {
+        val api = FakeApi().apply { appleStartFailure = ApiFailure(503, "provider detail") }
+        val viewModel = viewModel(api, FakeOnboardingStore(null))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.beginAppleAuthentication())
+        advanceUntilIdle()
+
+        assertNull(viewModel.authenticationMethod.value)
+        assertNull(viewModel.appleBrowserLaunch.value)
+        assertEquals("Apple sign-in is unavailable. Please try again.", viewModel.state.value.authError)
+        assertEquals(1, api.appleStartRequests.size)
+    }
+
+    @Test
+    fun processDeathLosesPrivateAppleProofAndStaleCallbackCannotInterruptRestoredAccount() = runTest(dispatcher) {
+        val firstApi = FakeApi()
+        val first = viewModel(firstApi, FakeOnboardingStore(null))
+        advanceUntilIdle()
+        assertTrue(first.beginAppleAuthentication())
+        runCurrent()
+
+        val restoredApi = FakeApi()
+        val restored = viewModel(
+            restoredApi,
+            FakeOnboardingStore(null),
+            FakeSessionStore(StoredSession(BASE_URL, SESSION)),
+        )
+        advanceUntilIdle()
+
+        assertFalse(restored.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE)))
+        advanceUntilIdle()
+        assertEquals(USER, restored.state.value.user)
+        assertTrue(restoredApi.appleExchangeRequests.isEmpty())
+    }
+
+    @Test
+    fun appleSecureStoreFailureDoesNotExposeOrKeepTheReturnedSession() = runTest(dispatcher) {
+        val api = FakeApi()
+        val store = FakeSessionStore().apply { failWrites = true }
+        val viewModel = viewModel(api, FakeOnboardingStore(null), store)
+        advanceUntilIdle()
+        viewModel.beginAppleAuthentication()
+        runCurrent()
+        viewModel.handleAppleAuthenticationCallback(AppleAuthenticationCallback.Success(HANDLE, CODE))
+        advanceUntilIdle()
+
+        assertEquals(1, api.appleExchangeRequests.size)
+        assertNull(store.stored)
+        assertNull(viewModel.state.value.user)
+        assertFalse(viewModel.state.value.toString().contains(SESSION.token))
+        assertEquals("Could not save the session", viewModel.state.value.authError)
+    }
+
+    @Test
+    fun debugCallbackIsRequestedOnlyForLoopbackHttpBackends() {
+        assertEquals("debug", appleCallbackFor("http://10.0.2.2:3000/", isDebugBuild = true))
+        assertEquals("debug", appleCallbackFor("http://localhost:3000/", isDebugBuild = true))
+        assertEquals("release", appleCallbackFor("http://10.0.2.2:3000/", isDebugBuild = false))
+        assertEquals("release", appleCallbackFor("https://development.example/", isDebugBuild = true))
+    }
+
     private fun viewModel(
         api: FakeApi,
         onboardingStore: FakeOnboardingStore,
         sessionStore: FakeSessionStore = FakeSessionStore(),
+        appleWaitingTimeoutMillis: Long = 300_000,
     ) = MainCourseViewModel(
         api = api,
         sessionStore = sessionStore,
@@ -280,6 +500,7 @@ class MainCourseViewModelTest {
         baseUrl = BASE_URL,
         clock = CLOCK,
         imageCleanup = {},
+        appleWaitingTimeoutMillis = appleWaitingTimeoutMillis,
     )
 
     private class FakeOnboardingStore(var record: OnboardingRecord?) : OnboardingStore {
@@ -290,8 +511,10 @@ class MainCourseViewModelTest {
     }
 
     private class FakeSessionStore(var stored: StoredSession? = null) : SessionStore {
+        var failWrites = false
         override suspend fun read() = stored
         override suspend fun write(session: StoredSession) {
+            if (failWrites) error("disk full")
             stored = session
         }
         override suspend fun clear() {
@@ -304,9 +527,13 @@ class MainCourseViewModelTest {
         var signInCalls = 0
         var signUpCalls = 0
         val googleRequests = mutableListOf<GoogleSignInRequest>()
+        val appleStartRequests = mutableListOf<AppleAuthenticationStartRequest>()
+        val appleExchangeRequests = mutableListOf<AppleAuthenticationExchangeRequest>()
         var lastSignUp: SignUpRequest? = null
         var catalogFailure = false
         var googleFailure: Throwable? = null
+        var appleExchangeResult: CompletableDeferred<SessionResponse>? = null
+        var appleStartFailure: Throwable? = null
         var onSubmitOnboarding: suspend () -> Unit = {}
 
         override suspend fun signIn(request: SignInRequest): SessionResponse {
@@ -318,6 +545,17 @@ class MainCourseViewModelTest {
             googleRequests += request
             googleFailure?.let { throw it }
             return SESSION
+        }
+        override suspend fun startAppleAuthentication(
+            request: AppleAuthenticationStartRequest,
+        ): AppleAuthenticationStartResponse {
+            appleStartRequests += request
+            appleStartFailure?.let { throw it }
+            return AppleAuthenticationStartResponse(HANDLE, APPLE_BROWSER_URL, "2026-09-08T00:05:00Z")
+        }
+        override suspend fun exchangeAppleAuthentication(request: AppleAuthenticationExchangeRequest): SessionResponse {
+            appleExchangeRequests += request
+            return appleExchangeResult?.await() ?: SESSION
         }
         override suspend fun signUp(request: SignUpRequest): SessionResponse {
             signUpCalls++
@@ -356,6 +594,9 @@ class MainCourseViewModelTest {
 
     private companion object {
         const val BASE_URL = "https://example.test/"
+        const val HANDLE = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        const val CODE = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        const val APPLE_BROWSER_URL = "https://example.test/android/apple/sign_in?transaction_id=$HANDLE"
         val CLOCK: Clock = Clock.fixed(Instant.parse("2026-09-08T00:00:00Z"), ZoneOffset.UTC)
         val USER = User(7, "Reader", "reader@example.test", false)
         val SESSION = SessionResponse("secret", "2026-12-08T00:00:00Z", USER)

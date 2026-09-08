@@ -60,6 +60,9 @@ fun OnboardingScreen(
     onSignIn: (SignInRequest) -> Unit,
     onSignUp: (SignUpRequest) -> Unit,
     onGoogleSignIn: () -> Unit,
+    onAppleSignIn: () -> Unit,
+    onCancelAppleSignIn: () -> Unit,
+    appleCanCancel: Boolean,
 ) {
     val isPreparingAuthentication = authenticationMethod != null
     if (state.step == OnboardingStep.WELCOME) {
@@ -83,6 +86,9 @@ fun OnboardingScreen(
                 onSignIn = onSignIn,
                 onSignUp = onSignUp,
                 onGoogleSignIn = onGoogleSignIn,
+                onAppleSignIn = onAppleSignIn,
+                onCancelAppleSignIn = onCancelAppleSignIn,
+                appleCanCancel = appleCanCancel,
             )
         }
         return

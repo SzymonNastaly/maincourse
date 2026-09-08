@@ -56,6 +56,9 @@ fun AuthScreen(
     onSignIn: (SignInRequest) -> Unit,
     onSignUp: (SignUpRequest) -> Unit,
     onGoogleSignIn: () -> Unit,
+    onAppleSignIn: () -> Unit,
+    onCancelAppleSignIn: () -> Unit,
+    appleCanCancel: Boolean,
 ) {
     var signup by rememberSaveable { mutableStateOf(startsInSignUpMode) }
     var name by rememberSaveable { mutableStateOf("") }
@@ -111,6 +114,19 @@ fun AuthScreen(
                 isLoading = authenticationMethod == AuthenticationMethod.GOOGLE,
                 onClick = onGoogleSignIn,
             )
+            AppleSignInButton(
+                enabled = !busy,
+                isLoading = authenticationMethod == AuthenticationMethod.APPLE,
+                onClick = onAppleSignIn,
+            )
+            if (authenticationMethod == AuthenticationMethod.APPLE && appleCanCancel) {
+                TextButton(
+                    onClick = onCancelAppleSignIn,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).testTag("auth_cancel_apple"),
+                ) {
+                    Text(stringResource(R.string.auth_cancel_apple))
+                }
+            }
             if (error != null) {
                 Text(error, color = MainCourseColors.Danger, style = MaterialTheme.typography.bodyMedium)
             }
@@ -206,6 +222,7 @@ fun AuthScreen(
 enum class AuthenticationMethod {
     EMAIL,
     GOOGLE,
+    APPLE,
 }
 
 private fun String.isValidEmail(): Boolean {
