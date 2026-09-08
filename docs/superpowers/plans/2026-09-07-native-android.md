@@ -185,8 +185,8 @@ credentials, billing, or push configuration is needed.
 
 ## Milestone 2: Identity And Account
 
-**Status:** In progress. The onboarding/account core passed its local gate on
-2026-09-08. Google sign-in is next, followed by Apple; full Milestone 2 remains
+**Status:** In progress. The onboarding/account core passed its local gate and
+final code review on 2026-09-08. Google sign-in is next, followed by Apple; full Milestone 2 remains
 open through real-provider and release-signed verification.
 
 **Core design:** [`docs/superpowers/specs/2026-09-08-android-milestone-2-core-design.md`](../specs/2026-09-08-android-milestone-2-core-design.md).
@@ -211,7 +211,7 @@ gate remains open until all three sign-in methods are verified.
 
 **Core local verification recorded on 2026-09-08:**
 - A clean API 37 gate passed debug and minified unsigned release builds,
-  debug/release lint, 122 JVM tests, and 86 device tests with no failures or
+  debug/release lint, 123 JVM tests, and 91 device tests with no failures or
   skips. Release remained fixed to the public HTTPS API, unsigned, and free of
   provider integrations.
 - The real `MainActivity`, Keystore session, Room cache, and local Rails API
@@ -234,6 +234,10 @@ gate remains open until all three sign-in methods are verified.
 - Rails onboarding/account/session/registration contracts passed 31 tests and
   73 assertions. Authenticated account `401` and local-cleanup failure are
   covered by automated fault-injection tests, not claimed as live Rails cases.
+- Final code review and scoped re-review accepted the core slice after explicit
+  onboarding schema serialization, stronger cancellation coverage, and clearer
+  pending-local-save feedback. Final core code commit: `29d9a14`; the 214-test
+  clean Android gate includes those fixes.
 - The core gate does not close Milestone 2. Google then Apple integration, real
   provider identities, release signing, and the full milestone review remain
   pending. Cross-process cleanup after OS termination or broken storage remains
@@ -423,11 +427,10 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
   cookbook switching, and cached recipe list/detail slice passed its local
   acceptance gate and final code review. Evidence and integration tracking are in
   [#93](https://github.com/SzymonNastaly/maincourse/issues/93).
-- Milestone 2 onboarding and account/preferences passed their local core gate;
+- Milestone 2 onboarding and account/preferences passed their local core gate and final code review;
   evidence and implementation tracking are in #97. Integrate Google next and
   Apple afterward when their provider configuration is ready. Full Milestone 2
-  remains in progress, and final branch review of the core slice is still
-  controller-owned.
+  remains in progress through its provider and release-signed gates.
 - Continue Milestones 3–5 without treating provider or Play gates as blockers.
   All external tracks remain open in #92.
 - Play registration is temporarily owner-blocked. Follow the working sequence above; local OAuth SHA-1 discovery and Google Cloud/Firebase configuration do not depend on Play access.
