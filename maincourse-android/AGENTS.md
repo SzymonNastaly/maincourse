@@ -39,8 +39,10 @@ These instructions apply to `maincourse-android/`.
   composables.
 - Keep the app light-only with dynamic color disabled.
 - Use native Material sans for text and bundled Plex Mono only for numerics.
-- The Google button is the sole typography/color exception: keep the official
-  full-color G, Google Sans Medium, and provider component colors confined to it.
+- Provider buttons are the only typography/color exceptions: keep the official
+  full-color G, Google Sans Medium, and Google component colors confined to the
+  Google button; keep the white Apple mark and black/white treatment confined
+  to the Continue with Apple button.
 - Use 8dp/10dp/12dp control/card/panel radii, flat hairline surfaces, native
   Material behavior, and checked-in Material Symbols vectors.
 - Preserve the four shell destinations: Recipes, Shopping, Search, Settings.
@@ -68,6 +70,12 @@ These instructions apply to `maincourse-android/`.
   separate package/SHA-1 Android client ID. Keep the chooser Activity-owned and
   the accepted Rails exchange view-model-owned; never persist or log its token or
   nonce, and never auto-relaunch after recreation.
+- Apple sign-in uses the system browser and a PKCE-bound Rails transaction. Keep
+  its handle, verifier, exchange code, and relative five-minute wait in volatile
+  retained memory only; never auto-relaunch or retry an exchange. Debug may use
+  `com.getmaincourse.app.debug:/oauth/apple` with local Rails, while release
+  accepts only the exact HTTPS App Link. Process-death and stale callbacks must
+  be dropped without disturbing a restored account.
 - Preserve `allowBackup="false"`, `fullBackupContent="false"`, and the API 31+
   cloud-backup/device-transfer exclusions.
 - Preserve `X-Cookbook-Id`, user/cookbook data isolation, and the Rails 90-day

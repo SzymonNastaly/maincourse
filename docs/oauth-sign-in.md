@@ -1,8 +1,8 @@
 # OAuth sign-in
 
 MainCourse supports Sign in with Apple and Google on the Rails web app and the
-native iOS app, plus Google sign-in in the native Android app. Email and password
-remain available. Provider identity is
+native iOS app, plus Google Credential Manager and an Apple browser handoff in
+the native Android app. Email and password remain available. Provider identity is
 resolved by the stable `(provider, uid)` pair. A verified provider may join an
 existing OAuth-only user with the same email. It does not automatically join a
 password account because password signup does not verify email ownership; the
@@ -15,9 +15,9 @@ Browser sign-in runs through OmniAuth middleware configured in
 `config/initializers/omniauth.rb`. The callback creates the existing database
 `Session` and signed `session_id` cookie.
 
-Native sign-in runs through Apple's `AuthenticationServices` framework, the
-official `GoogleSignIn-iOS` package, or Android Credential Manager. The client
-sends the signed ID token and a nonce to
+Direct native sign-in runs through Apple's `AuthenticationServices` framework,
+the official `GoogleSignIn-iOS` package, or Android Credential Manager. The
+client sends the signed ID token and a nonce to
 `POST /api/v1/oauth_session`. Rails verifies the provider signature, issuer,
 audience, expiry, email verification, and nonce before issuing the same opaque
 `ApiToken` used by password login. Apple authorization codes are also exchanged
@@ -28,6 +28,12 @@ Provider accounts live in `identities`. Apple refresh tokens use Rails Active
 Record Encryption, so the SQLite database and Litestream backups contain only
 ciphertext. OAuth-only users have a nullable `password_digest`; they can later
 set a password through the existing reset-password flow.
+
+Android Apple sign-in deliberately does not send a web-audience Apple token to
+the native OAuth endpoint. It starts an anonymous PKCE transaction, authenticates
+through the existing `/auth/apple/callback`, and exchanges a short-lived proof
+for the same opaque `ApiToken` session used by email and Google. It creates no
+Rails browser `Session` or authenticated cookie.
 
 ## Apple account creation confirmation
 
@@ -51,7 +57,9 @@ identity requires the updated app or the web flow.
 On the web, an unconfirmed callback redirects to a read-only confirmation page.
 Its create action starts a fresh CSRF-protected `POST /auth/apple` request;
 creation intent comes only from OmniAuth's state-validated request-phase
-parameters, not callback query or form parameters.
+parameters, not callback query or form parameters. The Android browser handoff
+uses this same rule and returns to the app only after the fresh callback has
+authorized its server-side transaction.
 
 Returning `(provider, uid)` identities keep their existing owner even if Apple
 later supplies a different email. The established verified same-email rule may
@@ -59,6 +67,52 @@ attach a provider identity to an OAuth-only account, but confirmation does not
 merge accounts, transfer cookbook data, link an unlike email, or bypass a
 password-account conflict. Authenticated account linking remains a separate
 feature.
+
+## Android Apple browser handoff
+
+`POST /api/v1/apple_auth_transaction` accepts only `code_challenge` and
+`callback`. The callback selector is `release`, or `debug` only in a local Rails
+environment; clients never supply a return URI. The response contains an opaque
+`transaction_id`, same-origin browser URL, and expiry. Neither this endpoint nor
+the exchange endpoint accepts an API bearer or cookbook context.
+
+The `apple_auth_transactions` row stores SHA-256 digests of independently
+generated 32-byte transaction handles and exchange codes, the PKCE S256
+challenge, one server-selected return URI, optional user reference, and expiry,
+authorization, confirmation, and consumption timestamps. It never stores a raw
+handle/code, PKCE verifier, Apple token, authorization code, or refresh token.
+The transaction expires five minutes after creation. Once authorized, its
+exchange proof expires after one minute or at transaction expiry, whichever is
+earlier.
+
+The same-origin `GET /android/apple/sign_in` page is inert. Its CSRF-protected
+provider POST captures `android_transaction` in OmniAuth request-phase session
+state; the callback never trusts a callback query/body handle. The Android-only
+Apple strategy preserves the normal signature, issuer, audience, time, and OAuth
+state checks while requiring and consuming the expected nonce even when the
+upstream strategy's `nonce_supported` option is absent or false. State and nonce
+are consumed on success and failure. A valid callback authorizes the transaction
+under its row lock and redirects with only `transaction_id` and
+`exchange_code`. Fixed cancellation/failure codes use `transaction_id` and
+`error`; provider payloads are not reflected.
+
+`POST /api/v1/apple_auth_transaction/exchange` accepts `transaction_id`,
+`exchange_code`, RFC 7636 `code_verifier`, `device_name`, and optional
+`onboarding_device_id`. Under one transaction it verifies PKCE, authorization,
+expiry, and non-consumption, creates the `ApiToken`, links onboarding, and marks
+the exchange consumed. Invalid, expired, mismatched, and replayed requests share
+one generic 400 response. Wrong guesses do not consume a still-valid proof.
+
+Return destinations are fixed: release uses the verified-link candidate
+`https://app.getmaincourse.com/android/auth/apple`; local debug may use
+`com.getmaincourse.app.debug:/oauth/apple`. The custom scheme proves neither
+domain ownership nor release signing. Android keeps the verifier and a relative
+five-minute wait only in retained process memory. Rotation keeps the attempt,
+but process death drops it; stale callbacks are ignored. Cancel, timeout, or any
+exchange outcome clears private proof. An ambiguous network failure is never
+retried automatically because the exchange is one-use; the user starts a fresh
+attempt. Bearers remain in the HTTPS response and Android Keystore-backed
+session storage, never in callback URLs.
 
 ## Apple configuration
 
@@ -70,6 +124,8 @@ In Apple Developer Certificates, Identifiers & Profiles:
    same Apple subject identifier.
 3. Configure domain `app.getmaincourse.com` and return URL
    `https://app.getmaincourse.com/auth/apple/callback` on that Services ID.
+   Android reuses this callback; do not register its App Link as a second Apple
+   return URL.
 4. Create a Sign in with Apple key for the same primary App ID. Download the
    `.p8` once and record its Key ID.
 5. Register the production email domain and sender with Apple's private email
@@ -177,6 +233,25 @@ returning-user identity, and the Rails exchange require an owner-controlled test
 account and explicit consent. Release verification additionally requires a
 genuinely signed build whose certificate is registered for
 `com.getmaincourse.app`; the unsigned repository release build is not evidence.
+
+Android Apple verification likewise starts from the real `MainActivity`. A
+local HTTP landing intentionally reports that HTTPS setup is required; it can
+verify start, browser task, CSRF-protected cancellation, custom-scheme return,
+process-death rejection, and email fallback, but not Apple authentication. A
+controlled local transaction authorized to a dedicated fixture can verify the
+actual callback parser, PKCE exchange, Keystore session, and Room startup. Label
+that evidence as fixture proof, not Apple credential validation. Real acceptance
+requires the configured Services ID on a registered HTTPS origin, an
+owner-authorized Apple account including Hide My Email, and the name fallback
+after the fresh confirmation authorization.
+
+The release App Link is not verified until `app.getmaincourse.com` serves a
+matching `assetlinks.json` for the certificate that actually signs
+`com.getmaincourse.app`. The repository's unsigned release build and debug
+custom scheme are not substitutes. The browser fallback at
+`/android/auth/apple` gives static return-to-app guidance and never echoes its
+query. Locally forwarded HTTPS can validate that response shape, but cannot be
+claimed as production proxy or domain-association proof.
 
 Provider JWKS and Apple token endpoint calls are stubbed in the Rails test
 suite. Run `bin/ci`, `bin/ios-build`, `bin/ios-test`, `bin/android-build`, and

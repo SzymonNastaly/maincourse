@@ -15,7 +15,7 @@ module Android
     assert_equal "no-referrer", response.headers["Referrer-Policy"]
     assert_select "h1", "Continue with Apple"
     assert_select "form[action='/auth/apple?android_transaction=#{handle}'][method='post'][data-turbo='false']"
-    assert_select "form[action='/android/apple/cancel'][method='post'] input[name='transaction_id'][value='#{handle}']"
+    assert_select "form[action='/android/apple/cancel'][method='post'][data-turbo='false'] input[name='transaction_id'][value='#{handle}']"
     assert_select "input[name='id_token']", count: 0
     assert_select "input[name='authorization_code']", count: 0
     assert_select "input[name='exchange_code']", count: 0
@@ -30,6 +30,7 @@ module Android
     assert_response :success
     assert_select "h1", "HTTPS setup required"
     assert_select "form[action^='/auth/apple']", count: 0
+    assert_select "form[action='/android/apple/cancel'][method='post'][data-turbo='false'] input[name='transaction_id'][value='#{handle}']"
     assert_select "p", text: /registered HTTPS MainCourse address/
   end
 
@@ -61,6 +62,33 @@ module Android
     assert_equal "no-referrer", response.headers["Referrer-Policy"]
   end
 
+  test "browser cancel accepts its valid CSRF token when no-referrer produces a null origin" do
+    _transaction, handle = start_transaction
+
+    with_forgery_protection do
+      get "/android/apple/sign_in", params: { transaction_id: handle }
+      token = css_select("form[action='/android/apple/cancel'] input[name='authenticity_token']").sole["value"]
+
+      post "/android/apple/cancel",
+        params: { transaction_id: handle, authenticity_token: token },
+        headers: { "HTTP_ORIGIN" => "null" }
+
+      assert_redirected_to "https://app.getmaincourse.com/android/auth/apple?transaction_id=#{handle}&error=cancelled"
+    end
+  end
+
+  test "browser cancel still rejects a missing CSRF token" do
+    _transaction, handle = start_transaction
+
+    with_forgery_protection do
+      post "/android/apple/cancel",
+        params: { transaction_id: handle },
+        headers: { "HTTP_ORIGIN" => "null" }
+
+      assert_response :unprocessable_content
+    end
+  end
+
   test "cancel with an unknown handle renders locally without a redirect" do
     post "/android/apple/cancel", params: { transaction_id: "unknown" }
 
@@ -87,6 +115,14 @@ module Android
     private
       def start_transaction
         AppleAuthTransaction.start!(code_challenge: "A" * 43, callback: "release")
+      end
+
+      def with_forgery_protection
+        previous = ActionController::Base.allow_forgery_protection
+        ActionController::Base.allow_forgery_protection = true
+        yield
+      ensure
+        ActionController::Base.allow_forgery_protection = previous
       end
   end
 end

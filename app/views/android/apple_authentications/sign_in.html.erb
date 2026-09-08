@@ -26,9 +26,11 @@
                   method: :post,
                   class: "mc-btn mc-btn-apple w-full py-3 text-[13.5px]",
                   form: { data: { turbo: false } } %>
-    <%= button_to "Cancel", android_apple_cancel_path,
-                  method: :post,
-                  params: { transaction_id: @transaction_id },
-                  class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
   </div>
 <% end %>
+
+<%= button_to "Cancel", android_apple_cancel_path,
+              method: :post,
+              params: { transaction_id: @transaction_id },
+              class: "mc-btn mc-btn-outline mt-2.5 w-full py-3 text-[13.5px]",
+              form: { data: { turbo: false } } %>

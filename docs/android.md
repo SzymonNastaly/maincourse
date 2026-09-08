@@ -1,6 +1,6 @@
 # Android Development
 `maincourse-android/` is the native Kotlin/Jetpack Compose client. It provides
-first-run onboarding, native email signup/sign-in, cookbook-scoped recipe
+first-run onboarding, native email, Google, and Apple sign-in, cookbook-scoped recipe
 browsing with offline cache support, account settings/deletion, and an
 interactive development gallery. It uses the same Rails API and accounts as the
 web and iOS clients. See
@@ -17,9 +17,9 @@ and is tracked in [issue #97](https://github.com/SzymonNastaly/maincourse/issues
 Its Google slice follows a separate
 [approved design](superpowers/specs/2026-09-08-android-milestone-2-google-design.md)
 and is tracked in [issue #98](https://github.com/SzymonNastaly/maincourse/issues/98).
-The core and Google implementation gates have passed locally, but a real Google
-account, release-signed Google verification, Apple sign-in, and the full
-Milestone 2 review remain outstanding.
+The core, Google, and Apple implementation gates have passed locally. Real
+Google and Apple accounts, release-signed provider verification, production App
+Link association, and the full Milestone 2 review remain outstanding.
 
 ## Bootstrap Contract
 | Setting | Pinned value |
@@ -99,6 +99,25 @@ the Rails exchange, so that phase may finish across Activity recreation. A new
 Activity or process never restores or relaunches a chooser. Google and email
 share one admission/busy gate, and cancellation restores the existing form and
 its volatile field values.
+
+Explicit Apple sign-in uses a Rails-hosted browser handoff and the system
+browser. The retained view model creates an in-memory PKCE verifier, starts an
+anonymous five-minute transaction, and launches the returned same-origin URL
+once in a separate browser task. The verifier, handle, and relative five-minute
+wait deadline are never persisted. Rotation retains the attempt without
+relaunching it; process death loses the proof, so a later callback is discarded
+and the user starts again. Cancel, timeout, provider failure, or a failed single
+exchange releases the shared auth gate. There is no automatic retry.
+
+`MainActivity` accepts Apple returns in `onCreate` and `onNewIntent`. Release
+parses only `https://app.getmaincourse.com/android/auth/apple`; debug additionally
+accepts `com.getmaincourse.app.debug:/oauth/apple`. Parsing rejects duplicate,
+unknown, conflicting, oversized, or malformed parameters and requires the
+returned transaction handle to match the active in-memory attempt. The debug
+custom scheme is a local-development convenience, not Digital Asset Links
+proof. The release intent filter requests App Link verification, but production
+association remains unverified until the owner publishes `assetlinks.json` for
+the certificate that actually signs `com.getmaincourse.app`.
 
 The protected shell preserves four destinations: Recipes, Shopping, Search, and
 Settings. Recipes and account/preferences Settings are real; Shopping and Search
@@ -238,6 +257,9 @@ unlinked analytics response by design.
 - Use mobile radii of 8dp for controls, 10dp for cards, and 12dp for panels.
 - Keep surfaces flat with hairline borders; reserve elevation for native transient/floating UI.
 - Keep native Material navigation, dialogs, sheets, fields, touch feedback, accessibility, and adaptive behavior.
+- Provider controls are the only color/type exceptions: the Google button keeps
+  its full-color G and Google Sans Medium, while the Apple button keeps its
+  official white mark and black/white treatment.
 - Use Material Symbols as checked-in vectors, not an icon font, emoji, or a competing family.
 - Keep the adaptive launcher icon's original brown cookbook artwork. Its
   monochrome H/book stencil is only for launchers when the user explicitly
@@ -350,6 +372,13 @@ uses the fixed public HTTPS API, and contains neither the local-network
 permission nor a debug URL override. Signing keys and Play App Signing are
 user-owned.
 
+The local HTTP server can create an Apple transaction and render its browser
+landing, but it cannot complete real Apple authorization because Apple requires
+a registered HTTPS return URL. The landing says that HTTPS setup is required
+and retains a CSRF-protected Cancel action that returns to the app. Use a real
+registered HTTPS development origin for provider testing; never add a fake
+consent route or weaken production redirects to make localhost appear valid.
+
 The manifest sets `allowBackup="false"` and `fullBackupContent="false"`. `data_extraction_rules.xml` also excludes every storage
 domain, including device-protected storage, from cloud backup and device transfer on API 31+.
 
@@ -374,6 +403,16 @@ SDK credential parsing/error mapping, shared email/provider admission, chooser
 and exchange ownership across recreation, cleanup notification, and both auth
 surfaces. They do not substitute for a real Google account and registered
 package/certificate.
+
+Apple tests cover RFC 7636, exact anonymous start/exchange payloads, strict
+callback parsing, transaction binding, one-shot browser launch, rotation,
+process-death rejection, relative timeout behavior, cancellation, and reuse of
+the existing secure session path. Rails tests cover strict browser state/nonce,
+digest-only and single-use transaction state, callback failure mapping, and the
+explicit new-account decision. Synthetic credentials and a controlled local
+fixture can prove the handoff boundaries, but neither proves Apple credential
+validation, Hide My Email, a registered HTTPS callback, or a verified release
+App Link.
 
 Compose and image device tests run through `MainCourseTestActivity`, a
 non-exported host that exists only in the debug source set and is absent from
@@ -460,9 +499,11 @@ independent tracks, not a sequence that starts with Play registration:
   release signing identities when available. Provider integration requires the
   real Cloud configuration and a suitable Google-enabled emulator/device.
 - **Apple now:** keep Apple's existing primary App ID grouping and Services ID
-  so Apple subjects remain shared. Android uses the secure web handoff in the
-  roadmap and requires the account-identity fix in #86 and a registered HTTPS
-  callback. Play access is not a prerequisite.
+  so Apple subjects remain shared. Android's PKCE-bound web handoff reuses the
+  existing `/auth/apple/callback`; real acceptance still requires #86, a
+  registered HTTPS callback, an owner-controlled Apple/Hide My Email identity,
+  and the fresh-confirmation name fallback check. Play access is not a
+  prerequisite.
 - **Firebase now:** register the exact package for each build being tested
   (including `.debug`), configure FCM, and test on a Google APIs/Google Play
   emulator. Server credentials belong in Rails deployment secrets. Physical
@@ -477,8 +518,11 @@ independent tracks, not a sequence that starts with Play registration:
   verification; publish production `assetlinks.json` for the actual production
   signing certificate once known.
 
-Google sign-in is integrated and its local code/device gate is complete. The
-owner-recorded debug Android OAuth registration in #92 remains live-unverified
-until a real credential is returned for this package and certificate. Successful
-provider identity, release-signed Google, Apple, billing, FCM, and app-link
-behavior retain their respective real-service gates.
+Google and Apple sign-in are integrated and their local code/device gates are
+complete. The owner-recorded debug Android Google registration in #92 remains
+live-unverified until a real credential is returned for this package and
+certificate. Apple credential validation, registered-HTTPS return, Hide My
+Email, release-signed provider behavior, production App Link association,
+billing, and FCM retain their respective real-service gates. Milestone 3 may
+proceed while those owner-controlled gates and the final Milestone 2 review stay
+open.

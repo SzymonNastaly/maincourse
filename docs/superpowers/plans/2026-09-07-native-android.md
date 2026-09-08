@@ -12,7 +12,7 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 |---|---|---|
 | 0. Enablement and scaffold | Complete | Native preview, local tooling, CI definition, and local verification complete; external accounts tracked in #92 |
 | 1. First vertical slice | Complete | Email session through cached recipe list/detail passed local API 37 acceptance and final code review; evidence in #93 |
-| 2. Identity and account | In progress | Core, Google, and the shared Apple account-creation prerequisite passed local component gates; Android Apple handoff, live providers, release signing, and full review remain |
+| 2. Identity and account | In progress | Core, Google, and Apple handoff implementation gates passed locally; live providers, release signing/App Links, and full review remain |
 | 3. Recipe workflows | Planned | Search, editing, imports, cooking, and recipe actions |
 | 4. Shopping list | Planned | Durable offline shopping workflow |
 | 5. Collaboration | Planned | Shared cookbooks and invitations |
@@ -20,14 +20,14 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | 7. Notifications | Planned | FCM registration, delivery, tracking, and routing |
 | 8. Release | Planned | Production hardening and Play release |
 
-Milestones 0 and 1 are complete. Milestone 2's onboarding/account core, Google
-implementation, and shared Rails/web/iOS Apple account-creation prerequisite
-passed their separate local component gates on 2026-09-08. The Android Apple
-browser handoff is not implemented. Real Google and Apple accounts,
-release-signed provider verification, and the full milestone review remain, so
-the milestone is not complete. Core evidence is tracked in #97, Google evidence
-in #98, the Apple plan in [#99](https://github.com/SzymonNastaly/maincourse/issues/99),
-and external setup in #92.
+Milestones 0 and 1 are complete. Milestone 2's onboarding/account core, Google,
+shared Rails/web/iOS Apple account-creation prerequisite, and Android Apple
+browser handoff passed their separate local implementation gates on 2026-09-08.
+Real Google and Apple accounts, registered HTTPS Apple acceptance, release-signed
+provider verification, production App Link association, and the full milestone
+review remain, so the milestone is not complete. Core evidence is tracked in
+#97, Google evidence in #98, Apple prerequisite evidence in #99, handoff evidence
+in #100, and external setup in #92.
 
 ### Working sequence while Play registration waits
 
@@ -188,11 +188,13 @@ credentials, billing, or push configuration is needed.
 
 ## Milestone 2: Identity And Account
 
-**Status:** In progress. The onboarding/account core and Google implementation
-passed their local gates and reviews on 2026-09-08. The shared Rails/web/iOS
-Apple account-creation prerequisite also passed its component gates; the Android
-handoff, owner-controlled real provider identities, release-signed verification,
-and the full milestone review remain.
+**Status:** In progress. The onboarding/account core, Google implementation,
+shared Rails/web/iOS Apple account-creation prerequisite, and Android Apple
+handoff passed local implementation gates on 2026-09-08. The Apple handoff is
+ready for the final whole-branch review, which has not yet occurred.
+Owner-controlled real provider identities, registered HTTPS Apple acceptance,
+release-signed verification, production App Link association, and the full
+milestone gate remain open.
 
 **Core design:** [`docs/superpowers/specs/2026-09-08-android-milestone-2-core-design.md`](../specs/2026-09-08-android-milestone-2-core-design.md).
 **Implementation:** [issue #97](https://github.com/SzymonNastaly/maincourse/issues/97).
@@ -200,12 +202,16 @@ and the full milestone review remain.
 **Google implementation:** [issue #98](https://github.com/SzymonNastaly/maincourse/issues/98).
 **Apple prerequisite design:** [`docs/superpowers/specs/2026-09-08-apple-account-confirmation-design.md`](../specs/2026-09-08-apple-account-confirmation-design.md).
 **Apple prerequisite implementation:** [issue #99](https://github.com/SzymonNastaly/maincourse/issues/99), addressing [issue #86](https://github.com/SzymonNastaly/maincourse/issues/86).
+**Android Apple design:** [`docs/superpowers/specs/2026-09-08-android-apple-handoff-design.md`](../specs/2026-09-08-android-apple-handoff-design.md).
+**Android Apple implementation:** [issue #100](https://github.com/SzymonNastaly/maincourse/issues/100).
 
 **Sequence:** Implement onboarding and account/preferences independently of
 provider enablement. Google and Apple can be developed and tested before Play
 registration with the appropriate Cloud/Apple configuration and local signing
 identity. Provider blockers must not stop Milestones 3–5; the full Milestone 2
 gate remains open until all three sign-in methods are verified.
+After the pending final whole-branch review, continue automatically into
+Milestone 3 rather than waiting for owner-controlled provider and release gates.
 
 **Scope:**
 - Google and Apple sign-in in addition to email/password; all three methods are required for public v1.
@@ -277,8 +283,9 @@ gate remains open until all three sign-in methods are verified.
 - No provider credential was returned, so the owner-recorded Cloud registration,
   consent, returning identity, and live Rails exchange remain unverified. These
   require an owner-added account and explicit authorization; they are distinct
-  from the completed implementation gate. Android Apple handoff is next, and the
-  full Milestone 2 gate remains open; the local Google code review is complete.
+  from the completed implementation gate. The Android Apple handoff now has its
+  own local implementation gate, while the full Milestone 2 gate remains open;
+  the local Google code review is complete.
 
 **Shared Apple prerequisite verification recorded on 2026-09-08:**
 - Rails, web, and iOS now require an explicit decision before an unknown Apple
@@ -298,8 +305,36 @@ gate remains open until all three sign-in methods are verified.
 - These are implementation gates, not real-provider proof. A registered HTTPS
   callback, owner Apple account, Hide My Email, and the possible absence of the
   one-time Apple name on the second authorization remain acceptance checks.
-  Android has no Apple provider code yet, and the full Milestone 2 provider and
-  owner checks remain open. Keep #86 open until that evidence exists.
+  The full Milestone 2 provider and owner checks remain open. Keep #86 open until
+  that evidence exists.
+
+**Android Apple handoff implementation verification recorded on 2026-09-08:**
+- Rails now owns a digest-only, PKCE-bound, five-minute handoff transaction and
+  one-minute single-use exchange. The existing Apple callback uses strict
+  Android-only state/nonce handling, preserves explicit account creation, and
+  creates no browser login session. Full Rails CI passed 984 tests plus 9 system
+  tests; the only 2 skips were the expected recipe-corpus snapshot skips.
+- The clean Android gate passed debug and minified unsigned release builds,
+  debug/release lint, 165 JVM tests, and 109 device tests with no failures,
+  errors, or skips on the API 37 emulator.
+- The real `MainActivity` opened the same-origin local landing in Chrome, which
+  showed actionable HTTPS-required guidance rather than fake Apple consent. Its
+  CSRF-protected Cancel followed the real 302 custom-scheme return and released
+  auth admission. A callback after process death was discarded without an
+  exchange, explicit retry remained available, and email login still reached
+  the protected app.
+- A controlled local transaction authorized to the existing dedicated fixture
+  completed the real implicit callback, PKCE exchange, encrypted session write,
+  and Room-backed startup exactly once. This is local fixture proof, not Apple
+  credential validation or live-provider evidence.
+- The unchanged iOS source passed all 261 tests: 259 passed and 2 API recipe
+  fixture tests skipped because the fixture account returned no recipes. This
+  preserves the shared OAuth contract after the Android-only strategy change.
+- Real Apple credential validation, registered-HTTPS callback, Hide My Email,
+  fresh-confirmation name fallback, real Google identity, release signing, and
+  production `assetlinks.json` verification remain owner gates in #86/#92/#100.
+  The final whole-branch review is still pending; after it, Milestone 3 proceeds
+  independently of those external gates.
 
 ## Milestone 3: Recipe Workflows
 
@@ -422,20 +457,33 @@ The source baseline is the current SwiftUI app, especially `RootView.swift`, `Ma
 ## Security And Integration Decisions
 
 ### Apple on Android
-- Use a browser-based Apple authorization flow with server-generated `state` and `nonce`; validate both exactly once.
+- Use a browser-based Apple authorization flow with OmniAuth-generated `state`
+  and Apple nonce; validate and consume both exactly once. Android handoffs use
+  an explicitly loaded stricter Apple strategy without changing ordinary web or
+  native iOS authentication.
 - Keep the existing Apple Services ID grouped under the iOS primary App ID so the stable Apple subject remains shared across web, iOS, and Android handoff.
 - Apply the shared explicit-creation contract: first try unconfirmed, explain
   that a new account creates a separate cookbook, and begin an entirely fresh
   authorization after confirmation. Never infer a link from email or carry a
   rejected provider credential into the confirmed attempt.
-- After the callback, Rails returns a short-lived, single-use exchange code bound to the initiating Android login transaction. The app exchanges it over TLS for the normal API token.
+- Android starts an anonymous five-minute transaction with a PKCE S256 challenge.
+  Rails stores only handle and exchange-code digests, a server-selected return
+  URI, and state timestamps; it stores no verifier or provider credential.
+- After the callback, Rails returns an exchange code that expires after one
+  minute or with the transaction, whichever comes first. The app exchanges it
+  once for the normal API token; wrong proof does not consume the valid code.
 - Never place an API bearer token in a redirect URL, app link, browser history, logs, or analytics.
 - Consume or expire the exchange code atomically and reject replay, mismatched app/transaction binding, invalid state, and invalid nonce.
+- Local debug may return through `com.getmaincourse.app.debug:/oauth/apple`; only
+  release accepts `https://app.getmaincourse.com/android/auth/apple`. Process
+  death discards the in-memory verifier, and network ambiguity requires an
+  explicit fresh attempt rather than exchange retry.
 - The shared prerequisite for
   [#86](https://github.com/SzymonNastaly/maincourse/issues/86) is implemented
   under [#99](https://github.com/SzymonNastaly/maincourse/issues/99). Design and
-  implement the Android handoff next; do not close #86 or call the provider gate
-  complete until registered-HTTPS and real Hide My Email acceptance passes.
+  Android handoff implementation is locally gated; do not close #86 or call the
+  provider gate complete until registered-HTTPS and real Hide My Email
+  acceptance passes.
 
 ### Imports And Android Shares
 - Current import POST endpoints have no idempotency contract. Do not automatically retry an ambiguous timeout or replay work after process death; let the user deliberately retry after checking status.
@@ -488,6 +536,7 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
 | 2026-09-08 | Milestone 2 onboarding/account core passed its local Rails/API 37 gate; Google then Apple remain separate required provider slices, so the full milestone stays in progress. |
 | 2026-09-08 | Android Google Credential Manager implementation passed its local code and zero-account chooser gate; real account/consent, release signing, Apple, and full Milestone 2 review remain separate gates. |
 | 2026-09-08 | Shared Rails/web/iOS Apple account-creation confirmation passed local component gates under #99. Android handoff and real registered-HTTPS/Hide My Email acceptance remain; #86 and the full Milestone 2 review stay open. |
+| 2026-09-08 | Android's PKCE-bound Apple browser handoff passed its local Rails/API 37 implementation gate, including real browser cancellation and controlled fixture exchange. Real Apple/Google identities, registered HTTPS, production App Links, release signing, #86, and final whole-branch review stay open; Milestone 3 follows independently. |
 
 ## Handoff
 
@@ -499,11 +548,13 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
   evidence is in #97. Google code and zero-account chooser behavior passed their
   local gate in #98, but owner-authorized live identity and release-signed checks
   remain. The shared Apple account-creation prerequisite passed Rails/web/iOS
-  component gates under #99; Android handoff is next. Real Apple/Hide My Email,
-  release-signed checks, #86, full Milestone 2, and final branch review remain
-  open.
+  component gates under #99, and Android's Apple handoff passed its local
+  implementation gate under #100. Real Apple/Hide My Email, registered HTTPS,
+  production App Links, release-signed Google/Apple checks, #86, full Milestone
+  2, and final whole-branch review remain open.
 - Continue Milestones 3–5 without treating provider or Play gates as blockers.
-  All external tracks remain open in #92.
+  Milestone 3 is the automatic next implementation scope after the pending final
+  review. All external tracks remain open in #92.
 - Play registration is temporarily owner-blocked. Follow the working sequence above; local OAuth SHA-1 discovery and Google Cloud/Firebase configuration do not depend on Play access.
 - Before implementation work, consult the milestone's GitHub issues and update this roadmap only when scope, sequencing, gates, or decisions change.
 - Do not mark a milestone complete from code presence alone; its gate and listed verification must have recorded evidence.
