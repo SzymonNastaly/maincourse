@@ -1092,6 +1092,41 @@ class SessionControllerTest {
     }
 
     @Test
+    fun postedRecipeSaveSurvivesCookbookSwitchAndCommitsItsCapturedSource() = runTest {
+        val mutationStarted = CompletableDeferred<Unit>()
+        val releaseMutation = CompletableDeferred<Unit>()
+        val acknowledged = SOUP_DETAIL.copy(name = "Edited while switching", updatedAt = "2026-09-08T10:00:00Z")
+        val store = FakeCatalogStore()
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL, SHARED) }
+            recipesBlock = { _, cookbookId -> if (cookbookId == PERSONAL.id) listOf(SOUP) else listOf(SALAD) }
+            updateRecipeBlock = { _, _, _, _ ->
+                mutationStarted.complete(Unit)
+                releaseMutation.await()
+                acknowledged
+            }
+        }
+        val controller = controller(api = api, catalogStore = store, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+
+        val mutation = controller.saveRecipe(changedDraft(), null)
+        mutationStarted.await()
+        val switching = controller.switchCookbook(SHARED.id)
+        runCurrent()
+
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertFalse(mutation.isCompleted)
+        releaseMutation.complete(Unit)
+        mutation.join()
+        switching.join()
+
+        assertEquals(acknowledged, store.detail(RecipeScope(USER.id, PERSONAL.id), SOUP.id))
+        assertEquals(SHARED.id, controller.state.value.activeCookbookId)
+        assertEquals(listOf(SALAD), controller.state.value.recipes)
+    }
+
+    @Test
     fun queuedRefreshDoesNotRunAfterLogoutAndFreshReadsWorkAfterTheNextLogin() = runTest {
         val mutationEntered = CompletableDeferred<Unit>()
         val releaseMutation = CompletableDeferred<Unit>()
@@ -2204,6 +2239,243 @@ class SessionControllerTest {
         assertTrue(sessionStore.cleared)
         assertTrue(store.cleared)
         assertEquals(1, imageCleanups)
+    }
+
+    @Test
+    fun cancellingControllerRootRejectsAndDiscardsALateNonCancellablePreparedImage() = runTest {
+        val preparationStarted = CompletableDeferred<Unit>()
+        val releasePreparation = CompletableDeferred<Unit>()
+        val prepared = PreparedRecipeImage("/private/user-7/late.jpg", USER.id, "late")
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val controllerJob = Job(coroutineContext[Job])
+        val controllerScope = CoroutineScope(coroutineContext + controllerJob)
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL) }
+                recipesBlock = { _, _ -> listOf(SOUP) }
+            },
+            session = SESSION,
+            controllerScope = controllerScope,
+            prepareRecipeImage = { _, _ ->
+                preparationStarted.complete(Unit)
+                withContext(NonCancellable) { releasePreparation.await() }
+                prepared
+            },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        val preparation = controller.prepareRecipeImage("content://recipe/late")
+        preparationStarted.await()
+        controllerJob.cancel()
+        releasePreparation.complete(Unit)
+        preparation.join()
+
+        assertFalse(controller.recipeImagePreparationState.value.status == RecipeImagePreparationStatus.READY)
+        assertEquals(listOf(prepared), discarded)
+    }
+
+    @Test
+    fun cancellingControllerRootCancelsSessionAccountAndRecipeActionWorkers() = runTest {
+        val accountStarted = CompletableDeferred<Unit>()
+        val actionStarted = CompletableDeferred<Unit>()
+        val accountCancelled = CompletableDeferred<Unit>()
+        val actionCancelled = CompletableDeferred<Unit>()
+        val root = Job(backgroundScope.coroutineContext[Job])
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            updateAccountBlock = { _, _ ->
+                accountStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    accountCancelled.complete(Unit)
+                }
+            }
+            updateRecipeBlock = { _, _, _, _ ->
+                actionStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    actionCancelled.complete(Unit)
+                }
+            }
+        }
+        val controller = controller(
+            api = api,
+            session = SESSION,
+            controllerScope = CoroutineScope(coroutineContext + root),
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        val account = controller.updateName("Ada")
+        val action = controller.saveRecipe(changedDraft(), null)
+        accountStarted.await()
+        actionStarted.await()
+        root.cancel()
+        account.join()
+        action.join()
+
+        assertTrue(accountCancelled.isCompleted)
+        assertTrue(actionCancelled.isCompleted)
+    }
+
+    @Test
+    fun cancellingControllerRootCancelsCookbookDetailSweepImageAndSearchWorkers() = runTest {
+        val detailStarted = CompletableDeferred<Unit>()
+        val sweepStarted = CompletableDeferred<Unit>()
+        val imageStarted = CompletableDeferred<Unit>()
+        val searchStarted = CompletableDeferred<Unit>()
+        val cancelled = mutableSetOf<String>()
+        val root = Job(backgroundScope.coroutineContext[Job])
+        val store = FakeCatalogStore().apply {
+            afterSearchRead = {
+                searchStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    cancelled += "search"
+                }
+            }
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            recipeBlock = { _, _, _ ->
+                detailStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    cancelled += "detail"
+                }
+            }
+            batchBlock = { _, _, _ ->
+                sweepStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    cancelled += "sweep"
+                }
+            }
+        }
+        val controller = controller(
+            api = api,
+            catalogStore = store,
+            session = SESSION,
+            controllerScope = CoroutineScope(coroutineContext + root),
+            prepareRecipeImage = { _, _ ->
+                imageStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    cancelled += "image"
+                }
+            },
+        )
+        controller.restore().join()
+        sweepStarted.await()
+        controller.openRecipe(SOUP.id)
+        controller.prepareRecipeImage("content://recipe/photo")
+        controller.updateSearchQuery("soup")
+        detailStarted.await()
+        imageStarted.await()
+        searchStarted.await()
+
+        root.cancel()
+        advanceUntilIdle()
+
+        assertTrue(cancelled.containsAll(setOf("detail", "sweep", "image", "search")))
+    }
+
+    @Test
+    fun cancellingControllerRootCancelsCatalogDiscovery() = runTest {
+        val discoveryStarted = CompletableDeferred<Unit>()
+        val discoveryCancelled = CompletableDeferred<Unit>()
+        val root = Job(backgroundScope.coroutineContext[Job])
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = {
+                    discoveryStarted.complete(Unit)
+                    try {
+                        awaitCancellation()
+                    } finally {
+                        discoveryCancelled.complete(Unit)
+                    }
+                }
+            },
+            session = SESSION,
+            controllerScope = CoroutineScope(coroutineContext + root),
+        )
+
+        val restore = controller.restore()
+        discoveryStarted.await()
+        root.cancel()
+        restore.join()
+
+        assertTrue(discoveryCancelled.isCompleted)
+    }
+
+    @Test
+    fun cancellingControllerRootRejectsALateNonCancellableAuthenticationWrite() = runTest {
+        val authenticationStarted = CompletableDeferred<Unit>()
+        val releaseAuthentication = CompletableDeferred<Unit>()
+        val root = Job(backgroundScope.coroutineContext[Job])
+        val sessionStore = FakeSessionStore(null)
+        val controller = controller(
+            api = FakeApi().apply {
+                signInBlock = {
+                    authenticationStarted.complete(Unit)
+                    withContext(NonCancellable) { releaseAuthentication.await() }
+                    SESSION.response
+                }
+            },
+            sessionStore = sessionStore,
+            controllerScope = CoroutineScope(coroutineContext + root),
+        )
+        controller.restore().join()
+
+        val authentication = controller.signIn(SIGN_IN)
+        authenticationStarted.await()
+        root.cancel()
+        releaseAuthentication.complete(Unit)
+        authentication.join()
+
+        assertNull(sessionStore.value)
+        assertNull(controller.state.value.user)
+    }
+
+    @Test
+    fun recipeAction401JobWaitsForProtectedCleanup() = runTest {
+        val clearStarted = CompletableDeferred<Unit>()
+        val releaseClear = CompletableDeferred<Unit>()
+        val sessionStore = FakeSessionStore(SESSION).apply {
+            beforeClear = {
+                clearStarted.complete(Unit)
+                releaseClear.await()
+            }
+        }
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            updateRecipeBlock = { _, _, _, _ -> throw ApiFailure(401, "expired") }
+        }
+        val controller = controller(api = api, sessionStore = sessionStore, session = SESSION)
+        controller.restore().join()
+        advanceUntilIdle()
+
+        val action = controller.saveRecipe(changedDraft(), null)
+        clearStarted.await()
+        assertFalse(action.isCompleted)
+        action.cancel()
+        releaseClear.complete(Unit)
+        action.join()
+
+        assertTrue(action.isCancelled)
+        assertEquals(SessionPhase.SIGNED_OUT, controller.state.value.phase)
+        assertNull(sessionStore.value)
     }
 
     @Test
@@ -3364,14 +3636,14 @@ class SessionControllerTest {
         ),
     )
 
-    private fun CoroutineScope.controller(
+    private fun TestScope.controller(
         api: FakeApi = FakeApi(),
         sessionStore: FakeSessionStore = FakeSessionStore(null),
         catalogStore: FakeCatalogStore = FakeCatalogStore(),
         catalogRepository: CatalogRepository = CatalogRepository(api, catalogStore),
         session: StoredSession? = null,
         clock: Clock = Clock.fixed(NOW, ZoneOffset.UTC),
-        controllerScope: CoroutineScope = this,
+        controllerScope: CoroutineScope = backgroundScope,
         deleteTimeoutMillis: Long = 30_000,
         hydrationTimeoutMillis: Long = 120_000,
         credentialStateCleanup: suspend () -> Unit = {},

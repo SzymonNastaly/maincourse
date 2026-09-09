@@ -39,13 +39,15 @@ internal class RecipeSearchCoordinator(
     private var activeScope: RecipeScope? = null
     private var generation = 0L
     private var searchJob: Job? = null
+    private var workScope = scope
 
-    fun activate(recipeScope: RecipeScope?): Job {
+    fun activate(recipeScope: RecipeScope?, ownerScope: CoroutineScope = scope): Job {
         val query = synchronized(lock) {
             generation++
             searchJob?.cancel()
             searchJob = null
             activeScope = recipeScope
+            workScope = ownerScope
             val saved = recipeScope?.let { queries[it] }.orEmpty()
             mutableState.value = RecipeSearchState(scope = recipeScope, query = saved)
             saved
@@ -108,7 +110,7 @@ internal class RecipeSearchCoordinator(
             }
             generation
         }
-        launched = scope.launch(start = CoroutineStart.LAZY) {
+        launched = synchronized(lock) { workScope }.launch(start = CoroutineStart.LAZY) {
             try {
                 val documents = loadDocuments(recipeScope)
                 val results = withContext(searchDispatcher) { engine.search(documents, query) }
@@ -144,5 +146,5 @@ internal class RecipeSearchCoordinator(
         return launched
     }
 
-    private fun done(): Job = Job().apply { complete() }
+    private fun done(): Job = Job(scope.coroutineContext[Job]).apply { complete() }
 }

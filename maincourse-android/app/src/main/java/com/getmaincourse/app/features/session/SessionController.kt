@@ -41,8 +41,10 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,15 +95,20 @@ class SessionController(
     private val cookbookTransition = Mutex()
     private val recipeRefreshTransition = Mutex()
     private val jobsLock = Any()
-    private val authenticatedJobs = mutableSetOf<Job>()
-    private val catalogJobs = mutableSetOf<Job>()
-    private val cookbookJobs = mutableSetOf<Job>()
-    private val detailJobs = mutableSetOf<Job>()
-    private val recipeRefreshJobs = mutableSetOf<Job>()
-    private val hydrationJobs = mutableSetOf<Job>()
+    private val rootJob = requireNotNull(scope.coroutineContext[Job]) { "SessionController scope requires a parent Job" }
+    private val rootContext = scope.coroutineContext.minusKey(Job)
+    private val controllerGeneration = AtomicLong()
+    private var sessionLifetime: WorkLifetime? = null
+    private var cookbookLifetime: WorkLifetime? = null
+    private var refreshLifetime: WorkLifetime? = null
+    private var catalogJob: Job? = null
+    private var detailJob: Job? = null
+    private var hydrationJob: Job? = null
+    private var cookbookRecoveryJob: Job? = null
     private var authAttempt: Job? = null
     private var restoreJob: Job? = null
     private var cleanupJob: Job? = null
+    private var cleanupCancelsAnonymous = false
     private var accountJob: Job? = null
     private var admission = Admission.INITIAL
     private var session: SessionResponse? = null
@@ -173,7 +180,11 @@ class SessionController(
     val recipeImagePreparationState: StateFlow<RecipeImagePreparationState> =
         mutableRecipeImagePreparationState.asStateFlow()
     private val imagePreparationRequest = AtomicLong()
-    private val imagePreparationJobs = mutableSetOf<Job>()
+    private var imagePreparationJob: Job? = null
+
+    init {
+        rootJob.invokeOnCompletion { controllerGeneration.incrementAndGet() }
+    }
 
     fun restore(): Job {
         lateinit var launched: Job
@@ -191,39 +202,41 @@ class SessionController(
     }
 
     private suspend fun performRestore() {
-        mutableState.value = SessionState(phase = SessionPhase.RESTORING)
-        val stored = try {
-            sessionStore.read()
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (failure: Throwable) {
-            val stillRestoring = synchronized(jobsLock) { admission == Admission.RESTORING }
-            if (stillRestoring) {
-                transition.withLock {
-                    mutableState.value = SessionState(
-                        phase = SessionPhase.RESTORE_FAILED,
-                        message = failure.userMessage("Could not read the saved session"),
-                        canRetry = true,
-                        canReset = true,
-                    )
+        completeWithRecovery {
+            mutableState.value = SessionState(phase = SessionPhase.RESTORING)
+            val stored = try {
+                sessionStore.read()
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Throwable) {
+                val stillRestoring = synchronized(jobsLock) { admission == Admission.RESTORING }
+                if (stillRestoring) {
+                    transition.withLock {
+                        mutableState.value = SessionState(
+                            phase = SessionPhase.RESTORE_FAILED,
+                            message = failure.userMessage("Could not read the saved session"),
+                            canRetry = true,
+                            canReset = true,
+                        )
+                    }
+                    synchronized(jobsLock) {
+                        if (admission == Admission.RESTORING) admission = Admission.RESTORE_FAILED
+                    }
                 }
-                synchronized(jobsLock) {
-                    if (admission == Admission.RESTORING) admission = Admission.RESTORE_FAILED
-                }
+                return@completeWithRecovery
             }
-            return
-        }
 
-        if (stored == null || stored.baseUrl != baseUrl || isExpired(stored.response)) {
-            cleanupProtectedState(
-                finalAuthError = null,
-                restoring = true,
-                notifyCredentialProvider = stored != null,
-            )
-            return
-        }
+            if (stored == null || stored.baseUrl != baseUrl || isExpired(stored.response)) {
+                cleanupProtectedState(
+                    finalAuthError = null,
+                    restoring = true,
+                    notifyCredentialProvider = stored != null,
+                )
+                return@completeWithRecovery
+            }
 
-        establishSession(stored.response)?.join()
+            establishSession(stored.response)?.join()
+        }
     }
 
     fun signIn(request: SignInRequest): Job = authenticate("Could not sign in") { api.signIn(request) }
@@ -256,29 +269,33 @@ class SessionController(
         if (mutableState.value.cookbooks.none { it.id == id }) return completedJob()
         val requestVersion = cookbookRequest.incrementAndGet()
         return scope.launch {
-            val context = activeContextOrExpire() ?: return@launch
-            if (mutableState.value.cookbooks.none { it.id == id }) return@launch
-            val activation = activateCookbook(context, id, requestVersion) ?: return@launch
-            startRecipeRefresh(activation).join()
+            completeWithRecovery {
+                val context = activeContextOrExpire(deferCleanup = false) ?: return@completeWithRecovery
+                if (mutableState.value.cookbooks.none { it.id == id }) return@completeWithRecovery
+                val activation = activateCookbook(context, id, requestVersion) ?: return@completeWithRecovery
+                startRecipeRefresh(activation).join()
+            }
         }
     }
 
     fun refresh(): Job = scope.launch {
-        val context = activeContextOrExpire() ?: return@launch
-        if (!retryPendingPurge(context)) return@launch
-        val current = mutableState.value
-        val cookbookId = current.activeCookbookId
-        if (cookbookId == null || current.catalogStatus != LoadStatus.FRESH) {
-            startCatalogLoad(context).join()
-        } else {
-            val activation = Activation(
-                context = context,
-                recipeScope = RecipeScope(context.response.user.id, cookbookId),
-                cookbookGeneration = transition.withLock { cookbookGeneration },
-                requestVersion = cookbookRequest.get(),
-                allowForbiddenRecovery = true,
-            )
-            startRecipeRefresh(activation).join()
+        completeWithRecovery {
+            val context = activeContextOrExpire(deferCleanup = false) ?: return@completeWithRecovery
+            if (!retryPendingPurge(context)) return@completeWithRecovery
+            val current = mutableState.value
+            val cookbookId = current.activeCookbookId
+            if (cookbookId == null || current.catalogStatus != LoadStatus.FRESH) {
+                startCatalogLoad(context).join()
+            } else {
+                val activation = Activation(
+                    context = context,
+                    recipeScope = RecipeScope(context.response.user.id, cookbookId),
+                    cookbookGeneration = transition.withLock { cookbookGeneration },
+                    requestVersion = cookbookRequest.get(),
+                    allowForbiddenRecovery = true,
+                )
+                startRecipeRefresh(activation).join()
+            }
         }
     }
 
@@ -371,17 +388,17 @@ class SessionController(
     }
 
     fun releaseRecipeEditorImage(selection: RecipeEditorImageSelection): Job {
-        val jobs = synchronized(jobsLock) {
+        val preparation = synchronized(jobsLock) {
             val currentKey = mutableRecipeImagePreparationState.value.requestKey
             if (currentKey != null && currentKey == selection.requestKey) {
                 imagePreparationRequest.incrementAndGet()
-                imagePreparationJobs.toList()
+                imagePreparationJob
             } else {
-                emptyList()
+                null
             }
         }
         return scope.launch {
-            jobs.forEach { it.cancelAndJoin() }
+            preparation?.cancelAndJoin()
             val publishedImage = transition.withLock {
                 val current = mutableRecipeImagePreparationState.value
                 if (current.requestKey != null && current.requestKey == selection.requestKey) {
@@ -403,48 +420,50 @@ class SessionController(
         if (mutableState.value.recipes.none { it.id == id }) return completedJob()
         val requestVersion = detailRequest.incrementAndGet()
         return scope.launch {
-            val context = activeContextOrExpire() ?: return@launch
-            val current = mutableState.value
-            val cookbookId = current.activeCookbookId ?: return@launch
-            val summary = current.recipes.firstOrNull { it.id == id } ?: return@launch
-            val cookbookVersion = transition.withLock { cookbookGeneration }
-            cancelJobs(trackedSnapshot(detailJobs))
-            val detailVersion = transition.withLock {
-                if (!isCurrentLocked(context, cookbookId, cookbookVersion) ||
-                    requestVersion != detailRequest.get()
-                ) {
-                    return@withLock null
-                }
-                detailGeneration++
-                val version = detailGeneration
-                if (summary.importStatus != COMPLETED_IMPORT_STATUS) {
-                    mutableState.value = mutableState.value.copy(
-                        detail = RecipeDetailState(
-                            recipeId = id,
-                            status = DetailStatus.NOT_READY,
-                            message = summary.errorMessage ?: "Recipe is still being prepared",
-                        ),
-                    )
-                    return@withLock null
-                }
-                version
-            } ?: return@launch
+            completeWithRecovery detail@{
+                val context = activeContextOrExpire(deferCleanup = false) ?: return@detail
+                val current = mutableState.value
+                val cookbookId = current.activeCookbookId ?: return@detail
+                val summary = current.recipes.firstOrNull { it.id == id } ?: return@detail
+                val cookbookVersion = transition.withLock { cookbookGeneration }
+                synchronized(jobsLock) { detailJob }?.cancelAndJoin()
+                val detailVersion = transition.withLock {
+                    if (!isCurrentLocked(context, cookbookId, cookbookVersion) ||
+                        requestVersion != detailRequest.get()
+                    ) {
+                        return@withLock null
+                    }
+                    detailGeneration++
+                    val version = detailGeneration
+                    if (summary.importStatus != COMPLETED_IMPORT_STATUS) {
+                        mutableState.value = mutableState.value.copy(
+                            detail = RecipeDetailState(
+                                recipeId = id,
+                                status = DetailStatus.NOT_READY,
+                                message = summary.errorMessage ?: "Recipe is still being prepared",
+                            ),
+                        )
+                        return@withLock null
+                    }
+                    version
+                } ?: return@detail
 
-            startDetailLoad(
-                context = context,
-                recipeScope = RecipeScope(context.response.user.id, cookbookId),
-                recipeId = id,
-                cookbookVersion = cookbookVersion,
-                detailVersion = detailVersion,
-                requestVersion = requestVersion,
-            ).join()
+                startDetailLoad(
+                    context = context,
+                    recipeScope = RecipeScope(context.response.user.id, cookbookId),
+                    recipeId = id,
+                    cookbookVersion = cookbookVersion,
+                    detailVersion = detailVersion,
+                    requestVersion = requestVersion,
+                ).join()
+            }
         }
     }
 
     fun closeRecipe(): Job {
         val requestVersion = detailRequest.incrementAndGet()
         return scope.launch {
-            cancelJobs(trackedSnapshot(detailJobs))
+            synchronized(jobsLock) { detailJob }?.cancelAndJoin()
             transition.withLock {
                 if (requestVersion == detailRequest.get() &&
                     synchronized(jobsLock) { admission == Admission.AUTHENTICATED }
@@ -486,7 +505,8 @@ class SessionController(
     fun reset(): Job = requestCleanup(revoke = false)
 
     fun checkExpiry(): Job = scope.launch {
-        activeContextOrExpire()
+        activeContextOrExpire(deferCleanup = false)
+        awaitRecovery()
     }
 
     private fun updateAccount(attributes: AccountAttributes): Job {
@@ -577,7 +597,7 @@ class SessionController(
         val context = activeContextOrExpire() ?: return
         try {
             withTimeout(deleteTimeoutMillis) { api.deleteAccount(context.identity.token) }
-            cleanupProtectedState(finalAuthError = null)
+            scheduleAuthenticatedCleanup(context, finalAuthError = null)
         } catch (_: TimeoutCancellationException) {
             setAccountError(context, DELETION_AMBIGUOUS_MESSAGE)
         } catch (failure: CancellationException) {
@@ -612,30 +632,36 @@ class SessionController(
         lateinit var launched: Job
         synchronized(jobsLock) {
             if (admission != Admission.AUTHENTICATED || accountJob?.isActive == true) return completedJob()
+            val lifetime = sessionLifetime ?: return completedJob()
             launched = scope.launch(start = CoroutineStart.LAZY) {
-                try {
-                    transition.withLock {
-                        mutableAccountState.value = mutableAccountState.value.copy(
-                            operation = operation,
-                            error = if (clearErrorOnStart) null else mutableAccountState.value.error,
-                        )
-                    }
-                    block()
-                } finally {
-                    withContext(NonCancellable) {
+                val worker = lifetime.scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    try {
                         transition.withLock {
                             mutableAccountState.value = mutableAccountState.value.copy(
-                                operation = AccountOperation.IDLE,
+                                operation = operation,
+                                error = if (clearErrorOnStart) null else mutableAccountState.value.error,
                             )
+                        }
+                        block()
+                    } finally {
+                        withContext(NonCancellable) {
+                            transition.withLock {
+                                mutableAccountState.value = mutableAccountState.value.copy(
+                                    operation = AccountOperation.IDLE,
+                                )
+                            }
                         }
                     }
                 }
+                try {
+                    worker.join()
+                } finally {
+                    awaitRecovery()
+                }
             }
             accountJob = launched
-            authenticatedJobs += launched
             launched.invokeOnCompletion {
                 synchronized(jobsLock) {
-                    authenticatedJobs.remove(launched)
                     if (accountJob == launched) accountJob = null
                 }
             }
@@ -652,37 +678,35 @@ class SessionController(
             if (admission == Admission.CLEANING) return completedJob()
             admission = Admission.CLEANING
             token = session?.token
-            launched = scope.launch(start = CoroutineStart.LAZY) {
-                val callerContext = currentCoroutineContext()
-                val ownerJob = callerContext[Job]
+            launched = scope.launch(start = CoroutineStart.UNDISPATCHED) {
                 var revokeFailure: Throwable? = null
-                try {
-                    withContext(NonCancellable) {
-                        beginCleanup(SessionPhase.SIGNING_OUT, ownerJob)
-                    }
-                    if (revoke && token != null) {
-                        try {
-                            withTimeout(revokeTimeoutMillis) { api.signOut(token) }
-                        } catch (_: TimeoutCancellationException) {
-                            // Local removal is authoritative for logout.
-                        } catch (failure: CancellationException) {
-                            revokeFailure = failure
-                        } catch (_: Throwable) {
-                            // Local removal is authoritative for logout.
+                withContext(NonCancellable) {
+                    val cleanup = prepareCleanup(SessionPhase.SIGNING_OUT, ownerJob = null, includeAnonymous = true)
+                    try {
+                        retireCleanupWork(cleanup)
+                        if (revoke && token != null) {
+                            try {
+                                withTimeout(revokeTimeoutMillis) { api.signOut(token) }
+                            } catch (_: TimeoutCancellationException) {
+                                // Local removal is authoritative for logout.
+                            } catch (failure: CancellationException) {
+                                revokeFailure = failure
+                            } catch (_: Throwable) {
+                                // Local removal is authoritative for logout.
+                            }
                         }
+                    } finally {
+                        finishCleanup(finalAuthError = null, notifyCredentialProvider = true)
                     }
-                } finally {
-                    withContext(NonCancellable) { finishCleanup(finalAuthError = null, notifyCredentialProvider = true) }
                 }
                 revokeFailure?.let { throw it }
-                callerContext.ensureActive()
+                currentCoroutineContext().ensureActive()
             }
             cleanupJob = launched
         }
         launched.invokeOnCompletion {
             synchronized(jobsLock) { if (cleanupJob == launched) cleanupJob = null }
         }
-        launched.start()
         return launched
     }
 
@@ -693,6 +717,7 @@ class SessionController(
             admission = Admission.AUTHENTICATING
         }
         launched = scope.launch(start = CoroutineStart.LAZY) {
+            val authenticationJob = currentCoroutineContext()[Job]
             transition.withLock {
                 mutableState.value = SessionState(
                     phase = SessionPhase.LOADING_COOKBOOKS,
@@ -708,8 +733,14 @@ class SessionController(
                 }
                 try {
                     credentialTransition.withLock {
+                        val mayWrite = synchronized(jobsLock) {
+                            rootJob.isActive && admission == Admission.AUTHENTICATING &&
+                                authAttempt == authenticationJob
+                        }
+                        if (!mayWrite) return@withLock
                         sessionStore.write(StoredSession(baseUrl, response))
                     }
+                    if (!rootJob.isActive) return@launch
                 } catch (failure: CancellationException) {
                     throw failure
                 } catch (failure: Throwable) {
@@ -719,6 +750,7 @@ class SessionController(
 
                 val startup = establishSession(response)
                 startup?.join()
+                awaitRecovery()
             } catch (failure: CancellationException) {
                 throw failure
             } catch (failure: Throwable) {
@@ -735,8 +767,14 @@ class SessionController(
                     if (admission == Admission.AUTHENTICATING) admission = Admission.SIGNED_OUT
                 }
             } finally {
-                transition.withLock {
-                    if (authAttempt == currentCoroutineContext()[Job]) authAttempt = null
+                withContext(NonCancellable) {
+                    val cancelledByCleanup = synchronized(jobsLock) {
+                        cleanupCancelsAnonymous && authAttempt == authenticationJob
+                    }
+                    transition.withLock {
+                        if (authAttempt == authenticationJob) authAttempt = null
+                    }
+                    if (!cancelledByCleanup) awaitRecovery(authenticationJob)
                 }
             }
         }
@@ -748,7 +786,9 @@ class SessionController(
     private suspend fun establishSession(response: SessionResponse): Job? {
         val context = transition.withLock {
             val accepted = synchronized(jobsLock) {
-                if (admission != Admission.RESTORING && admission != Admission.AUTHENTICATING) {
+                if (!rootJob.isActive ||
+                    (admission != Admission.RESTORING && admission != Admission.AUTHENTICATING)
+                ) {
                     false
                 } else {
                     admission = Admission.AUTHENTICATED
@@ -768,9 +808,19 @@ class SessionController(
                 canReset = true,
             )
             mutableAccountState.value = AccountState()
+            synchronized(jobsLock) {
+                sessionLifetime = newLifetime(rootJob)
+                cookbookLifetime = null
+                refreshLifetime = null
+            }
             UserContext(
                 response = response,
-                identity = SessionIdentity(userGeneration, response.user.id, response.token),
+                identity = SessionIdentity(
+                    controllerGeneration.get(),
+                    userGeneration,
+                    response.user.id,
+                    response.token,
+                ),
             )
         } ?: return null
         return startCatalogLoad(context)
@@ -781,11 +831,19 @@ class SessionController(
         return scope.launch {
             val work = catalogTransition.withLock {
                 if (!isCurrentCatalog(context, requestVersion)) return@withLock null
-                cancelJobs(trackedSnapshot(catalogJobs))
+                synchronized(jobsLock) { catalogJob }?.cancelAndJoin()
                 if (!isCurrentCatalog(context, requestVersion)) return@withLock null
-                tracked(catalogJobs, also = authenticatedJobs) {
+                val lifetime = synchronized(jobsLock) { sessionLifetime } ?: return@withLock null
+                lateinit var launched: Job
+                launched = lifetime.scope.launch(start = CoroutineStart.LAZY) {
                     performCatalogLoad(context, requestVersion)
                 }
+                synchronized(jobsLock) { catalogJob = launched }
+                launched.invokeOnCompletion {
+                    synchronized(jobsLock) { if (catalogJob == launched) catalogJob = null }
+                }
+                launched.start()
+                launched
             }
             work?.join()
         }
@@ -820,7 +878,13 @@ class SessionController(
             }
             if (!isCurrentCatalog(context, requestVersion)) return
             if (remote.isEmpty()) {
-                cancelJobs(cookbookJobs)
+                val oldCookbook = synchronized(jobsLock) {
+                    cookbookLifetime.also {
+                        cookbookLifetime = null
+                        refreshLifetime = null
+                    }
+                }
+                oldCookbook?.job?.cancelAndJoin()
                 search.activate(null)
                 val imagesToDiscard = mutableListOf<PreparedRecipeImage>()
                 transition.withLock {
@@ -961,12 +1025,19 @@ class SessionController(
         if (catalogVersion != null && catalogVersion != catalogRequest.get()) return null
         if (!isCurrent(context)) return null
         if (!retryPendingPurge(context)) return null
-        val currentJob = currentCoroutineContext()[Job]
         val imagesToDiscard = mutableListOf<PreparedRecipeImage>()
-        val version = transition.withLock {
+        val lifetimeChange = transition.withLock {
             if (!isCurrentLocked(context)) return@withLock null
             if (requestVersion != cookbookRequest.get()) return@withLock null
             if (catalogVersion != null && catalogVersion != catalogRequest.get()) return@withLock null
+            val sessionOwner = synchronized(jobsLock) { sessionLifetime } ?: return@withLock null
+            val nextLifetime = newLifetime(sessionOwner.job)
+            val oldLifetime = synchronized(jobsLock) {
+                cookbookLifetime.also {
+                    cookbookLifetime = nextLifetime
+                    refreshLifetime = null
+                }
+            }
             cookbookGeneration++
             detailGeneration++
             imagePreparationRequest.incrementAndGet()
@@ -983,10 +1054,11 @@ class SessionController(
                 message = null,
                 canRetry = false,
             )
-            search.activate(RecipeScope(context.response.user.id, cookbookId))
-            cookbookGeneration
+            search.activate(RecipeScope(context.response.user.id, cookbookId), nextLifetime.scope)
+            CookbookLifetimeChange(cookbookGeneration, oldLifetime)
         } ?: return null
-        cancelJobs(trackedSnapshot(cookbookJobs).filterNot { it == currentJob })
+        val version = lifetimeChange.generation
+        lifetimeChange.old?.job?.cancelAndJoin()
         imagesToDiscard.distinct().forEach { runCatching { discardRecipeImageResource(it) } }
         catalogRepository.invalidateAndJoinRecipeReads()
         if (requestVersion != cookbookRequest.get()) return null
@@ -1031,21 +1103,24 @@ class SessionController(
         }
     }
 
-    private fun startRecipeRefresh(activation: Activation, replacingOwner: Job? = null): Job {
+    private fun startRecipeRefresh(activation: Activation): Job {
         val requestVersion = recipeRefreshRequest.incrementAndGet()
         hydrationRequest.incrementAndGet()
         search.setHydrationStatus(activation.recipeScope, SearchHydrationStatus.IDLE)
         return scope.launch {
             val work = recipeRefreshTransition.withLock {
-                val currentJob = currentCoroutineContext()[Job]
-                cancelJobs(
-                    (trackedSnapshot(recipeRefreshJobs) + trackedSnapshot(hydrationJobs))
-                        .filterNot { it == currentJob || it == replacingOwner },
-                )
+                val cookbookOwner = synchronized(jobsLock) { cookbookLifetime } ?: return@withLock null
+                val nextLifetime = newLifetime(cookbookOwner.job)
+                val oldLifetime = synchronized(jobsLock) {
+                    refreshLifetime.also { refreshLifetime = nextLifetime }
+                }
+                oldLifetime?.job?.cancelAndJoin()
                 if (requestVersion != recipeRefreshRequest.get()) return@withLock null
-                tracked(recipeRefreshJobs, also = cookbookJobs) {
+                val launched = nextLifetime.scope.launch(start = CoroutineStart.LAZY) {
                     performRecipeRefresh(activation, requestVersion)
                 }
+                launched.start()
+                launched
             }
             work?.join()
         }
@@ -1100,11 +1175,13 @@ class SessionController(
                 failure is ApiFailure && failure.status == 401 ->
                     invalidateAuthenticatedSession(activation.context, failure.message)
                 failure is ApiFailure && failure.status == 403 ->
-                    recoverForbiddenCookbook(
+                    scheduleCookbookRecovery {
+                        recoverForbiddenCookbook(
                         activation,
                         failure.message,
                         rediscover = activation.allowForbiddenRecovery,
-                    )
+                        )
+                    }
                 else -> transition.withLock {
                     if (isCurrentLocked(activation) && requestVersion == recipeRefreshRequest.get()) {
                         val cached = mutableState.value.recipesFetched
@@ -1126,7 +1203,9 @@ class SessionController(
     ): Job {
         val hydrationVersion = hydrationRequest.incrementAndGet()
         search.setHydrationStatus(activation.recipeScope, SearchHydrationStatus.HYDRATING)
-        return tracked(hydrationJobs, also = cookbookJobs) {
+        val lifetime = synchronized(jobsLock) { refreshLifetime } ?: return completedJob()
+        lateinit var launched: Job
+        launched = lifetime.scope.launch(start = CoroutineStart.LAZY) {
             try {
                 recipeHydrator.hydrate(
                     session = activation.context.response,
@@ -1160,15 +1239,17 @@ class SessionController(
                 }
                 throw failure
             } catch (failure: Throwable) {
-                if (!ownsHydrationStatus(activation, refreshVersion, hydrationVersion)) return@tracked
+                if (!ownsHydrationStatus(activation, refreshVersion, hydrationVersion)) return@launch
                 when {
                     failure is ApiFailure && failure.status == 401 ->
                         invalidateAuthenticatedSession(activation.context, failure.message)
-                    failure is ApiFailure && failure.status == 403 -> recoverForbiddenCookbook(
-                        activation,
-                        failure.message,
-                        rediscover = activation.allowForbiddenRecovery,
-                    )
+                    failure is ApiFailure && failure.status == 403 -> scheduleCookbookRecovery {
+                        recoverForbiddenCookbook(
+                            activation,
+                            failure.message,
+                            rediscover = activation.allowForbiddenRecovery,
+                        )
+                    }
                     else -> search.setHydrationStatus(
                         activation.recipeScope,
                         SearchHydrationStatus.INCOMPLETE,
@@ -1177,6 +1258,12 @@ class SessionController(
                 }
             }
         }
+        synchronized(jobsLock) { hydrationJob = launched }
+        launched.invokeOnCompletion {
+            synchronized(jobsLock) { if (hydrationJob == launched) hydrationJob = null }
+        }
+        launched.start()
+        return launched
     }
 
     private suspend fun publishHydratedRecipes(
@@ -1231,24 +1318,28 @@ class SessionController(
         lateinit var launched: Job
         synchronized(jobsLock) {
             if (admission != Admission.AUTHENTICATED) return completedJob()
+            val lifetime = sessionLifetime ?: return completedJob()
             launched = scope.launch(start = CoroutineStart.LAZY) {
-                val context = transition.withLock {
-                    val response = session ?: return@withLock null
-                    val cookbookId = mutableState.value.activeCookbookId ?: return@withLock null
-                    RecipeActionContext(
-                        generation = userGeneration,
-                        userId = response.user.id,
-                        token = response.token,
-                        scope = RecipeScope(response.user.id, cookbookId),
-                        recipes = mutableState.value.recipes,
-                        cookbookIds = mutableState.value.cookbooks.map(Cookbook::id).toSet(),
-                    )
-                } ?: return@launch
-                block(context)
-            }
-            authenticatedJobs += launched
-            launched.invokeOnCompletion {
-                synchronized(jobsLock) { authenticatedJobs.remove(launched) }
+                val worker = lifetime.scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    val context = transition.withLock {
+                        val response = session ?: return@withLock null
+                        val cookbookId = mutableState.value.activeCookbookId ?: return@withLock null
+                        RecipeActionContext(
+                            generation = userGeneration,
+                            userId = response.user.id,
+                            token = response.token,
+                            scope = RecipeScope(response.user.id, cookbookId),
+                            recipes = mutableState.value.recipes,
+                            cookbookIds = mutableState.value.cookbooks.map(Cookbook::id).toSet(),
+                        )
+                    } ?: return@launch
+                    block(context)
+                }
+                try {
+                    worker.join()
+                } finally {
+                    awaitRecovery()
+                }
             }
         }
         launched.start()
@@ -1262,27 +1353,24 @@ class SessionController(
         val context: RecipeImageOperationContext
         val requestVersion: Long
         synchronized(jobsLock) {
-            if (admission != Admission.AUTHENTICATED || imagePreparationJobs.any(Job::isActive)) return completedJob()
+            if (admission != Admission.AUTHENTICATED || imagePreparationJob?.isActive == true) return completedJob()
+            val lifetime = cookbookLifetime ?: return completedJob()
             val response = session ?: return completedJob()
             val cookbookId = mutableState.value.activeCookbookId ?: return completedJob()
             context = RecipeImageOperationContext(
                 userContext = UserContext(
                     response,
-                    SessionIdentity(userGeneration, response.user.id, response.token),
+                    SessionIdentity(controllerGeneration.get(), userGeneration, response.user.id, response.token),
                 ),
                 recipeScope = RecipeScope(response.user.id, cookbookId),
                 cookbookGeneration = cookbookGeneration,
             )
             requestVersion = imagePreparationRequest.incrementAndGet()
-            launched = scope.launch(start = CoroutineStart.LAZY) { block(context, requestVersion) }
-            imagePreparationJobs += launched
-            authenticatedJobs += launched
-            cookbookJobs += launched
+            launched = lifetime.scope.launch(start = CoroutineStart.LAZY) { block(context, requestVersion) }
+            imagePreparationJob = launched
             launched.invokeOnCompletion {
                 synchronized(jobsLock) {
-                    imagePreparationJobs.remove(launched)
-                    authenticatedJobs.remove(launched)
-                    cookbookJobs.remove(launched)
+                    if (imagePreparationJob == launched) imagePreparationJob = null
                 }
             }
         }
@@ -1311,13 +1399,14 @@ class SessionController(
     }
 
     private fun isCurrentRecipeActionLocked(context: RecipeActionContext): Boolean =
-        userGeneration == context.generation && session?.user?.id == context.userId && session?.token == context.token
+        rootJob.isActive && userGeneration == context.generation &&
+            session?.user?.id == context.userId && session?.token == context.token
 
     private suspend fun recipeActionUserContext(context: RecipeActionContext): UserContext? = transition.withLock {
         if (!isCurrentRecipeActionLocked(context)) return@withLock null
         UserContext(
             checkNotNull(session),
-            SessionIdentity(context.generation, context.userId, context.token),
+            SessionIdentity(controllerGeneration.get(), context.generation, context.userId, context.token),
         )
     }
 
@@ -1421,7 +1510,7 @@ class SessionController(
                 activation = Activation(
                     context = UserContext(
                         checkNotNull(session),
-                        SessionIdentity(context.generation, context.userId, context.token),
+                        SessionIdentity(controllerGeneration.get(), context.generation, context.userId, context.token),
                     ),
                     recipeScope = context.scope,
                     cookbookGeneration = cookbookGeneration,
@@ -1434,7 +1523,7 @@ class SessionController(
             )
         } ?: return false
         if (!retryPendingPurge(recovery.activation.context)) return false
-        startRecipeRefresh(recovery.activation, replacingOwner = currentCoroutineContext()[Job]).join()
+        startRecipeRefresh(recovery.activation).join()
         val reopen = transition.withLock {
             recovery.selectedLoadingRecipeId?.takeIf { id ->
                 isCurrentLocked(recovery.activation) && mutableState.value.detail?.recipeId == id &&
@@ -1468,7 +1557,7 @@ class SessionController(
             }
         }
         if (activation != null) {
-            recoverForbiddenCookbook(activation, failure.message, rediscover = true)
+            scheduleCookbookRecovery { recoverForbiddenCookbook(activation, failure.message, rediscover = true) }
         } else {
             retryPendingPurge(userContext)
         }
@@ -1482,7 +1571,10 @@ class SessionController(
         cookbookVersion: Long,
         detailVersion: Long,
         requestVersion: Long,
-    ): Job = tracked(detailJobs, also = cookbookJobs) {
+    ): Job {
+        val lifetime = synchronized(jobsLock) { cookbookLifetime } ?: return completedJob()
+        lateinit var launched: Job
+        launched = lifetime.scope.launch(start = CoroutineStart.LAZY) {
         val cached = try {
             catalogRepository.cachedDetail(recipeScope, recipeId)
         } catch (failure: CancellationException) {
@@ -1502,7 +1594,7 @@ class SessionController(
                 false
             }
         }
-        if (!mayRequest) return@tracked
+        if (!mayRequest) return@launch
 
         try {
             val detail = catalogRepository.refreshDetail(context.response, recipeScope, recipeId) {
@@ -1531,20 +1623,19 @@ class SessionController(
                 isCurrentLocked(context, recipeScope.cookbookId, cookbookVersion) &&
                     detailGeneration == detailVersion && requestVersion == detailRequest.get()
             }
-            if (!stillCurrent) return@tracked
+            if (!stillCurrent) return@launch
             when {
                 failure is ApiFailure && failure.status == 401 -> invalidateAuthenticatedSession(context, failure.message)
-                failure is ApiFailure && failure.status == 403 -> recoverForbiddenCookbook(
-                    Activation(context, recipeScope, cookbookVersion, cookbookRequest.get(), true),
-                    failure.message,
-                    rediscover = true,
-                )
-                failure is ApiFailure && failure.status == 404 -> removeMissingRecipe(
-                    context,
-                    recipeScope,
-                    recipeId,
-                    cookbookVersion,
-                )
+                failure is ApiFailure && failure.status == 403 -> scheduleCookbookRecovery {
+                    recoverForbiddenCookbook(
+                        Activation(context, recipeScope, cookbookVersion, cookbookRequest.get(), true),
+                        failure.message,
+                        rediscover = true,
+                    )
+                }
+                failure is ApiFailure && failure.status == 404 -> scheduleCookbookRecovery {
+                    removeMissingRecipe(context, recipeScope, recipeId, cookbookVersion)
+                }
                 else -> transition.withLock {
                     if (isCurrentLocked(context, recipeScope.cookbookId, cookbookVersion) &&
                         detailGeneration == detailVersion && requestVersion == detailRequest.get()
@@ -1561,6 +1652,13 @@ class SessionController(
                 }
             }
         }
+        }
+        synchronized(jobsLock) { detailJob = launched }
+        launched.invokeOnCompletion {
+            synchronized(jobsLock) { if (detailJob == launched) detailJob = null }
+        }
+        launched.start()
+        return launched
     }
 
     private suspend fun removeMissingRecipe(
@@ -1570,10 +1668,17 @@ class SessionController(
         expectedCookbookGeneration: Long,
     ) {
         if (!isCurrent(context)) return
-        val currentJob = currentCoroutineContext()[Job]
         val transitionResult = transition.withLock {
             if (!isCurrentLocked(context, recipeScope.cookbookId, expectedCookbookGeneration)) {
                 return@withLock null
+            }
+            val sessionOwner = synchronized(jobsLock) { sessionLifetime } ?: return@withLock null
+            val nextLifetime = newLifetime(sessionOwner.job)
+            val oldLifetime = synchronized(jobsLock) {
+                cookbookLifetime.also {
+                    cookbookLifetime = nextLifetime
+                    refreshLifetime = null
+                }
             }
             cookbookGeneration++
             detailGeneration++
@@ -1587,11 +1692,11 @@ class SessionController(
                     message = "Recipe is no longer available",
                 ),
             )
-            bumpedGeneration to trackedSnapshot(cookbookJobs).filterNot { it == currentJob }
+            search.activate(recipeScope, nextLifetime.scope)
+            bumpedGeneration to oldLifetime
         } ?: return
-        val (bumpedGeneration, siblings) = transitionResult
-        search.documentsChanged(recipeScope)
-        cancelJobs(siblings)
+        val (bumpedGeneration, oldLifetime) = transitionResult
+        oldLifetime?.job?.cancelAndJoin()
         if (!retryPendingPurge(context)) return
         transition.withLock {
             if (isCurrentLocked(context, recipeScope.cookbookId, bumpedGeneration)) {
@@ -1627,9 +1732,8 @@ class SessionController(
         message: String?,
         rediscover: Boolean,
     ) {
-        val currentJob = currentCoroutineContext()[Job]
         val imagesToDiscard = mutableListOf<PreparedRecipeImage>()
-        val siblings = transition.withLock {
+        val oldLifetime = transition.withLock {
             if (!isCurrentLocked(activation)) return
             cookbookGeneration++
             detailGeneration++
@@ -1653,9 +1757,14 @@ class SessionController(
                 canRetry = true,
             )
             search.activate(null)
-            trackedSnapshot(cookbookJobs).filterNot { it == currentJob }
+            synchronized(jobsLock) {
+                cookbookLifetime.also {
+                    cookbookLifetime = null
+                    refreshLifetime = null
+                }
+            }
         }
-        cancelJobs(siblings)
+        oldLifetime?.job?.cancelAndJoin()
         imagesToDiscard.distinct().forEach { runCatching { discardRecipeImageResource(it) } }
         if (!retryPendingPurge(activation.context)) return
 
@@ -1699,7 +1808,7 @@ class SessionController(
                     selected.id,
                     allowForbiddenRecovery = false,
                 )?.let { recovered ->
-                    startRecipeRefresh(recovered, replacingOwner = currentCoroutineContext()[Job]).join()
+                    startRecipeRefresh(recovered).join()
                     transition.withLock {
                         if (isCurrentLocked(recovered)) {
                             mutableState.value = mutableState.value.copy(
@@ -1808,24 +1917,95 @@ class SessionController(
         }
     }
 
-    private suspend fun activeContextOrExpire(): UserContext? {
+    private suspend fun scheduleCookbookRecovery(block: suspend () -> Unit): Job {
+        val owner = currentCoroutineContext()[Job]
+        lateinit var launched: Job
+        synchronized(jobsLock) {
+            val lifetime = sessionLifetime ?: return completedJob()
+            launched = lifetime.scope.launch(start = CoroutineStart.LAZY) {
+                owner?.join()
+                block()
+            }
+            cookbookRecoveryJob = launched
+        }
+        launched.invokeOnCompletion {
+            synchronized(jobsLock) { if (cookbookRecoveryJob == launched) cookbookRecoveryJob = null }
+        }
+        launched.start()
+        return launched
+    }
+
+    private suspend fun awaitRecovery() = awaitRecovery(currentCoroutineContext()[Job])
+
+    private suspend fun awaitRecovery(owner: Job?) {
+        while (true) {
+            val pending = synchronized(jobsLock) {
+                if (cleanupCancelsAnonymous && (owner == authAttempt || owner == restoreJob)) return
+                listOfNotNull(cleanupJob, cookbookRecoveryJob).firstOrNull { it.isActive && it != owner }
+            } ?: return
+            withContext(NonCancellable) { pending.join() }
+        }
+    }
+
+    private suspend inline fun completeWithRecovery(crossinline block: suspend () -> Unit) {
+        try {
+            block()
+        } finally {
+            awaitRecovery()
+        }
+    }
+
+    private suspend fun activeContextOrExpire(deferCleanup: Boolean = true): UserContext? {
         if (synchronized(jobsLock) { admission != Admission.AUTHENTICATED }) return null
         val context = transition.withLock {
             session?.let {
                 UserContext(
                     response = it,
-                    identity = SessionIdentity(userGeneration, it.user.id, it.token),
+                    identity = SessionIdentity(controllerGeneration.get(), userGeneration, it.user.id, it.token),
                 )
             }
         } ?: return null
         if (!isExpired(context.response)) return context
-        cleanupProtectedState(SESSION_EXPIRED_MESSAGE)
+        if (deferCleanup) {
+            scheduleAuthenticatedCleanup(context, SESSION_EXPIRED_MESSAGE)
+        } else {
+            cleanupProtectedState(SESSION_EXPIRED_MESSAGE)
+        }
         return null
     }
 
     private suspend fun invalidateAuthenticatedSession(context: UserContext, message: String?) {
         if (!isCurrent(context)) return
-        cleanupProtectedState(message ?: SESSION_EXPIRED_MESSAGE)
+        scheduleAuthenticatedCleanup(context, message ?: SESSION_EXPIRED_MESSAGE)
+    }
+
+    private suspend fun scheduleAuthenticatedCleanup(context: UserContext, finalAuthError: String?): Job {
+        if (!isCurrent(context)) return completedJob()
+        val ownerJob = currentCoroutineContext()[Job]
+        val admitted = synchronized(jobsLock) {
+            if (admission == Admission.CLEANING) false else {
+                admission = Admission.CLEANING
+                true
+            }
+        }
+        if (!admitted) return synchronized(jobsLock) { cleanupJob } ?: completedJob()
+        val cleanup = prepareCleanup(SessionPhase.SIGNING_OUT, ownerJob, includeAnonymous = false)
+        lateinit var launched: Job
+        launched = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            withContext(NonCancellable) {
+                ownerJob?.join()
+                try {
+                    retireCleanupWork(cleanup)
+                } finally {
+                    finishCleanup(finalAuthError, notifyCredentialProvider = true)
+                }
+            }
+        }
+        synchronized(jobsLock) { cleanupJob = launched }
+        launched.invokeOnCompletion {
+            synchronized(jobsLock) { if (cleanupJob == launched) cleanupJob = null }
+        }
+        return launched
     }
 
     private suspend fun cleanupProtectedState(
@@ -1846,10 +2026,12 @@ class SessionController(
         val ownerJob = callerContext[Job]
         withContext(NonCancellable) {
             try {
-                beginCleanup(
+                val cleanup = prepareCleanup(
                     if (restoring) SessionPhase.RESTORING else SessionPhase.SIGNING_OUT,
                     ownerJob,
+                    includeAnonymous = true,
                 )
+                retireCleanupWork(cleanup)
             } finally {
                 finishCleanup(finalAuthError, notifyCredentialProvider)
             }
@@ -1857,8 +2039,11 @@ class SessionController(
         callerContext.ensureActive()
     }
 
-    private suspend fun beginCleanup(phase: SessionPhase, ownerJob: Job?) {
-        val jobs = transition.withLock {
+    private suspend fun prepareCleanup(
+        phase: SessionPhase,
+        ownerJob: Job?,
+        includeAnonymous: Boolean,
+    ): CleanupWork = transition.withLock {
             userGeneration++
             cookbookGeneration++
             detailGeneration++
@@ -1875,11 +2060,34 @@ class SessionController(
             mutableState.value = SessionState(phase = phase)
             mutableAccountState.value = AccountState()
             search.clear()
-            val tracked = trackedSnapshot(authenticatedJobs) + trackedSnapshot(catalogJobs) + trackedSnapshot(cookbookJobs) +
-                trackedSnapshot(detailJobs) + listOfNotNull(authAttempt, restoreJob)
-            tracked.distinct().filterNot { it == ownerJob }
+            val oldSession = synchronized(jobsLock) {
+                cleanupCancelsAnonymous = includeAnonymous
+                sessionLifetime.also {
+                    sessionLifetime = null
+                    cookbookLifetime = null
+                    refreshLifetime = null
+                    catalogJob = null
+                    detailJob = null
+                    hydrationJob = null
+                    imagePreparationJob = null
+                }
+            }
+            CleanupWork(
+                session = oldSession,
+                anonymousJobs = synchronized(jobsLock) {
+                    if (includeAnonymous) {
+                        listOfNotNull(authAttempt, restoreJob).filterNot { it == ownerJob }
+                    } else {
+                        emptyList()
+                    }
+                },
+            )
         }
-        cancelJobs(jobs)
+
+    private suspend fun retireCleanupWork(cleanup: CleanupWork) {
+        cleanup.session?.job?.cancelAndJoin()
+        cleanup.anonymousJobs.forEach { it.cancel() }
+        cleanup.anonymousJobs.forEach { it.cancelAndJoin() }
         catalogRepository.invalidateAndJoinRecipeReads()
     }
 
@@ -1887,46 +2095,49 @@ class SessionController(
         finalAuthError: String?,
         notifyCredentialProvider: Boolean,
     ) = withContext(NonCancellable) {
-        val providerCleanup = launch(start = CoroutineStart.UNDISPATCHED) {
-            if (!notifyCredentialProvider) return@launch
-            try {
-                credentialStateCleanup()
-            } catch (_: Throwable) {
-                // Provider selection cleanup is bounded best effort and never gates local deletion.
+        coroutineScope {
+            val providerCleanup = launch(start = CoroutineStart.UNDISPATCHED) {
+                if (!notifyCredentialProvider) return@launch
+                try {
+                    credentialStateCleanup()
+                } catch (_: Throwable) {
+                    // Provider selection cleanup is bounded best effort and never gates local deletion.
+                }
             }
-        }
-        val failures = buildList {
-            try {
-                credentialTransition.withLock { sessionStore.clear() }
-            } catch (failure: Throwable) {
-                add(failure)
+            val failures = buildList {
+                try {
+                    credentialTransition.withLock { sessionStore.clear() }
+                } catch (failure: Throwable) {
+                    add(failure)
+                }
+                try {
+                    catalogRepository.clear()
+                } catch (failure: Throwable) {
+                    add(failure)
+                }
+                try {
+                    imageCleanup()
+                } catch (failure: Throwable) {
+                    add(failure)
+                }
             }
-            try {
-                catalogRepository.clear()
-            } catch (failure: Throwable) {
-                add(failure)
+            providerCleanup.join()
+            transition.withLock {
+                mutableState.value = if (failures.isEmpty()) {
+                    SessionState(phase = SessionPhase.SIGNED_OUT, authError = finalAuthError)
+                } else {
+                    SessionState(
+                        phase = SessionPhase.CLEANUP_FAILED,
+                        message = failures.first().userMessage("Could not finish local cleanup"),
+                        canRetry = true,
+                        canReset = true,
+                    )
+                }
             }
-            try {
-                imageCleanup()
-            } catch (failure: Throwable) {
-                add(failure)
+            synchronized(jobsLock) {
+                cleanupCancelsAnonymous = false
+                admission = if (failures.isEmpty()) Admission.SIGNED_OUT else Admission.CLEANUP_FAILED
             }
-        }
-        providerCleanup.join()
-        transition.withLock {
-            mutableState.value = if (failures.isEmpty()) {
-                SessionState(phase = SessionPhase.SIGNED_OUT, authError = finalAuthError)
-            } else {
-                SessionState(
-                    phase = SessionPhase.CLEANUP_FAILED,
-                    message = failures.first().userMessage("Could not finish local cleanup"),
-                    canRetry = true,
-                    canReset = true,
-                )
-            }
-        }
-        synchronized(jobsLock) {
-            admission = if (failures.isEmpty()) Admission.SIGNED_OUT else Admission.CLEANUP_FAILED
         }
     }
 
@@ -1936,7 +2147,8 @@ class SessionController(
         transition.withLock { isCurrentCatalogLocked(context, requestVersion) }
 
     private fun isCurrentLocked(context: UserContext): Boolean =
-        userGeneration == context.identity.generation &&
+        rootJob.isActive && controllerGeneration.get() == context.identity.controllerGeneration &&
+            userGeneration == context.identity.generation &&
             session?.user?.id == context.identity.userId &&
             session?.token == context.identity.token
 
@@ -1962,39 +2174,12 @@ class SessionController(
         true
     }
 
-    private fun tracked(
-        primary: MutableSet<Job>,
-        also: MutableSet<Job>? = null,
-        block: suspend () -> Unit,
-    ): Job {
-        lateinit var launched: Job
-        launched = scope.launch(start = CoroutineStart.LAZY) {
-            try {
-                block()
-            } finally {
-                synchronized(jobsLock) {
-                    primary.remove(launched)
-                    also?.remove(launched)
-                }
-            }
-        }
-        synchronized(jobsLock) {
-            primary += launched
-            also?.add(launched)
-        }
-        launched.start()
-        return launched
+    private fun completedJob(): Job = Job(rootJob).apply { complete() }
+
+    private fun newLifetime(parent: Job): WorkLifetime {
+        val job = SupervisorJob(parent)
+        return WorkLifetime(job, CoroutineScope(rootContext + job))
     }
-
-    private fun trackedSnapshot(jobs: Collection<Job>): List<Job> = synchronized(jobsLock) { jobs.toList() }
-
-    private suspend fun cancelJobs(jobs: Collection<Job>) {
-        val snapshot = jobs.distinct()
-        snapshot.forEach { it.cancel() }
-        snapshot.forEach { it.cancelAndJoin() }
-    }
-
-    private fun completedJob(): Job = Job().apply { complete() }
 
     private fun LoadStatus.isFailure(): Boolean = this == LoadStatus.DEGRADED || this == LoadStatus.ERROR
 
@@ -2012,9 +2197,25 @@ class SessionController(
         if (this is ApiFailure) message?.takeIf { it.isNotBlank() } ?: fallback else fallback
 
     private data class SessionIdentity(
+        val controllerGeneration: Long,
         val generation: Long,
         val userId: Long,
         val token: String,
+    )
+
+    private data class WorkLifetime(
+        val job: Job,
+        val scope: CoroutineScope,
+    )
+
+    private data class CookbookLifetimeChange(
+        val generation: Long,
+        val old: WorkLifetime?,
+    )
+
+    private data class CleanupWork(
+        val session: WorkLifetime?,
+        val anonymousJobs: List<Job>,
     )
 
     private data class UserContext(

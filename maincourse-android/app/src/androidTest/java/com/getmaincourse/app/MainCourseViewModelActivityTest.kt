@@ -167,6 +167,19 @@ class MainCourseViewModelActivityTest {
     }
 
     @Test
+    fun clearingTheViewModelStoreCancelsAuthenticatedSessionWork() {
+        api.updateResult = CompletableDeferred()
+        api.updateCancelled = CompletableDeferred()
+        compose.runOnIdle { viewModel.updateName("Ada") }
+        compose.waitUntil(5_000) { viewModel.accountState.value.operation == AccountOperation.SAVING }
+
+        compose.runOnIdle { compose.activity.viewModelStore.clear() }
+
+        compose.waitUntil(5_000) { api.updateCancelled?.isCompleted == true }
+        assertEquals(1, api.updateCalls)
+    }
+
+    @Test
     fun rotationDuringChooserCancelsOnlyTheUnresolvedChooserWithoutAutoLaunch() {
         compose.runOnIdle { viewModel.logout() }
         compose.waitUntil(5_000) { viewModel.state.value.phase == SessionPhase.SIGNED_OUT }
@@ -468,6 +481,7 @@ class MainCourseViewModelActivityTest {
         var deleteCalls = 0
         var signOutCalls = 0
         var updateResult: CompletableDeferred<User>? = null
+        var updateCancelled: CompletableDeferred<Unit>? = null
         var deleteResult: CompletableDeferred<Unit>? = null
         var googleResult: CompletableDeferred<SessionResponse>? = null
         val googleRequests = mutableListOf<GoogleSignInRequest>()
@@ -498,7 +512,11 @@ class MainCourseViewModelActivityTest {
         }
         override suspend fun updateAccount(token: String, request: AccountUpdateRequest): User {
             updateCalls++
-            return updateResult?.await() ?: USER
+            return try {
+                updateResult?.await() ?: USER
+            } finally {
+                updateCancelled?.complete(Unit)
+            }
         }
         override suspend fun deleteAccount(token: String) {
             deleteCalls++
