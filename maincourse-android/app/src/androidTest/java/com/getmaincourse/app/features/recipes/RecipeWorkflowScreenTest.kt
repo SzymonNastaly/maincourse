@@ -241,7 +241,7 @@ class RecipeWorkflowScreenTest {
     }
 
     @Test
-    fun ingredientReviewSuccessReturnsAfterOneSubmission() {
+    fun ingredientReviewSuccessWaitsForAcknowledgementBeforeReturning() {
         val action = mutableStateOf<RecipeActionUiState>(RecipeActionUiState.Idle)
         var submissions = 0
         var backs = 0
@@ -263,6 +263,9 @@ class RecipeWorkflowScreenTest {
         }
 
         compose.onNodeWithTag("review_submit").performClick()
+        compose.onNodeWithText("Ingredients added").assertIsDisplayed()
+        assertEquals(0, backs)
+        compose.onNodeWithTag("review_success_confirm").performClick()
         compose.waitUntil(5_000) { backs == 1 }
         assertEquals(1, submissions)
     }

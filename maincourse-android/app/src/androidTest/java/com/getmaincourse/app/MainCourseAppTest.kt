@@ -90,6 +90,8 @@ class MainCourseAppTest {
         compose.onNodeWithTag("recipe_add_ingredients").performScrollTo().performClick()
         compose.onNodeWithTag("ingredient_review").assertIsDisplayed()
         compose.onNodeWithTag("review_submit").performClick()
+        compose.onNodeWithText("Ingredients added").assertIsDisplayed()
+        compose.onNodeWithTag("review_success_confirm").performClick()
 
         compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
     }

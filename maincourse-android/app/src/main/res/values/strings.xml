@@ -128,6 +128,7 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="dismiss">Dismiss</string>
+    <string name="done">Done</string>
     <string name="onboarding_tagline">Cook something delicious today</string>
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_existing_account">Already have an account? Sign in</string>
