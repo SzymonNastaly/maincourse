@@ -24,8 +24,10 @@ import okhttp3.mockwebserver.Dispatcher as MockDispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -128,7 +130,23 @@ class SimpleRepositoriesTest {
     }
 
     @Test
-    fun confirmedMoveUsesPatchDetailWithoutRequiringTargetRefresh() = runBlocking {
+    fun confirmedMoveRefreshesTargetAndPreservesPatchDetail() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        server.enqueue(jsonResponse(detailJson(7, "Moved")))
+        server.enqueue(jsonResponse("[${summaryJson(7, "Refreshed")}]"))
+
+        recipes.move(USER_ID, 10, 7, 20)
+
+        assertEquals(2, server.requestCount)
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertEquals(listOf("Refreshed"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
+        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
+    }
+
+    @Test
+    fun failedTargetRefreshKeepsConfirmedMoveAndPatchDetail() = runBlocking {
         seedCookbook(USER_ID, 10)
         seedCookbook(USER_ID, 20)
         seedRecipe(USER_ID, 10, summary(7, "Source"))
@@ -137,7 +155,42 @@ class SimpleRepositoriesTest {
 
         recipes.move(USER_ID, 10, 7, 20)
 
-        assertEquals(1, server.requestCount)
+        assertEquals(2, server.requestCount)
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
+        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
+    }
+
+    @Test
+    fun disconnectedTargetRefreshKeepsConfirmedMoveAndPatchDetail() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        server.enqueue(jsonResponse(detailJson(7, "Moved")))
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
+
+        recipes.move(USER_ID, 10, 7, 20)
+
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
+        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
+    }
+
+    @Test
+    fun cancelledTargetRefreshKeepsReconciledMoveAndPropagatesCancellation() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        server.enqueue(jsonResponse(detailJson(7, "Moved")))
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+
+        val move = async(Dispatchers.IO) { recipes.move(USER_ID, 10, 7, 20) }
+        assertNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+        assertNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+        move.cancel()
+        runCatching { move.await() }
+
+        assertTrue(move.isCancelled)
         assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
         assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
         assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)

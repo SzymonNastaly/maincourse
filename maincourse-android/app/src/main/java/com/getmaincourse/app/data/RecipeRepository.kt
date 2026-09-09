@@ -13,11 +13,14 @@ import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.network.MainCourseService
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import retrofit2.HttpException
 
 class RecipeRepository(
     private val database: MainCourseDatabase,
@@ -55,26 +58,38 @@ class RecipeRepository(
         sourceCookbookId: Long,
         recipeId: Long,
         targetCookbookId: Long,
-    ) = listWrites.withLock {
-        val moved = service.moveRecipe(sourceCookbookId, recipeId, MoveRecipeRequest(targetCookbookId))
-        database.withTransaction {
-            val source = dao.recipe(userId, sourceCookbookId, recipeId)
-            val target = dao.recipe(userId, targetCookbookId, recipeId)
-            val previousSummary = source?.toSummary(json) ?: target?.toSummary(json)
-            dao.upsertRecipes(
-                listOf(
-                    RecipeEntity(
-                        userId = userId,
-                        cookbookId = targetCookbookId,
-                        recipeId = recipeId,
-                        listPosition = target?.listPosition
-                            ?: dao.nextRecipePosition(userId, targetCookbookId),
-                        summaryJson = json.encodeToString(moved.toSummary(previousSummary)),
-                        detailJson = moved.toJson(json),
+    ) {
+        listWrites.withLock {
+            val moved = service.moveRecipe(sourceCookbookId, recipeId, MoveRecipeRequest(targetCookbookId))
+            database.withTransaction {
+                val source = dao.recipe(userId, sourceCookbookId, recipeId)
+                val target = dao.recipe(userId, targetCookbookId, recipeId)
+                val previousSummary = source?.toSummary(json) ?: target?.toSummary(json)
+                dao.upsertRecipes(
+                    listOf(
+                        RecipeEntity(
+                            userId = userId,
+                            cookbookId = targetCookbookId,
+                            recipeId = recipeId,
+                            listPosition = target?.listPosition
+                                ?: dao.nextRecipePosition(userId, targetCookbookId),
+                            summaryJson = json.encodeToString(moved.toSummary(previousSummary)),
+                            detailJson = moved.toJson(json),
+                        ),
                     ),
-                ),
-            )
-            dao.removeRecipe(userId, sourceCookbookId, recipeId)
+                )
+                dao.removeRecipe(userId, sourceCookbookId, recipeId)
+            }
+        }
+
+        try {
+            refreshList(userId, targetCookbookId)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (_: IOException) {
+            // The PATCH is already confirmed and locally reconciled.
+        } catch (_: HttpException) {
+            // The PATCH is already confirmed and locally reconciled.
         }
     }
 
