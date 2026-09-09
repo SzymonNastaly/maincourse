@@ -1,5 +1,25 @@
 # Android Structured Session Lifetimes
 
+## Evaluation outcome — revised scope
+
+The hierarchical prototype (`457fb64`) removed seven registries but added 203
+production lines, duplicated launch scaffolding, and introduced extra recovery
+handoffs and timing dependencies. Review found that it did not meet the user's
+library-first simplification goal. It is not the selected implementation.
+
+Retain the existing ViewModel-parented coroutines and selective cancellation
+groups. Keep only the independently demonstrated safety improvement: reject
+late authentication, recipe/action and image results when the injected root Job
+is no longer active. Preserve focused root-disposal regressions, and restore the
+original TestScope-based test setup rather than hiding active work in
+backgroundScope. Public API/state/behavior and existing generation/write guards
+remain unchanged. No new dependencies or ownership framework are introduced.
+
+The hierarchy below is the evaluated proposal, retained as design history, not
+an implementation requirement. #104 completes with the smaller guard hardening
+and this documented decision; reconsider child-lifetime restructuring only if
+it provides a concrete maintenance reduction. Imports/sharing proceeds next.
+
 ## Goal
 
 Apply the library-first review in #104 before imports/sharing adds more session

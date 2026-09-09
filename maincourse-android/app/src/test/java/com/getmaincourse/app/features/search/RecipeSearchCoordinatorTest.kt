@@ -7,9 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -137,32 +135,6 @@ class RecipeSearchCoordinatorTest {
         search.join()
         assertEquals(false, coordinator.state.value.isSearching)
         assertEquals("Search is unavailable. Try again.", coordinator.state.value.searchError)
-    }
-
-    @Test
-    fun cancellingTheCookbookOwnerRejectsLateNonCancellableSearchResults() = runTest {
-        val loadStarted = CompletableDeferred<Unit>()
-        val releaseLoad = CompletableDeferred<Unit>()
-        val owner = Job(backgroundScope.coroutineContext[Job])
-        val coordinator = RecipeSearchCoordinator(
-            scope = backgroundScope,
-            loadDocuments = {
-                loadStarted.complete(Unit)
-                withContext(NonCancellable) { releaseLoad.await() }
-                listOf(document(1, "Soup"))
-            },
-            searchDispatcher = StandardTestDispatcher(testScheduler),
-        )
-        coordinator.activate(RecipeScope(1, 10), CoroutineScope(coroutineContext + owner))
-
-        val search = coordinator.updateQuery("soup")
-        loadStarted.await()
-        owner.cancel()
-        releaseLoad.complete(Unit)
-        search.join()
-        runCurrent()
-
-        assertTrue(coordinator.state.value.results.isEmpty())
     }
 
     private fun document(id: Long, name: String) = RecipeSearchDocument(
