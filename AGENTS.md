@@ -72,10 +72,12 @@ nowhere else.
 ## Documentation
 
 The native Android client is in `maincourse-android/`. Read `docs/android.md`
-and `maincourse-android/AGENTS.md` before changing it. Its living roadmap is
-`docs/superpowers/plans/2026-09-07-native-android.md`. Use `bin/android-build`,
-`bin/android-test`, and `bin/android-test --device` (running emulator/device)
-for Android checks; these run separately from the Rails `bin/ci` suite.
+and `maincourse-android/AGENTS.md` before changing it. The current scope is the
+simple MVP in `docs/superpowers/specs/2026-09-09-android-simple-mvp-design.md`;
+`docs/superpowers/plans/2026-09-07-native-android.md` is superseded and retained
+only as historical context. Use `bin/android-build`, `bin/android-test`, and
+`bin/android-test --device` (running emulator/device) for Android checks; these
+run separately from the Rails `bin/ci` suite.
 
 `docs/` contains guides and reference documentation about how things work in this codebase. Check there first when working on a feature area.
 
