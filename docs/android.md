@@ -1,9 +1,9 @@
 # Android Development
 `maincourse-android/` is the native Kotlin/Jetpack Compose client. It provides
-first-run onboarding, native email, Google, and Apple sign-in, cookbook-scoped recipe
-browsing with offline cache support, account settings/deletion, and an
-interactive development gallery. It uses the same Rails API and accounts as the
-web and iOS clients. See
+first-run onboarding, native email, Google, and Apple sign-in, cookbook-scoped
+recipe browsing and local search with offline cache support, recipe editing and
+online actions, account settings/deletion, and an interactive development
+gallery. It uses the same Rails API and accounts as the web and iOS clients. See
 `docs/superpowers/plans/2026-09-07-native-android.md` for the product roadmap and
 [issue #92](https://github.com/SzymonNastaly/maincourse/issues/92) for Android
 external-service setup.
@@ -19,7 +19,10 @@ Its Google slice follows a separate
 and is tracked in [issue #98](https://github.com/SzymonNastaly/maincourse/issues/98).
 The core, Google, and Apple implementation gates have passed locally. Real
 Google and Apple accounts, release-signed provider verification, production App
-Link association, and the full Milestone 2 review remain outstanding.
+Link association, and the full Milestone 2 review remain outstanding. Milestone
+3's core recipe workflow gate has also passed locally; imports, Android sharing,
+the isolated coroutine-lifetime follow-up in #104, and final whole-core review
+remain before Milestone 3 can be called complete.
 
 ## Bootstrap Contract
 | Setting | Pinned value |
@@ -80,9 +83,9 @@ Use package-by-feature directories inside
   the nonsecret onboarding draft; `data/cache` owns Room; and `data/images`
   owns image URL and cache policy.
 - `features/auth`, `features/onboarding`, `features/session`,
-  `features/recipes`, and `features/settings` contain the implemented product
-  slice.
-- `features/preview` contains the explicit Shopping/Search placeholders;
+  `features/recipes`, `features/search`, and `features/settings` contain the
+  implemented product slice.
+- `features/preview` contains the explicit Shopping placeholder;
   `features/designsystem` is the development gallery; theme code is under
   `ui/theme`.
 
@@ -132,9 +135,9 @@ association remains unverified until the owner publishes `assetlinks.json` for
 the certificate that actually signs `com.getmaincourse.app`.
 
 The protected shell preserves four destinations: Recipes, Shopping, Search, and
-Settings. Recipes and account/preferences Settings are real; Shopping and Search
-remain explicitly labeled previews. The design gallery remains reachable from
-Settings during development.
+Settings. Recipes, cookbook-scoped Search, and account/preferences Settings are
+real; Shopping remains explicitly labeled as a preview. The design gallery
+remains reachable from Settings during development.
 
 `DesignSystemScreen.kt` is a navigable, interactive token/component gallery for phone/tablet validation, not a production
 destination or substitute for feature tests.
@@ -164,11 +167,47 @@ recipe responses replace their scope transactionally, including successful
 empty lists. A detail response updates only its recipe and never prunes peers.
 Corrupt cached records are invalidated at their narrowest safe scope.
 
-Recipe details are cached on demand when opened, not during initial list sync.
-A previously opened detail remains readable offline with saved/offline feedback;
-an unopened detail requires a connection and must not be rendered from summary
-data as if complete. The list can be fully available offline only after it has
-been fetched. There is no mutation outbox in this milestone.
+Recipe details still cache on demand when opened. In addition, every successful
+authoritative recipe-list refresh starts a cancellable, two-minute full detail
+sweep through `GET /api/v1/recipes/batch?limit=100&cursor=…`. Completed recipes
+saved by that sweep remain readable offline even if they were never opened;
+details not reached by either path still require a connection and are never
+fabricated from summary data. Every sweep starts without a persisted cursor and
+runs through the terminal empty page. This deliberately differs from Milestone
+1's on-demand-only convention because ingredient parsing does not currently
+advance the parent recipe cursor revision
+([#102](https://github.com/SzymonNastaly/maincourse/issues/102)). Batch pages are
+partial updates, cache only known completed list members, and never prune
+recipes; only a successful full list response has pruning authority.
+
+Search scores the active cookbook's Room summaries/details in memory, off Main,
+over normalized recipe names, ingredient names/raw fallback, and instructions.
+It removes case and common Latin diacritics, requires every query term, ranks
+name above ingredient above instruction matches, and uses bounded prefix/typo
+fallback only when direct matches are absent. A scope change clears visible
+results before recomputing, and an active query restored during startup shows a
+loading state rather than another cookbook's rows or a false error.
+
+Recipe edits send one complete JSON PATCH so explicit `null` and `[]` clear
+nullable fields and ordered rows. A staged cover then uses a separate multipart
+PATCH. A confirmed text save followed by an unconfirmed photo upload keeps the
+private prepared file for explicit photo-only retry and never repeats the text
+PATCH. Missing files require a replacement selection. Network ambiguity is
+reported as unconfirmed, never auto-replayed; a local cache-write failure offers
+reconciliation rather than resending the server mutation. Editor fields, row
+identities/order, private staged-image keys, and interrupted markers use scoped
+saved state, but credentials do not. Process recreation never auto-saves.
+
+Move, delete, and reviewed-ingredient add are likewise online-only. Shopping
+review freezes scaled values and stable per-row UUIDs so an explicit ambiguous
+retry is duplicate-safe through the Rails upsert contract. This is not the
+general durable shopping outbox planned for Milestone 4. Successful source/target
+cache reconciliation is scoped and partial; the cross-process durable purge gap
+remains [#94](https://github.com/SzymonNastaly/maincourse/issues/94). Restored
+detail/editor/review routes now distinguish loading, authoritative absence, zero
+cookbooks, and recoverable cookbook discovery, preserving Retry and Back instead
+of dead-ending; this resolves the Milestone 3 cases tracked by
+[#96](https://github.com/SzymonNastaly/maincourse/issues/96).
 
 The session coordinator owns the authenticated coroutine lifetime. User,
 cookbook, catalog, and detail generations plus serialized cache writes prevent a
@@ -205,6 +244,13 @@ directories when preparing another account, and never attaches the API bearer
 header to image requests. Image caching is best effort: placeholders are valid
 offline even when an image was not retained. Cookbook switching removes old
 images from view; account cleanup disposes requests and memory/disk ownership.
+
+`RecipeImageOwner` separately stages editor photos in app-private cache. Platform
+`ImageDecoder` normalizes orientation, rejects input beyond the byte and
+dimension bounds before expensive allocation, downsamples the long edge, and
+emits a server-sized JPEG off Main. Photo Picker grants are never persisted;
+only the validated private key/path is saveable, and explicit cancel, completed
+upload, scope loss, or logout removes owned staging files.
 
 Logout first cancels authenticated work and hides protected content, attempts
 remote revocation with a bounded timeout, then clears the encrypted session,
@@ -403,10 +449,17 @@ The Android suites include:
 
 - `MainCourseThemeTest.kt`: token identity and required text/surface contrast.
 - `MainCourseAppTest.kt`: authentication validation, session recovery, cookbook
-  switching, recipe list/detail cache states, logout, four destinations, Back,
-  gallery restoration, and adaptive navigation.
+  switching, recipe list/detail/search states, editor and action recovery,
+  logout, four destinations, Back, gallery restoration, and adaptive navigation.
 - `SessionImagesTest.kt`: session loader reuse, cleanup, and unauthenticated
   image requests.
+
+Recipe policy tests cover normalized search/ranking, full-sweep termination and
+staleness, exact null/array/multipart wire contracts, move/delete reconciliation,
+quantity formatting, stable ingredient IDs, partial-photo retry, and no automatic
+mutation replay. Device tests cover real Room partial upserts and platform image
+preparation. Live acceptance claims still require the real `MainActivity`; the
+test host does not substitute for Keystore, Room, Photo Picker, or window flags.
 
 Use the Compose JUnit `v2` test rules. Keep Espresso explicitly pinned in the
 catalog: Compose's older transitive version uses an input API removed in API 37.

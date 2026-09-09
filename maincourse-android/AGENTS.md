@@ -35,8 +35,8 @@ These instructions apply to `maincourse-android/`.
   DI framework or speculative layers at this scale.
 - Keep `data/{model,network,session,onboarding,cache,images}` as the shared data
   boundary and
-  `features/{auth,onboarding,session,recipes,settings,preview,designsystem}` as
-  the package-by-feature UI/orchestration layout.
+  `features/{auth,onboarding,session,recipes,search,settings,preview,designsystem}`
+  as the package-by-feature UI/orchestration layout.
 - Prefer small Compose screens with explicit state and event parameters. Add a
   view model or shared abstraction only when behavior warrants it.
 
@@ -53,9 +53,9 @@ These instructions apply to `maincourse-android/`.
 - Use 8dp/10dp/12dp control/card/panel radii, flat hairline surfaces, native
   Material behavior, and checked-in Material Symbols vectors.
 - Preserve the four shell destinations: Recipes, Shopping, Search, Settings.
-- Recipes, onboarding, and account/preferences Settings are implemented. Keep
-  Shopping and Search explicitly labeled as previews until their roadmap
-  milestones.
+- Recipes, cookbook-scoped Search, onboarding, and account/preferences Settings
+  are implemented. Keep Shopping explicitly labeled as a preview until its
+  roadmap milestone.
 - Keep `features/designsystem/DesignSystemScreen.kt` navigable and interactive
   from Settings. It is a development gallery, not a real feature.
 - Adapt navigation between compact and expanded widths; do not create a
@@ -108,8 +108,14 @@ These instructions apply to `maincourse-android/`.
 - Preserve request generation/ownership checks, structured cancellation, and
   serialized cache writes across refresh, switch, logout, `401`, `403`, and
   `404` handling. Do not let stale requests write into a newer scope.
-- Keep Coil loaders user/session-owned and bearer-free. Images are best effort;
-  only details successfully fetched after opening are available offline.
+- Keep Coil loaders user/session-owned and bearer-free. Images are best effort.
+  A successful recipe-list refresh starts a bounded full detail sweep, so
+  completed recipes swept in the background can open offline even if they were
+  never opened. Batch pages are partial updates and are never pruning authority.
+- Recipe edits, cover retries, moves, deletes, and reviewed-ingredient adds are
+  online actions without automatic replay. Keep exact editor snapshots and
+  stable review IDs for explicit recovery, but do not turn them into a durable
+  mutation outbox; that remains Milestone 4 shopping scope.
 - Cleanup must finish before admitting another account. Treat disk/storage
   deletion failure as recoverable failure, not successful logout. Cross-process
   cleanup/purge durability after logout or successful account deletion remains

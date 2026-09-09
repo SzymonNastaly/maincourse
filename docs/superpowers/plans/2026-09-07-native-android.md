@@ -13,7 +13,7 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | 0. Enablement and scaffold | Complete | Native preview, local tooling, CI definition, and local verification complete; external accounts tracked in #92 |
 | 1. First vertical slice | Complete | Email session through cached recipe list/detail passed local API 37 acceptance and final code review; evidence in #93 |
 | 2. Identity and account | Implementation reviewed; external gates open | Core, Google, and Apple handoff code gates and reviews passed; live providers and release signing/App Links remain |
-| 3. Recipe workflows | In progress | Search, editing, imports, cooking, and recipe actions; continuing automatically |
+| 3. Recipe workflows | Core locally gated; remaining slice in progress | Search, editing, cooking, and core recipe actions passed local acceptance; imports/sharing and final review remain |
 | 4. Shopping list | Planned | Durable offline shopping workflow |
 | 5. Collaboration | Planned | Shared cookbooks and invitations |
 | 6. Subscription | Planned | RevenueCat and Google Play billing |
@@ -342,6 +342,13 @@ provider and release gates; implementation reviews are complete.
 
 ## Milestone 3: Recipe Workflows
 
+**Status:** Core recipe workflows passed their local Rails/API 37 acceptance gate
+on 2026-09-09. This is a partial milestone gate: imports, Android share targets,
+the isolated structured-coroutine lifetime work in #104, and final whole-core
+review remain. Milestone 4 shopping outbox work has not started.
+
+**Core design:** [`docs/superpowers/specs/2026-09-08-android-recipe-workflows-design.md`](../specs/2026-09-08-android-recipe-workflows-design.md).
+
 **Scope:**
 - Local cookbook-scoped search backed by cached recipe data.
 - Recipe editing for cover image, name, prep/cook time, servings, ingredients, instructions, notes, and source URL.
@@ -353,6 +360,32 @@ provider and release gates; implementation reviews are complete.
 **Gate:**
 - Every workflow handles success, validation, cancellation, process recreation, slow server completion, and server failure.
 - Import retries cannot silently create duplicate recipes; until the API supplies idempotency, automatic POST retry is prohibited.
+
+**Core local verification recorded on 2026-09-09:**
+- The real `MainActivity`, Android Keystore session, Room cache, Retrofit API,
+  platform Photo Picker, and local Rails API passed cookbook-scoped search over
+  names/ingredients/instructions and diacritics, full-sweep offline opening of a
+  never-opened recipe, complete editor clearing/order/photo replacement, offline
+  draft retention, move/delete reconciliation, selected scaled ingredient add,
+  and cooking-window lifecycle checks.
+- Controlled local proxy faults proved acknowledged text plus failed photo is
+  reported as partial, retained-file and replacement-file retries upload only
+  the photo, and the replacement sequence issues exactly one JSON update.
+  Process-death acceptance proved staged draft restoration without auto-save and
+  explicit Cancel cleanup. Zero-cookbook and failed-discovery Retry/Back states
+  remained recoverable, resolving the cases tracked in #96.
+- Phone and tablet layouts were inspected at 200% text with IME. Emulator size,
+  density, font, rotation, night, and network settings were restored. Evidence
+  is from the local API 37 emulator, not a physical device or signed release.
+- The clean Android gate passed debug and minified unsigned release builds,
+  debug/release lint, JVM tests, and API 37 device tests. Targeted Rails recipe,
+  shopping-list, and shopping upsert contracts also passed; Rails production
+  code and iOS code were unchanged.
+- Background detail hydration always performs a full sweep because parser child
+  changes do not advance the parent cursor (#102). Reviewed-item UUIDs support
+  explicit duplicate-safe add, not the Milestone 4 durable outbox. Cross-process
+  purge durability remains #94. Imports/sharing follow only after the isolated
+  #104 lifetime work; final whole-core review is still pending.
 
 ## Milestone 4: Durable Offline Shopping
 
@@ -541,6 +574,7 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
 | 2026-09-08 | Android Google Credential Manager implementation passed its local code and zero-account chooser gate; real account/consent, release signing, Apple, and full Milestone 2 review remain separate gates. |
 | 2026-09-08 | Shared Rails/web/iOS Apple account-creation confirmation passed local component gates under #99. Android handoff and real registered-HTTPS/Hide My Email acceptance remain; #86 and the full Milestone 2 review stay open. |
 | 2026-09-08 | Android's PKCE-bound Apple browser handoff passed its local Rails/API 37 implementation gate and final code review, including real browser cancellation and controlled fixture exchange. Real Apple/Google identities, registered HTTPS, production App Links, release signing, and #86 stay open; Milestone 3 follows independently. |
+| 2026-09-09 | Milestone 3 core search/edit/actions/cooking passed local Rails/API 37 acceptance. The milestone remains partial: imports/sharing, #104's isolated lifetime refactor, and final whole-core review are next; #102 cursor and #94 durable-purge limitations remain explicit. |
 
 ## Handoff
 
@@ -557,8 +591,10 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
   production App Links, release-signed Google/Apple checks, #86, full Milestone
   2 remain open.
 - Continue Milestones 3–5 without treating provider or Play gates as blockers.
-  Milestone 3 is now the active implementation scope. External tracks remain
-  open in #92; the owner has supplied Firebase Rails configuration for the later
+  Milestone 3 core recipe workflows are locally gated but not finally reviewed.
+  Complete #104 as an isolated lifetime step, then implement imports and Android
+  sharing before calling Milestone 3 complete. External tracks remain open in
+  #92; the owner has supplied Firebase Rails configuration for the later
   notification integration.
 - Play registration is temporarily owner-blocked. Follow the working sequence above; local OAuth SHA-1 discovery and Google Cloud/Firebase configuration do not depend on Play access.
 - Before implementation work, consult the milestone's GitHub issues and update this roadmap only when scope, sequencing, gates, or decisions change.
