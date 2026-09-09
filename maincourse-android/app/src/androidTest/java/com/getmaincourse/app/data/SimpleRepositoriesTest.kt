@@ -111,6 +111,19 @@ class SimpleRepositoriesTest {
     }
 
     @Test
+    fun recipeRefreshDoesNotWriteLegacyFetchMetadata() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        server.enqueue(jsonResponse("[${summaryJson(7, "Fresh")}]"))
+
+        recipes.refreshList(USER_ID, 10)
+
+        database.openHelper.readableDatabase.query("SELECT COUNT(*) FROM recipe_fetches").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+    }
+
+    @Test
     fun malformedCachedJsonMapsToAbsenceUntilRefreshReplacesIt() = runBlocking {
         seedCookbook(USER_ID, 10)
         database.catalogDao().upsertRecipes(

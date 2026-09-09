@@ -34,6 +34,8 @@ data class SelectedCookbookEntity(
     val cookbookId: Long,
 )
 
+// Retained only to keep Room schema version 1 compatible with existing installs.
+// The simple MVP never reads or writes this legacy table; remove it with a deliberate migration.
 @Entity(
     tableName = "recipe_fetches",
     primaryKeys = ["userId", "cookbookId"],

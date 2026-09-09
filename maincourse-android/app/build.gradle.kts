@@ -78,7 +78,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
@@ -110,6 +109,5 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     // Compose's transitive Espresso 3.5 uses an input API removed in Android 17.
     androidTestImplementation(libs.androidx.test.espresso.core)
-    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.okhttp.mockwebserver)
 }
