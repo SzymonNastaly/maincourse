@@ -45,7 +45,7 @@ its local gate and awaits final review; imports and Android sharing follow next.
 | Retrofit / kotlinx.serialization converter | 3.0.0 / 3.0.0 |
 | Room / KSP | 2.8.4 / 2.3.11 |
 | Coil | 3.3.0 |
-| Lifecycle | Declared 2.9.4; resolved atomic group 2.10.0 |
+| Lifecycle | 2.11.0 (direct and resolved atomic group) |
 | Credential Manager / Play-services adapter | 1.6.0 / 1.6.0 |
 | Google ID library | 1.2.0 |
 | Fragment | Direct stable compatibility pin 1.9.0 |
@@ -64,9 +64,11 @@ resolved Fragment 1.5.7 runtime fails the current
 by `CredentialManagerMisuse`; it maps to the same safe unavailable-provider
 message rather than exposing SDK details.
 
-Navigation 3 runtime 1.1.7 aligns the AndroidX Lifecycle atomic group to 2.10.0
-even though the two direct Lifecycle dependencies remain declared at 2.9.4. Do
-not force one Lifecycle artifact back to 2.9.4: the group must resolve together.
+Lifecycle 2.11.0 is pinned across the AndroidX Lifecycle atomic group. Its
+official `rememberViewModelStoreOwner` API gives the protected Navigation 3
+shell an owner that survives Activity recreation and clears its entry-scoped
+view models when the signed-in shell leaves composition. Keep the Lifecycle
+artifacts aligned rather than forcing one artifact to an older version.
 The API boundary uses Retrofit's official kotlinx.serialization converter over
 the pinned OkHttp client. Room, Android Keystore storage, and a session-owned
 Coil image loader cover their respective persistence and image roles.
