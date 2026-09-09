@@ -417,7 +417,9 @@ class RecipeActionControllerTest {
 
         assertEquals(1, api.shoppingRequests.size)
         assertEquals(payload, controller.state.value.frozenShoppingItems)
+        assertEquals(RecipeActionOperation.ADDING_INGREDIENTS, controller.state.value.operation)
         assertEquals(RecipeActionOutcome.AMBIGUOUS, controller.state.value.outcome)
+        assertFalse(controller.state.value.isBusy)
         assertEquals("stable", api.shoppingRequests.single().items.single().clientId)
 
         api.shoppingFailure = null
@@ -425,8 +427,41 @@ class RecipeActionControllerTest {
 
         assertEquals(2, api.shoppingRequests.size)
         assertEquals(api.shoppingRequests[0], api.shoppingRequests[1])
+        assertEquals(RecipeActionOperation.ADDING_INGREDIENTS, controller.state.value.operation)
         assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
         assertEquals(1, controller.state.value.acknowledgedCount)
+        assertFalse(controller.state.value.isBusy)
+    }
+
+    @Test
+    fun definiteIngredientRejectionKeepsItsOperationAndDoesNotPostAgain() = runTest {
+        val api = FakeApi().apply { shoppingFailure = ApiFailure(422, "Ingredient is invalid") }
+        val controller = controller(api, FakeStore(), FakeHost(this))
+        val payload = listOf(ShoppingItemInput("stable", "onion", null, null, RECIPE.id))
+
+        controller.addReviewedIngredients(RECIPE.id, payload).join()
+
+        assertEquals(1, api.shoppingRequests.size)
+        assertEquals(RecipeActionOperation.ADDING_INGREDIENTS, controller.state.value.operation)
+        assertEquals(RecipeActionOutcome.FAILED, controller.state.value.outcome)
+        assertEquals(payload, controller.state.value.frozenShoppingItems)
+        assertFalse(controller.state.value.isBusy)
+    }
+
+    @Test
+    fun invalidIngredientSelectionPublishesItsOperationWithoutPosting() = runTest {
+        val api = FakeApi()
+        val controller = controller(api, FakeStore(), FakeHost(this))
+
+        controller.addReviewedIngredients(
+            RECIPE.id,
+            listOf(ShoppingItemInput("stable", " ", null, null, RECIPE.id)),
+        ).join()
+
+        assertTrue(api.shoppingRequests.isEmpty())
+        assertEquals(RecipeActionOperation.ADDING_INGREDIENTS, controller.state.value.operation)
+        assertEquals(RecipeActionOutcome.FAILED, controller.state.value.outcome)
+        assertFalse(controller.state.value.isBusy)
     }
 
     @Test
@@ -469,7 +504,10 @@ class RecipeActionControllerTest {
         ).join()
 
         assertEquals(1, host.authorizationFailures)
+        assertEquals(1, api.shoppingRequests.size)
+        assertEquals(RecipeActionOperation.IDLE, controller.state.value.operation)
         assertEquals(RecipeActionOutcome.IDLE, controller.state.value.outcome)
+        assertFalse(controller.state.value.isBusy)
     }
 
     @Test

@@ -209,7 +209,13 @@ class RecipeActionController internal constructor(
             frozen.map(ShoppingItemInput::clientId).toSet().size != frozen.size ||
             context.recipes.none { it.id == recipeId && it.importStatus == "completed" }
         ) {
-            publishFailure(context, version, recipeId, "Select at least one valid ingredient")
+            publishFailure(
+                context,
+                version,
+                recipeId,
+                "Select at least one valid ingredient",
+                operation = RecipeActionOperation.ADDING_INGREDIENTS,
+            )
             return@launch
         }
         publishRunning(context, version, RecipeActionOperation.ADDING_INGREDIENTS, recipeId, frozen)
@@ -226,13 +232,22 @@ class RecipeActionController internal constructor(
                 mutableState.value = RecipeActionState()
                 return@launch
             }
-            handleMutationFailure(context, version, recipeId, failure, "Could not add ingredients", frozen)
+            handleMutationFailure(
+                context,
+                version,
+                recipeId,
+                failure,
+                "Could not add ingredients",
+                frozen = frozen,
+                operation = RecipeActionOperation.ADDING_INGREDIENTS,
+            )
             return@launch
         }
         publishState(
             context,
             version,
             RecipeActionState(
+                operation = RecipeActionOperation.ADDING_INGREDIENTS,
                 outcome = RecipeActionOutcome.SUCCEEDED,
                 scope = context.scope,
                 recipeId = recipeId,
@@ -527,6 +542,7 @@ class RecipeActionController internal constructor(
         fallback: String,
         frozen: List<ShoppingItemInput> = emptyList(),
         requestKey: String? = null,
+        operation: RecipeActionOperation = RecipeActionOperation.IDLE,
     ) {
         if (failure is CancellationException) throw failure
         if (failure.isAuthorizationFailure()) throw DeferredAuthorizationFailure(failure as ApiFailure)
@@ -535,6 +551,7 @@ class RecipeActionController internal constructor(
             context,
             version,
             RecipeActionState(
+                operation = operation,
                 outcome = if (ambiguous) RecipeActionOutcome.AMBIGUOUS else RecipeActionOutcome.FAILED,
                 scope = context.scope,
                 recipeId = recipeId,
@@ -572,11 +589,13 @@ class RecipeActionController internal constructor(
         recipeId: Long?,
         message: String,
         requestKey: String? = null,
+        operation: RecipeActionOperation = RecipeActionOperation.IDLE,
     ) =
         publishState(
             context,
             version,
             RecipeActionState(
+                operation = operation,
                 outcome = RecipeActionOutcome.FAILED,
                 scope = context.scope,
                 recipeId = recipeId,
