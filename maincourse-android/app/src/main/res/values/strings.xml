@@ -165,6 +165,7 @@
     <string name="delete_account_transfer">Cookbooks you share with others will be transferred to a collaborator so their data is preserved.</string>
     <string name="delete_confirmation_prompt">Type DELETE to confirm</string>
     <string name="delete_my_account">Delete My Account</string>
+    <string name="retry_account_deletion">Retry deletion</string>
     <plurals name="recipe_servings">
         <item quantity="one">%1$d serving</item>
         <item quantity="other">%1$d servings</item>

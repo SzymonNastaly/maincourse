@@ -180,7 +180,10 @@ fun SettingsScreen(
                     Text(stringResource(R.string.sign_out))
                 }
                 OutlinedButton(
-                    onClick = { confirmingDelete = true },
+                    onClick = {
+                        onClearError()
+                        confirmingDelete = true
+                    },
                     modifier = Modifier.fillMaxWidth().testTag("settings_delete"),
                     enabled = !busy,
                     shape = MainCourseShapes.Control,
@@ -194,6 +197,7 @@ fun SettingsScreen(
     if (confirmingDelete) {
         DeleteAccountDialog(
             deleting = state.deleting,
+            error = state.error,
             onConfirm = onDeleteAccount,
             onDismiss = { confirmingDelete = false },
         )

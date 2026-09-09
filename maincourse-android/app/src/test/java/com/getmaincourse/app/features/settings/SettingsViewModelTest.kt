@@ -98,7 +98,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun persistenceFailureDoesNotPublishUnpersistedUserOrRepeatPatchOnRetry() = runTest(dispatcher) {
+    fun identicalPersistenceRetryDoesNotRepeatPatch() = runTest(dispatcher) {
         val updated = USER.copy(name = "New name", lifecycleNotificationsEnabled = false)
         service.updatedUser = updated
         store.writeFailure = IOException("disk full")
@@ -119,6 +119,28 @@ class SettingsViewModelTest {
         assertEquals(1, service.updateCalls)
         assertEquals(updated, store.value?.response?.user)
         assertEquals(updated, provider.session.value?.user)
+    }
+
+    @Test
+    fun editedValuesAfterPersistenceFailureSendANewPatch() = runTest(dispatcher) {
+        service.updatedUser = USER.copy(name = "First accepted", lifecycleNotificationsEnabled = false)
+        store.writeFailure = IOException("disk full")
+        val viewModel = buildViewModel()
+        viewModel.saveProfile("First accepted", remindersEnabled = false).join()
+
+        store.writeFailure = null
+        val editedUser = USER.copy(name = "Edited again", lifecycleNotificationsEnabled = true)
+        service.updatedUser = editedUser
+        viewModel.saveProfile("Edited again", remindersEnabled = true).join()
+        runCurrent()
+
+        assertEquals(2, service.updateCalls)
+        assertEquals(
+            AccountUpdateRequest(AccountAttributes(name = "Edited again", lifecycleNotificationsEnabled = true)),
+            service.updateRequest,
+        )
+        assertEquals(editedUser, store.value?.response?.user)
+        assertEquals(editedUser, provider.session.value?.user)
     }
 
     @Test

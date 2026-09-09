@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.AccountResponse
@@ -140,6 +141,26 @@ class MainCourseAppTest {
         compose.onNodeWithTag("settings_delete").assertIsDisplayed()
         compose.onNodeWithTag("settings_sign_out").assertIsDisplayed()
         compose.onNodeWithTag("navigation_bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun accountDeletionFailureStaysInConfirmationAndCanBeRetried() {
+        val deletionCalls = AtomicInteger()
+        show(
+            SessionUiState.SignedIn(SESSION),
+            factories = factories(onDeleteAccount = deletionCalls::incrementAndGet),
+        )
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("settings_delete").performClick()
+        compose.onNodeWithTag("delete_confirmation").performTextInput("DELETE")
+
+        compose.onNodeWithTag("delete_account_button").performClick()
+
+        compose.onNodeWithTag("delete_account_error")
+            .assertIsDisplayed()
+            .assertTextEquals("Could not delete account")
+        compose.onNodeWithText("Retry deletion").assertIsDisplayed().performClick()
+        compose.waitUntil(5_000) { deletionCalls.get() == 2 }
     }
 
     @Test
@@ -277,6 +298,7 @@ class MainCourseAppTest {
         summary: RecipeSummary = SUMMARY,
         onRecipesCreated: () -> Unit = {},
         onDetailCreated: () -> Unit = {},
+        onDeleteAccount: () -> Unit = {},
     ): BrowsingViewModelFactories {
         val selection = MutableStateFlow(CookbookSelection(listOf(COOKBOOK), COOKBOOK.id))
         val recipes = MutableStateFlow(listOf(summary))
@@ -310,7 +332,7 @@ class MainCourseAppTest {
                         service = UnusedService,
                         sessionStore = InMemorySessionStore(StoredSession(BASE_URL, SESSION)),
                         sessionProvider = provider,
-                        deleteAccount = ::completedJob,
+                        deleteAccount = { completedJob().also { onDeleteAccount() } },
                         signOut = ::completedJob,
                     )
                 }

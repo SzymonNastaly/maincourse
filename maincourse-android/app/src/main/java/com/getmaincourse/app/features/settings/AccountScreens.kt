@@ -18,6 +18,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -28,6 +31,7 @@ import com.getmaincourse.app.ui.theme.MainCourseShapes
 @Composable
 fun DeleteAccountDialog(
     deleting: Boolean,
+    error: String?,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -49,6 +53,15 @@ fun DeleteAccountDialog(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                     shape = MainCourseShapes.Control,
                 )
+                error?.let {
+                    Text(
+                        text = it,
+                        color = MainCourseColors.Danger,
+                        modifier = Modifier.testTag("delete_account_error").semantics {
+                            liveRegion = LiveRegionMode.Polite
+                        },
+                    )
+                }
             }
         },
         confirmButton = {
@@ -59,7 +72,11 @@ fun DeleteAccountDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MainCourseColors.Danger),
             ) {
                 if (deleting) CircularProgressIndicator(strokeWidth = 2.dp)
-                Text(stringResource(R.string.delete_my_account))
+                Text(
+                    stringResource(
+                        if (error == null) R.string.delete_my_account else R.string.retry_account_deletion,
+                    ),
+                )
             }
         },
         dismissButton = {

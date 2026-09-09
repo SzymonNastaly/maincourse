@@ -52,8 +52,14 @@ class SettingsViewModel(
 
     fun saveProfile(name: String, remindersEnabled: Boolean): Job = launchAction(saving = true) {
         val current = sessionProvider.session.value ?: return@launchAction
+        val requestedName = name.trim()
         val pending = pendingSession
-        if (pending != null && pending.response.token == current.token) {
+        val pendingUser = pending?.response?.user
+        if (pending != null &&
+            pending.response.token == current.token &&
+            pendingUser?.name == requestedName &&
+            pendingUser.lifecycleNotificationsEnabled == remindersEnabled
+        ) {
             persistAndPublish(pending, current.token)
             return@launchAction
         }
@@ -76,7 +82,7 @@ class SettingsViewModel(
             service.updateAccount(
                 AccountUpdateRequest(
                     AccountAttributes(
-                        name = name.trim(),
+                        name = requestedName,
                         lifecycleNotificationsEnabled = remindersEnabled,
                     ),
                 ),
