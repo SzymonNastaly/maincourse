@@ -19,12 +19,14 @@ import java.time.Instant
 import java.time.format.DateTimeParseException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 class SessionViewModel internal constructor(
@@ -55,7 +57,7 @@ class SessionViewModel internal constructor(
         baseUrl = baseUrl,
         clock = clock,
         prepareImages = images::prepare,
-        clearDatabase = database::clearAllTables,
+        clearDatabase = { withContext(Dispatchers.IO) { database.clearAllTables() } },
         clearImages = images::clear,
     )
 

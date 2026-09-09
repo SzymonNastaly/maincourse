@@ -13,7 +13,8 @@ Implemented:
 - Cookbook selection and cached recipe list/detail browsing.
 - Online recipe move, delete, and reviewed ingredient addition to the shopping
   list.
-- Account name and recipe-reminder settings.
+- Account name and recipe-reminder settings, with the account email displayed
+  read-only.
 - Four bottom destinations: Recipes and Settings are functional; Shopping and
   Search are clearly labeled placeholders.
 

@@ -24,8 +24,9 @@ These instructions apply to `maincourse-android/`.
   `viewModelScope` cancellation.
 - Prefer small Compose screens with explicit state and callback parameters.
 - Current features are email auth, cached cookbook/recipe browsing, recipe
-  move/delete/add-to-shopping actions, profile settings, account deletion, and
-  logout. Shopping and Search are labeled placeholders.
+  move/delete/add-to-shopping actions, profile settings with read-only account
+  email, account deletion, and logout. Shopping and Search are labeled
+  placeholders.
 - Do not restore onboarding, provider sign-in, search, recipe editing/photo
   upload, imports/sharing, design gallery, or adaptive navigation without an
   approved scope change.
