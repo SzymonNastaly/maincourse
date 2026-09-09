@@ -1,6 +1,8 @@
 package com.getmaincourse.app.data
 
+import androidx.room.withTransaction
 import com.getmaincourse.app.data.cache.MainCourseDatabase
+import com.getmaincourse.app.data.cache.RecipeEntity
 import com.getmaincourse.app.data.cache.toDetail
 import com.getmaincourse.app.data.cache.toEntity
 import com.getmaincourse.app.data.cache.toJson
@@ -12,6 +14,8 @@ import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.network.MainCourseService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 class RecipeRepository(
@@ -21,6 +25,7 @@ class RecipeRepository(
 ) {
     private val dao = database.catalogDao()
     private val json = Json(json) { ignoreUnknownKeys = true }
+    private val listWrites = Mutex()
 
     fun observeSummaries(userId: Long, cookbookId: Long): Flow<List<RecipeSummary>> =
         dao.observeRecipes(userId, cookbookId).map { entities ->
@@ -30,7 +35,7 @@ class RecipeRepository(
     fun observeDetail(userId: Long, cookbookId: Long, recipeId: Long): Flow<RecipeDetail?> =
         dao.observeRecipe(userId, cookbookId, recipeId).map { it?.toDetail(json) }
 
-    suspend fun refreshList(userId: Long, cookbookId: Long) {
+    suspend fun refreshList(userId: Long, cookbookId: Long) = listWrites.withLock {
         val response = service.recipes(cookbookId)
         dao.replaceRecipes(
             userId,
@@ -49,13 +54,30 @@ class RecipeRepository(
         sourceCookbookId: Long,
         recipeId: Long,
         targetCookbookId: Long,
-    ) {
-        service.moveRecipe(sourceCookbookId, recipeId, MoveRecipeRequest(targetCookbookId))
-        dao.removeRecipe(userId, sourceCookbookId, recipeId)
-        refreshList(userId, targetCookbookId)
+    ) = listWrites.withLock {
+        val moved = service.moveRecipe(sourceCookbookId, recipeId, MoveRecipeRequest(targetCookbookId))
+        database.withTransaction {
+            val source = dao.recipe(userId, sourceCookbookId, recipeId)
+            val target = dao.recipe(userId, targetCookbookId, recipeId)
+            val previousSummary = source?.toSummary(json) ?: target?.toSummary(json)
+            dao.upsertRecipes(
+                listOf(
+                    RecipeEntity(
+                        userId = userId,
+                        cookbookId = targetCookbookId,
+                        recipeId = recipeId,
+                        listPosition = target?.listPosition
+                            ?: dao.nextRecipePosition(userId, targetCookbookId),
+                        summaryJson = json.encodeToString(moved.toSummary(previousSummary)),
+                        detailJson = moved.toJson(json),
+                    ),
+                ),
+            )
+            dao.removeRecipe(userId, sourceCookbookId, recipeId)
+        }
     }
 
-    suspend fun delete(userId: Long, cookbookId: Long, recipeId: Long) {
+    suspend fun delete(userId: Long, cookbookId: Long, recipeId: Long) = listWrites.withLock {
         service.deleteRecipe(cookbookId, recipeId)
         dao.removeRecipe(userId, cookbookId, recipeId)
     }

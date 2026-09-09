@@ -34,6 +34,19 @@ internal fun RecipeEntity.toDetail(json: Json): RecipeDetail? = detailJson?.let(
 
 internal fun RecipeDetail.toJson(json: Json): String = json.encodeToString(this)
 
+internal fun RecipeDetail.toSummary(previous: RecipeSummary?): RecipeSummary = RecipeSummary(
+    id = id,
+    name = name,
+    prepTime = prepTime,
+    cookTime = cookTime,
+    favorite = favorite,
+    coverImageUrl = coverImageUrl,
+    coverImages = coverImages,
+    importStatus = previous?.importStatus ?: "completed",
+    errorMessage = previous?.errorMessage,
+    updatedAt = updatedAt,
+)
+
 private inline fun <reified T> Json.decodeOrNull(value: String): T? = try {
     decodeFromString<T>(value)
 } catch (_: SerializationException) {

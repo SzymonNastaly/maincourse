@@ -11,14 +11,18 @@ import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.network.MainCourseService
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.mockwebserver.Dispatcher as MockDispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -60,7 +64,7 @@ class SimpleRepositoriesTest {
     fun cookbookRefreshPublishesRowsAndKeepsAValidSelection() = runBlocking {
         server.enqueue(jsonResponse("[${cookbookJson(10)},${cookbookJson(20)}]"))
         val firstEmission = async(Dispatchers.IO) {
-            cookbooks.observe(USER_ID).first { it.cookbooks.size == 2 }
+            cookbooks.observe(USER_ID).first { it.cookbooks.size == 2 && it.selectedId == 10L }
         }
 
         cookbooks.refresh(USER_ID)
@@ -121,9 +125,66 @@ class SimpleRepositoriesTest {
         assertEquals("Fresh detail", recipes.observeDetail(USER_ID, 10, 7).first()?.name)
     }
 
+    @Test
+    fun movePersistsReturnedDetailWithoutASecondNetworkCall() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        server.enqueue(jsonResponse(detailJson(7, "Moved")))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        recipes.move(USER_ID, 10, 7, 20)
+
+        assertEquals(1, server.requestCount)
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
+        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
+    }
+
+    @Test
+    fun delayedListRefreshCannotOverwriteALaterDelete() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Cached"))
+        val refreshRequested = CountDownLatch(1)
+        val allowRefreshResponse = CountDownLatch(1)
+        val deleteRequested = CountDownLatch(1)
+        server.dispatcher = object : MockDispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse = when (request.method) {
+                "GET" -> {
+                    refreshRequested.countDown()
+                    allowRefreshResponse.await(5, TimeUnit.SECONDS)
+                    jsonResponse("[${summaryJson(7, "Stale")}]")
+                }
+                "DELETE" -> {
+                    deleteRequested.countDown()
+                    MockResponse().setResponseCode(204)
+                }
+                else -> MockResponse().setResponseCode(404)
+            }
+        }
+
+        val refresh = async(Dispatchers.IO) { recipes.refreshList(USER_ID, 10) }
+        refreshRequested.await(5, TimeUnit.SECONDS)
+        val delete = async(Dispatchers.IO) { recipes.delete(USER_ID, 10, 7) }
+        if (deleteRequested.await(500, TimeUnit.MILLISECONDS)) delete.await()
+        allowRefreshResponse.countDown()
+        refresh.await()
+        delete.await()
+
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+    }
+
     private suspend fun seedCookbook(userId: Long, cookbookId: Long) {
         database.catalogDao().upsertCookbooks(
             listOf(CookbookEntity(userId, cookbookId, 0, Json.encodeToString(cookbook(cookbookId)))),
+        )
+    }
+
+    private suspend fun seedRecipe(userId: Long, cookbookId: Long, recipe: RecipeSummary) {
+        database.catalogDao().replaceRecipes(
+            userId,
+            cookbookId,
+            listOf(RecipeEntity(userId, cookbookId, recipe.id, 0, Json.encodeToString(recipe))),
         )
     }
 
