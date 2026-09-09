@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,10 +27,14 @@ import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
 @Composable
-fun PreviewScreen(onOpenDesignSystem: () -> Unit) {
+fun PreviewScreen(
+    title: String,
+    body: String,
+    testTag: String,
+) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
-            modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth().testTag("screen_Shopping"),
+            modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth().testTag(testTag),
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
@@ -50,9 +53,9 @@ fun PreviewScreen(onOpenDesignSystem: () -> Unit) {
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
-                    Text(stringResource(R.string.shopping_preview_title), style = MaterialTheme.typography.headlineLarge)
+                    Text(title, style = MaterialTheme.typography.headlineLarge)
                     Text(
-                        stringResource(R.string.shopping_preview_body),
+                        body,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MainCourseColors.Body,
                     )
@@ -71,9 +74,6 @@ fun PreviewScreen(onOpenDesignSystem: () -> Unit) {
                             style = MaterialTheme.typography.bodyMedium,
                             color = MainCourseColors.Body,
                         )
-                        Button(onClick = onOpenDesignSystem, shape = MainCourseShapes.Control) {
-                            Text(stringResource(R.string.explore_design))
-                        }
                     }
                 }
             }

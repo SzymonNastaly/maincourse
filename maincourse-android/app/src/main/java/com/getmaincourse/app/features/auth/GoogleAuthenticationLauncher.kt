@@ -4,15 +4,15 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.getmaincourse.app.features.session.GoogleAuthenticationAttempt
-import com.getmaincourse.app.features.session.MainCourseViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 internal class GoogleAuthenticationLauncher(
     private val activity: ComponentActivity,
-    private val viewModel: MainCourseViewModel,
+    private val beginAuthentication: () -> GoogleAuthenticationAttempt?,
+    private val finishAuthentication: (GoogleAuthenticationAttempt, String) -> Unit,
+    private val cancelAuthentication: (GoogleAuthenticationAttempt, String?) -> Unit,
     private val provider: GoogleCredentialProvider = AndroidGoogleCredentialProvider(activity),
 ) : DefaultLifecycleObserver {
     private var unresolvedAttempt: GoogleAuthenticationAttempt? = null
@@ -24,12 +24,12 @@ internal class GoogleAuthenticationLauncher(
 
     fun launch() {
         if (chooserJob?.isActive == true) return
-        val attempt = viewModel.beginGoogleAuthentication() ?: return
+        val attempt = beginAuthentication() ?: return
         unresolvedAttempt = attempt
         chooserJob = activity.lifecycleScope.launch {
             try {
                 val idToken = provider.credential(attempt.nonce)
-                viewModel.finishGoogleAuthentication(attempt, idToken)
+                finishAuthentication(attempt, idToken)
                 if (unresolvedAttempt == attempt) unresolvedAttempt = null
             } catch (_: GoogleSignInCancelledException) {
                 cancel(attempt)
@@ -47,7 +47,7 @@ internal class GoogleAuthenticationLauncher(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        unresolvedAttempt?.let(viewModel::cancelGoogleAuthentication)
+        unresolvedAttempt?.let { cancelAuthentication(it, null) }
         unresolvedAttempt = null
         chooserJob?.cancel()
         chooserJob = null
@@ -56,6 +56,10 @@ internal class GoogleAuthenticationLauncher(
 
     private fun cancel(attempt: GoogleAuthenticationAttempt, error: String? = null) {
         if (unresolvedAttempt == attempt) unresolvedAttempt = null
-        viewModel.cancelGoogleAuthentication(attempt, error)
+        cancelAuthentication(attempt, error)
     }
 }
+
+internal class GoogleAuthenticationAttempt internal constructor(
+    internal val nonce: String,
+)

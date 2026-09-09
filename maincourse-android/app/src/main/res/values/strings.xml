@@ -1,9 +1,11 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/design_system,@string/startup_failed,@string/cleanup_failed,@string/retry_cleanup,@string/clear_local_data,@string/cookbooks_load_error,@string/cookbooks_saved,@string/recipes_saved,@string/recipes_load_error,@string/recipe_saved_offline,@string/recipe_load_error,@string/recipe_actions,@string/recipe_edit,@string/search_no_cookbooks,@string/recipe_cooking_mode,@string/recipe_move_title,@string/recipe_delete_title,@string/recipe_delete_body,@string/recipe_move_target">
     <string name="app_name">MainCourse</string>
     <string name="recipes">Recipes</string>
     <string name="shopping">Shopping</string>
     <string name="search">Search</string>
     <string name="settings">Settings</string>
+    <string name="settings_preview_body">Account settings will be available in the next step.</string>
     <string name="design_system">Design system</string>
     <string name="back">Back</string>
     <string name="preview_badge">ANDROID PREVIEW</string>

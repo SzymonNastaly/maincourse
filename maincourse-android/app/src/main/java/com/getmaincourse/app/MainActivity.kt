@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -12,28 +11,20 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.getmaincourse.app.features.auth.GoogleAuthenticationLauncher
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.getmaincourse.app.features.auth.AppleAuthenticationCallbackParser
-import com.getmaincourse.app.features.session.MainCourseViewModel
+import com.getmaincourse.app.features.session.SessionUiState
+import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.ui.theme.MainCourseTheme
-import kotlinx.coroutines.CancellationException
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 class MainActivity : ComponentActivity() {
     private val appContainer: AppContainer
         get() = (application as MainCourseApplication).container
 
-    private val viewModel by viewModels<MainCourseViewModel> { appContainer.viewModelFactory }
-    private lateinit var googleAuthentication: GoogleAuthenticationLauncher
+    private val viewModel by viewModels<SessionViewModel> { appContainer.sessionViewModelFactory }
     private var contentInstalled = false
-    private var cookingScreenAwakeRequested = false
     private val localNetworkPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         installAppContent()
     }
@@ -41,18 +32,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        googleAuthentication = GoogleAuthenticationLauncher(this, viewModel)
-        consumeAppleCallbackIntent(intent, BuildConfig.DEBUG, viewModel::handleAppleAuthenticationCallback)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
         )
         val needsLocalNetworkPermission = shouldRequestLocalNetworkAccess(
-                isDebugBuild = BuildConfig.DEBUG,
-                sdkInt = Build.VERSION.SDK_INT,
-                permissionGranted = checkSelfPermission(LOCAL_NETWORK_PERMISSION) == PackageManager.PERMISSION_GRANTED,
-                apiHost = BuildConfig.API_BASE_URL.toHttpUrl().host,
-            )
+            isDebugBuild = BuildConfig.DEBUG,
+            sdkInt = Build.VERSION.SDK_INT,
+            permissionGranted = checkSelfPermission(LOCAL_NETWORK_PERMISSION) == PackageManager.PERMISSION_GRANTED,
+            apiHost = BuildConfig.API_BASE_URL.toHttpUrl().host,
+        )
         if (needsLocalNetworkPermission) {
             localNetworkPermission.launch(LOCAL_NETWORK_PERMISSION)
         } else {
@@ -65,122 +54,18 @@ class MainActivity : ComponentActivity() {
         contentInstalled = true
         setContent {
             MainCourseTheme {
-                val state by viewModel.state.collectAsStateWithLifecycle()
-                val onboardingState by viewModel.onboardingState.collectAsStateWithLifecycle()
-                val accountState by viewModel.accountState.collectAsStateWithLifecycle()
-                val searchState by viewModel.searchState.collectAsStateWithLifecycle()
-                val recipeActionState by viewModel.recipeActionState.collectAsStateWithLifecycle()
-                val recipeImagePreparationState by viewModel.recipeImagePreparationState.collectAsStateWithLifecycle()
-                val authenticationMethod by viewModel.authenticationMethod.collectAsStateWithLifecycle()
-                val appleBrowserLaunch by viewModel.appleBrowserLaunch.collectAsStateWithLifecycle()
-                val appleCanCancel by viewModel.appleCanCancel.collectAsStateWithLifecycle()
-                LaunchedEffect(appleBrowserLaunch) {
-                    val command = appleBrowserLaunch ?: return@LaunchedEffect
-                    val url = viewModel.consumeAppleBrowserLaunch(command) ?: return@LaunchedEffect
-                    try {
-                        startActivity(appleBrowserIntent(url))
-                    } catch (_: RuntimeException) {
-                        viewModel.appleBrowserLaunchFailed(command)
-                    }
-                }
-                val userId = state.user?.id
-                var imageLoader by remember(userId) { mutableStateOf<coil3.ImageLoader?>(null) }
-                LaunchedEffect(userId) {
-                    imageLoader = null
-                    if (userId != null) {
-                        imageLoader = try {
-                            appContainer.images.prepare(userId)
-                        } catch (failure: CancellationException) {
-                            throw failure
-                        } catch (_: Throwable) {
-                            null
-                        }
-                    }
+                LaunchedEffect(viewModel) {
+                    if (viewModel.state.value == SessionUiState.Restoring) viewModel.restore()
                 }
                 MainCourseApp(
-                    state = state,
-                    onboardingState = onboardingState,
-                    accountState = accountState,
-                    authenticationMethod = authenticationMethod,
-                    actions = MainCourseActions(
-                        restore = { viewModel.restore() },
-                        signIn = { viewModel.signIn(it) },
-                        signUp = { viewModel.signUp(it) },
-                        googleSignIn = googleAuthentication::launch,
-                        appleSignIn = { viewModel.beginAppleAuthentication() },
-                        cancelAppleSignIn = { viewModel.cancelAppleAuthentication() },
-                        startOnboarding = { viewModel.startOnboarding() },
-                        advanceOnboarding = { viewModel.advanceOnboarding() },
-                        backOnboarding = { viewModel.backOnboarding() },
-                        skipOnboarding = { viewModel.skipOnboarding() },
-                        useExistingAccount = { viewModel.useExistingAccount() },
-                        updateOnboardingHousehold = { viewModel.updateOnboardingHousehold(it) },
-                        updateOnboardingSaving = { viewModel.updateOnboardingSaving(it) },
-                        updateOnboardingDiet = { viewModel.updateOnboardingDiet(it) },
-                        retryOnboardingPersistence = { viewModel.retryOnboardingPersistence() },
-                        continueOnboardingWithoutSaving = { viewModel.continueOnboardingWithoutSaving() },
-                        switchCookbook = { viewModel.switchCookbook(it) },
-                        refresh = { viewModel.refresh() },
-                        openRecipe = { viewModel.openRecipe(it) },
-                        closeRecipe = { viewModel.closeRecipe() },
-                        updateSearchQuery = { viewModel.updateSearchQuery(it) },
-                        saveRecipe = { draft, image -> viewModel.saveRecipe(draft, image) },
-                        retryRecipePhoto = { viewModel.retryRecipePhoto(it) },
-                        moveRecipe = { recipeId, targetId -> viewModel.moveRecipe(recipeId, targetId) },
-                        deleteRecipe = { viewModel.deleteRecipe(it) },
-                        addReviewedIngredients = { recipeId, items -> viewModel.addReviewedIngredients(recipeId, items) },
-                        retryRecipeReconciliation = { viewModel.retryRecipeReconciliation() },
-                        clearRecipeAction = { viewModel.clearRecipeAction() },
-                        prepareRecipeImage = { uri, requestKey -> viewModel.prepareRecipeImage(uri, requestKey) },
-                        releaseRecipeEditorImage = { viewModel.releaseRecipeEditorImage(it) },
-                        updateName = { viewModel.updateName(it) },
-                        updateLifecycleNotifications = { viewModel.updateLifecycleNotifications(it) },
-                        retryAccountPersistence = { viewModel.retryAccountPersistence() },
-                        deleteAccount = { viewModel.deleteAccount() },
-                        clearAccountError = { viewModel.clearAccountError() },
-                        logout = { viewModel.logout() },
-                        reset = { viewModel.reset() },
-                    ),
-                    imageLoader = imageLoader,
+                    sessionViewModel = viewModel,
+                    cookbookRepository = appContainer.cookbookRepository,
+                    recipeRepository = appContainer.recipeRepository,
+                    imageLoader = viewModel.imageLoader,
                     resolveImage = appContainer.images::resolve,
-                    appleCanCancel = appleCanCancel,
-                    searchState = searchState,
-                    recipeActionState = recipeActionState,
-                    recipeImagePreparationState = recipeImagePreparationState,
-                    onKeepScreenOnChanged = ::setCookingScreenAwake,
                 )
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        applyCookingScreenAwake(cookingScreenAwakeRequested)
-        if (contentInstalled) viewModel.checkExpiry()
-    }
-
-    override fun onStop() {
-        applyCookingScreenAwake(false)
-        super.onStop()
-    }
-
-    private fun setCookingScreenAwake(enabled: Boolean) {
-        cookingScreenAwakeRequested = enabled
-        applyCookingScreenAwake(enabled)
-    }
-
-    private fun applyCookingScreenAwake(enabled: Boolean) {
-        if (enabled) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        consumeAppleCallbackIntent(intent, BuildConfig.DEBUG, viewModel::handleAppleAuthenticationCallback)
-        setIntent(intent)
     }
 }
 

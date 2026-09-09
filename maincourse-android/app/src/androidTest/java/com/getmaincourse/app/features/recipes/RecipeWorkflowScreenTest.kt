@@ -354,16 +354,14 @@ class RecipeWorkflowScreenTest {
                         override fun openUri(uri: String) = error("no handler")
                     }) {
                         RecipeDetailScreen(
-                            scope = RecipeScope(7, 1),
-                            detailState = com.getmaincourse.app.features.session.RecipeDetailState(
-                                DETAIL.id,
-                                com.getmaincourse.app.features.session.DetailStatus.FRESH,
-                                DETAIL.copy(sourceUrl = "https://example.test/recipe"),
+                            state = RecipeDetailUiState(
+                                recipe = DETAIL.copy(sourceUrl = "https://example.test/recipe"),
+                                loading = false,
                             ),
-                            importFailed = false,
                             imageLoader = null,
                             resolveImage = { it },
-                            onRetry = {},
+                            onRefresh = {},
+                            onBack = {},
                         )
                     }
                 }
