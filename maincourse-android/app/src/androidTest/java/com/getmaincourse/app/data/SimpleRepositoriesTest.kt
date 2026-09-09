@@ -177,6 +177,50 @@ class SimpleRepositoriesTest {
     }
 
     @Test
+    fun malformedTargetRefreshKeepsConfirmedMoveAndPatchDetail() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        server.enqueue(jsonResponse(detailJson(7, "Moved")))
+        server.enqueue(jsonResponse("{"))
+
+        recipes.move(USER_ID, 10, 7, 20)
+
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
+        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
+    }
+
+    @Test
+    fun failedTargetCacheWriteKeepsConfirmedMoveAndPatchDetail() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        seedRecipe(USER_ID, 20, summary(8, "Existing"))
+        database.openHelper.writableDatabase.execSQL(
+            """
+            CREATE TRIGGER fail_target_refresh
+            BEFORE DELETE ON recipes
+            WHEN OLD.cookbookId = 20
+            BEGIN
+                SELECT RAISE(FAIL, 'forced target write failure');
+            END
+            """.trimIndent(),
+        )
+        server.enqueue(jsonResponse(detailJson(7, "Moved")))
+        server.enqueue(jsonResponse("[${summaryJson(7, "Refreshed")}]"))
+
+        recipes.move(USER_ID, 10, 7, 20)
+
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertEquals(
+            listOf("Existing", "Moved"),
+            recipes.observeSummaries(USER_ID, 20).first().map { it.name },
+        )
+        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
+    }
+
+    @Test
     fun cancelledTargetRefreshKeepsReconciledMoveAndPropagatesCancellation() = runBlocking {
         seedCookbook(USER_ID, 10)
         seedCookbook(USER_ID, 20)

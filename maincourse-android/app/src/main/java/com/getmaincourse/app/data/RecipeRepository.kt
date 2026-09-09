@@ -13,14 +13,12 @@ import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.network.MainCourseService
-import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import retrofit2.HttpException
 
 class RecipeRepository(
     private val database: MainCourseDatabase,
@@ -86,9 +84,7 @@ class RecipeRepository(
             refreshList(userId, targetCookbookId)
         } catch (failure: CancellationException) {
             throw failure
-        } catch (_: IOException) {
-            // The PATCH is already confirmed and locally reconciled.
-        } catch (_: HttpException) {
+        } catch (_: Throwable) {
             // The PATCH is already confirmed and locally reconciled.
         }
     }
