@@ -69,12 +69,14 @@ class SessionViewModelTest {
     @Test
     fun validStoredSessionRestoresAndPreparesImages() = runTest(dispatcher) {
         store.value = StoredSession(BASE_URL, session())
+        provider.setPendingAcceptedSession(session().copy(user = User(USER_ID, "Pending", "cook@example.com", false)))
         val viewModel = buildViewModel()
 
         viewModel.restore().join()
 
         assertEquals(SessionUiState.SignedIn(store.value!!.response), viewModel.state.value)
         assertEquals(store.value!!.response, provider.session.value)
+        assertNull(provider.pendingAcceptedSession.value)
         assertEquals(listOf(USER_ID), preparedUsers)
         assertEquals(emptyList<String>(), cleared)
     }
@@ -134,6 +136,7 @@ class SessionViewModelTest {
         service.signUpResponse = response
         val viewModel = buildViewModel()
         viewModel.restore().join()
+        provider.setPendingAcceptedSession(response.copy(user = response.user.copy(name = "Pending")))
         cleared.clear()
         var publishedWhileWriting: SessionResponse? = response
         store.onWrite = { publishedWhileWriting = provider.session.value }
@@ -144,9 +147,11 @@ class SessionViewModelTest {
         assertNull(publishedWhileWriting)
         assertEquals(StoredSession(BASE_URL, response), store.value)
         assertEquals(response, provider.session.value)
+        assertNull(provider.pendingAcceptedSession.value)
         assertEquals(SessionUiState.SignedIn(response), viewModel.state.value)
 
         viewModel.signOut().join()
+        provider.setPendingAcceptedSession(response.copy(user = response.user.copy(name = "Pending")))
         viewModel.signUp(" Cook ", " cook@example.com ", "123456789012", "123456789012").join()
 
         assertEquals(
@@ -154,6 +159,7 @@ class SessionViewModelTest {
             service.signUpRequest,
         )
         assertEquals(SessionUiState.SignedIn(response), viewModel.state.value)
+        assertNull(provider.pendingAcceptedSession.value)
     }
 
     @Test
@@ -176,6 +182,7 @@ class SessionViewModelTest {
         store.value = StoredSession(BASE_URL, response)
         val viewModel = buildViewModel()
         viewModel.restore().join()
+        provider.setPendingAcceptedSession(response.copy(user = response.user.copy(name = "Pending")))
         cleared.clear()
 
         events.notifyExpired(response.token)
@@ -184,6 +191,7 @@ class SessionViewModelTest {
         assertEquals(SessionUiState.SignedOut(), viewModel.state.value)
         assertNull(store.value)
         assertNull(provider.session.value)
+        assertNull(provider.pendingAcceptedSession.value)
         assertEquals(listOf("database", "images"), cleared)
     }
 

@@ -56,7 +56,8 @@ fun SettingsScreen(
     var confirmingDelete by rememberSaveable(user.id) { mutableStateOf(false) }
     val busy = state.saving || state.deleting
     val trimmedName = name.trim()
-    val changed = trimmedName != user.name.orEmpty() ||
+    val changed = state.pendingPersistence ||
+        trimmedName != user.name.orEmpty() ||
         remindersEnabled != user.lifecycleNotificationsEnabled
     val valid = trimmedName.isNotEmpty() && trimmedName.length <= MAX_NAME_LENGTH
 

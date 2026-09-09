@@ -30,6 +30,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -110,11 +111,13 @@ class SettingsViewModelTest {
         assertEquals(1, service.updateCalls)
         assertEquals(SESSION, provider.session.value)
         assertEquals(SESSION, store.value?.response)
+        assertEquals(SESSION.copy(user = updated), provider.pendingAcceptedSession.value)
+        assertTrue(viewModel.state.value.pendingPersistence)
         assertEquals("Could not save account changes", viewModel.state.value.error)
     }
 
     @Test
-    fun explicitSaveAfterPersistenceFailurePerformsFreshPatch() = runTest(dispatcher) {
+    fun recreatedViewModelRetriesMatchingPendingPersistenceWithoutPatch() = runTest(dispatcher) {
         val updated = USER.copy(name = "New name", lifecycleNotificationsEnabled = false)
         service.updatedUser = updated
         store.writeFailure = IOException("disk full")
@@ -122,35 +125,39 @@ class SettingsViewModelTest {
         viewModel.saveProfile("New name", remindersEnabled = false).join()
 
         store.writeFailure = null
-        viewModel.saveProfile("New name", remindersEnabled = false).join()
+        val recreatedViewModel = buildViewModel()
+        runCurrent()
+        assertTrue(recreatedViewModel.state.value.pendingPersistence)
+        recreatedViewModel.saveProfile("New name", remindersEnabled = false).join()
         runCurrent()
 
-        assertEquals(2, service.updateCalls)
+        assertEquals(1, service.updateCalls)
         assertEquals(updated, store.value?.response?.user)
         assertEquals(updated, provider.session.value?.user)
+        assertEquals(null, provider.pendingAcceptedSession.value)
     }
 
     @Test
-    fun recreatedViewModelAfterPersistenceFailureSendsCurrentValues() = runTest(dispatcher) {
+    fun revertingToDisplayedValuesAfterRecreationSendsFreshPatch() = runTest(dispatcher) {
         service.updatedUser = USER.copy(name = "First accepted", lifecycleNotificationsEnabled = false)
         store.writeFailure = IOException("disk full")
         val viewModel = buildViewModel()
         viewModel.saveProfile("First accepted", remindersEnabled = false).join()
 
         store.writeFailure = null
-        val editedUser = USER.copy(name = "Edited again", lifecycleNotificationsEnabled = true)
-        service.updatedUser = editedUser
+        service.updatedUser = USER
         val recreatedViewModel = buildViewModel()
-        recreatedViewModel.saveProfile("Edited again", remindersEnabled = true).join()
+        recreatedViewModel.saveProfile(USER.name!!, remindersEnabled = true).join()
         runCurrent()
 
         assertEquals(2, service.updateCalls)
         assertEquals(
-            AccountUpdateRequest(AccountAttributes(name = "Edited again", lifecycleNotificationsEnabled = true)),
+            AccountUpdateRequest(AccountAttributes(name = USER.name, lifecycleNotificationsEnabled = true)),
             service.updateRequest,
         )
-        assertEquals(editedUser, store.value?.response?.user)
-        assertEquals(editedUser, provider.session.value?.user)
+        assertEquals(USER, store.value?.response?.user)
+        assertEquals(USER, provider.session.value?.user)
+        assertEquals(null, provider.pendingAcceptedSession.value)
     }
 
     @Test

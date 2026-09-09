@@ -3,6 +3,8 @@ package com.getmaincourse.app
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -166,8 +168,9 @@ class MainCourseAppTest {
     }
 
     @Test
-    fun leavingSettingsDiscardsItsUnpublishedDraft() {
-        show(SessionUiState.SignedIn(SESSION))
+    fun leavingSettingsDiscardsItsDraftAndAllowsRevertingPendingChange() {
+        val pending = SESSION.copy(user = USER.copy(name = "Server accepted name", lifecycleNotificationsEnabled = false))
+        show(SessionUiState.SignedIn(SESSION), factories = factories(pendingSettingsSession = pending))
         compose.onNodeWithTag("nav_Settings").performClick()
         compose.onNodeWithTag("settings_name").performTextReplacement("Unpublished name")
 
@@ -175,6 +178,23 @@ class MainCourseAppTest {
         compose.onNodeWithTag("nav_Settings").performClick()
 
         compose.onNodeWithTag("settings_name").assertTextContains(USER.name!!)
+        compose.onNodeWithTag("settings_save").assertIsEnabled()
+    }
+
+    @Test
+    fun matchingPendingSaveSurvivesSettingsTabRecreationWithoutNetwork() {
+        val pending = SESSION.copy(user = USER.copy(name = "Server accepted name", lifecycleNotificationsEnabled = false))
+        show(SessionUiState.SignedIn(SESSION), factories = factories(pendingSettingsSession = pending))
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("nav_Recipes").performClick()
+        compose.onNodeWithTag("nav_Settings").performClick()
+
+        compose.onNodeWithTag("settings_name").performTextReplacement("Server accepted name")
+        compose.onNodeWithTag("recipe_reminders").performClick()
+        compose.onNodeWithTag("settings_save").performClick()
+
+        compose.onNodeWithTag("settings_error").assertDoesNotExist()
+        compose.onNodeWithTag("settings_save").assertIsNotEnabled()
     }
 
     @Test
@@ -313,10 +333,16 @@ class MainCourseAppTest {
         onRecipesCreated: () -> Unit = {},
         onDetailCreated: () -> Unit = {},
         onDeleteAccount: () -> Unit = {},
+        pendingSettingsSession: SessionResponse? = null,
     ): BrowsingViewModelFactories {
         val selection = MutableStateFlow(CookbookSelection(listOf(COOKBOOK), COOKBOOK.id))
         val recipes = MutableStateFlow(listOf(summary))
         val detailState = MutableStateFlow(detail)
+        val settingsProvider = SessionProvider().apply {
+            set(SESSION)
+            pendingSettingsSession?.let(::setPendingAcceptedSession)
+        }
+        val settingsStore = InMemorySessionStore(StoredSession(BASE_URL, SESSION))
         return BrowsingViewModelFactories(
             recipes = {
                 simpleViewModelFactory {
@@ -340,12 +366,11 @@ class MainCourseAppTest {
                 }
             },
             settings = {
-                val provider = SessionProvider().apply { set(SESSION) }
                 simpleViewModelFactory {
                     SettingsViewModel(
                         service = UnusedService,
-                        sessionStore = InMemorySessionStore(StoredSession(BASE_URL, SESSION)),
-                        sessionProvider = provider,
+                        sessionStore = settingsStore,
+                        sessionProvider = settingsProvider,
                         deleteAccount = { completedJob().also { onDeleteAccount() } },
                         signOut = ::completedJob,
                     )

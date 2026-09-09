@@ -24,6 +24,7 @@ data class SettingsUiState(
     val saving: Boolean = false,
     val deleting: Boolean = false,
     val error: String? = null,
+    val pendingPersistence: Boolean = false,
 )
 
 class SettingsViewModel(
@@ -36,22 +37,31 @@ class SettingsViewModel(
     private val action = MutableStateFlow(ActionState())
     private var actionJob: Job? = null
 
-    val state = combine(sessionProvider.session, action) { session, actionState ->
+    val state = combine(
+        sessionProvider.session,
+        sessionProvider.pendingAcceptedSession,
+        action,
+    ) { session, pendingAcceptedSession, actionState ->
         SettingsUiState(
             user = session?.user,
             saving = actionState.saving,
             deleting = actionState.deleting,
             error = actionState.error,
+            pendingPersistence = pendingAcceptedSession != null,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
-        initialValue = SettingsUiState(user = sessionProvider.session.value?.user),
+        initialValue = SettingsUiState(
+            user = sessionProvider.session.value?.user,
+            pendingPersistence = sessionProvider.pendingAcceptedSession.value != null,
+        ),
     )
 
     fun saveProfile(name: String, remindersEnabled: Boolean): Job = launchAction(saving = true) {
         val current = sessionProvider.session.value ?: return@launchAction
         val requestedName = name.trim()
+        val pending = sessionProvider.pendingAcceptedSession.value
         val stored = try {
             sessionStore.read()
         } catch (failure: CancellationException) {
@@ -62,6 +72,15 @@ class SettingsViewModel(
         }
         if (stored == null || stored.response.token != current.token) {
             action.value = action.value.copy(error = SAVE_FAILURE)
+            return@launchAction
+        }
+
+        if (pending != null &&
+            pending.token == current.token &&
+            pending.user.name == requestedName &&
+            pending.user.lifecycleNotificationsEnabled == remindersEnabled
+        ) {
+            persistAndPublish(stored.copy(response = pending), current.token)
             return@launchAction
         }
 
@@ -86,6 +105,7 @@ class SettingsViewModel(
         }
 
         val accepted = stored.copy(response = current.copy(user = updatedUser))
+        sessionProvider.setPendingAcceptedSession(accepted.response)
         persistAndPublish(accepted, current.token)
     }
 

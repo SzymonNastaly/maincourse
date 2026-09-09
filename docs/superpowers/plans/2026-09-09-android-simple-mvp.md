@@ -429,19 +429,22 @@ git commit -m "Add simple Android recipe actions"
 
 **Files:**
 - Create: `maincourse-android/app/src/main/java/com/getmaincourse/app/features/settings/SettingsViewModel.kt`
+- Modify: `maincourse-android/app/src/main/java/com/getmaincourse/app/data/session/SessionProvider.kt`
 - Modify: `maincourse-android/app/src/main/java/com/getmaincourse/app/features/settings/SettingsScreen.kt`
 - Modify: `maincourse-android/app/src/main/java/com/getmaincourse/app/features/settings/AccountScreens.kt`
 - Modify: `maincourse-android/app/src/main/java/com/getmaincourse/app/features/session/SessionViewModel.kt`
 - Create: `maincourse-android/app/src/test/java/com/getmaincourse/app/features/settings/SettingsViewModelTest.kt`
+- Modify: `maincourse-android/app/src/test/java/com/getmaincourse/app/features/session/SessionViewModelTest.kt`
 - Modify: `maincourse-android/app/src/androidTest/java/com/getmaincourse/app/MainCourseAppTest.kt`
 
 **Interfaces:**
 - Consumes: `MainCourseService`, `SessionStore`, `SessionProvider`, plus `SessionViewModel.deleteAccount()` and `signOut()` callbacks.
-- Produces: `SettingsUiState(user, saving, deleting, error)`; email remains read-only.
+- Produces: `SettingsUiState(user, saving, deleting, error, pendingPersistence)`; email remains read-only.
+- Extends `SessionProvider` with one observable pending server-accepted `SessionResponse` slot.
 
 - [ ] **Step 1: Write failing settings tests**
 
-Verify profile save sends name/reminder values, persists/publishes the returned user, HTTP failure preserves the acknowledged user, and local persistence failure does not publish an unpersisted user. Verify that a later explicit Save, including after recreating the settings view model, sends a fresh idempotent PATCH with the currently entered values. Account deletion and logout remain covered by `SessionViewModelTest`.
+Verify profile save sends name/reminder values, persists/publishes the returned user, HTTP failure preserves the acknowledged user, and local persistence failure does not publish an unpersisted user. Verify a matching explicit retry writes the pending server-accepted response locally without another PATCH, including after recreating the settings view model. Verify changed or reverted fields send a fresh PATCH. Account deletion and logout remain covered by `SessionViewModelTest`.
 
 ```kotlin
 @Test fun profileSavePublishesServerUserAfterPersistence() = runTest {
@@ -462,7 +465,7 @@ Expected: compilation fails because `SettingsViewModel` does not exist.
 
 Derive the displayed user from `SessionProvider.session`. `saveProfile` calls `MainCourseService.updateAccount`, writes the returned user into the stored session, and only then publishes it through `SessionProvider`. Delegate account deletion and logout to `SessionViewModel` callbacks supplied by the host. Retain only `saving`, `deleting`, and `error` locally.
 
-After `PATCH /account`, write the returned user into the stored session before publishing it through `SessionProvider`. On storage failure, report failure and retain the prior published session. Do not retain pending accepted profile state or retry automatically; a later explicit Save sends a fresh idempotent PATCH with the currently entered values.
+After `PATCH /account`, write the returned user into the stored session before publishing it through `SessionProvider`. On storage failure, report failure and retain the prior published session. Keep at most one pending server-accepted `SessionResponse` in the application-scoped `SessionProvider`. A matching explicit Save retries only `SessionStore.write`; changed or reverted fields send a fresh idempotent PATCH and replace the pending response on success. Clear pending state after successful persistence and whenever the session is cleared or newly established. Never retry automatically.
 
 - [ ] **Step 4: Simplify settings screens**
 
@@ -477,11 +480,13 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add maincourse-android/app/src/main/java/com/getmaincourse/app/features/settings/SettingsViewModel.kt \
+git add maincourse-android/app/src/main/java/com/getmaincourse/app/data/session/SessionProvider.kt \
+  maincourse-android/app/src/main/java/com/getmaincourse/app/features/settings/SettingsViewModel.kt \
   maincourse-android/app/src/main/java/com/getmaincourse/app/features/settings/SettingsScreen.kt \
   maincourse-android/app/src/main/java/com/getmaincourse/app/features/settings/AccountScreens.kt \
   maincourse-android/app/src/main/java/com/getmaincourse/app/features/session/SessionViewModel.kt \
   maincourse-android/app/src/test/java/com/getmaincourse/app/features/settings/SettingsViewModelTest.kt \
+  maincourse-android/app/src/test/java/com/getmaincourse/app/features/session/SessionViewModelTest.kt \
   maincourse-android/app/src/androidTest/java/com/getmaincourse/app/MainCourseAppTest.kt
 git commit -m "Add simple Android account settings"
 ```
