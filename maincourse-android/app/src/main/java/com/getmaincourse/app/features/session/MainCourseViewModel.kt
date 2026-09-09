@@ -307,8 +307,6 @@ class MainCourseViewModel(
     fun clearRecipeAction() = controller.clearRecipeAction()
     fun prepareRecipeImage(uri: Uri, requestKey: String = uri.toString()) =
         controller.prepareRecipeImage(uri.toString(), requestKey)
-    fun discardRecipeImage(image: PreparedRecipeImage) = controller.discardRecipeImage(image)
-    fun cancelRecipeImagePreparation(requestKey: String) = controller.cancelRecipeImagePreparation(requestKey)
     fun releaseRecipeEditorImage(selection: RecipeEditorImageSelection) = controller.releaseRecipeEditorImage(selection)
     fun openRecipe(id: Long) = controller.openRecipe(id)
     fun closeRecipe() = controller.closeRecipe()

@@ -77,6 +77,16 @@ class RecipeActionController internal constructor(
         }
         discardPendingPhotoFromAnotherRequest(draft.requestKey)
         val request = (validation as RecipeDraftValidation.Valid).request
+        val pending = image?.let {
+            PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, it, draft.requestKey)
+        }
+        if (!draft.hasChanges()) {
+            publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, draft.recipeId, requestKey = draft.requestKey)
+            mutateAndSettle(context) { permit ->
+                uploadPendingPhoto(context, version, permit, checkNotNull(pending))
+            }
+            return@launch
+        }
         publishRunning(context, version, RecipeActionOperation.SAVING, draft.recipeId, requestKey = draft.requestKey)
         mutateAndSettle(context) { permit ->
             val acknowledged = try {
@@ -95,48 +105,15 @@ class RecipeActionController internal constructor(
                 }
                 return@mutateAndSettle
             }
-            ownPendingPhoto(PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, image, draft.requestKey))
-
-            val file = try {
-                resolvePreparedImage(image, context.userId)
-            } catch (failure: Throwable) {
-                if (failure is CancellationException) throw failure
-                publishState(
-                    context,
-                    version,
-                    RecipeActionState(
-                        outcome = RecipeActionOutcome.PARTIAL,
-                        scope = context.scope,
-                        recipeId = draft.recipeId,
-                        message = "Recipe details were saved. Choose the photo again.",
-                        needsPhotoSelection = true,
-                        canRetryReconciliation = reconciliationFailure != null,
-                        requestKey = draft.requestKey,
-                    ),
-                )
-                return@mutateAndSettle
-            }
-            try {
-                publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, draft.recipeId, requestKey = draft.requestKey)
-                val cover = api.updateRecipeCover(context.token, context.scope.cookbookId, draft.recipeId, file)
-                reconciliationFailure = commitDetails(context, permit, context.scope, draft.recipeId, cover)
-                    ?: reconciliationFailure
-                releasePendingPhoto(image)
-                if (reconciliationFailure == null) {
-                    publishSuccess(context, version, draft.recipeId, "Recipe and photo saved", draft.requestKey)
-                } else {
-                    publishReconciliation(context, version, draft.recipeId, "Recipe and photo were saved on the server, but local data needs refreshing", draft.requestKey)
-                }
-            } catch (failure: Throwable) {
-                handlePhotoFailure(
-                    context = context,
-                    version = version,
-                    permit = permit,
-                    pending = PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, image, draft.requestKey),
-                    failure = failure,
-                    needsReconciliation = reconciliationFailure != null,
-                )
-            }
+            publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, draft.recipeId, requestKey = draft.requestKey)
+            uploadPendingPhoto(
+                context,
+                version,
+                permit,
+                checkNotNull(pending),
+                needsReconciliation = reconciliationFailure != null,
+                detailsAcknowledged = true,
+            )
         }
     }
 
@@ -151,37 +128,7 @@ class RecipeActionController internal constructor(
         if (!prepareMutation(context, version, pending.recipeId, pending.requestKey)) return@launch
         publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, pending.recipeId, requestKey = pending.requestKey)
         mutateAndSettle(context) { permit ->
-            val file = try {
-                resolvePreparedImage(pending.image, context.userId)
-            } catch (failure: Throwable) {
-                if (failure is CancellationException) throw failure
-                publishState(
-                    context,
-                    version,
-                    RecipeActionState(
-                        outcome = RecipeActionOutcome.PARTIAL,
-                        scope = context.scope,
-                        recipeId = pending.recipeId,
-                        message = "Choose the photo again",
-                        needsPhotoSelection = true,
-                        requestKey = pending.requestKey,
-                    ),
-                )
-                return@mutateAndSettle
-            }
-            ownPendingPhoto(pending)
-            val acknowledged = try {
-                api.updateRecipeCover(context.token, context.scope.cookbookId, pending.recipeId, file)
-            } catch (failure: Throwable) {
-                handlePhotoFailure(context, version, permit, pending, failure)
-                return@mutateAndSettle
-            }
-            releasePendingPhoto(pending.image)
-            if (commitDetails(context, permit, context.scope, pending.recipeId, acknowledged) == null) {
-                publishSuccess(context, version, pending.recipeId, "Photo saved", pending.requestKey)
-            } else {
-                publishReconciliation(context, version, pending.recipeId, "Photo saved on the server, but local data needs refreshing", pending.requestKey)
-            }
+            uploadPendingPhoto(context, version, permit, pending)
         }
     }
 
@@ -306,7 +253,34 @@ class RecipeActionController internal constructor(
         val requestKey = pending.requestKey
         if (!prepareMutation(context, version, recipeId, requestKey)) return@launch
         publishRunning(context, version, RecipeActionOperation.RECONCILING, recipeId, requestKey = requestKey)
-        if (host.settleRecipeReads(context)) {
+        val refreshed = host.settleRecipeReads(context)
+        val ownedPhoto = synchronized(admissionLock) {
+            pendingPhoto?.takeIf {
+                it.generation == context.generation && it.userId == context.userId && it.scope == context.scope &&
+                    it.requestKey == requestKey
+            }
+        }
+        if (ownedPhoto != null) {
+            val needsPhotoSelection = pending.needsPhotoSelection
+            publishState(
+                context,
+                version,
+                RecipeActionState(
+                    outcome = RecipeActionOutcome.PARTIAL,
+                    scope = context.scope,
+                    recipeId = recipeId,
+                    message = if (refreshed) {
+                        "Recipe data refreshed; the photo is still not confirmed."
+                    } else {
+                        "Recipe data still needs refreshing, and the photo is not confirmed."
+                    },
+                    canRetryPhoto = !needsPhotoSelection,
+                    needsPhotoSelection = needsPhotoSelection,
+                    canRetryReconciliation = !refreshed,
+                    requestKey = requestKey,
+                ),
+            )
+        } else if (refreshed) {
             publishSuccess(context, version, recipeId, "Recipe data refreshed", requestKey)
         } else {
             publishReconciliation(context, version, recipeId, "Recipe data still needs refreshing", requestKey)
@@ -419,6 +393,7 @@ class RecipeActionController internal constructor(
         pending: PendingPhoto,
         failure: Throwable,
         needsReconciliation: Boolean = false,
+        detailsAcknowledged: Boolean = true,
     ) {
         if (failure is CancellationException) throw failure
         if (failure.isAuthorizationFailure()) throw DeferredAuthorizationFailure(failure as ApiFailure)
@@ -461,12 +436,87 @@ class RecipeActionController internal constructor(
                 outcome = RecipeActionOutcome.PARTIAL,
                 scope = context.scope,
                 recipeId = pending.recipeId,
-                message = "Recipe details were saved, but the photo was not confirmed.",
+                message = if (detailsAcknowledged) {
+                    "Recipe details were saved, but the photo was not confirmed."
+                } else {
+                    "The photo was not confirmed."
+                },
                 canRetryPhoto = true,
                 canRetryReconciliation = needsReconciliation,
                 requestKey = pending.requestKey,
             ),
         )
+    }
+
+    private suspend fun uploadPendingPhoto(
+        context: RecipeActionContext,
+        version: Long,
+        permit: com.getmaincourse.app.features.session.RecipeMutationPermit,
+        pending: PendingPhoto,
+        needsReconciliation: Boolean = false,
+        detailsAcknowledged: Boolean = false,
+    ) {
+        ownPendingPhoto(pending)
+        val file = try {
+            resolvePreparedImage(pending.image, context.userId)
+        } catch (failure: Throwable) {
+            if (failure is CancellationException) throw failure
+            publishState(
+                context,
+                version,
+                RecipeActionState(
+                    outcome = RecipeActionOutcome.PARTIAL,
+                    scope = context.scope,
+                    recipeId = pending.recipeId,
+                    message = if (detailsAcknowledged) {
+                        "Recipe details were saved. Choose the photo again."
+                    } else {
+                        "Choose the photo again"
+                    },
+                    needsPhotoSelection = true,
+                    canRetryReconciliation = needsReconciliation,
+                    requestKey = pending.requestKey,
+                ),
+            )
+            return
+        }
+        val acknowledged = try {
+            api.updateRecipeCover(context.token, context.scope.cookbookId, pending.recipeId, file)
+        } catch (failure: Throwable) {
+            handlePhotoFailure(
+                context,
+                version,
+                permit,
+                pending,
+                failure,
+                needsReconciliation,
+                detailsAcknowledged,
+            )
+            return
+        }
+        val coverReconciliationFailure = commitDetails(context, permit, context.scope, pending.recipeId, acknowledged)
+        releasePendingPhoto(pending.image)
+        if (coverReconciliationFailure == null && !needsReconciliation) {
+            publishSuccess(
+                context,
+                version,
+                pending.recipeId,
+                if (detailsAcknowledged) "Recipe and photo saved" else "Photo saved",
+                pending.requestKey,
+            )
+        } else {
+            publishReconciliation(
+                context,
+                version,
+                pending.recipeId,
+                if (detailsAcknowledged) {
+                    "Recipe and photo were saved on the server, but local data needs refreshing"
+                } else {
+                    "Photo saved on the server, but local data needs refreshing"
+                },
+                pending.requestKey,
+            )
+        }
     }
 
     private suspend fun handleMutationFailure(

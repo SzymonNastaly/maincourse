@@ -72,6 +72,7 @@ fun RecipesScreen(
     onDeleteRecipe: (Long) -> Unit = {},
     actionsEnabled: Boolean = true,
     actionState: RecipeActionState = RecipeActionState(),
+    onRetryReconciliation: () -> Unit = {},
     onClearAction: () -> Unit = {},
 ) {
     val refreshing = status == LoadStatus.LOADING && recipesFetched
@@ -91,7 +92,7 @@ fun RecipesScreen(
             }
             if (actionState.message != null && actionState.scope?.cookbookId == activeCookbookId) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    RecipeActionFeedback(actionState, onRefresh, onClearAction)
+                    RecipeActionFeedback(actionState, onRefresh, onRetryReconciliation, onClearAction)
                 }
             }
             if (catalogStatus == LoadStatus.DEGRADED && cookbooks.isNotEmpty()) {
@@ -136,13 +137,21 @@ fun RecipesScreen(
 }
 
 @Composable
-internal fun RecipeActionFeedback(state: RecipeActionState, onRefresh: () -> Unit, onDismiss: () -> Unit) {
+internal fun RecipeActionFeedback(
+    state: RecipeActionState,
+    onRefresh: () -> Unit,
+    onRetryReconciliation: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     Surface(shape = MainCourseShapes.Panel, color = MainCourseColors.Surface, border = BorderStroke(1.dp, MainCourseColors.Hairline)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             state.message?.let { Text(it, color = if (state.outcome == RecipeActionOutcome.SUCCEEDED) MainCourseColors.Accent else MainCourseColors.Danger) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (state.outcome == RecipeActionOutcome.AMBIGUOUS || state.canRetryReconciliation) {
-                    Button(enabled = !state.isBusy, onClick = onRefresh) { Text(stringResource(R.string.recipe_refresh_data)) }
+                    Button(
+                        enabled = !state.isBusy,
+                        onClick = if (state.outcome == RecipeActionOutcome.AMBIGUOUS) onRefresh else onRetryReconciliation,
+                    ) { Text(stringResource(R.string.recipe_refresh_data)) }
                 }
                 androidx.compose.material3.TextButton(enabled = !state.isBusy, onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
             }

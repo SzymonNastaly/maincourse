@@ -436,7 +436,8 @@ class MainCourseAppTest {
 
         compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
         compose.onNodeWithText(compose.activity.getString(R.string.recipe_unavailable)).assertIsDisplayed()
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.retry)).assertCountEquals(0)
+        compose.onNodeWithText(compose.activity.getString(R.string.back)).performClick()
         compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
     }
 
@@ -581,7 +582,7 @@ class MainCourseAppTest {
         compose.onNodeWithText(compose.activity.getString(R.string.cancel)).performClick()
         compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("account_error"))
         val clearsBeforeDismiss = recorder.clearAccountErrorCount
-        compose.onNodeWithText(compose.activity.getString(R.string.dismiss)).performClick()
+        compose.onNodeWithTag("account_error_dismiss").performClick()
         assertEquals(clearsBeforeDismiss + 1, recorder.clearAccountErrorCount)
 
         accountState.value = accountState.value.copy(error = null)
@@ -1040,6 +1041,93 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun editorStaysOpenWhenReconciliationSucceedsWithAPendingPhotoThenPhotoRetryClosesIt() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("detail_actions").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        var editorRequestKey: String? = null
+        recorder.afterRecipeSave = { draft ->
+            editorRequestKey = draft.requestKey
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.PARTIAL,
+                scope = draft.scope,
+                recipeId = draft.recipeId,
+                message = "Recipe details were saved, but the photo was not confirmed.",
+                canRetryPhoto = true,
+                canRetryReconciliation = true,
+                requestKey = draft.requestKey,
+            )
+        }
+        compose.onNodeWithTag("editor_name").performTextInput(" updated")
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_save"))
+        compose.onNodeWithTag("editor_save").performClick()
+
+        recorder.afterRecipeReconciliation = {
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.PARTIAL,
+                scope = RecipeScope(USER.id, PERSONAL.id),
+                recipeId = SOUP.id,
+                message = "Recipe data refreshed; the photo is still not confirmed.",
+                canRetryPhoto = true,
+                requestKey = editorRequestKey,
+            )
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_reconciliation_retry"))
+        compose.onNodeWithTag("editor_reconciliation_retry").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("editor_list").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_retry_photo)).assertIsDisplayed()
+        assertEquals(1, recorder.recipeReconciliationCount)
+
+        recorder.afterRecipePhotoRetry = {
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.SUCCEEDED,
+                scope = RecipeScope(USER.id, PERSONAL.id),
+                recipeId = SOUP.id,
+                message = "Photo saved",
+                requestKey = editorRequestKey,
+            )
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_retry_photo)).performClick()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        assertEquals(1, recorder.recipePhotoRetryCount)
+        assertEquals(1, recorder.recipeSaveCount)
+    }
+
+    @Test
+    fun listAndSearchUseReconciliationRetryButAmbiguousActionsUseOrdinaryRefresh() {
+        val reconciliation = RecipeActionState(
+            outcome = RecipeActionOutcome.RECONCILIATION_REQUIRED,
+            scope = RecipeScope(USER.id, PERSONAL.id),
+            recipeId = SOUP.id,
+            message = "Recipe data needs refreshing",
+            canRetryReconciliation = true,
+        )
+        recipeActionState.value = reconciliation
+
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_refresh_data)).performClick()
+        assertEquals(1, recorder.recipeReconciliationCount)
+        assertEquals(0, recorder.refreshCount)
+
+        compose.onNodeWithTag("nav_Search").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_refresh_data)).performClick()
+        assertEquals(2, recorder.recipeReconciliationCount)
+        assertEquals(0, recorder.refreshCount)
+
+        recipeActionState.value = reconciliation.copy(
+            outcome = RecipeActionOutcome.AMBIGUOUS,
+            canRetryReconciliation = false,
+        )
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_refresh_data)).performClick()
+        assertEquals(2, recorder.recipeReconciliationCount)
+        assertEquals(1, recorder.refreshCount)
+    }
+
+    @Test
     fun cookingModeRestoresAcrossRotationAndClearsOnBack() {
         compose.onNodeWithText("Vegetable soup").performClick()
         show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
@@ -1277,6 +1365,8 @@ class MainCourseAppTest {
         var afterRecipeSave: (RecipeEditDraft) -> Unit = {}
         var recipeReconciliationCount = 0
         var afterRecipeReconciliation: () -> Unit = {}
+        var recipePhotoRetryCount = 0
+        var afterRecipePhotoRetry: () -> Unit = {}
         var movedRecipe: Pair<Long, Long>? = null
         var deletedRecipe: Long? = null
         var afterSignIn: () -> Unit = {}
@@ -1309,6 +1399,7 @@ class MainCourseAppTest {
             },
             closeRecipe = { state.value = state.value.copy(detail = null) },
             saveRecipe = { draft, _ -> recipeSaveCount++; afterRecipeSave(draft) },
+            retryRecipePhoto = { recipePhotoRetryCount++; afterRecipePhotoRetry() },
             retryRecipeReconciliation = { recipeReconciliationCount++; afterRecipeReconciliation() },
             moveRecipe = { recipeId, targetId -> movedRecipe = recipeId to targetId },
             deleteRecipe = { deletedRecipe = it },

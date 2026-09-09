@@ -230,7 +230,7 @@ class SessionControllerTest {
     }
 
     @Test
-    fun preparedImageCanBeDiscardedThroughTheSessionFacade() = runTest {
+    fun preparedImageCanBeReleasedThroughTheSessionFacade() = runTest {
         val discarded = mutableListOf<PreparedRecipeImage>()
         val prepared = PreparedRecipeImage("/private/user-7/photo.jpg", USER.id, "photo")
         val controller = controller(
@@ -247,14 +247,16 @@ class SessionControllerTest {
 
         controller.prepareRecipeImage("content://recipe/photo").join()
         assertEquals(RecipeImagePreparationStatus.READY, controller.recipeImagePreparationState.value.status)
-        controller.discardRecipeImage(prepared).join()
+        controller.releaseRecipeEditorImage(
+            RecipeEditorImageSelection("editor-a", prepared, "content://recipe/photo"),
+        ).join()
 
         assertEquals(listOf(prepared), discarded)
         assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)
     }
 
     @Test
-    fun discardingAnOlderPreparedImageDoesNotClearTheCurrentSelection() = runTest {
+    fun releasingAnOlderPreparedImageDoesNotClearTheCurrentSelection() = runTest {
         val first = PreparedRecipeImage("/private/user-7/first.jpg", USER.id, "first")
         val second = PreparedRecipeImage("/private/user-7/second.jpg", USER.id, "second")
         val prepared = ArrayDeque(listOf(first, second))
@@ -273,7 +275,9 @@ class SessionControllerTest {
 
         controller.prepareRecipeImage("content://recipe/first").join()
         controller.prepareRecipeImage("content://recipe/second").join()
-        controller.discardRecipeImage(first).join()
+        controller.releaseRecipeEditorImage(
+            RecipeEditorImageSelection("editor-a", first, "content://recipe/first"),
+        ).join()
 
         assertEquals(second, controller.recipeImagePreparationState.value.image)
         assertEquals(RecipeImagePreparationStatus.READY, controller.recipeImagePreparationState.value.status)
@@ -393,7 +397,9 @@ class SessionControllerTest {
         controller.prepareRecipeImage("content://recipe/photo", "editor-a:request-a")
         started.await()
 
-        val cancellation = controller.cancelRecipeImagePreparation("editor-a:request-a")
+        val cancellation = controller.releaseRecipeEditorImage(
+            RecipeEditorImageSelection("editor-a", null, "editor-a:request-a"),
+        )
         release.complete(Unit)
         cancellation.join()
 

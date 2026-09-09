@@ -143,8 +143,6 @@ data class MainCourseActions(
     val retryRecipeReconciliation: () -> Unit = {},
     val clearRecipeAction: () -> Unit = {},
     val prepareRecipeImage: (android.net.Uri, String) -> Unit = { _, _ -> },
-    val discardRecipeImage: (PreparedRecipeImage) -> Unit = {},
-    val cancelRecipeImagePreparation: (String) -> Unit = {},
     val releaseRecipeEditorImage: (RecipeEditorImageSelection) -> Unit = {},
     val updateName: (String) -> Unit = {},
     val updateLifecycleNotifications: (Boolean) -> Unit = {},
@@ -470,6 +468,7 @@ private fun ProtectedApp(
                                     onDeleteRecipe = { state.activeCookbookId?.let { cookbookId -> pendingDeleteRecipe = RecipeRoute(user.id, cookbookId, it) } },
                                     actionsEnabled = !recipeActionState.isBusy,
                                     actionState = recipeActionState,
+                                    onRetryReconciliation = actions.retryRecipeReconciliation,
                                     onClearAction = actions.clearRecipeAction,
                                 )
                                 Destination.Settings -> SettingsScreen(
@@ -487,7 +486,7 @@ private fun ProtectedApp(
                                     onLogout = actions.logout,
                                 )
                                 Destination.DesignSystem -> DesignSystemScreen()
-                                Destination.Shopping -> PreviewScreen(destination) { backStack.add(Destination.DesignSystem) }
+                                Destination.Shopping -> PreviewScreen { backStack.add(Destination.DesignSystem) }
                                 Destination.Search -> {
                                     val cookbookId = state.activeCookbookId
                                     if (cookbookId == null) {
@@ -517,6 +516,7 @@ private fun ProtectedApp(
                                             actionsEnabled = !recipeActionState.isBusy,
                                             actionState = recipeActionState,
                                             onRefresh = actions.refresh,
+                                            onRetryReconciliation = actions.retryRecipeReconciliation,
                                             onClearAction = actions.clearRecipeAction,
                                         )
                                     }
@@ -542,6 +542,11 @@ private fun ProtectedApp(
                                 imageLoader = imageLoader,
                                 resolveImage = resolveImage,
                                 onRetry = { retryRecipeRoute(state, destination.recipeId, actions) },
+                                onBack = {
+                                    cookingRequested = false
+                                    backStack.removeLastOrNull()
+                                    actions.closeRecipe()
+                                },
                                 actionState = recipeActionState,
                                 onEdit = { backStack.add(RecipeEditDestination(destination.userId, destination.cookbookId, destination.recipeId, java.util.UUID.randomUUID().toString())) },
                                 onMove = { pendingMoveRecipe = destination.recipeRoute() },

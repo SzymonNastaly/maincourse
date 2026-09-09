@@ -43,6 +43,7 @@ fun RecipeSearchScreen(
     actionsEnabled: Boolean = true,
     actionState: RecipeActionState = RecipeActionState(),
     onRefresh: () -> Unit = {},
+    onRetryReconciliation: () -> Unit = {},
     onClearAction: () -> Unit = {},
 ) {
     val scoped = state.takeIf { it.scope == scope } ?: RecipeSearchState(scope = scope)
@@ -81,7 +82,7 @@ fun RecipeSearchScreen(
             item { Text(scoped.message ?: stringResource(R.string.search_incomplete), color = MainCourseColors.Body) }
         }
         if (actionState.message != null && actionState.scope == scope) {
-            item { RecipeActionFeedback(actionState, onRefresh, onClearAction) }
+            item { RecipeActionFeedback(actionState, onRefresh, onRetryReconciliation, onClearAction) }
         }
         if (query.isBlank()) {
             item {

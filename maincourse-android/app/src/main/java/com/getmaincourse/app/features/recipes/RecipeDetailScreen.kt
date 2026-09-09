@@ -56,6 +56,7 @@ fun RecipeDetailScreen(
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     onRetry: () -> Unit,
+    onBack: () -> Unit = {},
     scope: RecipeScope = RecipeScope(0, 0),
     actionState: RecipeActionState = RecipeActionState(),
     onEdit: () -> Unit = {},
@@ -84,7 +85,7 @@ fun RecipeDetailScreen(
             item {
                 when (detailState?.status) {
                     DetailStatus.ERROR -> RetryState(stringResource(R.string.recipe_load_error), onRetry)
-                    DetailStatus.UNAVAILABLE -> RetryState(stringResource(R.string.recipe_unavailable), onRetry)
+                    DetailStatus.UNAVAILABLE -> UnavailableState(onBack)
                     DetailStatus.NOT_READY -> Feedback(stringResource(if (importFailed) R.string.recipe_failed else R.string.recipe_processing))
                     else -> Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 }
@@ -225,4 +226,12 @@ private fun DetailContent(
 ) {
     Text(text, color = MainCourseColors.Body)
     Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+}
+
+@Composable private fun UnavailableState(onBack: () -> Unit) = Column(
+    Modifier.fillMaxWidth().padding(vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.spacedBy(16.dp),
+) {
+    Text(stringResource(R.string.recipe_unavailable), color = MainCourseColors.Body)
+    OutlinedButton(onClick = onBack) { Text(stringResource(R.string.back)) }
 }

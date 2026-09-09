@@ -193,7 +193,9 @@ internal fun AccountError(
                     }
                 }
                 if (error != null) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
+                    TextButton(onClick = onDismiss, modifier = Modifier.testTag("account_error_dismiss")) {
+                        Text(stringResource(R.string.dismiss))
+                    }
                 }
             }
         }

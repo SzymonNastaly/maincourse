@@ -13,7 +13,7 @@ This is a living, long-horizon roadmap. GitHub issues are the source of executab
 | 0. Enablement and scaffold | Complete | Native preview, local tooling, CI definition, and local verification complete; external accounts tracked in #92 |
 | 1. First vertical slice | Complete | Email session through cached recipe list/detail passed local API 37 acceptance and final code review; evidence in #93 |
 | 2. Identity and account | Implementation reviewed; external gates open | Core, Google, and Apple handoff code gates and reviews passed; live providers and release signing/App Links remain |
-| 3. Recipe workflows | Core locally gated; remaining slice in progress | Search, editing, cooking, and core recipe actions passed local acceptance; imports/sharing and final review remain |
+| 3. Recipe workflows | Core reviewed and locally gated; remaining slice in progress | Search, editing, cooking, and core recipe actions passed local acceptance and final review; imports/sharing remain |
 | 4. Shopping list | Planned | Durable offline shopping workflow |
 | 5. Collaboration | Planned | Shared cookbooks and invitations |
 | 6. Subscription | Planned | RevenueCat and Google Play billing |
@@ -385,7 +385,7 @@ review remain. Milestone 4 shopping outbox work has not started.
   changes do not advance the parent cursor (#102). Reviewed-item UUIDs support
   explicit duplicate-safe add, not the Milestone 4 durable outbox. Cross-process
   purge durability remains #94. Imports/sharing follow only after the isolated
-  #104 lifetime work; final whole-core review is still pending.
+  #104 lifetime work. The whole-core review and consolidated fix wave are complete.
 
 ## Milestone 4: Durable Offline Shopping
 
@@ -574,7 +574,7 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
 | 2026-09-08 | Android Google Credential Manager implementation passed its local code and zero-account chooser gate; real account/consent, release signing, Apple, and full Milestone 2 review remain separate gates. |
 | 2026-09-08 | Shared Rails/web/iOS Apple account-creation confirmation passed local component gates under #99. Android handoff and real registered-HTTPS/Hide My Email acceptance remain; #86 and the full Milestone 2 review stay open. |
 | 2026-09-08 | Android's PKCE-bound Apple browser handoff passed its local Rails/API 37 implementation gate and final code review, including real browser cancellation and controlled fixture exchange. Real Apple/Google identities, registered HTTPS, production App Links, release signing, and #86 stay open; Milestone 3 follows independently. |
-| 2026-09-09 | Milestone 3 core search/edit/actions/cooking passed local Rails/API 37 acceptance. The milestone remains partial: imports/sharing, #104's isolated lifetime refactor, and final whole-core review are next; #102 cursor and #94 durable-purge limitations remain explicit. |
+| 2026-09-09 | Milestone 3 core search/edit/actions/cooking passed local Rails/API 37 acceptance and final review. The milestone remains partial: imports/sharing and #104's isolated lifetime refactor are next; #102 cursor and #94 durable-purge limitations remain explicit. |
 
 ## Handoff
 
@@ -591,7 +591,7 @@ Tests should be added at the lowest useful layer. Compose tests protect user-vis
   production App Links, release-signed Google/Apple checks, #86, full Milestone
   2 remain open.
 - Continue Milestones 3–5 without treating provider or Play gates as blockers.
-  Milestone 3 core recipe workflows are locally gated but not finally reviewed.
+  Milestone 3 core recipe workflows are locally gated and finally reviewed.
   Complete #104 as an isolated lifetime step, then implement imports and Android
   sharing before calling Milestone 3 complete. External tracks remain open in
   #92; the owner has supplied Firebase Rails configuration for the later

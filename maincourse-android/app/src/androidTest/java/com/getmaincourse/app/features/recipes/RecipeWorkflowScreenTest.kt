@@ -218,6 +218,41 @@ class RecipeWorkflowScreenTest {
     }
 
     @Test
+    fun ingredientReviewShowsOnlyIngredientActionMessages() {
+        val state = mutableStateOf(
+            RecipeActionState(
+                operation = RecipeActionOperation.SAVING,
+                outcome = RecipeActionOutcome.SUCCEEDED,
+                scope = RecipeScope(7, 1),
+                recipeId = DETAIL.id,
+                message = "Recipe saved",
+            ),
+        )
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    IngredientReviewScreen(
+                        scope = RecipeScope(7, 1),
+                        recipe = DETAIL,
+                        portions = 4,
+                        actionState = state.value,
+                        onSubmit = {},
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithText("Recipe saved").assertDoesNotExist()
+        compose.runOnIdle {
+            state.value = state.value.copy(
+                operation = RecipeActionOperation.ADDING_INGREDIENTS,
+                message = "Added 2 items",
+            )
+        }
+        compose.onNodeWithText("Added 2 items").assertIsDisplayed()
+    }
+
+    @Test
     fun sourceOpenFailureShowsSafeFeedbackInsteadOfCrashing() {
         compose.runOnIdle {
             MainCourseTestContent.content = {

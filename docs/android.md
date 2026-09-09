@@ -20,8 +20,8 @@ and is tracked in [issue #98](https://github.com/SzymonNastaly/maincourse/issues
 The core, Google, and Apple implementation gates have passed locally. Real
 Google and Apple accounts, release-signed provider verification, production App
 Link association, and the full Milestone 2 review remain outstanding. Milestone
-3's core recipe workflow gate has also passed locally; imports, Android sharing,
-the isolated coroutine-lifetime follow-up in #104, and final whole-core review
+3's core recipe workflow gate and final fix review have also passed locally;
+imports, Android sharing, and the isolated coroutine-lifetime follow-up in #104
 remain before Milestone 3 can be called complete.
 
 ## Bootstrap Contract
@@ -451,6 +451,10 @@ The Android suites include:
 - `MainCourseAppTest.kt`: authentication validation, session recovery, cookbook
   switching, recipe list/detail/search states, editor and action recovery,
   logout, four destinations, Back, gallery restoration, and adaptive navigation.
+- `RecipeWorkflowScreenTest.kt`: focused Search, editor, ingredient-review, and
+  detail workflow behavior in production composables.
+- `MainCourseViewModelActivityTest.kt`: retained ViewModel behavior across real
+  Activity recreation and controller/UI integration.
 - `SessionImagesTest.kt`: session loader reuse, cleanup, and unauthenticated
   image requests.
 
@@ -488,6 +492,8 @@ non-exported host that exists only in the debug source set and is absent from
 release. It injects production composables and actions for deterministic tests;
 it is not an authentication bypass. Live Rails acceptance must install and use
 the real `MainActivity`, encrypted store, Room database, API, and image owner.
+`assembleRelease` runs release compilation, shrinking, and R8 checks, but is
+compile proof only; runtime claims require exercising an installed release APK.
 
 ## CI
 `.github/workflows/android.yml` defines, but does not by itself prove execution

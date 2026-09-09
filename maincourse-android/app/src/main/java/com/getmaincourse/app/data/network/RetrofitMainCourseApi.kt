@@ -146,7 +146,7 @@ class RetrofitMainCourseApi(
             throw ApiFailure(null, "Network request failed")
         } catch (_: SerializationException) {
             throw ApiFailure(null, "Invalid response from server")
-        } catch (_: IllegalArgumentException) {
+        } catch (_: NullPointerException) {
             throw ApiFailure(null, "Invalid response from server")
         }
     }

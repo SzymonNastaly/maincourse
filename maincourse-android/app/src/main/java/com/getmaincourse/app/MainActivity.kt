@@ -132,8 +132,6 @@ class MainActivity : ComponentActivity() {
                         retryRecipeReconciliation = { viewModel.retryRecipeReconciliation() },
                         clearRecipeAction = { viewModel.clearRecipeAction() },
                         prepareRecipeImage = { uri, requestKey -> viewModel.prepareRecipeImage(uri, requestKey) },
-                        discardRecipeImage = { viewModel.discardRecipeImage(it) },
-                        cancelRecipeImagePreparation = { viewModel.cancelRecipeImagePreparation(it) },
                         releaseRecipeEditorImage = { viewModel.releaseRecipeEditorImage(it) },
                         updateName = { viewModel.updateName(it) },
                         updateLifecycleNotifications = { viewModel.updateLifecycleNotifications(it) },

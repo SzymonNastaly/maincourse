@@ -9,8 +9,6 @@
     <string name="preview_badge">ANDROID PREVIEW</string>
     <string name="shopping_preview_title">From your cookbook to your basket.</string>
     <string name="shopping_preview_body">You can add reviewed recipe ingredients online now. The full shopping list and offline check-off arrive in the next milestone.</string>
-    <string name="search_preview_title">Find the recipe you had in mind.</string>
-    <string name="search_preview_body">Search across recipe names, ingredients, and instructions is coming after cookbook sync.</string>
     <string name="explore_design">Explore the design system</string>
     <string name="native_foundation">Native Android. Familiar MainCourse.</string>
     <string name="foundation_description">Material controls, a quiet grey canvas, and one deep-green accent.</string>

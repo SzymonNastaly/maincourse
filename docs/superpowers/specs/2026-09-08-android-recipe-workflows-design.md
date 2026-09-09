@@ -68,12 +68,14 @@ Nonempty source URLs must be HTTP(S) with a host and no embedded credentials.
 Explain invalid input rather than silently dropping it. Only changed, valid
 drafts may save. There is no maximum title length invented beyond the API.
 
-Send a JSON `PATCH /api/v1/recipes/:id` containing the complete editable text
+When text changes, send a JSON `PATCH /api/v1/recipes/:id` containing the complete editable text
 snapshot. Nullable fields must explicitly encode null so clearing works; empty
 ingredient/instruction arrays must encode `[]`. If a new cover is staged,
 upload it afterward in a second multipart PATCH with part `cover_image`, matching
 the existing API/iOS contract. Two requests are necessary to preserve empty-array
 and null semantics without inventing a new multipart wire format.
+When only the cover changes, send only the cover PATCH; resending unchanged
+ingredients would unnecessarily replace their rows and enqueue parsing.
 
 After text success, reconcile cache/list/detail immediately. If cover upload
 fails, explicitly say the details were saved but the photo was not confirmed;

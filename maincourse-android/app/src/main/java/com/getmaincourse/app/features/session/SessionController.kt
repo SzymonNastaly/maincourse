@@ -370,50 +370,6 @@ class SessionController(
         currentCoroutineContext().ensureActive()
     }
 
-    fun discardRecipeImage(image: PreparedRecipeImage): Job = launchRecipeImageOperation { context, requestVersion ->
-        if (image.userId != context.userContext.response.user.id) return@launchRecipeImageOperation
-        val mayDiscard = transition.withLock {
-            isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
-                requestVersion == imagePreparationRequest.get()
-        }
-        if (!mayDiscard) return@launchRecipeImageOperation
-        try {
-            discardRecipeImageResource(image)
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (failure: Throwable) {
-            publishRecipeImageError(context, requestVersion, failure.userMessage("Could not discard the selected photo"))
-            return@launchRecipeImageOperation
-        }
-        transition.withLock {
-            if (isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
-                requestVersion == imagePreparationRequest.get() &&
-                mutableRecipeImagePreparationState.value.image == image
-            ) {
-                mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
-            }
-        }
-    }
-
-    fun cancelRecipeImagePreparation(requestKey: String): Job {
-        val jobs = synchronized(jobsLock) {
-            if (mutableRecipeImagePreparationState.value.requestKey != requestKey) return completedJob()
-            imagePreparationRequest.incrementAndGet()
-            imagePreparationJobs.toList()
-        }
-        return scope.launch {
-            jobs.forEach { it.cancelAndJoin() }
-            val image = transition.withLock {
-                mutableRecipeImagePreparationState.value.takeIf { it.requestKey == requestKey }?.image.also {
-                    if (mutableRecipeImagePreparationState.value.requestKey == requestKey) {
-                        mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
-                    }
-                }
-            }
-            image?.let { runCatching { discardRecipeImageResource(it) } }
-        }
-    }
-
     fun releaseRecipeEditorImage(selection: RecipeEditorImageSelection): Job {
         val jobs = synchronized(jobsLock) {
             val currentKey = mutableRecipeImagePreparationState.value.requestKey

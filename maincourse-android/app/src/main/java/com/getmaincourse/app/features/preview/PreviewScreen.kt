@@ -23,21 +23,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.getmaincourse.app.Destination
 import com.getmaincourse.app.R
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
 @Composable
-fun PreviewScreen(destination: Destination, onOpenDesignSystem: () -> Unit) {
-    val (title, description) = when (destination) {
-        Destination.Shopping -> R.string.shopping_preview_title to R.string.shopping_preview_body
-        Destination.Search -> R.string.search_preview_title to R.string.search_preview_body
-        else -> error("Only preview destinations use PreviewScreen")
-    }
+fun PreviewScreen(onOpenDesignSystem: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
-            modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth().testTag("screen_${destination.name}"),
+            modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth().testTag("screen_Shopping"),
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
@@ -56,9 +50,9 @@ fun PreviewScreen(destination: Destination, onOpenDesignSystem: () -> Unit) {
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
-                    Text(stringResource(title), style = MaterialTheme.typography.headlineLarge)
+                    Text(stringResource(R.string.shopping_preview_title), style = MaterialTheme.typography.headlineLarge)
                     Text(
-                        stringResource(description),
+                        stringResource(R.string.shopping_preview_body),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MainCourseColors.Body,
                     )

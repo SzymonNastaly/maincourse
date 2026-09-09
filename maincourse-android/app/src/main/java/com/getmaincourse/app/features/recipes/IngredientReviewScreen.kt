@@ -49,7 +49,8 @@ fun IngredientReviewScreen(
         payload = payload.copy(review = review)
         saved = RecipeUiSavedStateCodec.encodeDetail(payload)
     }
-    val matching = actionState.scope == scope && actionState.recipeId == recipe.id
+    val matching = actionState.scope == scope && actionState.recipeId == recipe.id &&
+        actionState.operation == RecipeActionOperation.ADDING_INGREDIENTS
     val frozen = matching && actionState.outcome == RecipeActionOutcome.AMBIGUOUS && actionState.frozenShoppingItems.isNotEmpty()
     LaunchedEffect(actionState.outcome, actionState.isBusy) {
         if (payload.reviewSubmissionInterrupted && matching && !actionState.isBusy &&

@@ -22,6 +22,7 @@ import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
+import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.data.model.User
 import com.getmaincourse.app.data.network.ApiFailure
 import com.getmaincourse.app.data.network.MainCourseApi
@@ -173,19 +174,46 @@ class RecipeActionControllerTest {
 
     @Test
     fun aNewPhotoMakesAnOtherwiseUnchangedDraftSaveable() = runTest {
-        val api = FakeApi()
+        val structured = listOf(StructuredIngredient(1, 0, "1", null, "cup", "onion", null, "1 cup onion"))
+        val api = FakeApi().apply {
+            coverResult = RECIPE_DETAIL.copy(
+                structuredIngredients = structured,
+                coverImageUrl = "/cover.jpg",
+                updatedAt = "2026-09-08T12:02:00Z",
+            )
+        }
+        val store = FakeStore()
         val image = File.createTempFile("recipe-photo-only", ".jpg").apply {
             writeBytes(byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte()))
         }
-        val controller = controller(api, FakeStore(), FakeHost(this)) { _, _ -> image }
+        val controller = controller(api, store, FakeHost(this)) { _, _ -> image }
         val changed = changedDraft()
         val unchanged = changed.copy(values = changed.original)
 
         controller.saveRecipe(unchanged, PreparedRecipeImage("/private/photo.jpg", 7, "photo")).join()
 
-        assertEquals(1, api.updateCalls)
+        assertEquals(0, api.updateCalls)
         assertEquals(1, api.coverCalls)
+        assertEquals(structured, store.detail(SOURCE, RECIPE.id)?.structuredIngredients)
         assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        image.delete()
+    }
+
+    @Test
+    fun mixedTextAndPhotoSaveStillSendsExplicitTextClearsBeforeTheCover() = runTest {
+        val api = FakeApi()
+        val image = File.createTempFile("recipe-mixed-save", ".jpg").apply {
+            writeBytes(byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte()))
+        }
+        val controller = controller(api, FakeStore(), FakeHost(this)) { _, _ -> image }
+
+        controller.saveRecipe(changedDraft(), PreparedRecipeImage("/private/photo.jpg", 7, "photo")).join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(emptyList<String>(), api.updateRequests.single().ingredients)
+        assertEquals(emptyList<String>(), api.updateRequests.single().instructions)
+        assertNull(api.updateRequests.single().prepTime)
+        assertEquals(1, api.coverCalls)
         image.delete()
     }
 
@@ -226,6 +254,42 @@ class RecipeActionControllerTest {
         assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
         assertEquals("editor-a", controller.state.value.requestKey)
         assertEquals(1, api.updateCalls)
+    }
+
+    @Test
+    fun reconciliationSuccessKeepsOwnedFailedPhotoPartialUntilPhotoOnlyRetrySucceeds() = runTest {
+        val image = File.createTempFile("double-fault-photo", ".jpg")
+        val prepared = PreparedRecipeImage("/private/photo.jpg", 7, "photo")
+        val host = FakeHost(this).apply { settleResult = true }
+        val store = FakeStore().apply { saveFailure = IOException("disk full") }
+        val api = FakeApi().apply { coverFailure = IOException("offline") }
+        val controller = controller(api, store, host) { _, _ -> image }
+
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-a"), prepared).join()
+        assertEquals(RecipeActionOutcome.PARTIAL, controller.state.value.outcome)
+        assertTrue(controller.state.value.canRetryPhoto)
+        assertTrue(controller.state.value.canRetryReconciliation)
+
+        controller.retryRecipeReconciliation().join()
+
+        assertEquals(RecipeActionOutcome.PARTIAL, controller.state.value.outcome)
+        assertTrue(controller.state.value.canRetryPhoto)
+        assertFalse(controller.state.value.canRetryReconciliation)
+        assertEquals("editor-a", controller.state.value.requestKey)
+        assertTrue(controller.ownsPendingPhoto("editor-a", prepared))
+        assertEquals(1, api.updateCalls)
+        assertEquals(1, api.coverCalls)
+
+        store.saveFailure = null
+        api.coverFailure = null
+        controller.retryRecipePhoto().join()
+
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        assertEquals("editor-a", controller.state.value.requestKey)
+        assertEquals(1, api.updateCalls)
+        assertEquals(2, api.coverCalls)
+        assertFalse(controller.ownsPendingPhoto("editor-a", prepared))
+        image.delete()
     }
 
     @Test
@@ -682,6 +746,7 @@ class RecipeActionControllerTest {
 
     private class FakeApi : MainCourseApi {
         var updateCalls = 0
+        val updateRequests = mutableListOf<RecipeUpdateRequest>()
         var coverCalls = 0
         var deleteCalls = 0
         var updateResult = UPDATED
@@ -696,6 +761,7 @@ class RecipeActionControllerTest {
         val shoppingRequests = mutableListOf<ShoppingItemsRequest>()
         override suspend fun updateRecipe(token: String, cookbookId: Long, recipeId: Long, request: RecipeUpdateRequest): RecipeDetail {
             updateCalls++
+            updateRequests += request
             updateFailure?.let { throw it }
             return updateBlock?.invoke() ?: updateResult
         }

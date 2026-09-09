@@ -1037,6 +1037,17 @@ class RetrofitMainCourseApiTest {
     }
 
     @Test
+    fun empty204ForTypedResponseBecomesStatuslessApiFailure() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        val failure = captureApiFailure { api.cookbooks("test-token") }
+
+        assertNull(failure.status)
+        assertEquals("Invalid response from server", failure.message)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun redirectsAreNotFollowedWithBearerCredentials() = runBlocking {
         server.enqueue(
             MockResponse()
