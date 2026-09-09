@@ -3,6 +3,7 @@ package com.getmaincourse.app
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.AccountResponse
@@ -161,6 +163,18 @@ class MainCourseAppTest {
             .assertTextEquals("Could not delete account")
         compose.onNodeWithText("Retry deletion").assertIsDisplayed().performClick()
         compose.waitUntil(5_000) { deletionCalls.get() == 2 }
+    }
+
+    @Test
+    fun leavingSettingsDiscardsItsUnpublishedDraft() {
+        show(SessionUiState.SignedIn(SESSION))
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("settings_name").performTextReplacement("Unpublished name")
+
+        compose.onNodeWithTag("nav_Recipes").performClick()
+        compose.onNodeWithTag("nav_Settings").performClick()
+
+        compose.onNodeWithTag("settings_name").assertTextContains(USER.name!!)
     }
 
     @Test

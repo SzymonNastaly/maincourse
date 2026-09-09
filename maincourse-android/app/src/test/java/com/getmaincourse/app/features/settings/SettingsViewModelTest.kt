@@ -98,7 +98,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun identicalPersistenceRetryDoesNotRepeatPatch() = runTest(dispatcher) {
+    fun persistenceFailureKeepsPriorPublishedSession() = runTest(dispatcher) {
         val updated = USER.copy(name = "New name", lifecycleNotificationsEnabled = false)
         service.updatedUser = updated
         store.writeFailure = IOException("disk full")
@@ -111,18 +111,27 @@ class SettingsViewModelTest {
         assertEquals(SESSION, provider.session.value)
         assertEquals(SESSION, store.value?.response)
         assertEquals("Could not save account changes", viewModel.state.value.error)
+    }
+
+    @Test
+    fun explicitSaveAfterPersistenceFailurePerformsFreshPatch() = runTest(dispatcher) {
+        val updated = USER.copy(name = "New name", lifecycleNotificationsEnabled = false)
+        service.updatedUser = updated
+        store.writeFailure = IOException("disk full")
+        val viewModel = buildViewModel()
+        viewModel.saveProfile("New name", remindersEnabled = false).join()
 
         store.writeFailure = null
         viewModel.saveProfile("New name", remindersEnabled = false).join()
         runCurrent()
 
-        assertEquals(1, service.updateCalls)
+        assertEquals(2, service.updateCalls)
         assertEquals(updated, store.value?.response?.user)
         assertEquals(updated, provider.session.value?.user)
     }
 
     @Test
-    fun editedValuesAfterPersistenceFailureSendANewPatch() = runTest(dispatcher) {
+    fun recreatedViewModelAfterPersistenceFailureSendsCurrentValues() = runTest(dispatcher) {
         service.updatedUser = USER.copy(name = "First accepted", lifecycleNotificationsEnabled = false)
         store.writeFailure = IOException("disk full")
         val viewModel = buildViewModel()
@@ -131,7 +140,8 @@ class SettingsViewModelTest {
         store.writeFailure = null
         val editedUser = USER.copy(name = "Edited again", lifecycleNotificationsEnabled = true)
         service.updatedUser = editedUser
-        viewModel.saveProfile("Edited again", remindersEnabled = true).join()
+        val recreatedViewModel = buildViewModel()
+        recreatedViewModel.saveProfile("Edited again", remindersEnabled = true).join()
         runCurrent()
 
         assertEquals(2, service.updateCalls)

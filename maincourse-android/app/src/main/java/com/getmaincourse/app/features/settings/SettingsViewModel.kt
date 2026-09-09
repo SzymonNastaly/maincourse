@@ -35,7 +35,6 @@ class SettingsViewModel(
 ) : ViewModel() {
     private val action = MutableStateFlow(ActionState())
     private var actionJob: Job? = null
-    private var pendingSession: StoredSession? = null
 
     val state = combine(sessionProvider.session, action) { session, actionState ->
         SettingsUiState(
@@ -53,18 +52,6 @@ class SettingsViewModel(
     fun saveProfile(name: String, remindersEnabled: Boolean): Job = launchAction(saving = true) {
         val current = sessionProvider.session.value ?: return@launchAction
         val requestedName = name.trim()
-        val pending = pendingSession
-        val pendingUser = pending?.response?.user
-        if (pending != null &&
-            pending.response.token == current.token &&
-            pendingUser?.name == requestedName &&
-            pendingUser.lifecycleNotificationsEnabled == remindersEnabled
-        ) {
-            persistAndPublish(pending, current.token)
-            return@launchAction
-        }
-        pendingSession = null
-
         val stored = try {
             sessionStore.read()
         } catch (failure: CancellationException) {
@@ -99,7 +86,6 @@ class SettingsViewModel(
         }
 
         val accepted = stored.copy(response = current.copy(user = updatedUser))
-        pendingSession = accepted
         persistAndPublish(accepted, current.token)
     }
 
@@ -126,7 +112,6 @@ class SettingsViewModel(
             return
         }
         if (sessionProvider.session.value?.token == token) {
-            pendingSession = null
             sessionProvider.set(session.response)
         }
     }

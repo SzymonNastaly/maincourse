@@ -441,7 +441,7 @@ git commit -m "Add simple Android recipe actions"
 
 - [ ] **Step 1: Write failing settings tests**
 
-Verify profile save sends name/reminder values, persists/publishes the returned user, HTTP failure preserves the acknowledged user, and local persistence failure does not publish an unpersisted user. Account deletion and logout remain covered by `SessionViewModelTest`.
+Verify profile save sends name/reminder values, persists/publishes the returned user, HTTP failure preserves the acknowledged user, and local persistence failure does not publish an unpersisted user. Verify that a later explicit Save, including after recreating the settings view model, sends a fresh idempotent PATCH with the currently entered values. Account deletion and logout remain covered by `SessionViewModelTest`.
 
 ```kotlin
 @Test fun profileSavePublishesServerUserAfterPersistence() = runTest {
@@ -462,7 +462,7 @@ Expected: compilation fails because `SettingsViewModel` does not exist.
 
 Derive the displayed user from `SessionProvider.session`. `saveProfile` calls `MainCourseService.updateAccount`, writes the returned user into the stored session, and only then publishes it through `SessionProvider`. Delegate account deletion and logout to `SessionViewModel` callbacks supplied by the host. Retain only `saving`, `deleting`, and `error` locally.
 
-After `PATCH /account`, write the returned user into the stored session before publishing it through `SessionProvider`. On storage failure, report failure and retain the prior published session; never repeat the PATCH automatically.
+After `PATCH /account`, write the returned user into the stored session before publishing it through `SessionProvider`. On storage failure, report failure and retain the prior published session. Do not retain pending accepted profile state or retry automatically; a later explicit Save sends a fresh idempotent PATCH with the currently entered values.
 
 - [ ] **Step 4: Simplify settings screens**
 
