@@ -342,12 +342,13 @@ provider and release gates; implementation reviews are complete.
 
 ## Milestone 3: Recipe Workflows
 
-**Status:** Core recipe workflows passed their local Rails/API 37 acceptance gate
-on 2026-09-09. This is a partial milestone gate: imports, Android share targets,
-the isolated structured-coroutine lifetime work in #104, and final whole-core
-review remain. Milestone 4 shopping outbox work has not started.
+**Status:** Core recipe workflows passed local Rails/API 37 acceptance and code
+review on 2026-09-09. Imports, Android share targets, and the isolated
+structured-coroutine lifetime work in #104 remain. Milestone 4 shopping outbox
+work has not started.
 
 **Core design:** [`docs/superpowers/specs/2026-09-08-android-recipe-workflows-design.md`](../specs/2026-09-08-android-recipe-workflows-design.md).
+**Core implementation:** [issue #103](https://github.com/SzymonNastaly/maincourse/issues/103).
 
 **Scope:**
 - Local cookbook-scoped search backed by cached recipe data.
@@ -378,9 +379,15 @@ review remain. Milestone 4 shopping outbox work has not started.
   density, font, rotation, night, and network settings were restored. Evidence
   is from the local API 37 emulator, not a physical device or signed release.
 - The clean Android gate passed debug and minified unsigned release builds,
-  debug/release lint, JVM tests, and API 37 device tests. Targeted Rails recipe,
-  shopping-list, and shopping upsert contracts also passed; Rails production
-  code and iOS code were unchanged.
+  debug/release lint, 273 JVM tests, and 152 API 37 device tests (425 total,
+  no failures/errors/skips), with the build cache disabled. Targeted Rails
+  recipe/shopping/upsert contracts passed 111 tests and 331 assertions; Rails
+  production code and iOS code were unchanged.
+- Final runtime fix `62fc46c` avoids needless text updates for photo-only saves,
+  preserves pending-photo reconciliation, removes unused API/preview code, and
+  tightens Retrofit error handling. Reviewed follow-up `9228a9e` aligns ingredient
+  feedback with real controller outcomes. A repeated same-frame failure feedback
+  edge case is tracked separately in #105; ordinary success/ambiguity paths pass.
 - Background detail hydration always performs a full sweep because parser child
   changes do not advance the parent cursor (#102). Reviewed-item UUIDs support
   explicit duplicate-safe add, not the Milestone 4 durable outbox. Cross-process
