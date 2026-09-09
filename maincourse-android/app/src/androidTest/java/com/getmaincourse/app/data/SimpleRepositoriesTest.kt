@@ -10,6 +10,7 @@ import com.getmaincourse.app.data.cache.RecipeEntity
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.network.MainCourseService
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -26,6 +27,7 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -126,19 +128,74 @@ class SimpleRepositoriesTest {
     }
 
     @Test
-    fun movePersistsReturnedDetailWithoutASecondNetworkCall() = runBlocking {
+    fun moveRemovesSourceAndRefreshesTargetList() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        server.enqueue(jsonResponse(detailJson(7, "Moved")))
+        server.enqueue(jsonResponse("[${summaryJson(7, "Moved")}]"))
+
+        recipes.move(USER_ID, 10, 7, 20)
+
+        assertEquals(2, server.requestCount)
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
+        assertNull(recipes.observeDetail(USER_ID, 20, 7).first())
+    }
+
+    @Test
+    fun failedMoveLeavesCachedRowsUnchanged() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedRecipe(USER_ID, 10, summary(7, "Source"))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        assertTrue(runCatching { recipes.move(USER_ID, 10, 7, 20) }.isFailure)
+
+        assertEquals(listOf("Source"), recipes.observeSummaries(USER_ID, 10).first().map { it.name })
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 20).first())
+    }
+
+    @Test
+    fun failedTargetRefreshAfterMoveLeavesCachedRowsUnchanged() = runBlocking {
         seedCookbook(USER_ID, 10)
         seedCookbook(USER_ID, 20)
         seedRecipe(USER_ID, 10, summary(7, "Source"))
         server.enqueue(jsonResponse(detailJson(7, "Moved")))
         server.enqueue(MockResponse().setResponseCode(500))
 
-        recipes.move(USER_ID, 10, 7, 20)
+        assertTrue(runCatching { recipes.move(USER_ID, 10, 7, 20) }.isFailure)
 
+        assertEquals(listOf("Source"), recipes.observeSummaries(USER_ID, 10).first().map { it.name })
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 20).first())
+    }
+
+    @Test
+    fun failedDeleteLeavesCachedRowUnchanged() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Cached"))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        assertTrue(runCatching { recipes.delete(USER_ID, 10, 7) }.isFailure)
+
+        assertEquals(listOf("Cached"), recipes.observeSummaries(USER_ID, 10).first().map { it.name })
+    }
+
+    @Test
+    fun addIngredientsSendsReviewedRowsOnce() = runBlocking {
+        server.enqueue(jsonResponse("[]"))
+        val rows = listOf(ShoppingItemRequest("stable-id", "Salt", "to taste", null, 7))
+
+        recipes.addIngredients(10, rows)
+
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("10", request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            """{"items":[{"client_id":"stable-id","name":"Salt","details":"to taste","checked_at":null,"source_recipe_id":7}]}""",
+            request.body.readUtf8(),
+        )
         assertEquals(1, server.requestCount)
-        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
-        assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
-        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
     }
 
     @Test

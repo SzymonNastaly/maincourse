@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +38,7 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.images.heroImagePath
+import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
@@ -49,11 +52,16 @@ fun RecipeDetailScreen(
     resolveImage: (String?) -> String?,
     onRefresh: () -> Unit,
     onBack: () -> Unit,
-    onMove: () -> Unit = {},
+    cookbookId: Long = 0,
+    actionState: RecipeActionUiState = RecipeActionUiState.Idle,
+    onMove: (Long) -> Unit = {},
     onDelete: () -> Unit = {},
     onAddIngredients: (Int) -> Unit = {},
-    actionsEnabled: Boolean = false,
+    onActionSucceeded: () -> Unit = {},
 ) {
+    LaunchedEffect(actionState) {
+        if (actionState is RecipeActionUiState.Succeeded) onActionSucceeded()
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("recipe_detail"),
         contentPadding = PaddingValues(20.dp),
@@ -85,7 +93,9 @@ fun RecipeDetailScreen(
                     onMove = onMove,
                     onDelete = onDelete,
                     onAddIngredients = onAddIngredients,
-                    actionsEnabled = actionsEnabled,
+                    cookbooks = state.cookbooks,
+                    cookbookId = cookbookId,
+                    actionState = actionState,
                 )
             }
         }
@@ -99,14 +109,71 @@ private fun DetailContent(
     resolveImage: (String?) -> String?,
     refreshing: Boolean,
     onRefresh: () -> Unit,
-    onMove: () -> Unit,
+    onMove: (Long) -> Unit,
     onDelete: () -> Unit,
     onAddIngredients: (Int) -> Unit,
-    actionsEnabled: Boolean,
+    cookbooks: List<Cookbook>,
+    cookbookId: Long,
+    actionState: RecipeActionUiState,
 ) {
     val baseServings = recipe.servings?.takeIf { it > 0 }
     var portions by rememberSaveable(recipe.id) { mutableIntStateOf(baseServings?.coerceIn(1, 64) ?: 1) }
     var sourceOpenFailed by remember(recipe.id) { mutableStateOf(false) }
+    var showMove by remember { mutableStateOf(false) }
+    var showDelete by remember { mutableStateOf(false) }
+    val actionRunning = actionState is RecipeActionUiState.Running
+    val moveTargets = cookbooks.filter { it.id != cookbookId }
+
+    if (showMove) {
+        AlertDialog(
+            onDismissRequest = { if (!actionRunning) showMove = false },
+            title = { Text(stringResource(R.string.recipe_move_title, recipe.name)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    moveTargets.forEach { cookbook ->
+                        OutlinedButton(
+                            onClick = {
+                                showMove = false
+                                onMove(cookbook.id)
+                            },
+                            enabled = !actionRunning,
+                            modifier = Modifier.fillMaxWidth().testTag("move_target_${cookbook.id}"),
+                        ) {
+                            Text(stringResource(R.string.recipe_move_target, cookbook.name))
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                OutlinedButton(onClick = { showMove = false }, enabled = !actionRunning) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+    if (showDelete) {
+        AlertDialog(
+            onDismissRequest = { if (!actionRunning) showDelete = false },
+            title = { Text(stringResource(R.string.recipe_delete_title, recipe.name)) },
+            text = { Text(stringResource(R.string.recipe_delete_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDelete = false
+                        onDelete()
+                    },
+                    enabled = !actionRunning,
+                    modifier = Modifier.testTag("confirm_delete"),
+                ) { Text(stringResource(R.string.recipe_delete)) }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDelete = false }, enabled = !actionRunning) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
         val image = resolveImage(recipe.heroImagePath())
@@ -124,13 +191,25 @@ private fun DetailContent(
             OutlinedButton(onClick = onRefresh, enabled = !refreshing) {
                 Text(stringResource(R.string.retry))
             }
-            OutlinedButton(onClick = onMove, enabled = actionsEnabled) {
+            OutlinedButton(
+                onClick = { showMove = true },
+                enabled = !actionRunning && moveTargets.isNotEmpty(),
+                modifier = Modifier.testTag("recipe_move"),
+            ) {
                 Text(stringResource(R.string.recipe_move))
             }
-            OutlinedButton(onClick = onDelete, enabled = actionsEnabled) {
+            OutlinedButton(
+                onClick = { showDelete = true },
+                enabled = !actionRunning,
+                modifier = Modifier.testTag("recipe_delete"),
+            ) {
                 Text(stringResource(R.string.recipe_delete))
             }
         }
+        if (actionState is RecipeActionUiState.Failed) {
+            Text(actionState.message, color = MainCourseColors.Danger, modifier = Modifier.testTag("recipe_action_error"))
+        }
+        if (actionRunning) CircularProgressIndicator(Modifier.testTag("recipe_action_running"))
         if (refreshing) CircularProgressIndicator(Modifier.testTag("recipe_refreshing"))
         val facts = buildList {
             recipe.prepTime?.takeIf { it > 0 }?.let { add(stringResource(R.string.recipe_prep) to stringResource(R.string.recipe_time, it)) }
@@ -168,8 +247,9 @@ private fun DetailContent(
         }
         if (ingredientLines.isNotEmpty()) Section(R.string.recipe_ingredients, ingredientLines)
         Button(
-            enabled = actionsEnabled && ingredientLines.isNotEmpty(),
+            enabled = !actionRunning && ingredientLines.isNotEmpty(),
             onClick = { onAddIngredients(portions) },
+            modifier = Modifier.testTag("recipe_add_ingredients"),
         ) {
             Text(stringResource(R.string.recipe_add_to_shopping))
         }

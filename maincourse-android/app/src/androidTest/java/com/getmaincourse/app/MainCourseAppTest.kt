@@ -83,6 +83,18 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun ingredientReviewSubmitsAndReturnsToRecipe() {
+        show(SessionUiState.SignedIn(SESSION))
+        compose.onNodeWithText(SUMMARY.name).performClick()
+
+        compose.onNodeWithTag("recipe_add_ingredients").performScrollTo().performClick()
+        compose.onNodeWithTag("ingredient_review").assertIsDisplayed()
+        compose.onNodeWithTag("review_submit").performClick()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+    }
+
+    @Test
     fun bottomNavigationShowsShoppingSearchAndSettingsAtEveryWidth() {
         show(SessionUiState.SignedIn(SESSION))
 

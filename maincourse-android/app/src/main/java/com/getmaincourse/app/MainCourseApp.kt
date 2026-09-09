@@ -48,6 +48,7 @@ import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.RecipeRepository
 import com.getmaincourse.app.features.auth.AuthScreen
 import com.getmaincourse.app.features.preview.PreviewScreen
+import com.getmaincourse.app.features.recipes.IngredientReviewScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
 import com.getmaincourse.app.features.recipes.RecipesScreen
@@ -64,6 +65,9 @@ data object RecipesRoute : NavKey
 
 @Serializable
 data class RecipeDetailRoute(val recipeId: Long, val cookbookId: Long) : NavKey
+
+@Serializable
+data class IngredientReviewRoute(val recipeId: Long, val cookbookId: Long, val portions: Int) : NavKey
 
 @Serializable
 data object ShoppingRoute : NavKey
@@ -101,7 +105,13 @@ fun MainCourseApp(
             },
             detail = { userId, cookbookId, recipeId ->
                 simpleViewModelFactory {
-                    RecipeDetailViewModel(userId, cookbookId, recipeId, recipeRepository)
+                    RecipeDetailViewModel(
+                        userId,
+                        cookbookId,
+                        recipeId,
+                        recipeRepository,
+                        cookbookRepository,
+                    )
                 }
             },
         ),
@@ -183,6 +193,7 @@ private fun ProtectedShell(
                     Text(
                         when (current) {
                             RecipesRoute, is RecipeDetailRoute -> stringResource(R.string.recipes)
+                            is IngredientReviewRoute -> stringResource(R.string.recipe_ingredients)
                             ShoppingRoute -> stringResource(R.string.shopping)
                             SearchRoute -> stringResource(R.string.search)
                             SettingsRoute -> stringResource(R.string.settings)
@@ -192,7 +203,7 @@ private fun ProtectedShell(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MainCourseColors.Canvas),
                 navigationIcon = {
-                    if (current is RecipeDetailRoute) {
+                    if (current is RecipeDetailRoute || current is IngredientReviewRoute) {
                         IconButton(
                             onClick = { backStack.removeLastOrNull() },
                             modifier = Modifier.testTag("navigate_back"),
@@ -255,13 +266,42 @@ private fun ProtectedShell(
                         factory = factories.detail(userId, route.cookbookId, route.recipeId),
                     )
                     val detailState by detailViewModel.state.collectAsStateWithLifecycle()
+                    val actionState by detailViewModel.action.collectAsStateWithLifecycle()
                     RecipeDetailScreen(
                         state = detailState,
                         imageLoader = latestImageLoader,
                         resolveImage = latestResolveImage,
                         onRefresh = { detailViewModel.refresh() },
                         onBack = { backStack.removeLastOrNull() },
+                        cookbookId = route.cookbookId,
+                        actionState = actionState,
+                        onMove = { detailViewModel.moveTo(it) },
+                        onDelete = { detailViewModel.delete() },
+                        onAddIngredients = { portions ->
+                            backStack.add(IngredientReviewRoute(route.recipeId, route.cookbookId, portions))
+                        },
+                        onActionSucceeded = { backStack.removeLastOrNull() },
                     )
+                }
+                entry<IngredientReviewRoute> { route ->
+                    val detailViewModel: RecipeDetailViewModel = viewModel(
+                        key = "review-$userId-${route.cookbookId}-${route.recipeId}",
+                        factory = factories.detail(userId, route.cookbookId, route.recipeId),
+                    )
+                    val detailState by detailViewModel.state.collectAsStateWithLifecycle()
+                    val actionState by detailViewModel.action.collectAsStateWithLifecycle()
+                    val recipe = detailState.recipe
+                    if (recipe == null) {
+                        LoadingScreen()
+                    } else {
+                        IngredientReviewScreen(
+                            recipe = recipe,
+                            portions = route.portions,
+                            actionState = actionState,
+                            onBack = { backStack.removeLastOrNull() },
+                            onSubmit = { detailViewModel.addIngredients(it) },
+                        )
+                    }
                 }
                 entry<ShoppingRoute> {
                     PreviewScreen(
