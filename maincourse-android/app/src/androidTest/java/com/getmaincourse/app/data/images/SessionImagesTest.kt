@@ -152,23 +152,6 @@ class SessionImagesTest {
         assertNull(images!!.preparedUserIdForTest())
     }
 
-    @Test
-    fun combinedImageCleanupAttemptsStagingEvenWhenDisplayCacheCleanupFails() = runBlocking {
-        var stagedCleanupRan = false
-
-        try {
-            clearImageResources(
-                clearDisplayImages = { error("display cleanup failed") },
-                clearStagedImages = { stagedCleanupRan = true },
-            )
-            fail("cleanup should expose the first failure")
-        } catch (expected: IllegalStateException) {
-            assertEquals("display cleanup failed", expected.message)
-        }
-
-        assertTrue(stagedCleanupRan)
-    }
-
     private fun testImages(
         root: File = newRoot(),
         baseUrl: String = "https://app.example.test/",

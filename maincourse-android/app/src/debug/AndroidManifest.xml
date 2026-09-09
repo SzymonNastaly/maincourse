@@ -1,32 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <application>
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.recipe-image-test"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/recipe_image_test_paths" />
-        </provider>
         <activity
             android:name=".MainCourseTestActivity"
             android:exported="false"
             android:theme="@style/Theme.MainCourse" />
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter tools:ignore="AppLinkUrlError">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="com.getmaincourse.app.debug"
-                    android:sspPrefix="/oauth/apple?" />
-            </intent-filter>
-        </activity>
     </application>
 </manifest>

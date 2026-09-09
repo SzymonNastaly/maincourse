@@ -1,6 +1,5 @@
 package com.getmaincourse.app
 
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -11,9 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
-import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.getmaincourse.app.features.auth.AppleAuthenticationCallbackParser
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.ui.theme.MainCourseTheme
@@ -69,24 +66,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-internal fun appleBrowserIntent(url: String): Intent =
-    Intent(Intent.ACTION_VIEW, url.toUri())
-        .addCategory(Intent.CATEGORY_BROWSABLE)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-internal fun consumeAppleCallbackIntent(
-    intent: Intent,
-    isDebugBuild: Boolean,
-    onCallback: (com.getmaincourse.app.features.auth.AppleAuthenticationCallback) -> Unit,
-): Boolean {
-    if (intent.action != Intent.ACTION_VIEW) return false
-    val rawUri = intent.dataString ?: return false
-    intent.data = null
-    val callback = AppleAuthenticationCallbackParser.parse(rawUri, isDebugBuild) ?: return false
-    onCallback(callback)
-    return true
 }
 
 internal fun shouldRequestLocalNetworkAccess(

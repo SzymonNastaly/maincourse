@@ -118,8 +118,6 @@ data class SignInRequest(
     val password: String,
     @SerialName("device_name")
     val deviceName: String,
-    @SerialName("onboarding_device_id")
-    val onboardingDeviceId: String? = null,
 )
 
 @Serializable
@@ -131,6 +129,4 @@ data class SignUpRequest(
     val passwordConfirmation: String,
     @SerialName("device_name")
     val deviceName: String,
-    @SerialName("onboarding_device_id")
-    val onboardingDeviceId: String? = null,
 )

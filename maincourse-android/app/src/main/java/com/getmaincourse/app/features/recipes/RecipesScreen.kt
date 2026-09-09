@@ -191,44 +191,6 @@ private fun RecipeCard(
     }
 }
 
-@Suppress("UNUSED_PARAMETER")
-@Composable
-internal fun RecipeCard(
-    recipe: RecipeSummary,
-    imageLoader: ImageLoader?,
-    resolveImage: (String?) -> String?,
-    onOpenRecipe: (Long) -> Unit,
-    onEditRecipe: (Long) -> Unit,
-    onMoveRecipe: (Long) -> Unit,
-    onDeleteRecipe: (Long) -> Unit,
-    actionsEnabled: Boolean,
-) {
-    RecipeCard(recipe, imageLoader, resolveImage, onOpenRecipe)
-}
-
-@Suppress("UNUSED_PARAMETER")
-@Composable
-internal fun RecipeActionFeedback(
-    state: RecipeActionState,
-    onRefresh: () -> Unit,
-    onRetryReconciliation: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    Surface(shape = MainCourseShapes.Panel, color = MainCourseColors.Surface, border = BorderStroke(1.dp, MainCourseColors.Hairline)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            state.message?.let { Text(it, color = MainCourseColors.Danger) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (state.canRetryReconciliation) Button(enabled = !state.isBusy, onClick = onRetryReconciliation) {
-                    Text(stringResource(R.string.recipe_refresh_data))
-                }
-                androidx.compose.material3.TextButton(enabled = !state.isBusy, onClick = onDismiss) {
-                    Text(stringResource(R.string.dismiss))
-                }
-            }
-        }
-    }
-}
-
 @Composable
 private fun StatusPanel(text: String, onRetry: () -> Unit) {
     Surface(shape = MainCourseShapes.Panel, color = MainCourseColors.Surface, border = BorderStroke(1.dp, MainCourseColors.Hairline)) {

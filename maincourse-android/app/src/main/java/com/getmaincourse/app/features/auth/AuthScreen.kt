@@ -42,8 +42,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
-import com.getmaincourse.app.data.model.SignInRequest
-import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
@@ -68,13 +66,11 @@ private fun AuthForm(
     modifier: Modifier,
     busy: Boolean,
     error: String?,
-    startsInSignUpMode: Boolean = false,
-    nameRequired: Boolean = false,
     onSignIn: (email: String, password: String) -> Unit,
     onSignUp: (name: String?, email: String, password: String, confirmation: String) -> Unit,
 ) {
     var mode by rememberSaveable {
-        mutableStateOf(if (startsInSignUpMode) AuthMode.SIGN_UP else AuthMode.SIGN_IN)
+        mutableStateOf(AuthMode.SIGN_IN)
     }
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
@@ -84,7 +80,7 @@ private fun AuthForm(
     val focusManager = LocalFocusManager.current
 
     val signingUp = mode == AuthMode.SIGN_UP
-    val nameInvalid = submitted && signingUp && nameRequired && name.isBlank()
+    val nameInvalid = submitted && signingUp && name.isBlank()
     val emailInvalid = submitted && !email.isValidEmail()
     val passwordInvalid = submitted && password.isEmpty()
     val passwordShort = submitted && signingUp && password.length < 12
@@ -92,7 +88,7 @@ private fun AuthForm(
     val submit = {
         submitted = true
         val valid = email.isValidEmail() && password.isNotEmpty() &&
-            (!signingUp || ((!nameRequired || name.isNotBlank()) &&
+            (!signingUp || (name.isNotBlank() &&
                 password.length >= 12 && confirmation == password))
         if (valid && !busy) {
             if (signingUp) {
@@ -241,40 +237,7 @@ private fun AuthForm(
     }
 }
 
-@Suppress("UNUSED_PARAMETER")
-@Composable
-fun AuthScreen(
-    modifier: Modifier,
-    authenticationMethod: AuthenticationMethod?,
-    error: String?,
-    startsInSignUpMode: Boolean = false,
-    onSignIn: (SignInRequest) -> Unit,
-    onSignUp: (SignUpRequest) -> Unit,
-    onGoogleSignIn: () -> Unit,
-    onAppleSignIn: () -> Unit,
-    onCancelAppleSignIn: () -> Unit,
-    appleCanCancel: Boolean,
-) {
-    AuthForm(
-        modifier = modifier,
-        busy = authenticationMethod != null,
-        error = error,
-        startsInSignUpMode = startsInSignUpMode,
-        nameRequired = true,
-        onSignIn = { email, password -> onSignIn(SignInRequest(email, password, "Android")) },
-        onSignUp = { name, email, password, confirmation ->
-            onSignUp(SignUpRequest(name, email, password, confirmation, "Android"))
-        },
-    )
-}
-
 enum class AuthMode { SIGN_IN, SIGN_UP }
-
-enum class AuthenticationMethod {
-    EMAIL,
-    GOOGLE,
-    APPLE,
-}
 
 private fun String.isValidEmail(): Boolean {
     val trimmed = trim()
