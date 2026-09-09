@@ -15,6 +15,7 @@ import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
+import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.data.model.User
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
@@ -83,12 +84,24 @@ class MainCourseAppTest {
     }
 
     @Test
-    fun ingredientReviewSubmitsAndReturnsToRecipe() {
-        show(SessionUiState.SignedIn(SESSION))
+    fun ingredientReviewPreservesSelectedServingsAcrossRecreationThenReturns() {
+        val detail = DETAIL.copy(
+            structuredIngredients = listOf(
+                StructuredIngredient(1, 0, "2", null, null, "Tomatoes", null, "2 Tomatoes"),
+            ),
+        )
+        show(SessionUiState.SignedIn(SESSION), factories = factories(detail = detail))
         compose.onNodeWithText(SUMMARY.name).performClick()
 
+        compose.onNodeWithTag("portion_increment").performScrollTo().performClick()
         compose.onNodeWithTag("recipe_add_ingredients").performScrollTo().performClick()
         compose.onNodeWithTag("ingredient_review").assertIsDisplayed()
+        compose.onNodeWithText("3").assertIsDisplayed()
+
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithTag("ingredient_review").assertIsDisplayed()
+        compose.onNodeWithText("3").assertIsDisplayed()
         compose.onNodeWithTag("review_submit").performClick()
         compose.onNodeWithText("Ingredients added").assertIsDisplayed()
         compose.onNodeWithTag("review_success_confirm").performClick()

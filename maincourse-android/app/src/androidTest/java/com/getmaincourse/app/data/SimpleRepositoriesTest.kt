@@ -128,19 +128,19 @@ class SimpleRepositoriesTest {
     }
 
     @Test
-    fun moveRemovesSourceAndRefreshesTargetList() = runBlocking {
+    fun confirmedMoveUsesPatchDetailWithoutRequiringTargetRefresh() = runBlocking {
         seedCookbook(USER_ID, 10)
         seedCookbook(USER_ID, 20)
         seedRecipe(USER_ID, 10, summary(7, "Source"))
         server.enqueue(jsonResponse(detailJson(7, "Moved")))
-        server.enqueue(jsonResponse("[${summaryJson(7, "Moved")}]"))
+        server.enqueue(MockResponse().setResponseCode(500))
 
         recipes.move(USER_ID, 10, 7, 20)
 
-        assertEquals(2, server.requestCount)
+        assertEquals(1, server.requestCount)
         assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
         assertEquals(listOf("Moved"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
-        assertNull(recipes.observeDetail(USER_ID, 20, 7).first())
+        assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
     }
 
     @Test
@@ -148,20 +148,6 @@ class SimpleRepositoriesTest {
         seedCookbook(USER_ID, 10)
         seedCookbook(USER_ID, 20)
         seedRecipe(USER_ID, 10, summary(7, "Source"))
-        server.enqueue(MockResponse().setResponseCode(500))
-
-        assertTrue(runCatching { recipes.move(USER_ID, 10, 7, 20) }.isFailure)
-
-        assertEquals(listOf("Source"), recipes.observeSummaries(USER_ID, 10).first().map { it.name })
-        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 20).first())
-    }
-
-    @Test
-    fun failedTargetRefreshAfterMoveLeavesCachedRowsUnchanged() = runBlocking {
-        seedCookbook(USER_ID, 10)
-        seedCookbook(USER_ID, 20)
-        seedRecipe(USER_ID, 10, summary(7, "Source"))
-        server.enqueue(jsonResponse(detailJson(7, "Moved")))
         server.enqueue(MockResponse().setResponseCode(500))
 
         assertTrue(runCatching { recipes.move(USER_ID, 10, 7, 20) }.isFailure)

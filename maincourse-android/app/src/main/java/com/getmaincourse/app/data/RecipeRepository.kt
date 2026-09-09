@@ -2,6 +2,7 @@ package com.getmaincourse.app.data
 
 import androidx.room.withTransaction
 import com.getmaincourse.app.data.cache.MainCourseDatabase
+import com.getmaincourse.app.data.cache.RecipeEntity
 import com.getmaincourse.app.data.cache.toDetail
 import com.getmaincourse.app.data.cache.toEntity
 import com.getmaincourse.app.data.cache.toJson
@@ -55,15 +56,23 @@ class RecipeRepository(
         recipeId: Long,
         targetCookbookId: Long,
     ) = listWrites.withLock {
-        service.moveRecipe(sourceCookbookId, recipeId, MoveRecipeRequest(targetCookbookId))
-        val targetRecipes = service.recipes(targetCookbookId)
+        val moved = service.moveRecipe(sourceCookbookId, recipeId, MoveRecipeRequest(targetCookbookId))
         database.withTransaction {
-            dao.replaceRecipes(
-                userId,
-                targetCookbookId,
-                targetRecipes.mapIndexed { index, summary ->
-                    summary.toEntity(userId, targetCookbookId, index, json)
-                },
+            val source = dao.recipe(userId, sourceCookbookId, recipeId)
+            val target = dao.recipe(userId, targetCookbookId, recipeId)
+            val previousSummary = source?.toSummary(json) ?: target?.toSummary(json)
+            dao.upsertRecipes(
+                listOf(
+                    RecipeEntity(
+                        userId = userId,
+                        cookbookId = targetCookbookId,
+                        recipeId = recipeId,
+                        listPosition = target?.listPosition
+                            ?: dao.nextRecipePosition(userId, targetCookbookId),
+                        summaryJson = json.encodeToString(moved.toSummary(previousSummary)),
+                        detailJson = moved.toJson(json),
+                    ),
+                ),
             )
             dao.removeRecipe(userId, sourceCookbookId, recipeId)
         }

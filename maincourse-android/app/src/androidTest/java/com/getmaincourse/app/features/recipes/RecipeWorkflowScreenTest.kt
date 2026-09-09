@@ -271,7 +271,7 @@ class RecipeWorkflowScreenTest {
     }
 
     @Test
-    fun ingredientReviewKeepsStableRowsForADeliberateRetry() {
+    fun ingredientReviewKeepsCheckboxesAndStableRowsAcrossRecreationAndRetry() {
         val action = mutableStateOf<RecipeActionUiState>(RecipeActionUiState.Idle)
         val submissions = mutableListOf<List<ShoppingItemInput>>()
         compose.runOnIdle {
@@ -294,6 +294,10 @@ class RecipeWorkflowScreenTest {
 
         compose.onNodeWithTag("review_submit").performClick()
         compose.waitUntil(5_000) { submissions.size == 1 }
+
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithTag("review_item_0").assertIsDisplayed()
         compose.onNodeWithTag("review_submit").performClick()
         compose.waitUntil(5_000) { submissions.size == 2 }
         assertEquals(submissions.first(), submissions.last())

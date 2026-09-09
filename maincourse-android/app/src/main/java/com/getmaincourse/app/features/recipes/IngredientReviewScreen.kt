@@ -18,7 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.ui.theme.MainCourseColors
+import kotlinx.serialization.json.Json
 
 @Composable
 fun IngredientReviewScreen(
@@ -38,7 +40,7 @@ fun IngredientReviewScreen(
     onBack: () -> Unit,
     onSubmit: (List<ShoppingItemInput>) -> Unit,
 ) {
-    var review by remember(recipe.id, portions) {
+    var review by rememberSaveable(recipe.id, portions, stateSaver = IngredientReviewSaver) {
         mutableStateOf(IngredientReview.create(recipe.id, recipe.structuredForReview(), portions, recipe.servings))
     }
     val selected = review.includedPayload()
@@ -103,6 +105,11 @@ fun IngredientReviewScreen(
         }
     }
 }
+
+private val IngredientReviewSaver = Saver<IngredientReview, String>(
+    save = { review -> Json.encodeToString(review) },
+    restore = { encoded -> runCatching { Json.decodeFromString<IngredientReview>(encoded) }.getOrNull() },
+)
 
 private fun RecipeDetail.structuredForReview() = if (structuredIngredients.isNotEmpty()) {
     structuredIngredients
