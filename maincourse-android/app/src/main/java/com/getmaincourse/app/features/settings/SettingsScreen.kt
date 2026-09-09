@@ -1,8 +1,6 @@
 package com.getmaincourse.app.features.settings
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,14 +10,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,28 +34,37 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import com.getmaincourse.app.BuildConfig
 import com.getmaincourse.app.R
-import com.getmaincourse.app.data.model.User
 import com.getmaincourse.app.ui.theme.MainCourseColors
-import com.getmaincourse.app.ui.theme.MainCourseMono
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
 @Composable
 fun SettingsScreen(
-    user: User,
-    accountState: AccountState,
-    onUpdateName: (String) -> Unit,
-    onUpdateLifecycleNotifications: (Boolean) -> Unit,
-    onRetryAccountPersistence: () -> Unit,
-    onClearAccountError: () -> Unit,
-    onOpenManageAccount: () -> Unit,
-    onOpenDesignSystem: () -> Unit,
-    onLogout: () -> Unit,
+    state: SettingsUiState,
+    onSave: (name: String, remindersEnabled: Boolean) -> Unit,
+    onDeleteAccount: () -> Unit,
+    onSignOut: () -> Unit,
+    onClearError: () -> Unit,
 ) {
-    var editingName by rememberSaveable(user.id) { mutableStateOf(false) }
-    val accountBusy = accountState.operation != AccountOperation.IDLE
+    val user = state.user ?: return
+    var name by rememberSaveable(user.id) { mutableStateOf(user.name.orEmpty()) }
+    var remindersEnabled by rememberSaveable(user.id) {
+        mutableStateOf(user.lifecycleNotificationsEnabled)
+    }
+    var confirmingDelete by rememberSaveable(user.id) { mutableStateOf(false) }
+    val busy = state.saving || state.deleting
+    val trimmedName = name.trim()
+    val changed = trimmedName != user.name.orEmpty() ||
+        remindersEnabled != user.lifecycleNotificationsEnabled
+    val valid = trimmedName.isNotEmpty() && trimmedName.length <= MAX_NAME_LENGTH
+
+    LaunchedEffect(user.name, user.lifecycleNotificationsEnabled) {
+        name = user.name.orEmpty()
+        remindersEnabled = user.lifecycleNotificationsEnabled
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("screen_Settings"),
         contentPadding = PaddingValues(20.dp),
@@ -67,29 +78,58 @@ fun SettingsScreen(
                 color = MainCourseColors.Surface,
                 border = BorderStroke(1.dp, MainCourseColors.Hairline),
             ) {
-                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    Modifier.fillMaxWidth().padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
                     Text(stringResource(R.string.account), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(R.string.signed_in_as), style = MaterialTheme.typography.labelMedium, color = MainCourseColors.Muted)
-                    Text(user.email, color = MainCourseColors.Body)
-                    SettingsRow(
-                        title = stringResource(R.string.edit_name),
-                        body = user.name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.name_not_set),
-                        enabled = !accountBusy,
-                        onClick = {
-                            if (!accountState.canRetryPersistence) onClearAccountError()
-                            editingName = true
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = {
+                            name = it
+                            onClearError()
                         },
+                        modifier = Modifier.fillMaxWidth().testTag("settings_name"),
+                        enabled = !busy,
+                        isError = name.trim().length > MAX_NAME_LENGTH,
+                        label = { Text(stringResource(R.string.auth_name)) },
+                        supportingText = {
+                            Text(
+                                if (name.trim().length > MAX_NAME_LENGTH) {
+                                    stringResource(R.string.name_too_long)
+                                } else {
+                                    stringResource(R.string.edit_name_help)
+                                },
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                        shape = MainCourseShapes.Control,
+                    )
+                    OutlinedTextField(
+                        value = user.email,
+                        onValueChange = {},
+                        modifier = Modifier.fillMaxWidth().testTag("settings_email"),
+                        enabled = !busy,
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.auth_email)) },
+                        singleLine = true,
+                        shape = MainCourseShapes.Control,
                     )
                     Row(
                         Modifier.fillMaxWidth()
                             .testTag("recipe_reminders")
                             .toggleable(
-                                value = user.lifecycleNotificationsEnabled,
-                                enabled = !accountBusy,
+                                value = remindersEnabled,
+                                enabled = !busy,
                                 role = Role.Switch,
-                                onValueChange = onUpdateLifecycleNotifications,
+                                onValueChange = {
+                                    remindersEnabled = it
+                                    onClearError()
+                                },
                             )
-                            .semantics(mergeDescendants = true) {},
+                            .semantics(mergeDescendants = true) {}
+                            .padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -101,103 +141,63 @@ fun SettingsScreen(
                                 color = MainCourseColors.Body,
                             )
                         }
-                        Switch(
-                            checked = user.lifecycleNotificationsEnabled,
-                            onCheckedChange = null,
-                            enabled = !accountBusy,
+                        Switch(checked = remindersEnabled, onCheckedChange = null, enabled = !busy)
+                    }
+                    state.error?.let {
+                        Text(
+                            it,
+                            color = MainCourseColors.Danger,
+                            modifier = Modifier.testTag("settings_error").semantics {
+                                liveRegion = LiveRegionMode.Polite
+                            },
                         )
                     }
-                    SettingsRow(
-                        title = stringResource(R.string.manage_account),
-                        body = stringResource(R.string.manage_account_help),
-                        enabled = !accountBusy,
-                        onClick = onOpenManageAccount,
-                    )
-                    Button(onClick = onLogout, enabled = !accountBusy, shape = MainCourseShapes.Control) {
-                        Text(stringResource(R.string.sign_out))
+                    Button(
+                        onClick = { onSave(trimmedName, remindersEnabled) },
+                        modifier = Modifier.fillMaxWidth().testTag("settings_save"),
+                        enabled = valid && changed && !busy,
+                        shape = MainCourseShapes.Control,
+                    ) {
+                        if (state.saving) {
+                            CircularProgressIndicator(Modifier.padding(end = 8.dp), strokeWidth = 2.dp)
+                        }
+                        Text(stringResource(R.string.save))
                     }
                 }
             }
         }
-        if (accountState.error != null || accountState.canRetryPersistence) {
-            item {
-                AccountError(
-                    error = accountState.error,
-                    canRetryPersistence = accountState.canRetryPersistence,
-                    enabled = !accountBusy,
-                    onRetry = onRetryAccountPersistence,
-                    onDismiss = onClearAccountError,
-                )
-            }
-        }
         item {
-            OutlinedButton(onClick = onOpenDesignSystem, shape = MainCourseShapes.Control) {
-                Text(stringResource(R.string.explore_design))
+            Column(
+                Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onSignOut,
+                    modifier = Modifier.fillMaxWidth().testTag("settings_sign_out"),
+                    enabled = !busy,
+                    shape = MainCourseShapes.Control,
+                ) {
+                    Text(stringResource(R.string.sign_out))
+                }
+                OutlinedButton(
+                    onClick = { confirmingDelete = true },
+                    modifier = Modifier.fillMaxWidth().testTag("settings_delete"),
+                    enabled = !busy,
+                    shape = MainCourseShapes.Control,
+                ) {
+                    Text(stringResource(R.string.delete_account), color = MainCourseColors.Danger)
+                }
             }
-        }
-        item {
-            Text(stringResource(R.string.preview_version), style = MaterialTheme.typography.labelMedium)
-            Text(BuildConfig.VERSION_NAME, fontFamily = MainCourseMono, color = MainCourseColors.Body)
         }
     }
-    if (editingName) {
-        EditNameDialog(
-            user = user,
-            accountState = accountState,
-            onSave = onUpdateName,
-            onRetryPersistence = onRetryAccountPersistence,
-            onDismiss = {
-                if (!accountState.canRetryPersistence) onClearAccountError()
-                editingName = false
-            },
+
+    if (confirmingDelete) {
+        DeleteAccountDialog(
+            deleting = state.deleting,
+            onConfirm = onDeleteAccount,
+            onDismiss = { confirmingDelete = false },
         )
     }
 }
 
-@Composable
-private fun SettingsRow(title: String, body: String, enabled: Boolean, onClick: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(body, style = MaterialTheme.typography.bodySmall, color = MainCourseColors.Body)
-    }
-}
-
-@Composable
-internal fun AccountError(
-    error: String?,
-    canRetryPersistence: Boolean,
-    enabled: Boolean,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth().testTag("account_error"),
-        color = MainCourseColors.DangerTint,
-        shape = MainCourseShapes.Card,
-    ) {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp).semantics { liveRegion = LiveRegionMode.Polite },
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            error?.let { Text(it, color = MainCourseColors.Danger) }
-            if (canRetryPersistence) {
-                Text(stringResource(R.string.account_save_pending), color = MainCourseColors.Danger)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (canRetryPersistence) {
-                    Button(onClick = onRetry, enabled = enabled, modifier = Modifier.testTag("account_retry")) {
-                        Text(stringResource(R.string.retry_save))
-                    }
-                }
-                if (error != null) {
-                    TextButton(onClick = onDismiss, modifier = Modifier.testTag("account_error_dismiss")) {
-                        Text(stringResource(R.string.dismiss))
-                    }
-                }
-            }
-        }
-    }
-}
+private const val MAX_NAME_LENGTH = 50

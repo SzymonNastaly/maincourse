@@ -46,6 +46,9 @@ import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.RecipeRepository
+import com.getmaincourse.app.data.network.MainCourseService
+import com.getmaincourse.app.data.session.SessionProvider
+import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.features.auth.AuthScreen
 import com.getmaincourse.app.features.preview.PreviewScreen
 import com.getmaincourse.app.features.recipes.IngredientReviewScreen
@@ -55,6 +58,8 @@ import com.getmaincourse.app.features.recipes.RecipesScreen
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
+import com.getmaincourse.app.features.settings.SettingsScreen
+import com.getmaincourse.app.features.settings.SettingsViewModel
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -81,6 +86,7 @@ data object SettingsRoute : NavKey
 internal data class BrowsingViewModelFactories(
     val recipes: (Long) -> ViewModelProvider.Factory,
     val detail: (userId: Long, cookbookId: Long, recipeId: Long) -> ViewModelProvider.Factory,
+    val settings: () -> ViewModelProvider.Factory,
 )
 
 @Composable
@@ -88,6 +94,9 @@ fun MainCourseApp(
     sessionViewModel: SessionViewModel,
     cookbookRepository: CookbookRepository,
     recipeRepository: RecipeRepository,
+    service: MainCourseService,
+    sessionStore: SessionStore,
+    sessionProvider: SessionProvider,
     resolveImage: (String?) -> String?,
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
@@ -111,6 +120,17 @@ fun MainCourseApp(
                         recipeId,
                         recipeRepository,
                         cookbookRepository,
+                    )
+                }
+            },
+            settings = {
+                simpleViewModelFactory {
+                    SettingsViewModel(
+                        service = service,
+                        sessionStore = sessionStore,
+                        sessionProvider = sessionProvider,
+                        deleteAccount = sessionViewModel::deleteAccount,
+                        signOut = sessionViewModel::signOut,
                     )
                 }
             },
@@ -318,10 +338,17 @@ private fun ProtectedShell(
                     )
                 }
                 entry<SettingsRoute> {
-                    PreviewScreen(
-                        title = stringResource(R.string.settings),
-                        body = stringResource(R.string.settings_preview_body),
-                        testTag = "screen_Settings",
+                    val settingsViewModel: SettingsViewModel = viewModel(
+                        key = "settings-$userId",
+                        factory = factories.settings(),
+                    )
+                    val settingsState by settingsViewModel.state.collectAsStateWithLifecycle()
+                    SettingsScreen(
+                        state = settingsState,
+                        onSave = { name, reminders -> settingsViewModel.saveProfile(name, reminders) },
+                        onDeleteAccount = { settingsViewModel.deleteAccount() },
+                        onSignOut = { settingsViewModel.signOut() },
+                        onClearError = settingsViewModel::clearError,
                     )
                 }
             },

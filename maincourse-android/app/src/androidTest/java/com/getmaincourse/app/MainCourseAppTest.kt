@@ -11,18 +11,31 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.data.CookbookSelection
+import com.getmaincourse.app.data.model.AccountResponse
+import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.data.model.User
+import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.ShoppingItem
+import com.getmaincourse.app.data.model.ShoppingItemsRequest
+import com.getmaincourse.app.data.model.SignInRequest
+import com.getmaincourse.app.data.model.SignUpRequest
+import com.getmaincourse.app.data.network.MainCourseService
+import com.getmaincourse.app.data.session.SessionProvider
+import com.getmaincourse.app.data.session.SessionStore
+import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.session.SessionUiState
+import com.getmaincourse.app.features.settings.SettingsViewModel
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import coil3.ImageLoader
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -120,6 +133,12 @@ class MainCourseAppTest {
         compose.onNodeWithTag("screen_Search").assertIsDisplayed()
         compose.onNodeWithTag("nav_Settings").performClick()
         compose.onNodeWithTag("screen_Settings").assertIsDisplayed()
+        compose.onNodeWithText(USER.email).assertIsDisplayed()
+        compose.onNodeWithTag("settings_name").assertIsDisplayed()
+        compose.onNodeWithTag("settings_email").assertIsDisplayed()
+        compose.onNodeWithTag("settings_save").assertIsDisplayed()
+        compose.onNodeWithTag("settings_delete").assertIsDisplayed()
+        compose.onNodeWithTag("settings_sign_out").assertIsDisplayed()
         compose.onNodeWithTag("navigation_bar").assertIsDisplayed()
     }
 
@@ -284,10 +303,56 @@ class MainCourseAppTest {
                     )
                 }
             },
+            settings = {
+                val provider = SessionProvider().apply { set(SESSION) }
+                simpleViewModelFactory {
+                    SettingsViewModel(
+                        service = UnusedService,
+                        sessionStore = InMemorySessionStore(StoredSession(BASE_URL, SESSION)),
+                        sessionProvider = provider,
+                        deleteAccount = ::completedJob,
+                        signOut = ::completedJob,
+                    )
+                }
+            },
         )
     }
 
+    private class InMemorySessionStore(private var value: StoredSession?) : SessionStore {
+        override suspend fun read(): StoredSession? = value
+        override suspend fun write(session: StoredSession) {
+            value = session
+        }
+        override suspend fun clear() {
+            value = null
+        }
+    }
+
+    private object UnusedService : MainCourseService {
+        override suspend fun signIn(request: SignInRequest): SessionResponse = error("Not used")
+        override suspend fun signUp(request: SignUpRequest): SessionResponse = error("Not used")
+        override suspend fun signOut() = error("Not used")
+        override suspend fun cookbooks(): List<Cookbook> = error("Not used")
+        override suspend fun recipes(cookbookId: Long): List<RecipeSummary> = error("Not used")
+        override suspend fun recipe(cookbookId: Long, recipeId: Long): RecipeDetail = error("Not used")
+        override suspend fun moveRecipe(
+            cookbookId: Long,
+            recipeId: Long,
+            request: MoveRecipeRequest,
+        ): RecipeDetail = error("Not used")
+        override suspend fun deleteRecipe(cookbookId: Long, recipeId: Long) = error("Not used")
+        override suspend fun addRecipeIngredients(
+            cookbookId: Long,
+            request: ShoppingItemsRequest,
+        ): List<ShoppingItem> = error("Not used")
+        override suspend fun updateAccount(request: AccountUpdateRequest): AccountResponse = error("Not used")
+        override suspend fun deleteAccount() = error("Not used")
+    }
+
+    private fun completedJob() = Job().apply { complete() }
+
     private companion object {
+        const val BASE_URL = "https://app.getmaincourse.com/"
         val USER = User(1, "Reader", "reader@example.test", true)
         val SESSION = SessionResponse("token", "2099-01-01T00:00:00Z", USER)
         val COOKBOOK = Cookbook(10, "Home", true, 1, emptyList())

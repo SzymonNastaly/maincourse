@@ -61,6 +61,9 @@ class MainActivity : ComponentActivity() {
                     sessionViewModel = viewModel,
                     cookbookRepository = appContainer.cookbookRepository,
                     recipeRepository = appContainer.recipeRepository,
+                    service = appContainer.service,
+                    sessionStore = appContainer.sessionStore,
+                    sessionProvider = appContainer.sessionProvider,
                     resolveImage = appContainer.images::resolve,
                 )
             }
