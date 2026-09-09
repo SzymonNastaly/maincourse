@@ -24,7 +24,7 @@ The MVP includes:
 - Recipe detail loading on demand.
 - Moving and deleting recipes.
 - Reviewing recipe ingredients and adding them to the shopping list.
-- Editing account name and email.
+- Editing account name and recipe-reminder preference; email remains read-only.
 - Deleting the account.
 - Bottom navigation with Recipes, Shopping, Search, and Settings.
 
