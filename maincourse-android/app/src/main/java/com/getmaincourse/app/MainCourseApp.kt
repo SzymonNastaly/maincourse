@@ -21,10 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,11 +32,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.navigation3.ViewModelStoreNavEntryDecorator
+import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreOwner
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -137,12 +137,15 @@ internal fun MainCourseAppContent(
                 "Browsing factories are required when signed in"
             }
             key(state.session.user.id) {
-                ProtectedShell(
-                    userId = state.session.user.id,
-                    factories = availableFactories,
-                    imageLoader = currentImageLoader,
-                    resolveImage = resolveImage,
-                )
+                val shellOwner = rememberViewModelStoreOwner()
+                CompositionLocalProvider(LocalViewModelStoreOwner provides shellOwner) {
+                    ProtectedShell(
+                        userId = state.session.user.id,
+                        factories = availableFactories,
+                        imageLoader = currentImageLoader,
+                        resolveImage = resolveImage,
+                    )
+                }
             }
         }
     }
@@ -157,10 +160,6 @@ private fun ProtectedShell(
     resolveImage: (String?) -> String?,
 ) {
     val backStack = rememberNavBackStack(RecipesRoute)
-    val entryViewModelStore = remember { ViewModelStore() }
-    val viewModelStoreDecorator = remember(entryViewModelStore) {
-        ViewModelStoreNavEntryDecorator<NavKey>(entryViewModelStore) { true }
-    }
     val latestImageLoader by rememberUpdatedState(imageLoader)
     val latestResolveImage by rememberUpdatedState(resolveImage)
     val current = backStack.last()
@@ -227,7 +226,7 @@ private fun ProtectedShell(
             modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
-                viewModelStoreDecorator,
+                rememberViewModelStoreNavEntryDecorator(),
             ),
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
@@ -287,9 +286,6 @@ private fun ProtectedShell(
                 }
             },
         )
-    }
-    DisposableEffect(entryViewModelStore) {
-        onDispose { entryViewModelStore.clear() }
     }
 }
 

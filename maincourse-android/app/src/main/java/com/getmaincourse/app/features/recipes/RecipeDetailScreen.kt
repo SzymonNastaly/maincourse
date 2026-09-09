@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -104,7 +105,7 @@ private fun DetailContent(
     actionsEnabled: Boolean,
 ) {
     val baseServings = recipe.servings?.takeIf { it > 0 }
-    var portions by remember(recipe.id) { mutableIntStateOf(baseServings?.coerceIn(1, 64) ?: 1) }
+    var portions by rememberSaveable(recipe.id) { mutableIntStateOf(baseServings?.coerceIn(1, 64) ?: 1) }
     var sourceOpenFailed by remember(recipe.id) { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {

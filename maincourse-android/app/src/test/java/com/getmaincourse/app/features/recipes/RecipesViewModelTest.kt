@@ -19,6 +19,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -109,6 +110,45 @@ class RecipesViewModelTest {
     }
 
     @Test
+    fun cookbookSelectionFailureIsShownWithoutChangingScope() = runTest(dispatcher) {
+        val fixture = RecipesFixture().apply {
+            selection.value = CookbookSelection(listOf(cookbook(10), cookbook(20)), 10)
+            summaries(10).value = listOf(recipeSummary(7))
+            selectionFailure = IOException("offline")
+        }
+        val viewModel = fixture.viewModel()
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        advanceUntilIdle()
+
+        viewModel.selectCookbook(20).join()
+        advanceUntilIdle()
+
+        assertEquals(10L, viewModel.state.value.selectedCookbookId)
+        assertEquals(listOf(7L), viewModel.state.value.recipes.map { it.id })
+        assertEquals("You're offline", viewModel.state.value.error)
+        collection.cancel()
+    }
+
+    @Test
+    fun cookbookSelectionCancellationIsNotReportedAsAnError() = runTest(dispatcher) {
+        val fixture = RecipesFixture().apply {
+            selection.value = CookbookSelection(listOf(cookbook(10), cookbook(20)), 10)
+            selectionFailure = kotlinx.coroutines.CancellationException("cancelled")
+        }
+        val viewModel = fixture.viewModel()
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        advanceUntilIdle()
+
+        val job = viewModel.selectCookbook(20)
+        job.join()
+        advanceUntilIdle()
+
+        assertTrue(job.isCancelled)
+        assertNull(viewModel.state.value.error)
+        collection.cancel()
+    }
+
+    @Test
     fun emptyCookbookResponseEndsInitialLoading() = runTest(dispatcher) {
         val fixture = RecipesFixture()
         val viewModel = fixture.viewModel()
@@ -168,6 +208,7 @@ class RecipesViewModelTest {
         private val recipeFlows = mutableMapOf<Long, MutableStateFlow<List<RecipeSummary>>>()
         var refreshedRecipes: List<RecipeSummary>? = null
         var refreshFailure: Throwable? = null
+        var selectionFailure: Throwable? = null
         var suspendRecipeRefresh = false
 
         fun summaries(cookbookId: Long): MutableStateFlow<List<RecipeSummary>> =
@@ -183,6 +224,7 @@ class RecipesViewModelTest {
                 refreshedRecipes?.let { summaries(cookbookId).value = it }
             },
             selectCookbook = { cookbookId ->
+                selectionFailure?.let { throw it }
                 selection.value = selection.value.copy(selectedId = cookbookId)
             },
         )

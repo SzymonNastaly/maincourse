@@ -3,10 +3,12 @@ package com.getmaincourse.app
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.Cookbook
@@ -188,6 +190,25 @@ class MainCourseAppTest {
         assertEquals(1, recipesCreated.get())
     }
 
+    @Test
+    fun detailViewModelAndSelectedPortionsSurviveActivityRecreation() {
+        val detailsCreated = AtomicInteger()
+        show(
+            state = SessionUiState.SignedIn(SESSION),
+            factories = factories(onDetailCreated = detailsCreated::incrementAndGet),
+        )
+        compose.onNodeWithText(SUMMARY.name).performClick()
+        compose.onNodeWithTag("portion_increment").performScrollTo().performClick()
+        compose.onNodeWithTag("recipe_portions").assertTextEquals("3")
+        assertEquals(1, detailsCreated.get())
+
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        compose.onNodeWithTag("recipe_portions").assertTextEquals("3")
+        assertEquals(1, detailsCreated.get())
+    }
+
     private fun show(
         state: SessionUiState,
         factories: BrowsingViewModelFactories = factories(),
@@ -209,6 +230,7 @@ class MainCourseAppTest {
         detailRefresh: suspend () -> Unit = {},
         summary: RecipeSummary = SUMMARY,
         onRecipesCreated: () -> Unit = {},
+        onDetailCreated: () -> Unit = {},
     ): BrowsingViewModelFactories {
         val selection = MutableStateFlow(CookbookSelection(listOf(COOKBOOK), COOKBOOK.id))
         val recipes = MutableStateFlow(listOf(summary))
@@ -228,6 +250,7 @@ class MainCourseAppTest {
             },
             detail = { _, _, _ ->
                 simpleViewModelFactory {
+                    onDetailCreated()
                     RecipeDetailViewModel(
                         observeDetail = { detailState },
                         refreshDetail = detailRefresh,

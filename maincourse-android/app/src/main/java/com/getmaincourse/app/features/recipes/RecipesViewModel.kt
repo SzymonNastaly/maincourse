@@ -99,7 +99,16 @@ class RecipesViewModel internal constructor(
     }
 
     fun selectCookbook(cookbookId: Long): Job = viewModelScope.launch {
-        selectCookbook.invoke(cookbookId)
+        refreshState.value = refreshState.value.copy(error = null)
+        try {
+            selectCookbook.invoke(cookbookId)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (failure: Throwable) {
+            refreshState.value = refreshState.value.copy(
+                error = failure.userMessage("Could not select cookbook"),
+            )
+        }
     }
 
     private data class RefreshState(
