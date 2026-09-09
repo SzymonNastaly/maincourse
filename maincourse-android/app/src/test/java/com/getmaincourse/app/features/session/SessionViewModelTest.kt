@@ -106,10 +106,13 @@ class SessionViewModelTest {
         val viewModel = buildViewModel()
         viewModel.restore().join()
         cleared.clear()
+        var publishedWhileWriting: SessionResponse? = response
+        store.onWrite = { publishedWhileWriting = provider.session.value }
 
         viewModel.signIn(" cook@example.com ", "secret").join()
 
         assertEquals(SignInRequest("cook@example.com", "secret", "Android"), service.signInRequest)
+        assertNull(publishedWhileWriting)
         assertEquals(StoredSession(BASE_URL, response), store.value)
         assertEquals(response, provider.session.value)
         assertEquals(SessionUiState.SignedIn(response), viewModel.state.value)
@@ -146,13 +149,29 @@ class SessionViewModelTest {
         viewModel.restore().join()
         cleared.clear()
 
-        events.notifyExpired()
+        events.notifyExpired(response.token)
         advanceUntilIdle()
 
         assertEquals(SessionUiState.SignedOut(), viewModel.state.value)
         assertNull(store.value)
         assertNull(provider.session.value)
         assertEquals(listOf("database", "images"), cleared)
+    }
+
+    @Test
+    fun staleTokenExpiryDoesNotClearCurrentSession() = runTest(dispatcher) {
+        val response = session(token = "current")
+        store.value = StoredSession(BASE_URL, response)
+        val viewModel = buildViewModel()
+        viewModel.restore().join()
+        cleared.clear()
+
+        events.notifyExpired("old")
+        advanceUntilIdle()
+
+        assertEquals(SessionUiState.SignedIn(response), viewModel.state.value)
+        assertEquals(response, provider.session.value)
+        assertEquals(emptyList<String>(), cleared)
     }
 
     @Test
@@ -168,7 +187,7 @@ class SessionViewModelTest {
         viewModel.restore().join()
         cleared.clear()
 
-        events.notifyExpired()
+        events.notifyExpired(session().token)
         cleanupStarted.await()
 
         assertEquals(SessionUiState.Restoring, viewModel.state.value)
@@ -220,19 +239,26 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun cleanupFailureBlocksAuthenticationBehindRestoreError() = runTest(dispatcher) {
+    fun storeClearFailureRequiresCleanupRetryAndNeverRestoresCredential() = runTest(dispatcher) {
         store.value = StoredSession(BASE_URL, session(expiresAt = "2026-09-08T12:00:00Z"))
-        val viewModel = buildViewModel(databaseCleanup = {
-            cleared += "database"
-            error("disk failed")
-        })
+        store.clearFailure = IOException("disk failed")
+        val viewModel = buildViewModel()
         viewModel.restore().join()
 
+        assertEquals(SessionUiState.CleanupError("Could not clear local data"), viewModel.state.value)
+        assertEquals(1, store.readCalls)
         viewModel.signIn("cook@example.com", "secret").join()
-
-        assertEquals(SessionUiState.RestoreError("Could not clear local data"), viewModel.state.value)
+        viewModel.restore().join()
+        assertEquals(1, store.readCalls)
         assertNull(service.signInRequest)
         assertEquals(listOf("database", "images"), cleared)
+
+        store.clearFailure = null
+        viewModel.retryCleanup().join()
+
+        assertEquals(SessionUiState.SignedOut(), viewModel.state.value)
+        assertNull(store.value)
+        assertEquals(1, store.readCalls)
     }
 
     private fun buildViewModel(
@@ -254,14 +280,22 @@ class SessionViewModelTest {
 
     private class FakeSessionStore : SessionStore {
         var value: StoredSession? = null
+        var readCalls = 0
+        var clearFailure: Throwable? = null
+        var onWrite: () -> Unit = {}
 
-        override suspend fun read(): StoredSession? = value
+        override suspend fun read(): StoredSession? {
+            readCalls += 1
+            return value
+        }
 
         override suspend fun write(session: StoredSession) {
+            onWrite()
             value = session
         }
 
         override suspend fun clear() {
+            clearFailure?.let { throw it }
             value = null
         }
     }
@@ -317,8 +351,11 @@ class SessionViewModelTest {
         private const val USER_ID = 7L
         private val CLOCK = Clock.fixed(Instant.parse("2026-09-09T12:00:00Z"), ZoneOffset.UTC)
 
-        private fun session(expiresAt: String = "2026-10-09T12:00:00Z") = SessionResponse(
-            token = "token",
+        private fun session(
+            expiresAt: String = "2026-10-09T12:00:00Z",
+            token: String = "token",
+        ) = SessionResponse(
+            token = token,
             expiresAt = expiresAt,
             user = User(USER_ID, "Cook", "cook@example.com", true),
         )

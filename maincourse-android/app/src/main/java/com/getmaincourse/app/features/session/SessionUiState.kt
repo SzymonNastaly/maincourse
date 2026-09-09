@@ -17,4 +17,8 @@ sealed interface SessionUiState {
     data class RestoreError(
         val message: String,
     ) : SessionUiState
+
+    data class CleanupError(
+        val message: String,
+    ) : SessionUiState
 }

@@ -68,8 +68,10 @@ class SessionViewModel internal constructor(
 
     init {
         viewModelScope.launch {
-            sessionEvents.expired.collect {
-                if (mutableState.value is SessionUiState.SignedIn) {
+            sessionEvents.expired.collect { expiredToken ->
+                if (mutableState.value is SessionUiState.SignedIn &&
+                    expiredToken == sessionProvider.session.value?.token
+                ) {
                     mutableState.value = SessionUiState.Restoring
                     foregroundAction?.cancelAndJoin()
                     launchForeground { hideAndClear() }.join()
@@ -78,35 +80,43 @@ class SessionViewModel internal constructor(
         }
     }
 
-    fun restore(): Job = launchForeground {
-        mutableState.value = SessionUiState.Restoring
-        val stored = try {
-            sessionStore.read()
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (failure: Throwable) {
-            mutableState.value = SessionUiState.RestoreError(
-                failure.userMessage("Could not read the saved session"),
-            )
-            return@launchForeground
-        }
+    fun restore(): Job {
+        if (mutableState.value is SessionUiState.CleanupError) return completedJob()
+        return launchForeground {
+            mutableState.value = SessionUiState.Restoring
+            val stored = try {
+                sessionStore.read()
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Throwable) {
+                mutableState.value = SessionUiState.RestoreError(
+                    failure.userMessage("Could not read the saved session"),
+                )
+                return@launchForeground
+            }
 
-        if (stored == null || stored.baseUrl != baseUrl || stored.response.isExpired()) {
-            hideAndClear()
-            return@launchForeground
-        }
+            if (stored == null || stored.baseUrl != baseUrl || stored.response.isExpired()) {
+                hideAndClear()
+                return@launchForeground
+            }
 
-        try {
-            publish(stored.response)
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (failure: Throwable) {
-            sessionProvider.clear()
-            imageLoader = null
-            mutableState.value = SessionUiState.RestoreError(
-                failure.userMessage("Could not restore the saved session"),
-            )
+            try {
+                publish(stored.response)
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Throwable) {
+                sessionProvider.clear()
+                imageLoader = null
+                mutableState.value = SessionUiState.RestoreError(
+                    failure.userMessage("Could not restore the saved session"),
+                )
+            }
         }
+    }
+
+    fun retryCleanup(): Job {
+        if (mutableState.value !is SessionUiState.CleanupError) return completedJob()
+        return launchForeground { hideAndClear() }
     }
 
     fun signIn(email: String, password: String): Job = authenticate("Could not sign in") {
@@ -239,7 +249,7 @@ class SessionViewModel internal constructor(
         mutableState.value = if (firstFailure == null) {
             success
         } else {
-            SessionUiState.RestoreError("Could not clear local data")
+            SessionUiState.CleanupError("Could not clear local data")
         }
     }
 

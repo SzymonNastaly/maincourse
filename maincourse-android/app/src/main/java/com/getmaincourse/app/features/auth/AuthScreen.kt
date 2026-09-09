@@ -172,11 +172,18 @@ private fun AuthForm(
                 singleLine = true,
                 enabled = !busy,
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    focusManager.clearFocus()
-                    submit()
-                }),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = if (signingUp) ImeAction.Next else ImeAction.Done,
+                ),
+                keyboardActions = if (signingUp) {
+                    KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                } else {
+                    KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                        submit()
+                    })
+                },
                 shape = MainCourseShapes.Card,
             )
             if (signingUp) {

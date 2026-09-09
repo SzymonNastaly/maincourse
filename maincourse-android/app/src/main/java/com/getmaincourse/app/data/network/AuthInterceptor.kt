@@ -11,12 +11,12 @@ internal const val ANONYMOUS_HEADER = "X-MainCourse-Anonymous"
 private const val AUTHORIZATION_HEADER = "Authorization"
 
 class SessionEvents {
-    private val mutableExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val mutableExpired = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
-    val expired: SharedFlow<Unit> = mutableExpired.asSharedFlow()
+    val expired: SharedFlow<String> = mutableExpired.asSharedFlow()
 
-    fun notifyExpired() {
-        mutableExpired.tryEmit(Unit)
+    fun notifyExpired(token: String) {
+        mutableExpired.tryEmit(token)
     }
 }
 
@@ -27,10 +27,10 @@ class AuthInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
         val anonymous = original.header(ANONYMOUS_HEADER).equals("true", ignoreCase = true)
-        val bearer = sessionProvider.session.value?.token
+        val token = sessionProvider.session.value?.token
             ?.takeUnless(String::isBlank)
-            ?.let { "Bearer $it" }
             ?.takeUnless { anonymous }
+        val bearer = token?.let { "Bearer $it" }
         val request = original.newBuilder()
             .removeHeader(ANONYMOUS_HEADER)
             .removeHeader(AUTHORIZATION_HEADER)
@@ -40,7 +40,7 @@ class AuthInterceptor(
             .build()
 
         return chain.proceed(request).also { response ->
-            if (bearer != null && response.code == 401) sessionEvents.notifyExpired()
+            if (token != null && response.code == 401) sessionEvents.notifyExpired(token)
         }
     }
 }

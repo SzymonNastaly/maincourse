@@ -70,9 +70,9 @@ class AuthInterceptorTest {
     @Test
     fun protectedUnauthorizedResponseEmitsExpiry() = runTest {
         val events = SessionEvents()
-        val expiries = mutableListOf<Unit>()
+        val expiries = mutableListOf<String>()
         backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            events.expired.collect { expiries += Unit }
+            events.expired.collect { expiries += it }
         }
         val provider = SessionProvider().apply { set(session("expired")) }
         val client = client(provider, events)
@@ -81,15 +81,15 @@ class AuthInterceptorTest {
         client.execute("/recipes")
         yield()
 
-        assertEquals(1, expiries.size)
+        assertEquals(listOf("expired"), expiries)
     }
 
     @Test
     fun anonymousUnauthorizedResponseDoesNotEmitExpiry() = runTest {
         val events = SessionEvents()
-        val expiries = mutableListOf<Unit>()
+        val expiries = mutableListOf<String>()
         backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            events.expired.collect { expiries += Unit }
+            events.expired.collect { expiries += it }
         }
         val provider = SessionProvider().apply { set(session("valid")) }
         val client = client(provider, events)
