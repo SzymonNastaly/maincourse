@@ -49,6 +49,7 @@
     <string name="auth_password">Password</string>
     <string name="auth_password_confirmation">Confirm password</string>
     <string name="auth_passwords_do_not_match">Passwords do not match.</string>
+    <string name="auth_name_required">Enter your first name.</string>
     <string name="auth_email_required">Enter a valid email address.</string>
     <string name="auth_password_required">Enter your password.</string>
     <string name="auth_password_too_short">Use at least 12 characters.</string>

@@ -21,6 +21,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -69,8 +70,9 @@ class SessionViewModel internal constructor(
         viewModelScope.launch {
             sessionEvents.expired.collect {
                 if (mutableState.value is SessionUiState.SignedIn) {
-                    foregroundAction?.cancel()
-                    hideAndClear()
+                    mutableState.value = SessionUiState.Restoring
+                    foregroundAction?.cancelAndJoin()
+                    launchForeground { hideAndClear() }.join()
                 }
             }
         }
@@ -147,61 +149,66 @@ class SessionViewModel internal constructor(
         )
     }
 
-    fun signOut(): Job = launchForeground {
-        if (mutableState.value !is SessionUiState.SignedIn) return@launchForeground
-        mutableState.value = SessionUiState.SignedOut(busy = true)
-        try {
-            withTimeout(SIGN_OUT_TIMEOUT_MILLIS) { service.signOut() }
-        } catch (_: TimeoutCancellationException) {
-            // Remote revocation is best effort; local credentials are authoritative.
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (_: Throwable) {
-            // Remote revocation is best effort; local credentials are authoritative.
+    fun signOut(): Job {
+        if (mutableState.value !is SessionUiState.SignedIn) return completedJob()
+        return launchForeground {
+            mutableState.value = SessionUiState.Restoring
+            try {
+                withTimeout(SIGN_OUT_TIMEOUT_MILLIS) { service.signOut() }
+            } catch (_: TimeoutCancellationException) {
+                // Remote revocation is best effort; local credentials are authoritative.
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (_: Throwable) {
+                // Remote revocation is best effort; local credentials are authoritative.
+            }
+            hideAndClear()
         }
-        hideAndClear()
     }
 
-    fun deleteAccount(): Job = launchForeground {
-        if (mutableState.value !is SessionUiState.SignedIn) return@launchForeground
-        try {
-            service.deleteAccount()
-            mutableState.value = SessionUiState.SignedOut()
-            hideAndClear()
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (_: Throwable) {
-            // The account remains signed in until deletion is confirmed.
+    fun deleteAccount(): Job {
+        if (mutableState.value !is SessionUiState.SignedIn) return completedJob()
+        return launchForeground {
+            try {
+                service.deleteAccount()
+                hideAndClear()
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (_: Throwable) {
+                // The account remains signed in until deletion is confirmed.
+            }
         }
     }
 
     private fun authenticate(
         fallback: String,
         request: suspend () -> SessionResponse?,
-    ): Job = launchForeground {
-        if (mutableState.value !is SessionUiState.SignedOut) return@launchForeground
-        mutableState.value = SessionUiState.SignedOut(busy = true)
-        val response = try {
-            request() ?: return@launchForeground
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (failure: Throwable) {
-            mutableState.value = SessionUiState.SignedOut(failure.userMessage(fallback))
-            return@launchForeground
-        }
+    ): Job {
+        if (mutableState.value !is SessionUiState.SignedOut) return completedJob()
+        return launchForeground {
+            mutableState.value = SessionUiState.SignedOut(busy = true)
+            val response = try {
+                request() ?: return@launchForeground
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Throwable) {
+                mutableState.value = SessionUiState.SignedOut(failure.userMessage(fallback))
+                return@launchForeground
+            }
 
-        if (response.isExpired()) {
-            mutableState.value = SessionUiState.SignedOut(fallback)
-            return@launchForeground
-        }
+            if (response.isExpired()) {
+                mutableState.value = SessionUiState.SignedOut(fallback)
+                return@launchForeground
+            }
 
-        try {
-            sessionStore.write(StoredSession(baseUrl, response))
-            publish(response)
-        } catch (failure: CancellationException) {
-            throw failure
-        } catch (failure: Throwable) {
-            hideAndClear(SessionUiState.SignedOut(failure.userMessage("Could not save the session")))
+            try {
+                sessionStore.write(StoredSession(baseUrl, response))
+                publish(response)
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Throwable) {
+                hideAndClear(SessionUiState.SignedOut(failure.userMessage("Could not save the session")))
+            }
         }
     }
 
@@ -213,7 +220,7 @@ class SessionViewModel internal constructor(
     }
 
     private suspend fun hideAndClear(success: SessionUiState = SessionUiState.SignedOut()) {
-        mutableState.value = SessionUiState.SignedOut()
+        mutableState.value = SessionUiState.Restoring
         imageLoader = null
         sessionProvider.clear()
         var firstFailure: Throwable? = null
@@ -254,6 +261,8 @@ class SessionViewModel internal constructor(
         launched.start()
         return launched
     }
+
+    private fun completedJob(): Job = Job().apply { complete() }
 
     private fun SessionResponse.isExpired(): Boolean = try {
         !Instant.parse(expiresAt).isAfter(clock.instant())

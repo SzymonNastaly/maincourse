@@ -22,11 +22,13 @@ import java.io.IOException
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -151,6 +153,35 @@ class SessionViewModelTest {
         assertNull(store.value)
         assertNull(provider.session.value)
         assertEquals(listOf("database", "images"), cleared)
+    }
+
+    @Test
+    fun authenticationIsNotAdmittedWhileExpiryCleanupIsSuspended() = runTest(dispatcher) {
+        val cleanupStarted = CompletableDeferred<Unit>()
+        val finishCleanup = CompletableDeferred<Unit>()
+        store.value = StoredSession(BASE_URL, session())
+        val viewModel = buildViewModel(databaseCleanup = {
+            cleanupStarted.complete(Unit)
+            finishCleanup.await()
+            cleared += "database"
+        })
+        viewModel.restore().join()
+        cleared.clear()
+
+        events.notifyExpired()
+        cleanupStarted.await()
+
+        assertEquals(SessionUiState.Restoring, viewModel.state.value)
+        val signIn = viewModel.signIn("cook@example.com", "secret")
+        runCurrent()
+        assertNull(service.signInRequest)
+        signIn.join()
+
+        finishCleanup.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(SessionUiState.SignedOut(), viewModel.state.value)
+        assertNull(service.signInRequest)
     }
 
     @Test

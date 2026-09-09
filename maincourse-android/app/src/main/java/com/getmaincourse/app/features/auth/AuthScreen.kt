@@ -69,6 +69,7 @@ private fun AuthForm(
     busy: Boolean,
     error: String?,
     startsInSignUpMode: Boolean = false,
+    nameRequired: Boolean = false,
     onSignIn: (email: String, password: String) -> Unit,
     onSignUp: (name: String?, email: String, password: String, confirmation: String) -> Unit,
 ) {
@@ -83,6 +84,7 @@ private fun AuthForm(
     val focusManager = LocalFocusManager.current
 
     val signingUp = mode == AuthMode.SIGN_UP
+    val nameInvalid = submitted && signingUp && nameRequired && name.isBlank()
     val emailInvalid = submitted && !email.isValidEmail()
     val passwordInvalid = submitted && password.isEmpty()
     val passwordShort = submitted && signingUp && password.length < 12
@@ -90,7 +92,8 @@ private fun AuthForm(
     val submit = {
         submitted = true
         val valid = email.isValidEmail() && password.isNotEmpty() &&
-            (!signingUp || (password.length >= 12 && confirmation == password))
+            (!signingUp || ((!nameRequired || name.isNotBlank()) &&
+                password.length >= 12 && confirmation == password))
         if (valid && !busy) {
             if (signingUp) {
                 onSignUp(name.trim().takeIf(String::isNotEmpty), email.trim(), password, confirmation)
@@ -126,6 +129,10 @@ private fun AuthForm(
                     modifier = Modifier.fillMaxWidth().testTag("auth_name")
                         .semantics { contentType = ContentType.PersonFirstName },
                     label = { Text(stringResource(R.string.auth_name)) },
+                    isError = nameInvalid,
+                    supportingText = if (nameInvalid) {
+                        { Text(stringResource(R.string.auth_name_required)) }
+                    } else null,
                     singleLine = true,
                     enabled = !busy,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -246,6 +253,7 @@ fun AuthScreen(
         busy = authenticationMethod != null,
         error = error,
         startsInSignUpMode = startsInSignUpMode,
+        nameRequired = true,
         onSignIn = { email, password -> onSignIn(SignInRequest(email, password, "Android")) },
         onSignUp = { name, email, password, confirmation ->
             onSignUp(SignUpRequest(name, email, password, confirmation, "Android"))
