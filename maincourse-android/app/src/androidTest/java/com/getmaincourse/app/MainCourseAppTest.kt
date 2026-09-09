@@ -70,6 +70,7 @@ class MainCourseAppTest {
     private lateinit var accountState: MutableState<AccountState>
     private lateinit var authenticationMethod: MutableState<AuthenticationMethod?>
     private lateinit var appleCanCancel: MutableState<Boolean>
+    private var keepScreenAwake = false
     private lateinit var recorder: ActionRecorder
 
     @Before
@@ -79,6 +80,7 @@ class MainCourseAppTest {
         accountState = mutableStateOf(AccountState())
         authenticationMethod = mutableStateOf(null)
         appleCanCancel = mutableStateOf(false)
+        keepScreenAwake = false
         recorder = ActionRecorder(state)
         compose.runOnIdle {
             MainCourseTestContent.content = {
@@ -890,6 +892,52 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun recipeMenusConfirmMoveAndDeleteBeforeDispatch() {
+        compose.onNodeWithTag("recipe_actions_20").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_move)).performClick()
+        compose.onNodeWithText("Move “Vegetable soup”?").assertIsDisplayed()
+        compose.onNodeWithTag("move_to_2").performClick()
+        assertEquals(20L to 2L, recorder.movedRecipe)
+
+        compose.onNodeWithTag("recipe_actions_20").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_delete)).performClick()
+        compose.onNodeWithTag("confirm_delete_recipe").performClick()
+        assertEquals(20L, recorder.deletedRecipe)
+    }
+
+    @Test
+    fun cookingModeRestoresAcrossRotationAndClearsOnBack() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("cooking_mode").performScrollTo().performClick().assertIsOn()
+        compose.waitForIdle()
+        assertEquals(true, keepScreenAwake)
+
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithTag("cooking_mode").performScrollTo().assertIsOn()
+        pressBack()
+        compose.waitForIdle()
+        assertEquals(false, keepScreenAwake)
+    }
+
+    @Test
+    fun restoredDetailWithFailedCookbookResolutionShowsRetryAndBackInsteadOfSpinner() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                catalogStatus = LoadStatus.ERROR,
+                canRetry = true,
+            ),
+        )
+
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_load_error)).assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.retry)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).assertIsDisplayed()
+    }
+
+    @Test
     fun protectedNavigationSurvivesSameUserLoadingButResetsForAnotherUser() {
         compose.onNodeWithTag("nav_Settings").performClick()
         show(readyState().copy(phase = SessionPhase.LOADING_COOKBOOKS, catalogStatus = LoadStatus.LOADING))
@@ -956,6 +1004,7 @@ class MainCourseAppTest {
             authenticationMethod = authenticationMethod.value,
             actions = recorder.actions,
             appleCanCancel = appleCanCancel.value,
+            onKeepScreenOnChanged = { keepScreenAwake = it },
         )
     }
 
@@ -983,6 +1032,8 @@ class MainCourseAppTest {
         var retryAccountPersistenceCount = 0
         var deleteAccountCount = 0
         var clearAccountErrorCount = 0
+        var movedRecipe: Pair<Long, Long>? = null
+        var deletedRecipe: Long? = null
         var afterSignIn: () -> Unit = {}
         var afterSignUp: () -> Unit = {}
         var afterRefresh: () -> Unit = {}
@@ -1012,6 +1063,8 @@ class MainCourseAppTest {
                 openRecipeCount++
             },
             closeRecipe = { state.value = state.value.copy(detail = null) },
+            moveRecipe = { recipeId, targetId -> movedRecipe = recipeId to targetId },
+            deleteRecipe = { deletedRecipe = it },
             updateName = { updatedName = it },
             updateLifecycleNotifications = { updatedReminders = it },
             retryAccountPersistence = { retryAccountPersistenceCount++ },

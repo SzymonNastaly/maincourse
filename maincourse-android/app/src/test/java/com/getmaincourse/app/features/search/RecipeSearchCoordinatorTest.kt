@@ -66,15 +66,18 @@ class RecipeSearchCoordinatorTest {
             searchDispatcher = StandardTestDispatcher(testScheduler),
         )
         coordinator.activate(first)
+        assertEquals(first, coordinator.state.value.scope)
         coordinator.updateQuery("soup").join()
         assertEquals(listOf(1L), coordinator.state.value.results.map { it.id })
 
         coordinator.activate(second)
+        assertEquals(second, coordinator.state.value.scope)
         assertEquals("", coordinator.state.value.query)
         assertTrue(coordinator.state.value.results.isEmpty())
         coordinator.updateQuery("salad").join()
 
         val restored = coordinator.activate(first)
+        assertEquals(first, coordinator.state.value.scope)
         assertEquals("soup", coordinator.state.value.query)
         assertTrue(coordinator.state.value.results.isEmpty())
         restored.join()

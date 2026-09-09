@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel by viewModels<MainCourseViewModel> { appContainer.viewModelFactory }
     private lateinit var googleAuthentication: GoogleAuthenticationLauncher
     private var contentInstalled = false
+    private var cookingScreenAwakeRequested = false
     private val localNetworkPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         installAppContent()
     }
@@ -66,6 +68,9 @@ class MainActivity : ComponentActivity() {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 val onboardingState by viewModel.onboardingState.collectAsStateWithLifecycle()
                 val accountState by viewModel.accountState.collectAsStateWithLifecycle()
+                val searchState by viewModel.searchState.collectAsStateWithLifecycle()
+                val recipeActionState by viewModel.recipeActionState.collectAsStateWithLifecycle()
+                val recipeImagePreparationState by viewModel.recipeImagePreparationState.collectAsStateWithLifecycle()
                 val authenticationMethod by viewModel.authenticationMethod.collectAsStateWithLifecycle()
                 val appleBrowserLaunch by viewModel.appleBrowserLaunch.collectAsStateWithLifecycle()
                 val appleCanCancel by viewModel.appleCanCancel.collectAsStateWithLifecycle()
@@ -118,6 +123,17 @@ class MainActivity : ComponentActivity() {
                         refresh = { viewModel.refresh() },
                         openRecipe = { viewModel.openRecipe(it) },
                         closeRecipe = { viewModel.closeRecipe() },
+                        updateSearchQuery = { viewModel.updateSearchQuery(it) },
+                        saveRecipe = { draft, image -> viewModel.saveRecipe(draft, image) },
+                        retryRecipePhoto = { viewModel.retryRecipePhoto(it) },
+                        moveRecipe = { recipeId, targetId -> viewModel.moveRecipe(recipeId, targetId) },
+                        deleteRecipe = { viewModel.deleteRecipe(it) },
+                        addReviewedIngredients = { recipeId, items -> viewModel.addReviewedIngredients(recipeId, items) },
+                        retryRecipeReconciliation = { viewModel.retryRecipeReconciliation() },
+                        clearRecipeAction = { viewModel.clearRecipeAction() },
+                        prepareRecipeImage = { uri, requestKey -> viewModel.prepareRecipeImage(uri, requestKey) },
+                        discardRecipeImage = { viewModel.discardRecipeImage(it) },
+                        cancelRecipeImagePreparation = { viewModel.cancelRecipeImagePreparation(it) },
                         updateName = { viewModel.updateName(it) },
                         updateLifecycleNotifications = { viewModel.updateLifecycleNotifications(it) },
                         retryAccountPersistence = { viewModel.retryAccountPersistence() },
@@ -129,6 +145,10 @@ class MainActivity : ComponentActivity() {
                     imageLoader = imageLoader,
                     resolveImage = appContainer.images::resolve,
                     appleCanCancel = appleCanCancel,
+                    searchState = searchState,
+                    recipeActionState = recipeActionState,
+                    recipeImagePreparationState = recipeImagePreparationState,
+                    onKeepScreenOnChanged = ::setCookingScreenAwake,
                 )
             }
         }
@@ -136,7 +156,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        applyCookingScreenAwake(cookingScreenAwakeRequested)
         if (contentInstalled) viewModel.checkExpiry()
+    }
+
+    override fun onStop() {
+        applyCookingScreenAwake(false)
+        super.onStop()
+    }
+
+    private fun setCookingScreenAwake(enabled: Boolean) {
+        cookingScreenAwakeRequested = enabled
+        applyCookingScreenAwake(enabled)
+    }
+
+    private fun applyCookingScreenAwake(enabled: Boolean) {
+        if (enabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

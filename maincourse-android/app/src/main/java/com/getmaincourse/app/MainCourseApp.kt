@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,6 +30,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -59,6 +62,17 @@ import com.getmaincourse.app.features.onboarding.OnboardingScreen
 import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
 import com.getmaincourse.app.features.preview.PreviewScreen
+import com.getmaincourse.app.features.search.RecipeSearchScreen
+import com.getmaincourse.app.features.search.RecipeSearchState
+import com.getmaincourse.app.features.recipes.IngredientReviewScreen
+import com.getmaincourse.app.features.recipes.RecipeActionState
+import com.getmaincourse.app.features.recipes.RecipeActionOperation
+import com.getmaincourse.app.features.recipes.RecipeEditDraft
+import com.getmaincourse.app.features.recipes.RecipeEditScreen
+import com.getmaincourse.app.features.recipes.RecipeImagePreparationState
+import com.getmaincourse.app.features.recipes.ShoppingItemInput
+import com.getmaincourse.app.data.images.PreparedRecipeImage
+import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
 import com.getmaincourse.app.features.recipes.RecipesScreen
 import com.getmaincourse.app.features.session.SessionPhase
@@ -83,7 +97,13 @@ enum class Destination(@get:StringRes val title: Int, @get:DrawableRes val icon:
 }
 
 @Serializable
-data class RecipeDestination(val cookbookId: Long, val recipeId: Long) : NavKey
+data class RecipeDestination(val userId: Long, val cookbookId: Long, val recipeId: Long) : NavKey
+
+@Serializable
+data class RecipeEditDestination(val userId: Long, val cookbookId: Long, val recipeId: Long) : NavKey
+
+@Serializable
+data class IngredientReviewDestination(val userId: Long, val cookbookId: Long, val recipeId: Long, val portions: Int) : NavKey
 
 @Serializable
 data class ManageAccountDestination(val userId: Long) : NavKey
@@ -112,6 +132,17 @@ data class MainCourseActions(
     val refresh: () -> Unit = {},
     val openRecipe: (Long) -> Unit = {},
     val closeRecipe: () -> Unit = {},
+    val updateSearchQuery: (String) -> Unit = {},
+    val saveRecipe: (RecipeEditDraft, PreparedRecipeImage?) -> Unit = { _, _ -> },
+    val retryRecipePhoto: (PreparedRecipeImage?) -> Unit = { _ -> },
+    val moveRecipe: (Long, Long) -> Unit = { _, _ -> },
+    val deleteRecipe: (Long) -> Unit = {},
+    val addReviewedIngredients: (Long, List<ShoppingItemInput>) -> Unit = { _, _ -> },
+    val retryRecipeReconciliation: () -> Unit = {},
+    val clearRecipeAction: () -> Unit = {},
+    val prepareRecipeImage: (android.net.Uri, String) -> Unit = { _, _ -> },
+    val discardRecipeImage: (PreparedRecipeImage) -> Unit = {},
+    val cancelRecipeImagePreparation: (String) -> Unit = {},
     val updateName: (String) -> Unit = {},
     val updateLifecycleNotifications: (Boolean) -> Unit = {},
     val retryAccountPersistence: () -> Unit = {},
@@ -135,13 +166,20 @@ fun MainCourseApp(
     imageLoader: ImageLoader? = null,
     resolveImage: (String?) -> String? = { it },
     appleCanCancel: Boolean = false,
+    searchState: RecipeSearchState = RecipeSearchState(),
+    recipeActionState: RecipeActionState = RecipeActionState(),
+    recipeImagePreparationState: RecipeImagePreparationState = RecipeImagePreparationState(),
+    onKeepScreenOnChanged: (Boolean) -> Unit = {},
 ) {
     val isPreparingAuthentication = authenticationMethod != null
     val authenticatedUser = state.user
     if (authenticatedUser != null &&
         (state.phase == SessionPhase.LOADING_COOKBOOKS || state.phase == SessionPhase.READY)
     ) {
-        ProtectedApp(state, accountState, actions, imageLoader, resolveImage)
+        ProtectedApp(
+            state, accountState, actions, imageLoader, resolveImage, searchState,
+            recipeActionState, recipeImagePreparationState, onKeepScreenOnChanged,
+        )
         return
     }
 
@@ -220,6 +258,10 @@ private fun ProtectedApp(
     actions: MainCourseActions,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
+    searchState: RecipeSearchState,
+    recipeActionState: RecipeActionState,
+    recipeImagePreparationState: RecipeImagePreparationState,
+    onKeepScreenOnChanged: (Boolean) -> Unit,
 ) {
     val user = state.user ?: return StartupScreen(R.string.startup_loading)
     val backStack = rememberNavBackStack(Destination.Recipes)
@@ -230,26 +272,60 @@ private fun ProtectedApp(
         }
     }
     val current = backStack.last()
+    val editorSaveBlocking = (current as? RecipeEditDestination)?.let { editor ->
+        recipeActionState.isBusy && recipeActionState.scope == RecipeScope(editor.userId, editor.cookbookId) &&
+            recipeActionState.recipeId == editor.recipeId &&
+            recipeActionState.operation in setOf(RecipeActionOperation.SAVING, RecipeActionOperation.UPLOADING_PHOTO)
+    } == true
+    var pendingMoveRecipe by remember { mutableStateOf<RecipeRoute?>(null) }
+    var pendingDeleteRecipe by remember { mutableStateOf<RecipeRoute?>(null) }
+    var cookingRequested by remember { mutableStateOf(false) }
     val selected = backStack.filterIsInstance<Destination>().lastOrNull { it in topLevelDestinations }
         ?: Destination.Recipes
     val selectDestination: (Destination) -> Unit = { destination ->
+        cookingRequested = false
         actions.closeRecipe()
         backStack.clear()
         backStack.add(Destination.Recipes)
         if (destination != Destination.Recipes) backStack.add(destination)
     }
 
+    LaunchedEffect(current, cookingRequested, state.user.id, state.activeCookbookId) {
+        onKeepScreenOnChanged(current is RecipeDestination && cookingRequested)
+    }
+    DisposableEffect(state.user.id) { onDispose { onKeepScreenOnChanged(false) } }
+    LaunchedEffect(state.user.id, state.activeCookbookId) {
+        pendingMoveRecipe = pendingMoveRecipe?.takeIf { it.userId == state.user.id && it.cookbookId == state.activeCookbookId }
+        pendingDeleteRecipe = pendingDeleteRecipe?.takeIf { it.userId == state.user.id && it.cookbookId == state.activeCookbookId }
+    }
+    LaunchedEffect(recipeActionState.outcome, recipeActionState.isBusy, current) {
+        val editor = current as? RecipeEditDestination ?: return@LaunchedEffect
+        if (!recipeActionState.isBusy && recipeActionState.outcome == com.getmaincourse.app.features.recipes.RecipeActionOutcome.SUCCEEDED &&
+            recipeActionState.scope == RecipeScope(editor.userId, editor.cookbookId) && recipeActionState.recipeId == editor.recipeId
+        ) {
+            backStack.removeLastOrNull()
+        }
+    }
+
     LaunchedEffect(state.phase, state.user.id, state.activeCookbookId, state.recipeStatus, state.recipes, current) {
-        val detailRoute = current as? RecipeDestination ?: return@LaunchedEffect
-        if (backStack.lastOrNull() != detailRoute) return@LaunchedEffect
+        val detailRoute = current.recipeRoute() ?: return@LaunchedEffect
+        if (backStack.lastOrNull()?.recipeRoute() != detailRoute) return@LaunchedEffect
+        if (detailRoute.userId != state.user.id) {
+            backStack.removeLastOrNull()
+            actions.closeRecipe()
+            return@LaunchedEffect
+        }
         val scopeUndecided = state.activeCookbookId == null && state.phase == SessionPhase.LOADING_COOKBOOKS
-        val scopeChanged = !scopeUndecided && detailRoute.cookbookId != state.activeCookbookId
+        val scopeFailedWithoutSelection = state.activeCookbookId == null &&
+            (state.catalogStatus.isFailure() || state.recipeStatus.isFailure())
+        val scopeChanged = !scopeUndecided && !scopeFailedWithoutSelection && detailRoute.cookbookId != state.activeCookbookId
         val unavailableHere = state.detail?.recipeId == detailRoute.recipeId &&
             state.detail.status == DetailStatus.UNAVAILABLE
         val authoritativelyMissing = state.recipesFetched &&
             state.recipeStatus != LoadStatus.LOADING &&
             state.recipes.none { it.id == detailRoute.recipeId }
         if (scopeChanged || (authoritativelyMissing && !unavailableHere)) {
+            cookingRequested = false
             backStack.removeLastOrNull()
             actions.closeRecipe()
         } else if (state.detail?.recipeId != detailRoute.recipeId &&
@@ -272,6 +348,7 @@ private fun ProtectedApp(
                         NavigationRailItem(
                             modifier = Modifier.testTag("nav_${destination.name}"),
                             selected = selected == destination,
+                            enabled = !editorSaveBlocking,
                             onClick = { selectDestination(destination) },
                             icon = { Icon(painterResource(destination.icon), contentDescription = null) },
                             label = { Text(stringResource(destination.title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -289,6 +366,8 @@ private fun ProtectedApp(
                                 when (current) {
                                     is Destination -> stringResource(current.title)
                                     is RecipeDestination -> state.detail?.recipe?.name ?: stringResource(R.string.recipes)
+                                    is RecipeEditDestination -> stringResource(R.string.recipe_edit)
+                                    is IngredientReviewDestination -> stringResource(R.string.recipe_review_help)
                                     is ManageAccountDestination -> stringResource(R.string.manage_account)
                                     is DeleteAccountDestination -> stringResource(R.string.delete_account)
                                     else -> stringResource(R.string.app_name)
@@ -297,11 +376,14 @@ private fun ProtectedApp(
                         },
                         colors = TopAppBarDefaults.topAppBarColors(containerColor = MainCourseColors.Canvas),
                         navigationIcon = {
-                            if (current is RecipeDestination || current == Destination.DesignSystem ||
+                            if (current is RecipeDestination || current is RecipeEditDestination ||
+                                current is IngredientReviewDestination || current == Destination.DesignSystem ||
                                 current is ManageAccountDestination || current is DeleteAccountDestination
                             ) {
                                 IconButton(
+                                    enabled = !editorSaveBlocking,
                                     onClick = {
+                                        cookingRequested = false
                                         backStack.removeLastOrNull()
                                         if (current is RecipeDestination) actions.closeRecipe()
                                     },
@@ -323,6 +405,7 @@ private fun ProtectedApp(
                                 NavigationBarItem(
                                     modifier = Modifier.testTag("nav_${destination.name}"),
                                     selected = selected == destination,
+                                    enabled = !editorSaveBlocking,
                                     onClick = { selectDestination(destination) },
                                     icon = { Icon(painterResource(destination.icon), contentDescription = null) },
                                     label = { Text(stringResource(destination.title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -336,8 +419,11 @@ private fun ProtectedApp(
                     backStack = backStack,
                     modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
                     onBack = {
-                        if (backStack.lastOrNull() is RecipeDestination) actions.closeRecipe()
-                        backStack.removeLastOrNull()
+                        if (!editorSaveBlocking) {
+                            cookingRequested = false
+                            if (backStack.lastOrNull() is RecipeDestination) actions.closeRecipe()
+                            backStack.removeLastOrNull()
+                        }
                     },
                     entryProvider = entryProvider {
                         entry<Destination> { destination ->
@@ -357,9 +443,20 @@ private fun ProtectedApp(
                                     onOpenRecipe = { recipeId ->
                                         val cookbookId = state.activeCookbookId
                                         if (cookbookId != null) {
-                                            backStack.add(RecipeDestination(cookbookId, recipeId))
+                                            backStack.add(RecipeDestination(user.id, cookbookId, recipeId))
                                         }
                                     },
+                                    onEditRecipe = { recipeId ->
+                                        state.activeCookbookId?.let { cookbookId ->
+                                            actions.openRecipe(recipeId)
+                                            backStack.add(RecipeEditDestination(user.id, cookbookId, recipeId))
+                                        }
+                                    },
+                                    onMoveRecipe = { state.activeCookbookId?.let { cookbookId -> pendingMoveRecipe = RecipeRoute(user.id, cookbookId, it) } },
+                                    onDeleteRecipe = { state.activeCookbookId?.let { cookbookId -> pendingDeleteRecipe = RecipeRoute(user.id, cookbookId, it) } },
+                                    actionsEnabled = !recipeActionState.isBusy,
+                                    actionState = recipeActionState,
+                                    onClearAction = actions.clearRecipeAction,
                                 )
                                 Destination.Settings -> SettingsScreen(
                                     user = user,
@@ -376,14 +473,35 @@ private fun ProtectedApp(
                                     onLogout = actions.logout,
                                 )
                                 Destination.DesignSystem -> DesignSystemScreen()
-                                Destination.Shopping, Destination.Search -> PreviewScreen(destination) {
-                                    backStack.add(Destination.DesignSystem)
+                                Destination.Shopping -> PreviewScreen(destination) { backStack.add(Destination.DesignSystem) }
+                                Destination.Search -> {
+                                    val cookbookId = state.activeCookbookId
+                                    if (cookbookId == null) {
+                                        RecoveryPanel(actions.refresh) { selectDestination(Destination.Recipes) }
+                                    } else {
+                                        RecipeSearchScreen(
+                                            scope = RecipeScope(user.id, cookbookId),
+                                            state = searchState,
+                                            imageLoader = imageLoader,
+                                            resolveImage = resolveImage,
+                                            onQueryChange = actions.updateSearchQuery,
+                                            onOpenRecipe = { backStack.add(RecipeDestination(user.id, cookbookId, it)) },
+                                            onEditRecipe = { recipeId -> actions.openRecipe(recipeId); backStack.add(RecipeEditDestination(user.id, cookbookId, recipeId)) },
+                                            onMoveRecipe = { pendingMoveRecipe = RecipeRoute(user.id, cookbookId, it) },
+                                            onDeleteRecipe = { pendingDeleteRecipe = RecipeRoute(user.id, cookbookId, it) },
+                                            actionsEnabled = !recipeActionState.isBusy,
+                                            actionState = recipeActionState,
+                                            onRefresh = actions.refresh,
+                                            onClearAction = actions.clearRecipeAction,
+                                        )
+                                    }
                                 }
                             }
                         }
                         entry<RecipeDestination> { destination ->
                             val awaitingListRecovery = state.detail?.recipeId != destination.recipeId &&
-                                !state.recipesFetched && state.recipeStatus.isFailure()
+                                !state.recipesFetched && (state.recipeStatus.isFailure() ||
+                                (state.activeCookbookId == null && state.catalogStatus.isFailure()))
                             val displayedDetail = state.detail?.takeIf { it.recipeId == destination.recipeId }
                                 ?: if (awaitingListRecovery) {
                                     RecipeDetailState(destination.recipeId, DetailStatus.ERROR)
@@ -391,6 +509,7 @@ private fun ProtectedApp(
                                     null
                                 }
                             RecipeDetailScreen(
+                                scope = RecipeScope(destination.userId, destination.cookbookId),
                                 detailState = displayedDetail,
                                 importFailed = state.recipes.firstOrNull {
                                     it.id == destination.recipeId
@@ -404,7 +523,49 @@ private fun ProtectedApp(
                                         actions.openRecipe(destination.recipeId)
                                     }
                                 },
+                                actionState = recipeActionState,
+                                onEdit = { backStack.add(RecipeEditDestination(destination.userId, destination.cookbookId, destination.recipeId)) },
+                                onMove = { pendingMoveRecipe = destination.recipeRoute() },
+                                onDelete = { pendingDeleteRecipe = destination.recipeRoute() },
+                                onReviewIngredients = { portions -> backStack.add(IngredientReviewDestination(destination.userId, destination.cookbookId, destination.recipeId, portions)) },
+                                onCookingChanged = { cookingRequested = it },
+                                onRetryPhoto = { actions.retryRecipePhoto(null) },
+                                onRetryReconciliation = actions.retryRecipeReconciliation,
                             )
+                        }
+                        entry<RecipeEditDestination> { destination ->
+                            val detail = state.detail?.takeIf { it.recipeId == destination.recipeId }?.recipe
+                            if (detail == null) {
+                                RecoveryPanel({ actions.openRecipe(destination.recipeId) }) { backStack.removeLastOrNull() }
+                            } else {
+                                RecipeEditScreen(
+                                    scope = RecipeScope(destination.userId, destination.cookbookId),
+                                    recipe = detail,
+                                    actionState = recipeActionState,
+                                    imageState = recipeImagePreparationState,
+                                    onSave = actions.saveRecipe,
+                                    onPrepareImage = actions.prepareRecipeImage,
+                                    onDiscardImage = actions.discardRecipeImage,
+                                    onCancelImageRequest = actions.cancelRecipeImagePreparation,
+                                    onRetryPhoto = actions.retryRecipePhoto,
+                                    onRetryReconciliation = actions.retryRecipeReconciliation,
+                                    onCancel = { backStack.removeLastOrNull() },
+                                )
+                            }
+                        }
+                        entry<IngredientReviewDestination> { destination ->
+                            val detail = state.detail?.takeIf { it.recipeId == destination.recipeId }?.recipe
+                            if (detail == null) {
+                                RecoveryPanel({ actions.openRecipe(destination.recipeId) }) { backStack.removeLastOrNull() }
+                            } else {
+                                IngredientReviewScreen(
+                                    scope = RecipeScope(destination.userId, destination.cookbookId),
+                                    recipe = detail,
+                                    portions = destination.portions.coerceIn(1, 64),
+                                    actionState = recipeActionState,
+                                    onSubmit = { actions.addReviewedIngredients(detail.id, it) },
+                                )
+                            }
                         }
                         entry<ManageAccountDestination> { destination ->
                             if (destination.userId == user.id) {
@@ -433,6 +594,72 @@ private fun ProtectedApp(
                     },
                 )
             }
+        }
+    }
+    pendingMoveRecipe?.let { route ->
+        val recipeName = state.recipes.firstOrNull { it.id == route.recipeId }?.name ?: return@let
+        AlertDialog(
+            onDismissRequest = { if (!recipeActionState.isBusy) pendingMoveRecipe = null },
+            title = { Text(stringResource(R.string.recipe_move_title, recipeName)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    state.cookbooks.filter { it.id != state.activeCookbookId }.forEach { cookbook ->
+                        OutlinedButton(
+                            enabled = !recipeActionState.isBusy,
+                            onClick = {
+                                if (state.user.id == route.userId && state.activeCookbookId == route.cookbookId) actions.moveRecipe(route.recipeId, cookbook.id)
+                                pendingMoveRecipe = null
+                            },
+                            modifier = Modifier.fillMaxWidth().testTag("move_to_${cookbook.id}"),
+                        ) { Text(stringResource(R.string.recipe_move_target, cookbook.name)) }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(enabled = !recipeActionState.isBusy, onClick = { pendingMoveRecipe = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    pendingDeleteRecipe?.let { route ->
+        val recipeName = state.recipes.firstOrNull { it.id == route.recipeId }?.name ?: return@let
+        AlertDialog(
+            onDismissRequest = { if (!recipeActionState.isBusy) pendingDeleteRecipe = null },
+            title = { Text(stringResource(R.string.recipe_delete_title, recipeName)) },
+            text = { Text(stringResource(R.string.recipe_delete_body)) },
+            confirmButton = {
+                Button(
+                    enabled = !recipeActionState.isBusy,
+                    onClick = {
+                        if (state.user.id == route.userId && state.activeCookbookId == route.cookbookId) actions.deleteRecipe(route.recipeId)
+                        pendingDeleteRecipe = null
+                    },
+                    modifier = Modifier.testTag("confirm_delete_recipe"),
+                ) { Text(stringResource(R.string.recipe_delete)) }
+            },
+            dismissButton = { TextButton(enabled = !recipeActionState.isBusy, onClick = { pendingDeleteRecipe = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+}
+
+private data class RecipeRoute(val userId: Long, val cookbookId: Long, val recipeId: Long)
+
+private fun Any?.recipeRoute(): RecipeRoute? = when (this) {
+    is RecipeDestination -> RecipeRoute(userId, cookbookId, recipeId)
+    is RecipeEditDestination -> RecipeRoute(userId, cookbookId, recipeId)
+    is IngredientReviewDestination -> RecipeRoute(userId, cookbookId, recipeId)
+    else -> null
+}
+
+@Composable
+private fun RecoveryPanel(onRetry: () -> Unit, onBack: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(stringResource(R.string.recipe_load_error), color = MainCourseColors.Body)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+            OutlinedButton(onClick = onBack) { Text(stringResource(R.string.back)) }
         }
     }
 }

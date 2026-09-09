@@ -284,7 +284,7 @@ class SessionController(
 
     fun saveRecipe(draft: RecipeEditDraft, image: PreparedRecipeImage?): Job = recipeActions.saveRecipe(draft, image)
 
-    fun retryRecipePhoto(): Job = recipeActions.retryRecipePhoto()
+    fun retryRecipePhoto(image: PreparedRecipeImage? = null): Job = recipeActions.retryRecipePhoto(image)
 
     fun moveRecipe(recipeId: Long, targetId: Long): Job = recipeActions.moveRecipe(recipeId, targetId)
 
@@ -297,7 +297,7 @@ class SessionController(
 
     fun clearRecipeAction(): Job = recipeActions.clearRecipeAction()
 
-    fun prepareRecipeImage(uri: String): Job = launchRecipeImageOperation { context, requestVersion ->
+    fun prepareRecipeImage(uri: String, requestKey: String = uri): Job = launchRecipeImageOperation { context, requestVersion ->
         val prior = transition.withLock {
             if (!isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) ||
                 requestVersion != imagePreparationRequest.get()
@@ -309,6 +309,7 @@ class SessionController(
                 status = RecipeImagePreparationStatus.PREPARING,
                 scope = context.recipeScope,
                 image = old,
+                requestKey = requestKey,
             )
             old
         }
@@ -346,6 +347,7 @@ class SessionController(
                         status = RecipeImagePreparationStatus.READY,
                         scope = context.recipeScope,
                         image = prepared,
+                        requestKey = requestKey,
                     )
                     true
                 } else {
@@ -376,10 +378,30 @@ class SessionController(
         }
         transition.withLock {
             if (isCurrentLocked(context.userContext, context.recipeScope.cookbookId, context.cookbookGeneration) &&
-                requestVersion == imagePreparationRequest.get()
+                requestVersion == imagePreparationRequest.get() &&
+                mutableRecipeImagePreparationState.value.image == image
             ) {
                 mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
             }
+        }
+    }
+
+    fun cancelRecipeImagePreparation(requestKey: String): Job {
+        val jobs = synchronized(jobsLock) {
+            if (mutableRecipeImagePreparationState.value.requestKey != requestKey) return completedJob()
+            imagePreparationRequest.incrementAndGet()
+            imagePreparationJobs.toList()
+        }
+        return scope.launch {
+            jobs.forEach { it.cancelAndJoin() }
+            val image = transition.withLock {
+                mutableRecipeImagePreparationState.value.takeIf { it.requestKey == requestKey }?.image.also {
+                    if (mutableRecipeImagePreparationState.value.requestKey == requestKey) {
+                        mutableRecipeImagePreparationState.value = RecipeImagePreparationState()
+                    }
+                }
+            }
+            image?.let { runCatching { discardRecipeImageResource(it) } }
         }
     }
 
@@ -1288,6 +1310,7 @@ class SessionController(
                     scope = context.recipeScope,
                     image = mutableRecipeImagePreparationState.value.image,
                     message = message,
+                    requestKey = mutableRecipeImagePreparationState.value.requestKey,
                 )
             }
         }

@@ -253,6 +253,33 @@ class SessionControllerTest {
     }
 
     @Test
+    fun discardingAnOlderPreparedImageDoesNotClearTheCurrentSelection() = runTest {
+        val first = PreparedRecipeImage("/private/user-7/first.jpg", USER.id, "first")
+        val second = PreparedRecipeImage("/private/user-7/second.jpg", USER.id, "second")
+        val prepared = ArrayDeque(listOf(first, second))
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL) }
+                recipesBlock = { _, _ -> listOf(SOUP) }
+            },
+            session = SESSION,
+            prepareRecipeImage = { _, _ -> prepared.removeFirst() },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.prepareRecipeImage("content://recipe/first").join()
+        controller.prepareRecipeImage("content://recipe/second").join()
+        controller.discardRecipeImage(first).join()
+
+        assertEquals(second, controller.recipeImagePreparationState.value.image)
+        assertEquals(RecipeImagePreparationStatus.READY, controller.recipeImagePreparationState.value.status)
+        assertEquals(listOf(first, first), discarded)
+    }
+
+    @Test
     fun cookbookSwitchJoinsImagePreparationAndDiscardsItsLateCapturedScopeResult() = runTest {
         val started = CompletableDeferred<Unit>()
         val release = CompletableDeferred<Unit>()
@@ -307,6 +334,38 @@ class SessionControllerTest {
 
         controller.switchCookbook(SHARED.id).join()
         advanceUntilIdle()
+
+        assertEquals(listOf(prepared), discarded)
+        assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)
+    }
+
+    @Test
+    fun closingAnEditorCancelsItsTaggedPreparationAndDiscardsALateResult() = runTest {
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/photo.jpg", USER.id, "photo")
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL) }
+                recipesBlock = { _, _ -> listOf(SOUP) }
+            },
+            session = SESSION,
+            prepareRecipeImage = { _, _ ->
+                started.complete(Unit)
+                withContext(NonCancellable) { release.await() }
+                prepared
+            },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+        controller.prepareRecipeImage("content://recipe/photo", "editor-a:request-a")
+        started.await()
+
+        val cancellation = controller.cancelRecipeImagePreparation("editor-a:request-a")
+        release.complete(Unit)
+        cancellation.join()
 
         assertEquals(listOf(prepared), discarded)
         assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)

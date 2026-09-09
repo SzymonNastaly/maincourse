@@ -79,8 +79,10 @@ class RecipeActionControllerTest {
     @Test
     fun missingStagedPhotoRequestsAChooseAgainWithoutCallingTheNetwork() = runTest {
         val api = FakeApi().apply { updateResult = UPDATED }
-        val controller = controller(api, FakeStore(), FakeHost(this)) { _, _ ->
-            throw PreparedRecipeImageUnavailable("Choose the photo again")
+        val replacementFile = File.createTempFile("replacement", ".jpg")
+        val replacement = PreparedRecipeImage("/private/replacement.jpg", 7, "replacement")
+        val controller = controller(api, FakeStore(), FakeHost(this)) { prepared, _ ->
+            if (prepared == replacement) replacementFile else throw PreparedRecipeImageUnavailable("Choose the photo again")
         }
 
         controller.saveRecipe(changedDraft(), PreparedRecipeImage("/missing", 7, "missing")).join()
@@ -90,6 +92,13 @@ class RecipeActionControllerTest {
         assertEquals(RecipeActionOutcome.PARTIAL, controller.state.value.outcome)
         assertTrue(controller.state.value.needsPhotoSelection)
         assertFalse(controller.state.value.canRetryPhoto)
+
+        controller.retryRecipePhoto(replacement).join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(1, api.coverCalls)
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        replacementFile.delete()
     }
 
     @Test
@@ -361,6 +370,36 @@ class RecipeActionControllerTest {
     }
 
     @Test
+    fun finalPublicationKeepsAdmissionOwnedUntilBusyStateIsSettled() = runTest {
+        val finalPublishStarted = CompletableDeferred<Unit>()
+        val releaseFinalPublish = CompletableDeferred<Unit>()
+        val host = FakeHost(this).apply {
+            onCanPublish = { call ->
+                if (call == 4) {
+                    finalPublishStarted.complete(Unit)
+                    releaseFinalPublish.await()
+                }
+            }
+        }
+        val api = FakeApi()
+        val controller = controller(api, FakeStore(), host)
+
+        val first = controller.saveRecipe(changedDraft(), null)
+        finalPublishStarted.await()
+        val rejected = controller.deleteRecipe(RECIPE.id)
+
+        assertTrue(rejected.isCompleted)
+        assertEquals(0, api.deleteCalls)
+        assertTrue(controller.state.value.isBusy)
+        releaseFinalPublish.complete(Unit)
+        first.join()
+        assertFalse(controller.state.value.isBusy)
+
+        controller.deleteRecipe(RECIPE.id).join()
+        assertEquals(1, api.deleteCalls)
+    }
+
+    @Test
     fun clearActionStateDoesNotRequireAnActiveCookbook() = runTest {
         val api = FakeApi().apply { updateFailure = ApiFailure(422, "invalid") }
         val host = FakeHost(this)
@@ -466,6 +505,8 @@ class RecipeActionControllerTest {
         var onAuthorizationFailure: suspend () -> Unit = {}
         var publishedDetails = 0
         var onSettle: suspend () -> Unit = {}
+        var onCanPublish: suspend (Int) -> Unit = {}
+        var canPublishCalls = 0
         val pendingRemovals = mutableListOf<Pair<RecipeScope, Long>>()
 
         override fun launch(block: suspend (RecipeActionContext) -> Unit): Job {
@@ -476,7 +517,11 @@ class RecipeActionControllerTest {
 
         override suspend fun prepareMutation(context: RecipeActionContext) = preparationAllowed && canCommit(context)
         override suspend fun canCommit(context: RecipeActionContext) = context.generation == generation
-        override suspend fun canPublish(context: RecipeActionContext) = canCommit(context) && activeScope == context.scope
+        override suspend fun canPublish(context: RecipeActionContext): Boolean {
+            canPublishCalls++
+            onCanPublish(canPublishCalls)
+            return canCommit(context) && activeScope == context.scope
+        }
         override suspend fun publishDetails(context: RecipeActionContext, scope: RecipeScope, recipeId: Long) {
             if (canPublish(context) && scope == activeScope) publishedDetails++
         }

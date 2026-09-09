@@ -8,7 +8,7 @@
     <string name="back">Back</string>
     <string name="preview_badge">ANDROID PREVIEW</string>
     <string name="shopping_preview_title">From your cookbook to your basket.</string>
-    <string name="shopping_preview_body">Your shopping list will live here, with ingredients from your recipes and offline check-off. Nothing is connected yet.</string>
+    <string name="shopping_preview_body">You can add reviewed recipe ingredients online now. The full shopping list and offline check-off arrive in the next milestone.</string>
     <string name="search_preview_title">Find the recipe you had in mind.</string>
     <string name="search_preview_body">Search across recipe names, ingredients, and instructions is coming after cookbook sync.</string>
     <string name="explore_design">Explore the design system</string>
@@ -81,6 +81,44 @@
     <string name="recipe_ingredients">Ingredients</string>
     <string name="recipe_steps">Steps</string>
     <string name="recipe_notes">Notes</string>
+    <string name="recipe_name">Recipe name</string>
+    <string name="recipe_prep_minutes">Prep minutes</string>
+    <string name="recipe_cook_minutes">Cook minutes</string>
+    <string name="recipe_source_url">Source URL</string>
+    <string name="recipe_actions">More actions</string>
+    <string name="recipe_edit">Edit</string>
+    <string name="recipe_move">Move</string>
+    <string name="recipe_delete">Delete</string>
+    <string name="search_recipes">Search recipes</string>
+    <string name="search_prompt">Search names, ingredients, and instructions.</string>
+    <string name="search_empty">No matching recipes.</string>
+    <string name="search_incomplete">Some recipe details are not available offline, so results may be incomplete.</string>
+    <string name="recipe_choose_photo">Choose photo</string>
+    <string name="recipe_replace_photo">Replace photo</string>
+    <string name="recipe_save_unconfirmed">The previous save was interrupted. Check the recipe before saving again.</string>
+    <string name="recipe_continue_editing">Continue editing</string>
+    <string name="recipe_name_required">Enter a recipe name.</string>
+    <string name="recipe_prep_invalid">Prep time must be a nonnegative whole number.</string>
+    <string name="recipe_cook_invalid">Cook time must be a nonnegative whole number.</string>
+    <string name="recipe_servings_invalid">Servings must be a positive whole number.</string>
+    <string name="recipe_source_invalid">Use an HTTP or HTTPS URL without credentials.</string>
+    <string name="recipe_row_number">Row %1$d</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="remove">Remove</string>
+    <string name="add_row">Add row</string>
+    <string name="recipe_review_help">Choose the ingredients to add to Shopping.</string>
+    <string name="recipe_add_unconfirmed">The previous add was interrupted. Check Shopping, or deliberately retry the same items.</string>
+    <string name="retry_same_items">Retry same items</string>
+    <string name="recipe_add_to_shopping">Add ingredients to Shopping</string>
+    <string name="recipe_portions">Portions</string>
+    <string name="recipe_cooking_mode">Keep screen awake while cooking</string>
+    <string name="recipe_move_title">Move “%1$s”?</string>
+    <string name="recipe_delete_title">Delete “%1$s”?</string>
+    <string name="recipe_delete_body">Wait for confirmation before this recipe is removed.</string>
+    <string name="recipe_move_target">Move to %1$s</string>
+    <string name="recipe_retry_photo">Retry photo</string>
+    <string name="recipe_refresh_data">Refresh recipe data</string>
     <string name="account">Account</string>
     <string name="signed_in_as">Signed in as</string>
     <string name="sign_out">Sign out</string>
@@ -139,5 +177,9 @@
     <plurals name="recipe_servings">
         <item quantity="one">%1$d serving</item>
         <item quantity="other">%1$d servings</item>
+    </plurals>
+    <plurals name="add_items">
+        <item quantity="one">Add %1$d item</item>
+        <item quantity="other">Add %1$d items</item>
     </plurals>
 </resources>

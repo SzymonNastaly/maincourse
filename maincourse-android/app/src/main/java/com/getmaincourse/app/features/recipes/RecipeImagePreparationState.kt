@@ -10,4 +10,5 @@ data class RecipeImagePreparationState(
     val scope: RecipeScope? = null,
     val image: PreparedRecipeImage? = null,
     val message: String? = null,
+    val requestKey: String? = null,
 )

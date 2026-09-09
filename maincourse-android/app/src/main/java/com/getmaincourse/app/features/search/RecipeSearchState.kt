@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 enum class SearchHydrationStatus { IDLE, HYDRATING, COMPLETE, INCOMPLETE }
 
 data class RecipeSearchState(
+    val scope: RecipeScope? = null,
     val query: String = "",
     val results: List<RecipeSummary> = emptyList(),
     val hydrationStatus: SearchHydrationStatus = SearchHydrationStatus.IDLE,
@@ -44,7 +45,7 @@ internal class RecipeSearchCoordinator(
             searchJob = null
             activeScope = recipeScope
             val saved = recipeScope?.let { queries[it] }.orEmpty()
-            mutableState.value = RecipeSearchState(query = saved)
+            mutableState.value = RecipeSearchState(scope = recipeScope, query = saved)
             saved
         }
         return if (recipeScope != null && query.isNotBlank()) launchSearch(recipeScope, query) else done()

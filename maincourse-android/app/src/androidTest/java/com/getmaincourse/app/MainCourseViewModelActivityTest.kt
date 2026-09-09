@@ -13,6 +13,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.hasTestTag
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +55,8 @@ import com.getmaincourse.app.features.auth.GoogleCredentialProvider
 import com.getmaincourse.app.features.auth.GoogleSignInCancelledException
 import com.getmaincourse.app.features.auth.GoogleSignInException
 import com.getmaincourse.app.features.search.RecipeSearchDocument
+import com.getmaincourse.app.features.recipes.RecipeEditScreen
+import com.getmaincourse.app.features.recipes.RecipeImagePreparationState
 import com.getmaincourse.app.features.settings.AccountOperation
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import java.time.Clock
@@ -296,6 +300,63 @@ class MainCourseViewModelActivityTest {
         assertEquals(1, api.appleExchangeRequests.size)
         assertEquals(null, callbackIntent.data)
         assertFalse(viewModel.appleCanCancel.value)
+    }
+
+    @Test
+    fun editorSaveableStateSurvivesAFreshMainCourseViewModelWithoutReplayingSave() {
+        val detail = RecipeDetail(
+            id = 20,
+            name = "Soup",
+            prepTime = 10,
+            cookTime = 20,
+            servings = 4,
+            favorite = false,
+            ingredients = listOf("onion"),
+            structuredIngredients = emptyList(),
+            instructions = listOf("Cook"),
+            notes = null,
+            sourceUrl = null,
+            tags = emptyList(),
+            coverImageUrl = null,
+            coverImages = null,
+            createdAt = "then",
+            updatedAt = "now",
+        )
+        var activeViewModel = viewModel
+        var submissions = 0
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                val action by activeViewModel.recipeActionState.collectAsStateWithLifecycle()
+                MainCourseTheme {
+                    RecipeEditScreen(
+                        scope = RecipeScope(USER.id, 1),
+                        recipe = detail,
+                        actionState = action,
+                        imageState = RecipeImagePreparationState(),
+                        onSave = { draft, image ->
+                            submissions++
+                            activeViewModel.saveRecipe(draft, image)
+                        },
+                    )
+                }
+            }
+        }
+        compose.onNodeWithTag("editor_name").performTextInput(" changed")
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_save"))
+        compose.onNodeWithTag("editor_save").performClick()
+        assertEquals(1, submissions)
+
+        compose.runOnIdle {
+            compose.activity.viewModelStore.clear()
+            activeViewModel = factory.create(MainCourseViewModel::class.java)
+            viewModel = activeViewModel
+        }
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_unconfirmed"))
+        compose.onNodeWithTag("editor_unconfirmed").assertIsDisplayed()
+        assertEquals(1, submissions)
+        assertEquals(0, api.updateCalls)
     }
 
     private fun openNameEditorAndSave(name: String) {

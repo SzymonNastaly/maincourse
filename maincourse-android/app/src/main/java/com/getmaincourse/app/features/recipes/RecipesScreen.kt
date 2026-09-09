@@ -67,6 +67,12 @@ fun RecipesScreen(
     onRefresh: () -> Unit,
     onLogout: () -> Unit,
     onOpenRecipe: (Long) -> Unit,
+    onEditRecipe: (Long) -> Unit = {},
+    onMoveRecipe: (Long) -> Unit = {},
+    onDeleteRecipe: (Long) -> Unit = {},
+    actionsEnabled: Boolean = true,
+    actionState: RecipeActionState = RecipeActionState(),
+    onClearAction: () -> Unit = {},
 ) {
     val refreshing = status == LoadStatus.LOADING && recipesFetched
     PullToRefreshBox(
@@ -82,6 +88,11 @@ fun RecipesScreen(
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 CookbookPicker(cookbooks, activeCookbookId, onSwitchCookbook)
+            }
+            if (actionState.message != null && actionState.scope?.cookbookId == activeCookbookId) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    RecipeActionFeedback(actionState, onRefresh, onClearAction)
+                }
             }
             if (catalogStatus == LoadStatus.DEGRADED && cookbooks.isNotEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
@@ -117,8 +128,23 @@ fun RecipesScreen(
                     EmptyPanel(stringResource(R.string.recipes_empty))
                 }
                 else -> items(recipes, key = { it.id }) { recipe ->
-                    RecipeCard(recipe, imageLoader, resolveImage, onOpenRecipe)
+                    RecipeCard(recipe, imageLoader, resolveImage, onOpenRecipe, onEditRecipe, onMoveRecipe, onDeleteRecipe, actionsEnabled)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun RecipeActionFeedback(state: RecipeActionState, onRefresh: () -> Unit, onDismiss: () -> Unit) {
+    Surface(shape = MainCourseShapes.Panel, color = MainCourseColors.Surface, border = BorderStroke(1.dp, MainCourseColors.Hairline)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            state.message?.let { Text(it, color = if (state.outcome == RecipeActionOutcome.SUCCEEDED) MainCourseColors.Accent else MainCourseColors.Danger) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (state.outcome == RecipeActionOutcome.AMBIGUOUS || state.canRetryReconciliation) {
+                    Button(enabled = !state.isBusy, onClick = onRefresh) { Text(stringResource(R.string.recipe_refresh_data)) }
+                }
+                androidx.compose.material3.TextButton(enabled = !state.isBusy, onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
             }
         }
     }
@@ -164,12 +190,17 @@ private fun CookbookPicker(
 }
 
 @Composable
-private fun RecipeCard(
+internal fun RecipeCard(
     recipe: RecipeSummary,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     onOpenRecipe: (Long) -> Unit,
+    onEditRecipe: (Long) -> Unit = {},
+    onMoveRecipe: (Long) -> Unit = {},
+    onDeleteRecipe: (Long) -> Unit = {},
+    actionsEnabled: Boolean = true,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
     val ready = recipe.importStatus.isBlank() || recipe.importStatus == "completed"
     Surface(
         modifier = Modifier.fillMaxWidth().clip(MainCourseShapes.Card)
@@ -181,7 +212,23 @@ private fun RecipeCard(
         Column {
             RecipeImage(recipe, imageLoader, resolveImage)
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(recipe.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(recipe.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    if (ready) {
+                        Box {
+                            androidx.compose.material3.TextButton(
+                                enabled = actionsEnabled,
+                                onClick = { menuExpanded = true },
+                                modifier = Modifier.testTag("recipe_actions_${recipe.id}"),
+                            ) { Text(stringResource(R.string.recipe_actions)) }
+                            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.recipe_edit)) }, onClick = { menuExpanded = false; onEditRecipe(recipe.id) })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.recipe_move)) }, onClick = { menuExpanded = false; onMoveRecipe(recipe.id) })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.recipe_delete)) }, onClick = { menuExpanded = false; onDeleteRecipe(recipe.id) })
+                            }
+                        }
+                    }
+                }
                 val total = listOfNotNull(recipe.prepTime, recipe.cookTime).sum()
                 if (total > 0) {
                     Text(stringResource(R.string.recipe_time, total), fontFamily = MainCourseMono, color = MainCourseColors.Body)

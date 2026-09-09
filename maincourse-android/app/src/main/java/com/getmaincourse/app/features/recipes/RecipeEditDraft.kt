@@ -3,12 +3,15 @@ package com.getmaincourse.app.features.recipes
 import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import java.net.URI
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class RecipeEditRow(
     val id: String,
     val text: String,
 )
 
+@Serializable
 data class RecipeEditValues(
     val name: String,
     val prepMinutes: String,

@@ -98,7 +98,7 @@ class RecipeActionController internal constructor(
                 resolvePreparedImage(image, context.userId)
             } catch (failure: Throwable) {
                 if (failure is CancellationException) throw failure
-                pendingPhoto = null
+                pendingPhoto = PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, image)
                 publishState(
                     context,
                     version,
@@ -137,10 +137,10 @@ class RecipeActionController internal constructor(
         }
     }
 
-    fun retryRecipePhoto(): Job = launch { context, version ->
+    fun retryRecipePhoto(replacement: PreparedRecipeImage? = null): Job = launch { context, version ->
         val pending = pendingPhoto?.takeIf {
             it.generation == context.generation && it.userId == context.userId && it.scope == context.scope
-        } ?: run {
+        }?.let { if (replacement == null) it else it.copy(image = replacement) } ?: run {
             publishFailure(context, version, null, "Choose a photo again")
             return@launch
         }
@@ -338,19 +338,17 @@ class RecipeActionController internal constructor(
                 try {
                     block(context, version)
                 } finally {
-                    val released = synchronized(admissionLock) {
+                    val canPublish = host.canPublish(context)
+                    synchronized(admissionLock) {
                         if (activeAction === owner) {
                             activeAction = null
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                    if (released && version == stateVersion.get()) {
-                        mutableState.value = if (host.canPublish(context)) {
-                            mutableState.value.copy(isBusy = false)
-                        } else {
-                            RecipeActionState()
+                            if (version == stateVersion.get()) {
+                                mutableState.value = if (canPublish) {
+                                    mutableState.value.copy(isBusy = false)
+                                } else {
+                                    RecipeActionState()
+                                }
+                            }
                         }
                     }
                 }
@@ -420,7 +418,7 @@ class RecipeActionController internal constructor(
             return
         }
         if (failure is ApiFailure && failure.status == 422) {
-            pendingPhoto = null
+            pendingPhoto = pending
             publishState(
                 context,
                 version,

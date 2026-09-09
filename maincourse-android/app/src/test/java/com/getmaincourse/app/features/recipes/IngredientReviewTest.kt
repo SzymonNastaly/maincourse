@@ -3,10 +3,25 @@ package com.getmaincourse.app.features.recipes
 import com.getmaincourse.app.data.model.StructuredIngredient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class IngredientReviewTest {
+    @Test
+    fun unknownBaseServingsUsesRawRowsAtOneToOneWithoutInventingDetails() {
+        val review = IngredientReview.create(
+            recipeId = 9,
+            ingredients = listOf(StructuredIngredient(1, 0, "2", null, null, "onions", null, "about two onions")),
+            portions = 1,
+            baseServings = null,
+            newId = { "stable" },
+        )
+
+        assertEquals("about two onions", review.items.single().name)
+        assertNull(review.items.single().details)
+        assertEquals("stable", review.items.single().clientId)
+    }
     @Test
     fun reviewStartsIncludedAndBuildsScaledParsedAndRawPayloadsWithStableIds() {
         val review = IngredientReview.create(
