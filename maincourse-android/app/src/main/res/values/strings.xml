@@ -42,13 +42,13 @@
     <string name="auth_create_account">Create account</string>
     <string name="auth_continue_google">Continue with Google</string>
     <string name="auth_continue_apple">Continue with Apple</string>
-    <string name="auth_cancel_apple">Cancel Apple sign-in</string>
     <string name="auth_have_account">Already have an account? Sign in</string>
     <string name="auth_need_account">New to MainCourse? Create account</string>
     <string name="auth_name">First name</string>
     <string name="auth_email">Email</string>
     <string name="auth_password">Password</string>
-    <string name="auth_name_required">Enter your first name.</string>
+    <string name="auth_password_confirmation">Confirm password</string>
+    <string name="auth_passwords_do_not_match">Passwords do not match.</string>
     <string name="auth_email_required">Enter a valid email address.</string>
     <string name="auth_password_required">Enter your password.</string>
     <string name="auth_password_too_short">Use at least 12 characters.</string>

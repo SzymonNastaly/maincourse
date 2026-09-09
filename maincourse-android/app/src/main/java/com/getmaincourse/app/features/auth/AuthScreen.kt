@@ -49,46 +49,53 @@ import com.getmaincourse.app.ui.theme.MainCourseShapes
 
 @Composable
 fun AuthScreen(
+    busy: Boolean,
+    error: String?,
+    onSignIn: (email: String, password: String) -> Unit,
+    onSignUp: (name: String?, email: String, password: String, confirmation: String) -> Unit,
+) {
+    AuthForm(
+        modifier = Modifier,
+        busy = busy,
+        error = error,
+        onSignIn = onSignIn,
+        onSignUp = onSignUp,
+    )
+}
+
+@Composable
+private fun AuthForm(
     modifier: Modifier,
-    authenticationMethod: AuthenticationMethod?,
+    busy: Boolean,
     error: String?,
     startsInSignUpMode: Boolean = false,
-    onSignIn: (SignInRequest) -> Unit,
-    onSignUp: (SignUpRequest) -> Unit,
-    onGoogleSignIn: () -> Unit,
-    onAppleSignIn: () -> Unit,
-    onCancelAppleSignIn: () -> Unit,
-    appleCanCancel: Boolean,
+    onSignIn: (email: String, password: String) -> Unit,
+    onSignUp: (name: String?, email: String, password: String, confirmation: String) -> Unit,
 ) {
-    var signup by rememberSaveable { mutableStateOf(startsInSignUpMode) }
+    var mode by rememberSaveable {
+        mutableStateOf(if (startsInSignUpMode) AuthMode.SIGN_UP else AuthMode.SIGN_IN)
+    }
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmation by remember { mutableStateOf("") }
     var submitted by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    val busy = authenticationMethod != null
-    val nameInvalid = submitted && signup && name.isBlank()
+    val signingUp = mode == AuthMode.SIGN_UP
     val emailInvalid = submitted && !email.isValidEmail()
     val passwordInvalid = submitted && password.isEmpty()
-    val passwordShort = submitted && signup && password.length < 12
+    val passwordShort = submitted && signingUp && password.length < 12
+    val confirmationInvalid = submitted && signingUp && confirmation != password
     val submit = {
         submitted = true
         val valid = email.isValidEmail() && password.isNotEmpty() &&
-            (!signup || (name.isNotBlank() && password.length >= 12))
+            (!signingUp || (password.length >= 12 && confirmation == password))
         if (valid && !busy) {
-            if (signup) {
-                onSignUp(
-                    SignUpRequest(
-                        name = name.trim(),
-                        email = email.trim(),
-                        password = password,
-                        passwordConfirmation = password,
-                        deviceName = "Android",
-                    ),
-                )
+            if (signingUp) {
+                onSignUp(name.trim().takeIf(String::isNotEmpty), email.trim(), password, confirmation)
             } else {
-                onSignIn(SignInRequest(email.trim(), password, "Android"))
+                onSignIn(email.trim(), password)
             }
         }
     }
@@ -109,38 +116,16 @@ fun AuthScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MainCourseColors.Body,
             )
-            GoogleSignInButton(
-                enabled = !busy,
-                isLoading = authenticationMethod == AuthenticationMethod.GOOGLE,
-                onClick = onGoogleSignIn,
-            )
-            AppleSignInButton(
-                enabled = !busy,
-                isLoading = authenticationMethod == AuthenticationMethod.APPLE,
-                onClick = onAppleSignIn,
-            )
-            if (authenticationMethod == AuthenticationMethod.APPLE && appleCanCancel) {
-                TextButton(
-                    onClick = onCancelAppleSignIn,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).testTag("auth_cancel_apple"),
-                ) {
-                    Text(stringResource(R.string.auth_cancel_apple))
-                }
-            }
             if (error != null) {
                 Text(error, color = MainCourseColors.Danger, style = MaterialTheme.typography.bodyMedium)
             }
-            if (signup) {
+            if (signingUp) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(50) },
                     modifier = Modifier.fillMaxWidth().testTag("auth_name")
                         .semantics { contentType = ContentType.PersonFirstName },
                     label = { Text(stringResource(R.string.auth_name)) },
-                    isError = nameInvalid,
-                    supportingText = if (nameInvalid) {
-                        { Text(stringResource(R.string.auth_name_required)) }
-                    } else null,
                     singleLine = true,
                     enabled = !busy,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -168,7 +153,7 @@ fun AuthScreen(
                 value = password,
                 onValueChange = { password = it },
                 modifier = Modifier.fillMaxWidth().testTag("auth_password").semantics {
-                    contentType = if (signup) ContentType.NewPassword else ContentType.Password
+                    contentType = if (signingUp) ContentType.NewPassword else ContentType.Password
                 },
                 label = { Text(stringResource(R.string.auth_password)) },
                 isError = passwordInvalid || passwordShort,
@@ -187,13 +172,35 @@ fun AuthScreen(
                 }),
                 shape = MainCourseShapes.Card,
             )
+            if (signingUp) {
+                OutlinedTextField(
+                    value = confirmation,
+                    onValueChange = { confirmation = it },
+                    modifier = Modifier.fillMaxWidth().testTag("auth_password_confirmation")
+                        .semantics { contentType = ContentType.NewPassword },
+                    label = { Text(stringResource(R.string.auth_password_confirmation)) },
+                    isError = confirmationInvalid,
+                    supportingText = if (confirmationInvalid) {
+                        { Text(stringResource(R.string.auth_passwords_do_not_match)) }
+                    } else null,
+                    singleLine = true,
+                    enabled = !busy,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                        submit()
+                    }),
+                    shape = MainCourseShapes.Card,
+                )
+            }
             Button(
                 onClick = submit,
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().testTag("auth_submit"),
                 shape = MainCourseShapes.Control,
             ) {
-                if (authenticationMethod == AuthenticationMethod.EMAIL) {
+                if (busy) {
                     CircularProgressIndicator(
                         Modifier.size(18.dp).testTag("auth_email_progress"),
                         strokeWidth = 2.dp,
@@ -201,23 +208,52 @@ fun AuthScreen(
                     Spacer(Modifier.size(8.dp))
                     Text(stringResource(R.string.auth_submitting))
                 } else {
-                    Text(stringResource(if (signup) R.string.auth_create_account else R.string.auth_sign_in))
+                    Text(stringResource(if (signingUp) R.string.auth_create_account else R.string.auth_sign_in))
                 }
             }
             TextButton(
                 onClick = {
-                    signup = !signup
+                    mode = if (signingUp) AuthMode.SIGN_IN else AuthMode.SIGN_UP
                     submitted = false
                     password = ""
+                    confirmation = ""
                 },
                 enabled = !busy,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
-                Text(stringResource(if (signup) R.string.auth_have_account else R.string.auth_need_account))
+                Text(stringResource(if (signingUp) R.string.auth_have_account else R.string.auth_need_account))
             }
         }
     }
 }
+
+@Suppress("UNUSED_PARAMETER")
+@Composable
+fun AuthScreen(
+    modifier: Modifier,
+    authenticationMethod: AuthenticationMethod?,
+    error: String?,
+    startsInSignUpMode: Boolean = false,
+    onSignIn: (SignInRequest) -> Unit,
+    onSignUp: (SignUpRequest) -> Unit,
+    onGoogleSignIn: () -> Unit,
+    onAppleSignIn: () -> Unit,
+    onCancelAppleSignIn: () -> Unit,
+    appleCanCancel: Boolean,
+) {
+    AuthForm(
+        modifier = modifier,
+        busy = authenticationMethod != null,
+        error = error,
+        startsInSignUpMode = startsInSignUpMode,
+        onSignIn = { email, password -> onSignIn(SignInRequest(email, password, "Android")) },
+        onSignUp = { name, email, password, confirmation ->
+            onSignUp(SignUpRequest(name, email, password, confirmation, "Android"))
+        },
+    )
+}
+
+enum class AuthMode { SIGN_IN, SIGN_UP }
 
 enum class AuthenticationMethod {
     EMAIL,
