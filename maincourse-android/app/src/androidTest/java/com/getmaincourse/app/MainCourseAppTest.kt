@@ -22,8 +22,10 @@ import coil3.ImageLoader
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -169,16 +171,21 @@ class MainCourseAppTest {
     fun recipeImageAppearsWhenPreparedLoaderIsPublished() {
         val loader = MutableStateFlow<ImageLoader?>(null)
         val recipe = SUMMARY.copy(coverImageUrl = "/rails/active_storage/image.jpg")
+        val recipesCreated = AtomicInteger()
         show(
             state = SessionUiState.SignedIn(SESSION),
-            factories = factories(summary = recipe),
+            factories = factories(summary = recipe, onRecipesCreated = recipesCreated::incrementAndGet),
             imageLoader = loader,
         )
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
         compose.onNodeWithTag("recipe_image_${recipe.id}", useUnmergedTree = true).assertDoesNotExist()
+        assertEquals(1, recipesCreated.get())
 
         compose.runOnIdle { loader.value = ImageLoader.Builder(compose.activity).build() }
 
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
         compose.onNodeWithTag("recipe_image_${recipe.id}", useUnmergedTree = true).assertExists()
+        assertEquals(1, recipesCreated.get())
     }
 
     private fun show(
@@ -201,6 +208,7 @@ class MainCourseAppTest {
         detail: RecipeDetail? = DETAIL,
         detailRefresh: suspend () -> Unit = {},
         summary: RecipeSummary = SUMMARY,
+        onRecipesCreated: () -> Unit = {},
     ): BrowsingViewModelFactories {
         val selection = MutableStateFlow(CookbookSelection(listOf(COOKBOOK), COOKBOOK.id))
         val recipes = MutableStateFlow(listOf(summary))
@@ -208,6 +216,7 @@ class MainCourseAppTest {
         return BrowsingViewModelFactories(
             recipes = {
                 simpleViewModelFactory {
+                    onRecipesCreated()
                     RecipesViewModel(
                         observeCookbooks = { selection },
                         observeRecipes = { recipes },
