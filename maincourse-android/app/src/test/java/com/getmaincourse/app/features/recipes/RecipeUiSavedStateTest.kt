@@ -27,6 +27,7 @@ class RecipeUiSavedStateTest {
         assertNull(RecipeUiSavedStateCodec.decodeEditor(encoded, RecipeScope(8, 2), 9))
         assertNull(RecipeUiSavedStateCodec.decodeEditor(encoded, RecipeScope(7, 3), 9))
         assertNull(RecipeUiSavedStateCodec.decodeEditor(encoded, RecipeScope(7, 2), 10))
+        assertNull(RecipeUiSavedStateCodec.decodeEditor(encoded, RecipeScope(7, 2), 9, "editor-b"))
         assertTrue(payload.operationInterrupted)
     }
 

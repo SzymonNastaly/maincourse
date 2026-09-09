@@ -17,17 +17,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -48,37 +45,53 @@ fun RecipeEditScreen(
     imageState: RecipeImagePreparationState,
     onSave: (RecipeEditDraft, PreparedRecipeImage?) -> Unit,
     onPrepareImage: (android.net.Uri, String) -> Unit = { _, _ -> },
-    onDiscardImage: (PreparedRecipeImage) -> Unit = {},
-    onCancelImageRequest: (String) -> Unit = {},
     onRetryPhoto: (PreparedRecipeImage?) -> Unit = { _ -> },
     onRetryReconciliation: () -> Unit = {},
     onCancel: () -> Unit = {},
+    editorId: String? = null,
+    onImageSelectionChanged: (RecipeEditorImageSelection) -> Unit = {},
+    onLeaveEditor: (RecipeEditorImageSelection) -> Unit = {},
 ) {
+    val resolvedEditorId = remember(editorId) { editorId ?: UUID.randomUUID().toString() }
     val fresh = remember(scope, recipe.id, recipe.updatedAt) { RecipeEditorSavedState(
         userId = scope.userId,
         cookbookId = scope.cookbookId,
         recipeId = recipe.id,
-        editorId = UUID.randomUUID().toString(),
+        editorId = resolvedEditorId,
         original = recipe.editValues(),
         values = recipe.editValues(),
     ) }
     var saved by rememberSaveable { mutableStateOf<String?>(null) }
-    var payload = RecipeUiSavedStateCodec.decodeEditor(saved, scope, recipe.id) ?: fresh
-    SideEffect { if (saved == null || RecipeUiSavedStateCodec.decodeEditor(saved, scope, recipe.id) == null) saved = RecipeUiSavedStateCodec.encodeEditor(payload) }
+    var payload = RecipeUiSavedStateCodec.decodeEditor(saved, scope, recipe.id, resolvedEditorId) ?: fresh
+    SideEffect {
+        if (saved == null || RecipeUiSavedStateCodec.decodeEditor(saved, scope, recipe.id, resolvedEditorId) == null) {
+            saved = RecipeUiSavedStateCodec.encodeEditor(payload)
+        }
+    }
     fun update(transform: (RecipeEditorSavedState) -> RecipeEditorSavedState) {
         payload = transform(payload)
         saved = RecipeUiSavedStateCodec.encodeEditor(payload)
     }
 
-    val matchingAction = actionState.scope == scope && actionState.recipeId == recipe.id
+    val matchingAction = actionState.scope == scope && actionState.recipeId == recipe.id &&
+        actionState.requestKey == payload.editorId
     val savingHere = matchingAction && actionState.isBusy
     LaunchedEffect(imageState) {
-        if (imageState.scope == scope && imageState.requestKey == payload.imageRequestKey && imageState.image != null) {
-            update { it.copy(stagedImage = imageState.image) }
-        } else if (imageState.scope == scope && imageState.image != null &&
-            imageState.requestKey?.substringBefore(':') != payload.editorId
+        val belongsToEditor = imageState.requestKey?.substringBefore(':') == payload.editorId
+        if (imageState.scope == scope && belongsToEditor && imageState.image != null &&
+            (payload.imageRequestKey == null || imageState.requestKey == payload.imageRequestKey)
         ) {
-            onDiscardImage(imageState.image)
+            update { it.copy(stagedImage = imageState.image, imageRequestKey = imageState.requestKey) }
+        } else if (imageState.scope == scope && imageState.image != null &&
+            !belongsToEditor
+        ) {
+            onLeaveEditor(
+                RecipeEditorImageSelection(
+                    imageState.requestKey?.substringBefore(':').orEmpty(),
+                    imageState.image,
+                    imageState.requestKey,
+                ),
+            )
         }
     }
     LaunchedEffect(actionState.outcome, actionState.isBusy) {
@@ -90,18 +103,11 @@ fun RecipeEditScreen(
         if (matchingAction && actionState.needsPhotoSelection && payload.stagedImage != null) {
             val rejected = payload.stagedImage ?: return@LaunchedEffect
             update { it.copy(stagedImage = null, imageRequestKey = null) }
-            onDiscardImage(rejected)
+            onLeaveEditor(RecipeEditorImageSelection(payload.editorId, rejected, null))
         }
     }
-    val activity = LocalActivity.current
-    val latestPayload by rememberUpdatedState(payload)
-    DisposableEffect(payload.editorId) {
-        onDispose {
-            if (activity?.isChangingConfigurations != true) {
-                latestPayload.imageRequestKey?.let(onCancelImageRequest)
-                if (latestPayload.imageRequestKey == null) latestPayload.stagedImage?.let(onDiscardImage)
-            }
-        }
+    SideEffect {
+        onImageSelectionChanged(RecipeEditorImageSelection(payload.editorId, payload.stagedImage, payload.imageRequestKey))
     }
     val photoPicker = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
         if (uri != null) {
@@ -110,7 +116,7 @@ fun RecipeEditScreen(
             onPrepareImage(uri, requestKey)
         }
     }
-    val draft = RecipeEditDraft(scope, recipe.id, payload.original, payload.values)
+    val draft = RecipeEditDraft(scope, recipe.id, payload.original, payload.values, payload.editorId)
     val validation = draft.validate()
     val requiresRecovery = matchingAction && (actionState.canRetryPhoto || actionState.needsPhotoSelection || actionState.canRetryReconciliation)
     val canSave = (draft.hasChanges() || payload.stagedImage != null) && validation is RecipeDraftValidation.Valid &&
@@ -169,14 +175,21 @@ fun RecipeEditScreen(
                 Button(
                     onClick = {
                         update { it.copy(operationInterrupted = true) }
-                        onSave(RecipeEditDraft(scope, recipe.id, payload.original, payload.values), payload.stagedImage)
+                        onSave(RecipeEditDraft(scope, recipe.id, payload.original, payload.values, payload.editorId), payload.stagedImage)
                     },
                     enabled = canSave,
                     modifier = Modifier.testTag("editor_save"),
                 ) {
                     if (savingHere) CircularProgressIndicator() else Text(stringResource(R.string.save))
                 }
-                OutlinedButton(enabled = !savingHere, onClick = onCancel) { Text(stringResource(R.string.cancel)) }
+                OutlinedButton(
+                    enabled = !savingHere,
+                    onClick = {
+                        onLeaveEditor(RecipeEditorImageSelection(payload.editorId, payload.stagedImage, payload.imageRequestKey))
+                        onCancel()
+                    },
+                    modifier = Modifier.testTag("editor_cancel"),
+                ) { Text(stringResource(R.string.cancel)) }
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.getmaincourse.app.features.recipes
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextContains
@@ -12,6 +13,8 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.MainCourseTestActivity
 import com.getmaincourse.app.MainCourseTestContent
@@ -26,6 +29,7 @@ import com.getmaincourse.app.features.search.RecipeSearchState
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -80,6 +84,28 @@ class RecipeWorkflowScreenTest {
     }
 
     @Test
+    fun searchDoesNotShowNoResultsWhileLoadingOrAfterACacheReadFailure() {
+        val scope = RecipeScope(7, 1)
+        val state = mutableStateOf(RecipeSearchState(scope = scope, query = "onion", isSearching = true))
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    RecipeSearchScreen(scope, state.value, null, { it }, {}, {})
+                }
+            }
+        }
+
+        compose.onNodeWithTag("search_loading").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(com.getmaincourse.app.R.string.search_empty)).assertDoesNotExist()
+
+        compose.runOnIdle {
+            state.value = state.value.copy(isSearching = false, searchError = "Search is unavailable. Try again.")
+        }
+        compose.onNodeWithTag("search_error").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(com.getmaincourse.app.R.string.search_empty)).assertDoesNotExist()
+    }
+
+    @Test
     fun editorValidatesFieldsAndPreservesRowOrderInSubmittedDraft() {
         var submitted: RecipeEditDraft? = null
         compose.runOnIdle {
@@ -116,6 +142,7 @@ class RecipeWorkflowScreenTest {
                         actionState = RecipeActionState(),
                         imageState = RecipeImagePreparationState(),
                         onSave = { _, _ -> submissions++ },
+                        editorId = "editor-restore",
                     )
                 }
             }
@@ -132,6 +159,40 @@ class RecipeWorkflowScreenTest {
         compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_unconfirmed"))
         compose.onNodeWithTag("editor_unconfirmed").assertIsDisplayed()
         assertEquals(1, submissions)
+    }
+
+    @Test
+    fun rotationDoesNotReleaseAStagedPhotoButExplicitCancelReportsItsExactOwner() {
+        val image = com.getmaincourse.app.data.images.PreparedRecipeImage("/private/staged.jpg", 7, "staged")
+        val releases = mutableListOf<RecipeEditorImageSelection>()
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    RecipeEditScreen(
+                        scope = RecipeScope(7, 1),
+                        recipe = DETAIL,
+                        actionState = RecipeActionState(),
+                        imageState = RecipeImagePreparationState(
+                            status = RecipeImagePreparationStatus.READY,
+                            scope = RecipeScope(7, 1),
+                            image = image,
+                            requestKey = "editor-a:pick-a",
+                        ),
+                        onSave = { _, _ -> },
+                        editorId = "editor-a",
+                        onLeaveEditor = { releases += it },
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.activityRule.scenario.recreate()
+        assertTrue(releases.isEmpty())
+
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_cancel"))
+        compose.onNodeWithTag("editor_cancel").performClick()
+
+        assertEquals(listOf(RecipeEditorImageSelection("editor-a", image, "editor-a:pick-a")), releases)
     }
 
     @Test
@@ -154,6 +215,36 @@ class RecipeWorkflowScreenTest {
         compose.onNodeWithTag("review_submit").assertIsEnabled().performClick()
         assertEquals(1, submitted?.size)
         assertEquals("salt", submitted?.single()?.name)
+    }
+
+    @Test
+    fun sourceOpenFailureShowsSafeFeedbackInsteadOfCrashing() {
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    CompositionLocalProvider(LocalUriHandler provides object : UriHandler {
+                        override fun openUri(uri: String) = error("no handler")
+                    }) {
+                        RecipeDetailScreen(
+                            scope = RecipeScope(7, 1),
+                            detailState = com.getmaincourse.app.features.session.RecipeDetailState(
+                                DETAIL.id,
+                                com.getmaincourse.app.features.session.DetailStatus.FRESH,
+                                DETAIL.copy(sourceUrl = "https://example.test/recipe"),
+                            ),
+                            importFailed = false,
+                            imageLoader = null,
+                            resolveImage = { it },
+                            onRetry = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        compose.onNodeWithTag("recipe_detail").performScrollToNode(hasTestTag("recipe_source"))
+        compose.onNodeWithTag("recipe_source").performClick()
+        compose.onNodeWithTag("source_open_error").assertIsDisplayed()
     }
 
     private companion object {

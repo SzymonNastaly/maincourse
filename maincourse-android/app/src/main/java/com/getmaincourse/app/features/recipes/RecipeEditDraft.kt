@@ -2,8 +2,8 @@ package com.getmaincourse.app.features.recipes
 
 import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.data.model.RecipeUpdateRequest
-import java.net.URI
 import kotlinx.serialization.Serializable
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 @Serializable
 data class RecipeEditRow(
@@ -28,6 +28,7 @@ data class RecipeEditDraft(
     val recipeId: Long,
     val original: RecipeEditValues,
     val values: RecipeEditValues,
+    val requestKey: String? = null,
 ) {
     fun hasChanges(): Boolean = normalized(original) != normalized(values)
 
@@ -41,7 +42,7 @@ data class RecipeEditDraft(
         val servings = parseOptionalInteger(values.servings, allowZero = false)
             ?: return RecipeDraftValidation.Invalid(RecipeDraftError.SERVINGS_INVALID)
         val sourceUrl = values.sourceUrl.trim().takeIf(String::isNotEmpty)
-        if (sourceUrl != null && !sourceUrl.isSafeHttpUrl()) {
+        if (sourceUrl != null && !isSafeRecipeSourceUrl(sourceUrl)) {
             return RecipeDraftValidation.Invalid(RecipeDraftError.SOURCE_URL_INVALID)
         }
         return RecipeDraftValidation.Valid(
@@ -77,13 +78,6 @@ data class RecipeEditDraft(
         return ParsedInteger(parsed)
     }
 
-    private fun String.isSafeHttpUrl(): Boolean = try {
-        val uri = URI(this)
-        uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank() && uri.userInfo == null
-    } catch (_: Exception) {
-        false
-    }
-
     private data class ParsedInteger(val value: Int?)
 
     private data class NormalizedValues(
@@ -96,6 +90,12 @@ data class RecipeEditDraft(
         val notes: String,
         val sourceUrl: String,
     )
+}
+
+internal fun isSafeRecipeSourceUrl(value: String): Boolean {
+    val url = value.toHttpUrlOrNull() ?: return false
+    return url.scheme in setOf("http", "https") && url.host.isNotBlank() &&
+        url.username.isEmpty() && url.password.isEmpty()
 }
 
 enum class RecipeDraftError {

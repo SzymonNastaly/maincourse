@@ -113,6 +113,30 @@ class RecipeSearchCoordinatorTest {
         }
     }
 
+    @Test
+    fun inFlightAndCacheReadFailureAreDistinctFromACompletedEmptySearch() = runTest {
+        val release = CompletableDeferred<Unit>()
+        val coordinator = RecipeSearchCoordinator(
+            scope = this,
+            loadDocuments = {
+                release.await()
+                error("cache unavailable")
+            },
+            searchDispatcher = StandardTestDispatcher(testScheduler),
+        )
+        coordinator.activate(RecipeScope(1, 10))
+
+        val search = coordinator.updateQuery("soup")
+        runCurrent()
+        assertTrue(coordinator.state.value.isSearching)
+        assertEquals(null, coordinator.state.value.searchError)
+
+        release.complete(Unit)
+        search.join()
+        assertEquals(false, coordinator.state.value.isSearching)
+        assertEquals("Search is unavailable. Try again.", coordinator.state.value.searchError)
+    }
+
     private fun document(id: Long, name: String) = RecipeSearchDocument(
         RecipeSummary(id, name, null, null, false, null, null, "completed", null, "2026-09-08T00:00:00Z"),
         null,

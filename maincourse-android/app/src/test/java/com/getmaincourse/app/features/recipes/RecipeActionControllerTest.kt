@@ -102,6 +102,76 @@ class RecipeActionControllerTest {
     }
 
     @Test
+    fun evictedPendingPhotoCanBeReplacedWithoutRepeatingAcknowledgedTextPatch() = runTest {
+        val initial = PreparedRecipeImage("/private/initial.jpg", 7, "initial")
+        val replacement = PreparedRecipeImage("/private/replacement.jpg", 7, "replacement")
+        val initialFile = File.createTempFile("initial", ".jpg")
+        val replacementFile = File.createTempFile("replacement", ".jpg")
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        var initialEvicted = false
+        val api = FakeApi().apply {
+            updateResult = UPDATED
+            coverFailure = IOException("offline")
+        }
+        val controller = controller(
+            api,
+            FakeStore(),
+            FakeHost(this),
+            resolve = { prepared, _ ->
+                when (prepared) {
+                    initial -> if (initialEvicted) throw PreparedRecipeImageUnavailable("evicted") else initialFile
+                    replacement -> replacementFile
+                    else -> error("unexpected image")
+                }
+            },
+            discard = { discarded += it },
+        )
+
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-a"), initial).join()
+        assertTrue(controller.ownsPendingPhoto("editor-a", initial))
+        initialEvicted = true
+        api.coverFailure = null
+        controller.retryRecipePhoto().join()
+
+        assertTrue(controller.state.value.needsPhotoSelection)
+        assertTrue(controller.ownsPendingPhoto("editor-a", initial))
+        controller.retryRecipePhoto(replacement).join()
+
+        assertEquals(1, api.updateCalls)
+        assertEquals(2, api.coverCalls)
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        assertEquals("editor-a", controller.state.value.requestKey)
+        assertFalse(controller.ownsPendingPhoto("editor-a", replacement))
+        assertEquals(listOf(initial, replacement), discarded)
+        initialFile.delete()
+        replacementFile.delete()
+    }
+
+    @Test
+    fun aNewEditorSaveExplicitlySupersedesAndDiscardsOlderPhotoRecovery() = runTest {
+        val pending = PreparedRecipeImage("/private/pending.jpg", 7, "pending")
+        val file = File.createTempFile("pending", ".jpg")
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val api = FakeApi().apply { coverFailure = IOException("offline") }
+        val controller = controller(
+            api,
+            FakeStore(),
+            FakeHost(this),
+            discard = { discarded += it },
+            resolve = { _, _ -> file },
+        )
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-a"), pending).join()
+        api.coverFailure = null
+
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-b"), null).join()
+
+        assertEquals(2, api.updateCalls)
+        assertEquals(listOf(pending), discarded)
+        assertFalse(controller.ownsPendingPhoto("editor-a", pending))
+        file.delete()
+    }
+
+    @Test
     fun aNewPhotoMakesAnOtherwiseUnchangedDraftSaveable() = runTest {
         val api = FakeApi()
         val image = File.createTempFile("recipe-photo-only", ".jpg").apply {
@@ -485,8 +555,9 @@ class RecipeActionControllerTest {
         api: FakeApi,
         store: FakeStore,
         host: FakeHost,
+        discard: suspend (PreparedRecipeImage) -> Unit = {},
         resolve: suspend (PreparedRecipeImage, Long) -> File = { _, _ -> error("unused") },
-    ) = RecipeActionController(api, CatalogRepository(api, store), host, resolve)
+    ) = RecipeActionController(api, CatalogRepository(api, store), host, discard, resolve)
 
     private fun changedDraft() = RecipeEditDraft(
         SOURCE,

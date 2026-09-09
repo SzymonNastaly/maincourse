@@ -93,6 +93,7 @@
     <string name="search_prompt">Search names, ingredients, and instructions.</string>
     <string name="search_empty">No matching recipes.</string>
     <string name="search_incomplete">Some recipe details are not available offline, so results may be incomplete.</string>
+    <string name="search_no_cookbooks">There are no cookbooks to search yet.</string>
     <string name="recipe_choose_photo">Choose photo</string>
     <string name="recipe_replace_photo">Replace photo</string>
     <string name="recipe_save_unconfirmed">The previous save was interrupted. Check the recipe before saving again.</string>
@@ -102,6 +103,7 @@
     <string name="recipe_cook_invalid">Cook time must be a nonnegative whole number.</string>
     <string name="recipe_servings_invalid">Servings must be a positive whole number.</string>
     <string name="recipe_source_invalid">Use an HTTP or HTTPS URL without credentials.</string>
+    <string name="recipe_source_open_failed">No app is available to open this source.</string>
     <string name="recipe_row_number">Row %1$d</string>
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +58,8 @@ fun RecipeSearchScreen(
         }
     }
     val query = if (restoredForScope) savedQuery else scoped.query
+    val awaitingSearch = scoped.isSearching || (query.isNotBlank() && query != scoped.query)
+    val visibleResults = if (query == scoped.query) scoped.results else emptyList()
     LaunchedEffect(scope, restoredForScope) {
         if (restoredForScope && query != scoped.query) onQueryChange(query)
     }
@@ -80,12 +83,19 @@ fun RecipeSearchScreen(
         if (actionState.message != null && actionState.scope == scope) {
             item { RecipeActionFeedback(actionState, onRefresh, onClearAction) }
         }
-        when {
-            query.isBlank() -> item {
+        if (query.isBlank()) {
+            item {
                 Text(stringResource(R.string.search_prompt), modifier = Modifier.testTag("search_prompt"), color = MainCourseColors.Body)
             }
-            scoped.results.isEmpty() -> item { Text(stringResource(R.string.search_empty), color = MainCourseColors.Body) }
-            else -> items(scoped.results, key = { it.id }) { recipe ->
+        } else {
+            if (awaitingSearch) item { CircularProgressIndicator(Modifier.testTag("search_loading")) }
+            if (scoped.searchError != null) item {
+                Text(scoped.searchError, modifier = Modifier.testTag("search_error"), color = MainCourseColors.Danger)
+            }
+            if (!awaitingSearch && scoped.searchError == null && visibleResults.isEmpty()) {
+                item { Text(stringResource(R.string.search_empty), color = MainCourseColors.Body) }
+            }
+            items(visibleResults, key = { it.id }) { recipe ->
                 RecipeCard(recipe, imageLoader, resolveImage, onOpenRecipe, onEditRecipe, onMoveRecipe, onDeleteRecipe, actionsEnabled)
             }
         }

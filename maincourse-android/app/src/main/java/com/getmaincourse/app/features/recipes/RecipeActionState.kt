@@ -18,4 +18,5 @@ data class RecipeActionState(
     val canRetryReconciliation: Boolean = false,
     val frozenShoppingItems: List<ShoppingItemInput> = emptyList(),
     val isBusy: Boolean = false,
+    val requestKey: String? = null,
 )

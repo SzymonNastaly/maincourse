@@ -28,6 +28,7 @@ import com.getmaincourse.app.features.recipes.RecipeEditDraft
 import com.getmaincourse.app.features.recipes.RecipeEditRow
 import com.getmaincourse.app.features.recipes.RecipeEditValues
 import com.getmaincourse.app.features.recipes.RecipeImagePreparationStatus
+import com.getmaincourse.app.features.recipes.RecipeEditorImageSelection
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.search.RecipeSearchDocument
@@ -280,6 +281,35 @@ class SessionControllerTest {
     }
 
     @Test
+    fun staleEditorReleaseDoesNotClearOrDiscardTheNewEditorsPreparedImage() = runTest {
+        val first = PreparedRecipeImage("/private/user-7/first.jpg", USER.id, "first")
+        val second = PreparedRecipeImage("/private/user-7/second.jpg", USER.id, "second")
+        val prepared = ArrayDeque(listOf(first, second))
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL) }
+                recipesBlock = { _, _ -> listOf(SOUP) }
+            },
+            session = SESSION,
+            prepareRecipeImage = { _, _ -> prepared.removeFirst() },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+        controller.prepareRecipeImage("content://recipe/first", "editor-a:pick-a").join()
+        controller.prepareRecipeImage("content://recipe/second", "editor-b:pick-b").join()
+
+        controller.releaseRecipeEditorImage(
+            RecipeEditorImageSelection("editor-a", first, "editor-a:pick-a"),
+        ).join()
+
+        assertEquals(second, controller.recipeImagePreparationState.value.image)
+        assertEquals("editor-b:pick-b", controller.recipeImagePreparationState.value.requestKey)
+        assertFalse(discarded.contains(second))
+    }
+
+    @Test
     fun cookbookSwitchJoinsImagePreparationAndDiscardsItsLateCapturedScopeResult() = runTest {
         val started = CompletableDeferred<Unit>()
         val release = CompletableDeferred<Unit>()
@@ -369,6 +399,83 @@ class SessionControllerTest {
 
         assertEquals(listOf(prepared), discarded)
         assertEquals(RecipeImagePreparationStatus.IDLE, controller.recipeImagePreparationState.value.status)
+    }
+
+    @Test
+    fun leavingEditorPreservesControllerOwnedPartialPhotoForDetailRetry() = runTest {
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/photo.jpg", USER.id, "photo")
+        val file = File.createTempFile("pending-photo", ".jpg")
+        val api = FakeApi().apply {
+            cookbooksBlock = { listOf(PERSONAL) }
+            recipesBlock = { _, _ -> listOf(SOUP) }
+            coverBlock = { _, _, _, _ -> throw IOException("offline") }
+        }
+        val controller = controller(
+            api = api,
+            session = SESSION,
+            resolvePreparedImage = { _, _ -> file },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-a"), prepared).join()
+        controller.releaseRecipeEditorImage(
+            RecipeEditorImageSelection("editor-a", prepared, "editor-a:pick-a"),
+        ).join()
+
+        assertTrue(discarded.isEmpty())
+        api.coverBlock = { _, _, _, _ -> SOUP_DETAIL }
+        controller.retryRecipePhoto().join()
+        assertEquals(2, api.coverCalls)
+        assertEquals(listOf(prepared), discarded)
+        file.delete()
+    }
+
+    @Test
+    fun cancellingFreshlyRestoredEditorDiscardsItsValidatedSavedPathWithoutImageState() = runTest {
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/restored.jpg", USER.id, "restored")
+        val controller = controller(
+            api = FakeApi().apply { cookbooksBlock = { listOf(PERSONAL) } },
+            session = SESSION,
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+
+        controller.releaseRecipeEditorImage(
+            RecipeEditorImageSelection("editor-restored", prepared, "editor-restored:pick"),
+        ).join()
+
+        assertEquals(listOf(prepared), discarded)
+    }
+
+    @Test
+    fun explicitlyDismissingPartialPhotoRecoveryDiscardsTheControllerOwnedFile() = runTest {
+        val discarded = mutableListOf<PreparedRecipeImage>()
+        val prepared = PreparedRecipeImage("/private/user-7/pending.jpg", USER.id, "pending")
+        val file = File.createTempFile("pending-photo", ".jpg")
+        val controller = controller(
+            api = FakeApi().apply {
+                cookbooksBlock = { listOf(PERSONAL) }
+                recipesBlock = { _, _ -> listOf(SOUP) }
+                coverBlock = { _, _, _, _ -> throw IOException("offline") }
+            },
+            session = SESSION,
+            resolvePreparedImage = { _, _ -> file },
+            discardRecipeImage = { discarded += it },
+        )
+        controller.restore().join()
+        advanceUntilIdle()
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-a"), prepared).join()
+
+        controller.clearRecipeAction().join()
+
+        assertEquals(listOf(prepared), discarded)
+        assertEquals(RecipeActionOutcome.IDLE, controller.recipeActionState.value.outcome)
+        file.delete()
     }
 
     @Test
@@ -3262,6 +3369,7 @@ class SessionControllerTest {
         deleteTimeoutMillis: Long = 30_000,
         hydrationTimeoutMillis: Long = 120_000,
         credentialStateCleanup: suspend () -> Unit = {},
+        resolvePreparedImage: suspend (PreparedRecipeImage, Long) -> File = { _, _ -> error("unused") },
         prepareRecipeImage: suspend (Long, String) -> PreparedRecipeImage = { _, _ -> error("unused") },
         discardRecipeImage: suspend (PreparedRecipeImage) -> Unit = {},
         imageCleanup: suspend () -> Unit = {},
@@ -3280,6 +3388,7 @@ class SessionControllerTest {
             deleteTimeoutMillis = deleteTimeoutMillis,
             hydrationTimeoutMillis = hydrationTimeoutMillis,
             searchDispatcher = controllerScope.coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+            resolvePreparedImage = resolvePreparedImage,
             prepareRecipeImage = prepareRecipeImage,
             discardRecipeImage = discardRecipeImage,
         )
@@ -3467,6 +3576,7 @@ class SessionControllerTest {
         var recipeCalls = 0
         var deleteRecipeCalls = 0
         var moveRecipeCalls = 0
+        var coverCalls = 0
         val batchCursors = mutableListOf<String?>()
         val googleRequests = mutableListOf<GoogleSignInRequest>()
         var signInBlock: suspend (SignInRequest) -> SessionResponse = { SESSION.response }
@@ -3484,6 +3594,7 @@ class SessionControllerTest {
         var updateRecipeBlock: suspend (String, Long, Long, RecipeUpdateRequest) -> RecipeDetail = { _, _, _, _ ->
             SOUP_DETAIL
         }
+        var coverBlock: suspend (String, Long, Long, File) -> RecipeDetail = { _, _, _, _ -> error("unused") }
 
         override suspend fun signIn(request: SignInRequest): SessionResponse {
             signInCalls++
@@ -3542,7 +3653,10 @@ class SessionControllerTest {
             cookbookId: Long,
             recipeId: Long,
             image: File,
-        ): RecipeDetail = error("unused")
+        ): RecipeDetail {
+            coverCalls++
+            return coverBlock(token, cookbookId, recipeId, image)
+        }
         override suspend fun moveRecipe(
             token: String,
             sourceCookbookId: Long,

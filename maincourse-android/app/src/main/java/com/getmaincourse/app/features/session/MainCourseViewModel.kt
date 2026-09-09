@@ -25,6 +25,7 @@ import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
 import com.getmaincourse.app.features.recipes.RecipeEditDraft
 import com.getmaincourse.app.features.recipes.ShoppingItemInput
+import com.getmaincourse.app.features.recipes.RecipeEditorImageSelection
 import java.io.File
 import java.time.Clock
 import java.time.Instant
@@ -308,6 +309,7 @@ class MainCourseViewModel(
         controller.prepareRecipeImage(uri.toString(), requestKey)
     fun discardRecipeImage(image: PreparedRecipeImage) = controller.discardRecipeImage(image)
     fun cancelRecipeImagePreparation(requestKey: String) = controller.cancelRecipeImagePreparation(requestKey)
+    fun releaseRecipeEditorImage(selection: RecipeEditorImageSelection) = controller.releaseRecipeEditorImage(selection)
     fun openRecipe(id: Long) = controller.openRecipe(id)
     fun closeRecipe() = controller.closeRecipe()
     fun updateName(name: String) = controller.updateName(name)

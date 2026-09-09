@@ -58,6 +58,15 @@ class RecipeEditDraftTest {
         assertEquals(listOf("onion"), (draft.validate() as RecipeDraftValidation.Valid).request.ingredients)
     }
 
+    @Test
+    fun sourceUrlValidationIsSharedAndRejectsCredentialsOrNonHttpSchemes() {
+        assertTrue(isSafeRecipeSourceUrl("https://example.com/recipe"))
+        assertTrue(isSafeRecipeSourceUrl("http://example.com"))
+        assertFalse(isSafeRecipeSourceUrl("https://user:pass@example.com/recipe"))
+        assertFalse(isSafeRecipeSourceUrl("file:///tmp/recipe"))
+        assertFalse(isSafeRecipeSourceUrl("not a url"))
+    }
+
     private fun draft(values: RecipeEditValues) = RecipeEditDraft(RecipeScope(7, 1), 10, values(), values)
 
     private fun values(

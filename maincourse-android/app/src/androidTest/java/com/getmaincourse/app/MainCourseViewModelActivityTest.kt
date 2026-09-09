@@ -83,17 +83,19 @@ class MainCourseViewModelActivityTest {
     private lateinit var sessionStore: FakeSessionStore
     private lateinit var viewModel: MainCourseViewModel
     private lateinit var factory: ViewModelProvider.Factory
+    private lateinit var catalogStore: FakeCatalogStore
 
     @Before
     fun setUp() {
         api = FakeApi()
         sessionStore = FakeSessionStore(StoredSession(BASE_URL, SESSION))
+        catalogStore = FakeCatalogStore()
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T = MainCourseViewModel(
                 api = api,
                 sessionStore = sessionStore,
-                catalogRepository = CatalogRepository(api, FakeCatalogStore()),
+                catalogRepository = CatalogRepository(api, catalogStore),
                 onboardingStore = FakeOnboardingStore(),
                 baseUrl = BASE_URL,
                 clock = CLOCK,
@@ -337,6 +339,7 @@ class MainCourseViewModelActivityTest {
                             submissions++
                             activeViewModel.saveRecipe(draft, image)
                         },
+                        editorId = "fresh-view-model-editor",
                     )
                 }
             }
@@ -359,6 +362,30 @@ class MainCourseViewModelActivityTest {
         assertEquals(0, api.updateCalls)
     }
 
+    @Test
+    fun fastRealControllerSaveReturnsToDetailAndOldSuccessDoesNotCloseReopenedEditor() {
+        api.cookbookItems = listOf(COOKBOOK)
+        api.recipeItems = listOf(RECIPE)
+        api.recipeDetail = DETAIL
+        compose.runOnIdle { viewModel.refresh() }
+        compose.waitUntil(5_000) { viewModel.state.value.recipes == listOf(RECIPE) }
+
+        compose.onNodeWithText(RECIPE.name).performClick()
+        compose.waitUntil(5_000) { viewModel.state.value.detail?.recipe == DETAIL }
+        compose.onNodeWithTag("detail_actions").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        compose.onNodeWithTag("editor_name").performTextInput(" updated")
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_save"))
+        compose.onNodeWithTag("editor_save").performClick()
+
+        compose.waitUntil(5_000) { viewModel.recipeActionState.value.outcome == com.getmaincourse.app.features.recipes.RecipeActionOutcome.SUCCEEDED }
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        compose.onNodeWithTag("detail_actions").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        compose.onNodeWithTag("editor_name").assertIsDisplayed()
+        assertEquals(1, api.updateCalls)
+    }
+
     private fun openNameEditorAndSave(name: String) {
         compose.onNodeWithTag("nav_Settings").performClick()
         compose.onNodeWithText(text(R.string.edit_name)).performClick()
@@ -378,6 +405,9 @@ class MainCourseViewModelActivityTest {
         val onboarding by viewModel.onboardingState.collectAsStateWithLifecycle()
         val account by viewModel.accountState.collectAsStateWithLifecycle()
         val authenticationMethod by viewModel.authenticationMethod.collectAsStateWithLifecycle()
+        val search by viewModel.searchState.collectAsStateWithLifecycle()
+        val recipeAction by viewModel.recipeActionState.collectAsStateWithLifecycle()
+        val recipeImage by viewModel.recipeImagePreparationState.collectAsStateWithLifecycle()
         MainCourseTheme {
             MainCourseApp(
                 state = state,
@@ -390,8 +420,15 @@ class MainCourseViewModelActivityTest {
                     retryAccountPersistence = { viewModel.retryAccountPersistence() },
                     deleteAccount = { viewModel.deleteAccount() },
                     clearAccountError = { viewModel.clearAccountError() },
+                    refresh = { viewModel.refresh() },
+                    openRecipe = { viewModel.openRecipe(it) },
+                    closeRecipe = { viewModel.closeRecipe() },
+                    saveRecipe = { draft, image -> viewModel.saveRecipe(draft, image) },
                     logout = { viewModel.logout() },
                 ),
+                searchState = search,
+                recipeActionState = recipeAction,
+                recipeImagePreparationState = recipeImage,
             )
         }
     }
@@ -435,6 +472,9 @@ class MainCourseViewModelActivityTest {
         var googleResult: CompletableDeferred<SessionResponse>? = null
         val googleRequests = mutableListOf<GoogleSignInRequest>()
         val appleExchangeRequests = mutableListOf<AppleAuthenticationExchangeRequest>()
+        var cookbookItems = emptyList<Cookbook>()
+        var recipeItems = emptyList<RecipeSummary>()
+        var recipeDetail: RecipeDetail? = null
 
         override suspend fun signIn(request: SignInRequest): SessionResponse = error("unused")
 
@@ -466,9 +506,10 @@ class MainCourseViewModelActivityTest {
         }
         override suspend fun submitOnboarding(request: OnboardingRequest) =
             OnboardingResponse(1, request.deviceId, request.answers)
-        override suspend fun cookbooks(token: String) = emptyList<Cookbook>()
-        override suspend fun recipes(token: String, cookbookId: Long) = emptyList<RecipeSummary>()
-        override suspend fun recipe(token: String, cookbookId: Long, recipeId: Long): RecipeDetail = error("unused")
+        override suspend fun cookbooks(token: String) = cookbookItems
+        override suspend fun recipes(token: String, cookbookId: Long) = recipeItems
+        override suspend fun recipe(token: String, cookbookId: Long, recipeId: Long): RecipeDetail =
+            this.recipeDetail ?: error("unused")
         override suspend fun recipeBatch(token: String, cookbookId: Long, cursor: String?): RecipeBatchResponse =
             error("unused")
         override suspend fun updateRecipe(
@@ -476,7 +517,10 @@ class MainCourseViewModelActivityTest {
             cookbookId: Long,
             recipeId: Long,
             request: RecipeUpdateRequest,
-        ): RecipeDetail = error("unused")
+        ): RecipeDetail {
+            updateCalls++
+            return checkNotNull(recipeDetail).copy(name = request.name, updatedAt = "later")
+        }
         override suspend fun updateRecipeCover(
             token: String,
             cookbookId: Long,
@@ -499,21 +543,27 @@ class MainCourseViewModelActivityTest {
 
     private class FakeCatalogStore : CatalogStore {
         private val memberships = mutableMapOf<Long, List<Cookbook>>()
+        private val recipeLists = mutableMapOf<RecipeScope, List<RecipeSummary>>()
+        private val details = mutableMapOf<Pair<RecipeScope, Long>, RecipeDetail>()
+        private val selected = mutableMapOf<Long, Long>()
         override suspend fun cookbooks(userId: Long) = memberships[userId].orEmpty()
         override suspend fun replaceCookbooks(userId: Long, items: List<Cookbook>) {
             memberships[userId] = items
         }
-        override suspend fun selectedCookbookId(userId: Long): Long? = null
+        override suspend fun selectedCookbookId(userId: Long): Long? = selected[userId]
         override suspend fun selectCookbook(userId: Long, cookbookId: Long) {
             require(memberships[userId].orEmpty().any { it.id == cookbookId })
+            selected[userId] = cookbookId
         }
-        override suspend fun recipes(scope: RecipeScope) = CachedRecipes(emptyList(), false)
+        override suspend fun recipes(scope: RecipeScope) = CachedRecipes(recipeLists[scope].orEmpty(), recipeLists.containsKey(scope))
         override suspend fun replaceRecipes(scope: RecipeScope, items: List<RecipeSummary>) {
             require(memberships[scope.userId].orEmpty().any { it.id == scope.cookbookId })
+            recipeLists[scope] = items
         }
-        override suspend fun detail(scope: RecipeScope, recipeId: Long): RecipeDetail? = null
+        override suspend fun detail(scope: RecipeScope, recipeId: Long): RecipeDetail? = details[scope to recipeId]
         override suspend fun saveRecipeDetails(scope: RecipeScope, details: List<RecipeDetail>) {
             require(memberships[scope.userId].orEmpty().any { it.id == scope.cookbookId })
+            details.forEach { detail -> this.details[scope to detail.id] = detail }
         }
         override suspend fun searchDocuments(scope: RecipeScope) = emptyList<RecipeSearchDocument>()
         override suspend fun upsertPartialRecipe(
@@ -538,5 +588,11 @@ class MainCourseViewModelActivityTest {
         val CLOCK: Clock = Clock.fixed(Instant.parse("2026-09-08T00:00:00Z"), ZoneOffset.UTC)
         val USER = User(7, "Reader", "reader@example.test", false)
         val SESSION = SessionResponse("fixture-token", "2026-12-08T00:00:00Z", USER)
+        val COOKBOOK = Cookbook(1, "My cookbook", true, 1, emptyList())
+        val RECIPE = RecipeSummary(20, "Soup", 10, 20, false, null, null, "completed", null, "now")
+        val DETAIL = RecipeDetail(
+            20, "Soup", 10, 20, 4, false, listOf("onion"), emptyList(), listOf("Cook"),
+            null, null, emptyList(), null, null, "then", "now",
+        )
     }
 }

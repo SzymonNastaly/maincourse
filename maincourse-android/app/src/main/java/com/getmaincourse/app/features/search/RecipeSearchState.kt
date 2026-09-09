@@ -22,6 +22,8 @@ data class RecipeSearchState(
     val results: List<RecipeSummary> = emptyList(),
     val hydrationStatus: SearchHydrationStatus = SearchHydrationStatus.IDLE,
     val message: String? = null,
+    val isSearching: Boolean = false,
+    val searchError: String? = null,
 )
 
 internal class RecipeSearchCoordinator(
@@ -58,7 +60,12 @@ internal class RecipeSearchCoordinator(
             generation++
             searchJob?.cancel()
             searchJob = null
-            mutableState.value = mutableState.value.copy(query = query, results = emptyList())
+            mutableState.value = mutableState.value.copy(
+                query = query,
+                results = emptyList(),
+                isSearching = false,
+                searchError = null,
+            )
             current
         }
         return if (recipeScope != null && query.isNotBlank()) launchSearch(recipeScope, query) else done()
@@ -96,6 +103,9 @@ internal class RecipeSearchCoordinator(
         val version = synchronized(lock) {
             generation++
             searchJob?.cancel()
+            if (activeScope == recipeScope && mutableState.value.query == query) {
+                mutableState.value = mutableState.value.copy(isSearching = true, searchError = null)
+            }
             generation
         }
         launched = scope.launch(start = CoroutineStart.LAZY) {
@@ -104,7 +114,11 @@ internal class RecipeSearchCoordinator(
                 val results = withContext(searchDispatcher) { engine.search(documents, query) }
                 synchronized(lock) {
                     if (generation == version && activeScope == recipeScope && mutableState.value.query == query) {
-                        mutableState.value = mutableState.value.copy(results = results)
+                        mutableState.value = mutableState.value.copy(
+                            results = results,
+                            isSearching = false,
+                            searchError = null,
+                        )
                     }
                 }
             } catch (failure: CancellationException) {
@@ -112,7 +126,11 @@ internal class RecipeSearchCoordinator(
             } catch (_: Throwable) {
                 synchronized(lock) {
                     if (generation == version && activeScope == recipeScope && mutableState.value.query == query) {
-                        mutableState.value = mutableState.value.copy(results = emptyList())
+                        mutableState.value = mutableState.value.copy(
+                            results = emptyList(),
+                            isSearching = false,
+                            searchError = "Search is unavailable. Try again.",
+                        )
                     }
                 }
             } finally {

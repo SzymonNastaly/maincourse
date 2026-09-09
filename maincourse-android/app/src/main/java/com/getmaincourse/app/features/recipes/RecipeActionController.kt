@@ -46,6 +46,7 @@ class RecipeActionController internal constructor(
     private val api: MainCourseApi,
     private val repository: CatalogRepository,
     private val host: RecipeActionHost,
+    private val discardPreparedImage: suspend (PreparedRecipeImage) -> Unit = {},
     private val resolvePreparedImage: suspend (PreparedRecipeImage, Long) -> File,
 ) {
     private val mutableState = MutableStateFlow(RecipeActionState())
@@ -57,48 +58,49 @@ class RecipeActionController internal constructor(
 
     fun saveRecipe(draft: RecipeEditDraft, image: PreparedRecipeImage?): Job = launch { context, version ->
         if (draft.scope != context.scope) {
-            publishFailure(context, version, draft.recipeId, "This recipe is no longer available")
+            publishFailure(context, version, draft.recipeId, "This recipe is no longer available", draft.requestKey)
             return@launch
         }
-        if (!prepareMutation(context, version, draft.recipeId)) return@launch
+        if (!prepareMutation(context, version, draft.recipeId, draft.requestKey)) return@launch
         if (context.recipes.none { it.id == draft.recipeId && it.importStatus == "completed" }) {
-            publishFailure(context, version, draft.recipeId, "This recipe is no longer available")
+            publishFailure(context, version, draft.recipeId, "This recipe is no longer available", draft.requestKey)
             return@launch
         }
         val validation = draft.validate()
         if (validation is RecipeDraftValidation.Invalid) {
-            publishFailure(context, version, draft.recipeId, validation.error.userMessage())
+            publishFailure(context, version, draft.recipeId, validation.error.userMessage(), draft.requestKey)
             return@launch
         }
         if (!draft.hasChanges() && image == null) {
-            publishFailure(context, version, draft.recipeId, "Change something before saving")
+            publishFailure(context, version, draft.recipeId, "Change something before saving", draft.requestKey)
             return@launch
         }
+        discardPendingPhotoFromAnotherRequest(draft.requestKey)
         val request = (validation as RecipeDraftValidation.Valid).request
-        publishRunning(context, version, RecipeActionOperation.SAVING, draft.recipeId)
+        publishRunning(context, version, RecipeActionOperation.SAVING, draft.recipeId, requestKey = draft.requestKey)
         mutateAndSettle(context) { permit ->
             val acknowledged = try {
                 api.updateRecipe(context.token, context.scope.cookbookId, draft.recipeId, request)
             } catch (failure: Throwable) {
-                handleMutationFailure(context, version, draft.recipeId, failure, "Could not save recipe")
+                handleMutationFailure(context, version, draft.recipeId, failure, "Could not save recipe", requestKey = draft.requestKey)
                 return@mutateAndSettle
             }
 
             var reconciliationFailure = commitDetails(context, permit, context.scope, draft.recipeId, acknowledged)
             if (image == null) {
                 if (reconciliationFailure == null) {
-                    publishSuccess(context, version, draft.recipeId, "Recipe saved")
+                    publishSuccess(context, version, draft.recipeId, "Recipe saved", draft.requestKey)
                 } else {
-                    publishReconciliation(context, version, draft.recipeId, "Recipe saved on the server, but local data needs refreshing")
+                    publishReconciliation(context, version, draft.recipeId, "Recipe saved on the server, but local data needs refreshing", draft.requestKey)
                 }
                 return@mutateAndSettle
             }
+            ownPendingPhoto(PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, image, draft.requestKey))
 
             val file = try {
                 resolvePreparedImage(image, context.userId)
             } catch (failure: Throwable) {
                 if (failure is CancellationException) throw failure
-                pendingPhoto = PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, image)
                 publishState(
                     context,
                     version,
@@ -109,27 +111,28 @@ class RecipeActionController internal constructor(
                         message = "Recipe details were saved. Choose the photo again.",
                         needsPhotoSelection = true,
                         canRetryReconciliation = reconciliationFailure != null,
+                        requestKey = draft.requestKey,
                     ),
                 )
                 return@mutateAndSettle
             }
             try {
-                publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, draft.recipeId)
+                publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, draft.recipeId, requestKey = draft.requestKey)
                 val cover = api.updateRecipeCover(context.token, context.scope.cookbookId, draft.recipeId, file)
                 reconciliationFailure = commitDetails(context, permit, context.scope, draft.recipeId, cover)
                     ?: reconciliationFailure
-                pendingPhoto = null
+                releasePendingPhoto(image)
                 if (reconciliationFailure == null) {
-                    publishSuccess(context, version, draft.recipeId, "Recipe and photo saved")
+                    publishSuccess(context, version, draft.recipeId, "Recipe and photo saved", draft.requestKey)
                 } else {
-                    publishReconciliation(context, version, draft.recipeId, "Recipe and photo were saved on the server, but local data needs refreshing")
+                    publishReconciliation(context, version, draft.recipeId, "Recipe and photo were saved on the server, but local data needs refreshing", draft.requestKey)
                 }
             } catch (failure: Throwable) {
                 handlePhotoFailure(
                     context = context,
                     version = version,
                     permit = permit,
-                    pending = PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, image),
+                    pending = PendingPhoto(context.generation, context.userId, context.scope, draft.recipeId, image, draft.requestKey),
                     failure = failure,
                     needsReconciliation = reconciliationFailure != null,
                 )
@@ -138,20 +141,20 @@ class RecipeActionController internal constructor(
     }
 
     fun retryRecipePhoto(replacement: PreparedRecipeImage? = null): Job = launch { context, version ->
-        val pending = pendingPhoto?.takeIf {
+        val owned = synchronized(admissionLock) { pendingPhoto }?.takeIf {
             it.generation == context.generation && it.userId == context.userId && it.scope == context.scope
-        }?.let { if (replacement == null) it else it.copy(image = replacement) } ?: run {
+        } ?: run {
             publishFailure(context, version, null, "Choose a photo again")
             return@launch
         }
+        val pending = if (replacement == null) owned else owned.copy(image = replacement)
         if (!prepareMutation(context, version, pending.recipeId)) return@launch
-        publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, pending.recipeId)
+        publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, pending.recipeId, requestKey = pending.requestKey)
         mutateAndSettle(context) { permit ->
             val file = try {
                 resolvePreparedImage(pending.image, context.userId)
             } catch (failure: Throwable) {
                 if (failure is CancellationException) throw failure
-                pendingPhoto = null
                 publishState(
                     context,
                     version,
@@ -161,21 +164,23 @@ class RecipeActionController internal constructor(
                         recipeId = pending.recipeId,
                         message = "Choose the photo again",
                         needsPhotoSelection = true,
+                        requestKey = pending.requestKey,
                     ),
                 )
                 return@mutateAndSettle
             }
+            ownPendingPhoto(pending)
             val acknowledged = try {
                 api.updateRecipeCover(context.token, context.scope.cookbookId, pending.recipeId, file)
             } catch (failure: Throwable) {
                 handlePhotoFailure(context, version, permit, pending, failure)
                 return@mutateAndSettle
             }
-            pendingPhoto = null
+            releasePendingPhoto(pending.image)
             if (commitDetails(context, permit, context.scope, pending.recipeId, acknowledged) == null) {
-                publishSuccess(context, version, pending.recipeId, "Photo saved")
+                publishSuccess(context, version, pending.recipeId, "Photo saved", pending.requestKey)
             } else {
-                publishReconciliation(context, version, pending.recipeId, "Photo saved on the server, but local data needs refreshing")
+                publishReconciliation(context, version, pending.recipeId, "Photo saved on the server, but local data needs refreshing", pending.requestKey)
             }
         }
     }
@@ -309,21 +314,28 @@ class RecipeActionController internal constructor(
     fun clearRecipeAction(): Job {
         synchronized(admissionLock) {
             if (activeAction != null) return completedJob()
-            reset()
+            resetLocked()
         }
         return completedJob()
     }
 
-    internal fun scopeChanged() {
-        synchronized(admissionLock) {
-            if (activeAction == null) reset()
-        }
+    internal fun clearRecipeActionAndTakePendingPhoto(): Pair<Job, PreparedRecipeImage?> = synchronized(admissionLock) {
+        if (activeAction != null) return@synchronized completedJob() to null
+        completedJob() to resetLocked()
     }
 
-    internal fun reset() {
+    internal fun scopeChanged(): PreparedRecipeImage? = synchronized(admissionLock) {
+        if (activeAction == null) resetLocked() else null
+    }
+
+    internal fun reset(): PreparedRecipeImage? = synchronized(admissionLock) { resetLocked() }
+
+    private fun resetLocked(): PreparedRecipeImage? {
+        val image = pendingPhoto?.image
         stateVersion.incrementAndGet()
         pendingPhoto = null
         mutableState.value = RecipeActionState()
+        return image
     }
 
     private fun launch(block: suspend (RecipeActionContext, Long) -> Unit): Job {
@@ -339,18 +351,23 @@ class RecipeActionController internal constructor(
                     block(context, version)
                 } finally {
                     val canPublish = host.canPublish(context)
-                    synchronized(admissionLock) {
+                    val abandonedImage = synchronized(admissionLock) {
+                        var image: PreparedRecipeImage? = null
                         if (activeAction === owner) {
                             activeAction = null
                             if (version == stateVersion.get()) {
                                 mutableState.value = if (canPublish) {
                                     mutableState.value.copy(isBusy = false)
                                 } else {
+                                    image = pendingPhoto?.image
+                                    pendingPhoto = null
                                     RecipeActionState()
                                 }
                             }
                         }
+                        image
                     }
+                    abandonedImage?.let { runCatching { discardPreparedImage(it) } }
                 }
             }
             job.invokeOnCompletion {
@@ -404,7 +421,7 @@ class RecipeActionController internal constructor(
         if (failure is CancellationException) throw failure
         if (failure.isAuthorizationFailure()) throw DeferredAuthorizationFailure(failure as ApiFailure)
         if (failure is ApiFailure && failure.status == 404) {
-            pendingPhoto = null
+            releasePendingPhoto(pending.image)
             host.publishRemovalCount(context, null)
             try {
                 repository.commitRecipeRemoval(permit, context.scope, pending.recipeId) { host.canCommit(context) }
@@ -418,7 +435,7 @@ class RecipeActionController internal constructor(
             return
         }
         if (failure is ApiFailure && failure.status == 422) {
-            pendingPhoto = pending
+            ownPendingPhoto(pending)
             publishState(
                 context,
                 version,
@@ -429,11 +446,12 @@ class RecipeActionController internal constructor(
                     message = failure.message ?: "Choose another photo",
                     needsPhotoSelection = true,
                     canRetryReconciliation = needsReconciliation,
+                    requestKey = pending.requestKey,
                 ),
             )
             return
         }
-        pendingPhoto = pending
+        ownPendingPhoto(pending)
         publishState(
             context,
             version,
@@ -444,6 +462,7 @@ class RecipeActionController internal constructor(
                 message = "Recipe details were saved, but the photo was not confirmed.",
                 canRetryPhoto = true,
                 canRetryReconciliation = needsReconciliation,
+                requestKey = pending.requestKey,
             ),
         )
     }
@@ -455,6 +474,7 @@ class RecipeActionController internal constructor(
         failure: Throwable,
         fallback: String,
         frozen: List<ShoppingItemInput> = emptyList(),
+        requestKey: String? = null,
     ) {
         if (failure is CancellationException) throw failure
         if (failure.isAuthorizationFailure()) throw DeferredAuthorizationFailure(failure as ApiFailure)
@@ -469,6 +489,7 @@ class RecipeActionController internal constructor(
                 message = (failure as? ApiFailure)?.message?.takeIf(String::isNotBlank)
                     ?: if (ambiguous) "$fallback; the server result is unconfirmed. Retry deliberately." else fallback,
                 frozenShoppingItems = frozen,
+                requestKey = requestKey,
             ),
         )
     }
@@ -479,27 +500,40 @@ class RecipeActionController internal constructor(
         operation: RecipeActionOperation,
         recipeId: Long?,
         frozen: List<ShoppingItemInput> = emptyList(),
+        requestKey: String? = null,
     ) = publishState(
         context,
         version,
-        RecipeActionState(operation, RecipeActionOutcome.RUNNING, context.scope, recipeId, frozenShoppingItems = frozen),
+        RecipeActionState(operation, RecipeActionOutcome.RUNNING, context.scope, recipeId, frozenShoppingItems = frozen, requestKey = requestKey),
     )
 
-    private suspend fun publishSuccess(context: RecipeActionContext, version: Long, recipeId: Long?, message: String) =
+    private suspend fun publishSuccess(context: RecipeActionContext, version: Long, recipeId: Long?, message: String, requestKey: String? = null) =
         publishState(
             context,
             version,
-            RecipeActionState(outcome = RecipeActionOutcome.SUCCEEDED, scope = context.scope, recipeId = recipeId, message = message),
+            RecipeActionState(outcome = RecipeActionOutcome.SUCCEEDED, scope = context.scope, recipeId = recipeId, message = message, requestKey = requestKey),
         )
 
-    private suspend fun publishFailure(context: RecipeActionContext, version: Long, recipeId: Long?, message: String) =
+    private suspend fun publishFailure(
+        context: RecipeActionContext,
+        version: Long,
+        recipeId: Long?,
+        message: String,
+        requestKey: String? = null,
+    ) =
         publishState(
             context,
             version,
-            RecipeActionState(outcome = RecipeActionOutcome.FAILED, scope = context.scope, recipeId = recipeId, message = message),
+            RecipeActionState(
+                outcome = RecipeActionOutcome.FAILED,
+                scope = context.scope,
+                recipeId = recipeId,
+                message = message,
+                requestKey = requestKey,
+            ),
         )
 
-    private suspend fun publishReconciliation(context: RecipeActionContext, version: Long, recipeId: Long?, message: String) =
+    private suspend fun publishReconciliation(context: RecipeActionContext, version: Long, recipeId: Long?, message: String, requestKey: String? = null) =
         publishState(
             context,
             version,
@@ -509,6 +543,7 @@ class RecipeActionController internal constructor(
                 recipeId = recipeId,
                 message = message,
                 canRetryReconciliation = true,
+                requestKey = requestKey,
             ),
         )
 
@@ -516,18 +551,49 @@ class RecipeActionController internal constructor(
         if (version == stateVersion.get() && host.canPublish(context)) mutableState.value = value.copy(isBusy = true)
     }
 
-    private suspend fun prepareMutation(context: RecipeActionContext, version: Long, recipeId: Long?): Boolean {
+    private suspend fun prepareMutation(
+        context: RecipeActionContext,
+        version: Long,
+        recipeId: Long?,
+        requestKey: String? = null,
+    ): Boolean {
         if (host.prepareMutation(context)) return true
         publishReconciliation(
             context,
             version,
             recipeId,
             "Finish local recipe cleanup before trying another recipe action",
+            requestKey,
         )
         return false
     }
 
     private fun completedJob(): Job = Job().apply { complete() }
+
+    internal fun ownsPendingPhoto(requestKey: String, image: PreparedRecipeImage): Boolean = synchronized(admissionLock) {
+        pendingPhoto?.let { it.requestKey == requestKey && it.image == image } == true
+    }
+
+    private suspend fun ownPendingPhoto(pending: PendingPhoto) {
+        val previous = synchronized(admissionLock) {
+            pendingPhoto.also { pendingPhoto = pending }
+        }
+        if (previous != null && previous.image != pending.image) runCatching { discardPreparedImage(previous.image) }
+    }
+
+    private suspend fun releasePendingPhoto(image: PreparedRecipeImage) {
+        val released = synchronized(admissionLock) {
+            pendingPhoto?.takeIf { it.image == image }?.also { pendingPhoto = null }?.image
+        }
+        released?.let { runCatching { discardPreparedImage(it) } }
+    }
+
+    private suspend fun discardPendingPhotoFromAnotherRequest(requestKey: String?) {
+        val abandoned = synchronized(admissionLock) {
+            pendingPhoto?.takeIf { it.requestKey != requestKey }?.also { pendingPhoto = null }?.image
+        }
+        abandoned?.let { runCatching { discardPreparedImage(it) } }
+    }
 
     private fun RecipeDraftError.userMessage(): String = when (this) {
         RecipeDraftError.NAME_REQUIRED -> "Name is required"
@@ -543,6 +609,7 @@ class RecipeActionController internal constructor(
         val scope: RecipeScope,
         val recipeId: Long,
         val image: PreparedRecipeImage,
+        val requestKey: String?,
     )
 
     private class DeferredAuthorizationFailure(val failure: ApiFailure) : Exception()

@@ -18,6 +18,12 @@ data class RecipeEditorSavedState(
     val operationInterrupted: Boolean = false,
 )
 
+data class RecipeEditorImageSelection(
+    val editorId: String,
+    val image: PreparedRecipeImage?,
+    val requestKey: String?,
+)
+
 @Serializable
 data class RecipeDetailSavedState(
     val userId: Long,
@@ -34,9 +40,15 @@ object RecipeUiSavedStateCodec {
 
     fun encodeEditor(value: RecipeEditorSavedState): String = json.encodeToString(value)
 
-    fun decodeEditor(value: String?, scope: RecipeScope, recipeId: Long): RecipeEditorSavedState? =
+    fun decodeEditor(
+        value: String?,
+        scope: RecipeScope,
+        recipeId: Long,
+        editorId: String? = null,
+    ): RecipeEditorSavedState? =
         decode<RecipeEditorSavedState>(value)?.takeIf {
-            it.userId == scope.userId && it.cookbookId == scope.cookbookId && it.recipeId == recipeId
+            it.userId == scope.userId && it.cookbookId == scope.cookbookId && it.recipeId == recipeId &&
+                (editorId == null || it.editorId == editorId)
         }?.let { restored ->
             restored.copy(stagedImage = restored.stagedImage?.takeIf { it.userId == scope.userId })
         }

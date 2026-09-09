@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,7 +48,6 @@ import com.getmaincourse.app.features.session.RecipeDetailState
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
 import com.getmaincourse.app.ui.theme.MainCourseShapes
-import java.net.URI
 
 @Composable
 fun RecipeDetailScreen(
@@ -65,6 +65,7 @@ fun RecipeDetailScreen(
     onCookingChanged: (Boolean) -> Unit = {},
     onRetryPhoto: () -> Unit = {},
     onRetryReconciliation: () -> Unit = {},
+    onDismissAction: () -> Unit = {},
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("recipe_detail"),
@@ -73,10 +74,11 @@ fun RecipeDetailScreen(
     ) {
         val recipe = detailState?.recipe
         if (recipe != null) {
-            if (detailState.status == DetailStatus.SAVED_OFFLINE) item { Feedback(stringResource(R.string.recipe_saved_offline)) }
-            item { DetailContent(
+            if (detailState.status == DetailStatus.SAVED_OFFLINE) item(key = "offline-feedback") { Feedback(stringResource(R.string.recipe_saved_offline)) }
+            item(key = "detail-${scope.userId}-${scope.cookbookId}-${recipe.id}") { DetailContent(
                 scope, recipe, imageLoader, resolveImage, actionState, onEdit, onMove, onDelete,
                 onReviewIngredients, onCookingChanged, onRetryPhoto, onRetryReconciliation,
+                onDismissAction,
             ) }
         } else {
             item {
@@ -105,6 +107,7 @@ private fun DetailContent(
     onCookingChanged: (Boolean) -> Unit,
     onRetryPhoto: () -> Unit,
     onRetryReconciliation: () -> Unit,
+    onDismissAction: () -> Unit,
 ) {
     val base = recipe.servings?.takeIf { it > 0 }
     val initialPortions = base?.coerceIn(1, 64) ?: 1
@@ -115,6 +118,7 @@ private fun DetailContent(
     fun update(value: RecipeDetailSavedState) { savedState = value; saved = RecipeUiSavedStateCodec.encodeDetail(value) }
     LaunchedEffect(savedState.cooking) { onCookingChanged(savedState.cooking) }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
+    var sourceOpenFailed by remember(scope, recipe.id) { mutableStateOf(false) }
     val matchingAction = actionState.scope == scope && actionState.recipeId == recipe.id
 
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -155,7 +159,11 @@ private fun DetailContent(
             Text(stringResource(R.string.recipe_portions))
             OutlinedButton(enabled = base != null && savedState.portions > 1, onClick = { update(savedState.copy(portions = savedState.portions - 1)) }) { Text("−") }
             Text(savedState.portions.toString(), fontFamily = MainCourseMono, modifier = Modifier.testTag("recipe_portions"))
-            OutlinedButton(enabled = base != null && savedState.portions < 64, onClick = { update(savedState.copy(portions = savedState.portions + 1)) }) { Text("+") }
+            OutlinedButton(
+                enabled = base != null && savedState.portions < 64,
+                onClick = { update(savedState.copy(portions = savedState.portions + 1)) },
+                modifier = Modifier.testTag("portion_increment"),
+            ) { Text("+") }
         }
         val ingredientLines = if (recipe.structuredIngredients.isNotEmpty()) {
             recipe.structuredIngredients.sortedBy { it.position }.map {
@@ -166,9 +174,26 @@ private fun DetailContent(
         Button(enabled = ingredientLines.isNotEmpty() && !actionState.isBusy, onClick = { onReviewIngredients(savedState.portions) }) { Text(stringResource(R.string.recipe_add_to_shopping)) }
         if (recipe.instructions.isNotEmpty()) Section(R.string.recipe_steps, recipe.instructions.mapIndexed { index, step -> "${index + 1}. $step" })
         recipe.notes?.takeIf { it.isNotBlank() }?.let { Section(R.string.recipe_notes, listOf(it)) }
-        recipe.sourceUrl?.takeIf(String::isSafeSource)?.let { source ->
+        recipe.sourceUrl?.takeIf(::isSafeRecipeSourceUrl)?.let { source ->
             val uriHandler = LocalUriHandler.current
-            OutlinedButton(onClick = { uriHandler.openUri(source) }) { Text(source) }
+            OutlinedButton(
+                onClick = {
+                    sourceOpenFailed = try {
+                        uriHandler.openUri(source)
+                        false
+                    } catch (_: RuntimeException) {
+                        true
+                    }
+                },
+                modifier = Modifier.testTag("recipe_source"),
+            ) { Text(source) }
+            if (sourceOpenFailed) {
+                Text(
+                    stringResource(R.string.recipe_source_open_failed),
+                    color = MainCourseColors.Danger,
+                    modifier = Modifier.testTag("source_open_error"),
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.recipe_cooking_mode), modifier = Modifier.weight(1f))
@@ -178,14 +203,10 @@ private fun DetailContent(
             Text(actionState.message, color = if (actionState.outcome == RecipeActionOutcome.SUCCEEDED) MainCourseColors.Accent else MainCourseColors.Danger)
             if (actionState.canRetryPhoto) Button(enabled = !actionState.isBusy, onClick = onRetryPhoto) { Text(stringResource(R.string.recipe_retry_photo)) }
             if (actionState.canRetryReconciliation) Button(enabled = !actionState.isBusy, onClick = onRetryReconciliation) { Text(stringResource(R.string.recipe_refresh_data)) }
+            TextButton(enabled = !actionState.isBusy, onClick = onDismissAction) { Text(stringResource(R.string.dismiss)) }
         }
     }
 }
-
-private fun String.isSafeSource(): Boolean = try {
-    val uri = URI(this)
-    uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank() && uri.userInfo == null
-} catch (_: Exception) { false }
 
 @Composable private fun Section(title: Int, lines: List<String>) = Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
     Text(stringResource(title), style = MaterialTheme.typography.titleLarge)

@@ -41,6 +41,7 @@ import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.data.model.User
+import com.getmaincourse.app.data.cache.RecipeScope
 import com.getmaincourse.app.features.auth.AuthenticationMethod
 import com.getmaincourse.app.features.session.DetailStatus
 import com.getmaincourse.app.features.session.LoadStatus
@@ -49,6 +50,9 @@ import com.getmaincourse.app.features.session.SessionPhase
 import com.getmaincourse.app.features.session.SessionState
 import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
+import com.getmaincourse.app.features.recipes.RecipeActionOutcome
+import com.getmaincourse.app.features.recipes.RecipeActionState
+import com.getmaincourse.app.features.recipes.RecipeEditDraft
 import com.getmaincourse.app.features.settings.AccountOperation
 import com.getmaincourse.app.features.settings.AccountState
 import com.getmaincourse.app.ui.theme.MainCourseTheme
@@ -70,6 +74,7 @@ class MainCourseAppTest {
     private lateinit var accountState: MutableState<AccountState>
     private lateinit var authenticationMethod: MutableState<AuthenticationMethod?>
     private lateinit var appleCanCancel: MutableState<Boolean>
+    private lateinit var recipeActionState: MutableState<RecipeActionState>
     private var keepScreenAwake = false
     private lateinit var recorder: ActionRecorder
 
@@ -80,6 +85,7 @@ class MainCourseAppTest {
         accountState = mutableStateOf(AccountState())
         authenticationMethod = mutableStateOf(null)
         appleCanCancel = mutableStateOf(false)
+        recipeActionState = mutableStateOf(RecipeActionState())
         keepScreenAwake = false
         recorder = ActionRecorder(state)
         compose.runOnIdle {
@@ -906,6 +912,67 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun reopeningEditorIgnoresAnOlderSuccessfulActionForTheSameRecipe() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.runOnIdle {
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.SUCCEEDED,
+                scope = RecipeScope(USER.id, PERSONAL.id),
+                recipeId = SOUP.id,
+                requestKey = "older-editor",
+            )
+        }
+
+        compose.onNodeWithTag("detail_actions").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithTag("editor_name").assertIsDisplayed()
+    }
+
+    @Test
+    fun ingredientOrReconciliationSuccessDoesNotCloseARecipeEditor() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("detail_actions").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+
+        compose.runOnIdle {
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.SUCCEEDED,
+                scope = RecipeScope(USER.id, PERSONAL.id),
+                recipeId = SOUP.id,
+                requestKey = null,
+            )
+        }
+
+        compose.onNodeWithTag("editor_name").assertIsDisplayed()
+    }
+
+    @Test
+    fun aFastSaveCompletionClosesOnlyTheEditorThatSubmittedIt() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("detail_actions").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        recorder.afterRecipeSave = { draft ->
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.SUCCEEDED,
+                scope = draft.scope,
+                recipeId = draft.recipeId,
+                requestKey = draft.requestKey,
+            )
+        }
+        compose.onNodeWithTag("editor_name").performTextInput(" updated")
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_save"))
+        compose.onNodeWithTag("editor_save").performClick()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        assertEquals(1, recorder.recipeSaveCount)
+    }
+
+    @Test
     fun cookingModeRestoresAcrossRotationAndClearsOnBack() {
         compose.onNodeWithText("Vegetable soup").performClick()
         show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
@@ -918,6 +985,19 @@ class MainCourseAppTest {
         pressBack()
         compose.waitForIdle()
         assertEquals(false, keepScreenAwake)
+    }
+
+    @Test
+    fun offlineBannerInsertionDoesNotResetPortionsOrCookingState() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("portion_increment").performScrollTo().performClick()
+        compose.onNodeWithTag("cooking_mode").performScrollTo().performClick()
+
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.SAVED_OFFLINE, SOUP_DETAIL)))
+
+        compose.onNodeWithTag("recipe_portions").performScrollTo().assertTextContains("5")
+        compose.onNodeWithTag("cooking_mode").performScrollTo().assertIsOn()
     }
 
     @Test
@@ -991,6 +1071,47 @@ class MainCourseAppTest {
         compose.onNodeWithTag(tag).assertIsDisplayed()
     }
 
+    @Test
+    fun searchDistinguishesColdCookbookRestoreEmptyMembershipAndFailure() {
+        compose.onNodeWithTag("nav_Search").performClick()
+
+        show(SessionState(phase = SessionPhase.LOADING_COOKBOOKS, user = USER, catalogStatus = LoadStatus.LOADING))
+        compose.onNodeWithTag("search_scope_loading").assertIsDisplayed()
+
+        show(SessionState(phase = SessionPhase.READY, user = USER, catalogStatus = LoadStatus.FRESH))
+        compose.onNodeWithTag("search_no_cookbooks").assertIsDisplayed()
+
+        show(SessionState(phase = SessionPhase.LOADING_COOKBOOKS, user = USER, catalogStatus = LoadStatus.ERROR))
+        compose.onNodeWithTag("search_scope_error").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.retry)).assertIsDisplayed()
+    }
+
+    @Test
+    fun editFromCardWaitsForDelayedDetailInsteadOfShowingAConnectionError() {
+        compose.onNodeWithTag("recipe_actions_20").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+
+        compose.onNodeWithTag("recipe_route_loading").assertIsDisplayed()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.recipe_load_error)).assertCountEquals(0)
+
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("editor_name").assertIsDisplayed()
+    }
+
+    @Test
+    fun editorUsesUnavailableCopyWhenTheRequestedRecipeWasRemoved() {
+        compose.onNodeWithTag("recipe_actions_20").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        show(
+            readyState(recipes = emptyList()).copy(
+                detail = RecipeDetailState(20L, DetailStatus.UNAVAILABLE),
+            ),
+        )
+
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_unavailable)).assertIsDisplayed()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.recipe_load_error)).assertCountEquals(0)
+    }
+
     private fun show(value: SessionState) {
         compose.runOnIdle { state.value = value }
     }
@@ -1004,6 +1125,7 @@ class MainCourseAppTest {
             authenticationMethod = authenticationMethod.value,
             actions = recorder.actions,
             appleCanCancel = appleCanCancel.value,
+            recipeActionState = recipeActionState.value,
             onKeepScreenOnChanged = { keepScreenAwake = it },
         )
     }
@@ -1032,6 +1154,8 @@ class MainCourseAppTest {
         var retryAccountPersistenceCount = 0
         var deleteAccountCount = 0
         var clearAccountErrorCount = 0
+        var recipeSaveCount = 0
+        var afterRecipeSave: (RecipeEditDraft) -> Unit = {}
         var movedRecipe: Pair<Long, Long>? = null
         var deletedRecipe: Long? = null
         var afterSignIn: () -> Unit = {}
@@ -1063,6 +1187,7 @@ class MainCourseAppTest {
                 openRecipeCount++
             },
             closeRecipe = { state.value = state.value.copy(detail = null) },
+            saveRecipe = { draft, _ -> recipeSaveCount++; afterRecipeSave(draft) },
             moveRecipe = { recipeId, targetId -> movedRecipe = recipeId to targetId },
             deleteRecipe = { deletedRecipe = it },
             updateName = { updatedName = it },
