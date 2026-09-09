@@ -4,149 +4,84 @@ These instructions apply to `maincourse-android/`.
 
 ## Read First
 
-- `docs/android.md` is the architecture, local integration, and day-to-day
-  Android convention.
-- `docs/superpowers/plans/2026-09-07-native-android.md` is the milestone roadmap.
-- `docs/oauth-sign-in.md`, `docs/ios-authenticated-startup.md`,
-  `docs/ios-offline-sync-patterns.md`, and `docs/lifecycle-notifications.md`
-  define shared backend behavior when those features are implemented.
+- `docs/android.md` is the durable architecture, setup, and verification guide.
+- `docs/superpowers/specs/2026-09-09-android-simple-mvp-design.md` defines the
+  current MVP. The older native Android roadmap is historical only.
 - `app/assets/tailwind/application.css` and
-  `hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift` are the design-token
-  sources.
+  `hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift` are the shared
+  design-token sources.
 
-## Project Rules
-
-- Prefer established libraries and Android/platform APIs for general-purpose
-  functionality. Check existing dependencies first, then evaluate a maintained
-  library before building an equivalent. Keep custom code focused on MainCourse
-  rules; record a concrete reason when a generic implementation stays custom.
-  Library adoption should reduce maintenance rather than introduce a parallel
-  framework or duplicate a capability already supplied by the platform.
+## Scope And Structure
 
 - Keep one `:app` module and package code under `com.getmaincourse.app` by
-  feature. Do not add modules or architectural layers speculatively.
-- Release uses `com.getmaincourse.app`; debug uses the `.debug` application ID
-  suffix. Keep `minSdk 29`, `compileSdk 37`, and `targetSdk 37`.
-- Use the pinned compatible toolchain and UI set in `docs/android.md`. Review
-  upgrades deliberately and validate the set together. Lint warnings are errors;
-  only the three documented dependency-freshness checks are disabled.
-- Keep the implemented manual application container: one API, encrypted session
-  store, Room database/store, repository, and session image owner. Do not add a
-  DI framework or speculative layers at this scale.
-- Keep `data/{model,network,session,onboarding,cache,images}` as the shared data
-  boundary and
-  `features/{auth,onboarding,session,recipes,search,settings,preview,designsystem}`
-  as the package-by-feature UI/orchestration layout.
-- Prefer small Compose screens with explicit state and event parameters. Add a
-  view model or shared abstraction only when behavior warrants it.
+  feature. Do not add speculative modules, DI, use-case layers, coordinators,
+  custom concurrency frameworks, or durable mutation queues.
+- Keep the manual application container small: Room database, encrypted session
+  store, in-memory session provider, Retrofit service, cookbook and recipe
+  repositories, and session-owned image loader.
+- Repositories connect Retrofit to Room and own no coroutine scope or UI state.
+  Use focused lifecycle view models with `StateFlow` and ordinary
+  `viewModelScope` cancellation.
+- Prefer small Compose screens with explicit state and callback parameters.
+- Current features are email auth, cached cookbook/recipe browsing, recipe
+  move/delete/add-to-shopping actions, profile settings, account deletion, and
+  logout. Shopping and Search are labeled placeholders.
+- Do not restore onboarding, provider sign-in, search, recipe editing/photo
+  upload, imports/sharing, design gallery, or adaptive navigation without an
+  approved scope change.
 
-## UI
+## Platform And UI
 
-- Use `MainCourseTheme` and semantic `MainCourseColors`; no raw colors in
-  composables.
-- Keep the app light-only with dynamic color disabled.
-- Use native Material sans for text and bundled Plex Mono only for numerics.
-- Provider buttons are the only typography/color exceptions: keep the official
-  full-color G, Google Sans Medium, and Google component colors confined to the
-  Google button; keep the white Apple mark and black/white treatment confined
-  to the Continue with Apple button.
-- Use 8dp/10dp/12dp control/card/panel radii, flat hairline surfaces, native
-  Material behavior, and checked-in Material Symbols vectors.
-- Preserve the four shell destinations: Recipes, Shopping, Search, Settings.
-- Recipes, cookbook-scoped Search, onboarding, and account/preferences Settings
-  are implemented. Keep Shopping explicitly labeled as a preview until its
-  roadmap milestone.
-- Keep `features/designsystem/DesignSystemScreen.kt` navigable and interactive
-  from Settings. It is a development gallery, not a real feature.
-- Adapt navigation between compact and expanded widths; do not create a
-  dedicated tablet two-pane flow.
-- Preserve the brown cookbook launcher artwork; the monochrome H/book stencil
-  is only for explicitly themed launcher icons.
+- Release uses `com.getmaincourse.app`; debug uses the `.debug` suffix. Keep
+  `minSdk 29`, `compileSdk 37`, `targetSdk 37`, and Java 17.
+- Use the pinned dependency set in `gradle/libs.versions.toml`; validate upgrades
+  together. Lint warnings are errors except for the three documented dependency
+  freshness checks.
+- Use `MainCourseTheme` and semantic `MainCourseColors`; keep the app light-only
+  and dynamic color disabled. Use native Material sans and Plex Mono only for
+  numeric content.
+- Keep 8dp/10dp/12dp control/card/panel radii, flat hairline surfaces, native
+  Material behavior, checked-in Material Symbols, four bottom destinations at
+  every width, and the existing brown cookbook launcher artwork.
 
-## Security And Configuration
+## Security And Data
 
-- Never commit secrets, signing keys, private provider files, or bearer tokens.
-- Keep release API traffic on `https://app.getmaincourse.com/` and deny
-  cleartext. Debug HTTP is limited to `10.0.2.2`, `localhost`, and `127.0.0.1`;
-  use `adb reverse` or HTTPS rather than arbitrary LAN HTTP.
-- Keep Google Services/provider plugins disabled until actual console files are
-  available. Google Credential Manager sign-in does not require that plugin or
-  `google-services.json`. Release is unsigned in source control.
-- Google sign-in uses Credential Manager and `GetSignInWithGoogleOption` only
-  after an explicit tap. Request the public Rails web/server audience, not the
-  separate package/SHA-1 Android client ID. Keep the chooser Activity-owned and
-  the accepted Rails exchange view-model-owned; never persist or log its token or
-  nonce, and never auto-relaunch after recreation.
-- Apple sign-in uses the system browser and a PKCE-bound Rails transaction. Keep
-  its handle, verifier, exchange code, and relative five-minute wait in volatile
-  retained memory only; never auto-relaunch or retry an exchange. Debug may use
-  `com.getmaincourse.app.debug:/oauth/apple` with local Rails, while release
-  accepts only the exact HTTPS App Link. Process-death and stale callbacks must
-  be dropped without disturbing a restored account.
-- Preserve `allowBackup="false"`, `fullBackupContent="false"`, and the API 31+
-  cloud-backup/device-transfer exclusions.
-- Preserve `X-Cookbook-Id`, user/cookbook data isolation, and the Rails 90-day
-  no-refresh-token session contract. Login `401` is a form error; authenticated
-  `401` clears protected local state.
+- Never commit secrets, signing keys, private service files, credentials, or
+  bearer tokens. Release remains unsigned in source control.
+- Keep release API traffic fixed to `https://app.getmaincourse.com/` with
+  cleartext denied. Debug cleartext is limited to emulator and loopback hosts.
 - Keep credentials only in the AES-GCM Android-Keystore-backed atomic session
-  file. Do not put tokens in Room, preferences, routes, saved state, logs, or
+  file. Never put tokens in Room, preferences, routes, saved state, logs, or
   image requests.
-- Keep onboarding's versioned `AtomicFile` record under `noBackupFilesDir`,
-  scoped to API origin. It may contain only the random draft UUID, step,
-  validated choices, and completion state. Passwords remain volatile. Restoring
-  AUTH must not eagerly submit; an explicit auth attempt starts the first
-  submission after restore, joins one already running, or retries a failed one
-  within one five-second budget.
-- Onboarding submission is unauthenticated and account operations are
-  authenticated but unscoped: neither sends `X-Cookbook-Id`. Do not add
-  automatic mutation retries. A server-accepted account update whose encrypted
-  session write failed retries only that local write.
-- Scope Room rows and queries by user and cookbook where applicable. Full list
-  responses may replace only their captured scope; detail fetches are partial,
-  on-demand updates and must not prune peers. Keep schema exports and require
-  deliberate migrations rather than destructive fallback.
-- Preserve request generation/ownership checks, structured cancellation, and
-  serialized cache writes across refresh, switch, logout, `401`, `403`, and
-  `404` handling. Do not let stale requests write into a newer scope.
-- Keep Coil loaders user/session-owned and bearer-free. Images are best effort.
-  A successful recipe-list refresh starts a bounded full detail sweep, so
-  completed recipes swept in the background can open offline even if they were
-  never opened. Batch pages are partial updates and are never pruning authority.
-- Recipe edits, cover retries, moves, deletes, and reviewed-ingredient adds are
-  online actions without automatic replay. Keep exact editor snapshots and
-  stable review IDs for explicit recovery, but do not turn them into a durable
-  mutation outbox; that remains Milestone 4 shopping scope.
-- Cleanup must finish before admitting another account. Treat disk/storage
-  deletion failure as recoverable failure, not successful logout. Cross-process
-  cleanup/purge durability after logout or successful account deletion remains
-  tracked in
-  [issue #94](https://github.com/SzymonNastaly/maincourse/issues/94).
+- Preserve backup/device-transfer exclusions, the Rails 90-day no-refresh-token
+  session contract, and local cleanup on logout, confirmed deletion, or an
+  authenticated `401`. Cleanup failure must block admission of another account.
+- Keep `X-Cookbook-Id` explicit on recipe/shopping requests and scope all Room
+  data by user and cookbook where applicable.
+- Room is the observable source of truth. Full list responses replace only their
+  scope while preserving retained details; detail fetches update one row and do
+  not prune peers. Keep schema exports and explicit migrations.
+- Mutations are online-only and are never automatically replayed. Keep profile
+  persistence-before-publication and local-only retry for a matching
+  server-accepted profile response.
+- Keep Coil image caches user-owned, best effort, and bearer-free.
 
 ## Commands And Verification
 
-Use `bin/android-build` for `assembleDebug`, `bin/android-test` for JVM tests and
-lint, and `bin/android-test --device` to add connected instrumentation tests.
-All delegate to `bin/android-gradle`, which also accepts arbitrary Gradle tasks
-and arguments. The native build does not depend on Rails.
+Use `bin/android-build`, `bin/android-test`,
+`bin/android-gradle :app:assembleRelease`, and, with an emulator/device running,
+`bin/android-test --device`. Wrappers must work from any directory, forward
+arguments, honor supplied `JAVA_HOME`/`ANDROID_HOME`, install nothing, and never
+edit global shell configuration.
 
-Wrappers must work from any current directory, forward arbitrary Gradle
-arguments, respect supplied `JAVA_HOME`/`ANDROID_HOME`, and never install tools
-or edit global shell configuration.
+Local Rails uses `http://10.0.2.2:3000/` from an emulator. Preserve the API 37
+debug-only local-network permission and its denial recovery path. Public HTTPS
+debug overrides and release must not request that permission.
 
-For Android changes, run the build, JVM tests, lint, and relevant device tests.
-Use phone and tablet emulator configurations for adaptive UI changes. Device UI
-tests use the non-exported debug-only `MainCourseTestActivity`; live integration
-claims must use the real `MainActivity`. Real provider, billing, push, app-link,
-camera, sharing, and physical-device claims require their real service/device;
-mocks and the local API 37 emulator are not sufficient.
+Device tests use the non-exported debug-only `MainCourseTestActivity`. Live-flow
+claims require the real `MainActivity` and a dedicated account. Never automate
+private credentials or delete real user data; account-deletion acceptance uses
+only a disposable account and remains manual when none is available.
 
-Local Rails integration uses the default emulator URL `http://10.0.2.2:3000/`.
-On Android 17/API 37, preserve the debug-only `ACCESS_LOCAL_NETWORK` request and
-the denial recovery path through Settings → MainCourse Dev → Permissions →
-Nearby devices. Public HTTPS debug overrides and release must not request this
-permission. Release remains unsigned in source control and fixed to the public
-HTTPS API.
-
-Keep executable task detail in GitHub issues. Update documentation only when a
-lasting convention, milestone gate, or decision changes. Android external setup
-is tracked in [issue #92](https://github.com/SzymonNastaly/maincourse/issues/92).
+Keep deferred work in GitHub issues and documentation focused on durable
+architecture and operating conventions.

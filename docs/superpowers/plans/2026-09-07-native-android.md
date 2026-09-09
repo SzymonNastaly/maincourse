@@ -1,5 +1,9 @@
 # Native Android Roadmap
 
+> **Superseded:** This roadmap is retained as historical context. The current
+> Android MVP is defined by
+> [`2026-09-09-android-simple-mvp-design.md`](../specs/2026-09-09-android-simple-mvp-design.md).
+
 ## Goal
 
 Ship a native Android app with public-v1 parity with functionality currently visible in the iOS app, while reusing the Rails API and preserving its account, cookbook, subscription, and notification semantics.
