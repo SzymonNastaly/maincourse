@@ -1,0 +1,292 @@
+package com.getmaincourse.app.data.network
+
+import com.getmaincourse.app.data.model.AccountAttributes
+import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.ShoppingItemRequest
+import com.getmaincourse.app.data.model.ShoppingItemsRequest
+import com.getmaincourse.app.data.model.SignInRequest
+import com.getmaincourse.app.data.model.SignUpRequest
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import retrofit2.HttpException
+import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+
+class MainCourseServiceTest {
+    private lateinit var server: MockWebServer
+    private lateinit var service: MainCourseService
+
+    @Before
+    fun setUp() {
+        server = MockWebServer()
+        server.start()
+        service = Retrofit.Builder()
+            .baseUrl(server.url("/"))
+            .addConverterFactory(
+                Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = true
+                }.asConverterFactory("application/json".toMediaType()),
+            )
+            .build()
+            .create(MainCourseService::class.java)
+    }
+
+    @After
+    fun tearDown() {
+        server.shutdown()
+    }
+
+    @Test
+    fun signInUsesAnonymousSessionContract() = runTest {
+        server.enqueue(jsonResponse(201, sessionJson()))
+
+        val response = service.signIn(SignInRequest("cook@example.com", "secret", "Android"))
+
+        assertEquals("token", response.token)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/session", request.path)
+        assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
+        assertEquals(
+            json("""{"email":"cook@example.com","password":"secret","device_name":"Android"}"""),
+            json(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun signUpUsesAnonymousRegistrationContract() = runTest {
+        server.enqueue(jsonResponse(201, sessionJson()))
+
+        service.signUp(SignUpRequest("Cook", "cook@example.com", "password", "password", "Android"))
+
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/registration", request.path)
+        assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
+        assertEquals(
+            json(
+                """{"name":"Cook","email":"cook@example.com","password":"password","password_confirmation":"password","device_name":"Android"}""",
+            ),
+            json(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun cookbookListUsesUnscopedContract() = runTest {
+        server.enqueue(
+            jsonResponse(
+                200,
+                """[{"id":42,"name":"Mine","personal":true,"recipe_count":1,"members":[]}]""",
+            ),
+        )
+
+        val cookbooks = service.cookbooks()
+
+        assertEquals(42L, cookbooks.single().id)
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/api/v1/cookbooks", request.path)
+        assertNull(request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun recipeListUsesExplicitCookbookHeader() = runTest {
+        server.enqueue(jsonResponse(200, "[]"))
+
+        val recipes = service.recipes(cookbookId = 42)
+
+        assertTrue(recipes.isEmpty())
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/api/v1/recipes", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun recipeDetailUsesPathAndExplicitCookbookHeader() = runTest {
+        server.enqueue(jsonResponse(200, recipeJson()))
+
+        val recipe = service.recipe(cookbookId = 42, recipeId = 7)
+
+        assertEquals(7L, recipe.id)
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/api/v1/recipes/7", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun moveRecipeUsesSourceHeaderAndTargetJson() = runTest {
+        server.enqueue(jsonResponse(200, recipeJson()))
+
+        service.moveRecipe(42, 7, MoveRecipeRequest(84))
+
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api/v1/recipes/7", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+        assertEquals(json("""{"cookbook_id":84}"""), json(request.body.readUtf8()))
+    }
+
+    @Test
+    fun deleteRecipeUsesPathAndExplicitCookbookHeader() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        service.deleteRecipe(42, 7)
+
+        val request = server.takeRequest()
+        assertEquals("DELETE", request.method)
+        assertEquals("/api/v1/recipes/7", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun shoppingItemCreationUsesExplicitCookbookHeaderAndJson() = runTest {
+        server.enqueue(
+            jsonResponse(
+                201,
+                """[{"id":9,"client_id":"row-1","name":"Onion","details":null,"checked_at":null,"source_recipe_id":7,"created_at":"now","updated_at":"now"}]""",
+            ),
+        )
+        val payload = ShoppingItemsRequest(
+            listOf(ShoppingItemRequest("row-1", "Onion", null, null, 7)),
+        )
+
+        val items = service.addRecipeIngredients(42, payload)
+
+        assertEquals(9L, items.single().id)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/shopping_list_items", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            json(
+                """{"items":[{"client_id":"row-1","name":"Onion","details":null,"checked_at":null,"source_recipe_id":7}]}""",
+            ),
+            json(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun accountUpdateReturnsWrapperAndDeleteIsUnscoped() = runTest {
+        server.enqueue(
+            jsonResponse(
+                200,
+                """{"user":{"id":7,"name":"New","email":"cook@example.com","lifecycle_notifications_enabled":false}}""",
+            ),
+        )
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        val response = service.updateAccount(
+            AccountUpdateRequest(AccountAttributes(name = "New", lifecycleNotificationsEnabled = false)),
+        )
+        service.deleteAccount()
+
+        assertEquals("New", response.user.name)
+        val update = server.takeRequest()
+        assertEquals("PATCH", update.method)
+        assertEquals("/api/v1/account", update.path)
+        assertNull(update.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            json("""{"user":{"name":"New","lifecycle_notifications_enabled":false}}"""),
+            json(update.body.readUtf8()),
+        )
+        val delete = server.takeRequest()
+        assertEquals("DELETE", delete.method)
+        assertEquals("/api/v1/account", delete.path)
+        assertNull(delete.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun logoutUsesUnscopedSessionDelete() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        service.signOut()
+
+        val request = server.takeRequest()
+        assertEquals("DELETE", request.method)
+        assertEquals("/api/v1/session", request.path)
+        assertNull(request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun userMessageUsesServerErrorThenFallbackForHttpFailures() = runTest {
+        server.enqueue(jsonResponse(422, """{"errors":["Email is invalid","Password is too short"]}"""))
+        server.enqueue(MockResponse().setResponseCode(503).setBody("unavailable"))
+
+        val validation = captureHttpException {
+            service.signIn(SignInRequest("bad", "short", "Android"))
+        }
+        val unavailable = captureHttpException { service.cookbooks() }
+
+        assertEquals("Email is invalid\nPassword is too short", validation.userMessage("Could not sign in"))
+        assertEquals("Could not load cookbooks", unavailable.userMessage("Could not load cookbooks"))
+    }
+
+    @Test
+    fun userMessageMapsIoAndRethrowsCancellation() {
+        assertEquals("You're offline", IOException("socket closed").userMessage("Could not refresh"))
+
+        val cancellation = CancellationException("cancelled")
+        try {
+            cancellation.userMessage("ignored")
+            throw AssertionError("Expected cancellation")
+        } catch (caught: CancellationException) {
+            assertSame(cancellation, caught)
+        }
+    }
+
+    private suspend fun captureHttpException(block: suspend () -> Unit): HttpException =
+        try {
+            block()
+            throw AssertionError("Expected HttpException")
+        } catch (failure: HttpException) {
+            failure
+        }
+
+    private fun jsonResponse(status: Int, body: String) = MockResponse()
+        .setResponseCode(status)
+        .setHeader("Content-Type", "application/json")
+        .setBody(body)
+
+    private fun json(value: String) = Json.parseToJsonElement(value)
+
+    private fun sessionJson() =
+        """{"token":"token","expires_at":"2026-12-06T10:15:30Z","user":{"id":7,"name":"Cook","email":"cook@example.com","lifecycle_notifications_enabled":true}}"""
+
+    private fun recipeJson() =
+        """
+        {
+          "id":7,
+          "name":"Soup",
+          "prep_time":null,
+          "cook_time":30,
+          "servings":2,
+          "favorite":false,
+          "ingredients":[],
+          "structured_ingredients":[],
+          "instructions":[],
+          "notes":null,
+          "source_url":null,
+          "tags":[],
+          "cover_image_url":null,
+          "cover_images":null,
+          "created_at":"2026-09-01T08:00:00Z",
+          "updated_at":"2026-09-09T08:00:00Z"
+        }
+        """.trimIndent()
+}
