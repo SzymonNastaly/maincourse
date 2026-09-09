@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
 
 data class StoredRecipeList(
     val items: List<RecipeEntity>,
@@ -12,6 +13,9 @@ data class StoredRecipeList(
 
 @Dao
 interface CatalogDao {
+    @Query("SELECT * FROM cookbooks WHERE userId = :userId ORDER BY listPosition")
+    fun observeCookbooks(userId: Long): Flow<List<CookbookEntity>>
+
     @Query("SELECT * FROM cookbooks WHERE userId = :userId ORDER BY listPosition")
     suspend fun cookbooks(userId: Long): List<CookbookEntity>
 
@@ -41,6 +45,9 @@ interface CatalogDao {
     }
 
     @Query("SELECT cookbookId FROM selected_cookbooks WHERE userId = :userId")
+    fun observeSelectedCookbookId(userId: Long): Flow<Long?>
+
+    @Query("SELECT cookbookId FROM selected_cookbooks WHERE userId = :userId")
     suspend fun selectedCookbookId(userId: Long): Long?
 
     @Upsert
@@ -50,7 +57,19 @@ interface CatalogDao {
         "SELECT * FROM recipes " +
             "WHERE userId = :userId AND cookbookId = :cookbookId ORDER BY listPosition",
     )
+    fun observeRecipes(userId: Long, cookbookId: Long): Flow<List<RecipeEntity>>
+
+    @Query(
+        "SELECT * FROM recipes " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId ORDER BY listPosition",
+    )
     suspend fun recipes(userId: Long, cookbookId: Long): List<RecipeEntity>
+
+    @Query(
+        "SELECT * FROM recipes " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId AND recipeId = :recipeId",
+    )
+    fun observeRecipe(userId: Long, cookbookId: Long, recipeId: Long): Flow<RecipeEntity?>
 
     @Query(
         "SELECT * FROM recipes " +

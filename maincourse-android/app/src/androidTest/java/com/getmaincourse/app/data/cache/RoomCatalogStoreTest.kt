@@ -12,6 +12,9 @@ import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTag
 import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.features.search.RecipeSearchDocument
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.junit.After
@@ -59,6 +62,49 @@ class RoomCatalogStoreTest {
         assertEquals(listOf(first), store.recipes(RecipeScope(1, 10)).items)
         assertEquals(listOf(secondCookbook), store.recipes(RecipeScope(1, 20)).items)
         assertEquals(listOf(secondUser), store.recipes(RecipeScope(2, 10)).items)
+    }
+
+    @Test
+    fun daoFlowsEmitInsertedValuesAndPreserveScope() = runBlocking {
+        val dao = database.catalogDao()
+        val observed = async(Dispatchers.IO) {
+            dao.observeRecipes(1, 10).first { it.size == 1 }
+        }
+        dao.replaceCookbooks(1, listOf(CookbookEntity(1, 10, 0, Json.encodeToString(cookbook(10)))))
+        dao.replaceCookbooks(2, listOf(CookbookEntity(2, 10, 0, Json.encodeToString(cookbook(10)))))
+
+        dao.replaceRecipes(
+            1,
+            10,
+            listOf(RecipeEntity(1, 10, 7, 0, Json.encodeToString(summary(7, "Observed")))),
+        )
+
+        assertEquals(listOf(7L), observed.await().map(RecipeEntity::recipeId))
+        assertTrue(dao.observeRecipes(2, 10).first().isEmpty())
+    }
+
+    @Test
+    fun replacingRecipesRetainsDetailForRetainedIdsAndPrunesRemovedIds() = runBlocking {
+        val dao = database.catalogDao()
+        dao.replaceCookbooks(1, listOf(CookbookEntity(1, 10, 0, Json.encodeToString(cookbook(10)))))
+        dao.replaceRecipes(
+            1,
+            10,
+            listOf(
+                RecipeEntity(1, 10, 7, 0, Json.encodeToString(summary(7, "Retained"))),
+                RecipeEntity(1, 10, 8, 1, Json.encodeToString(summary(8, "Removed"))),
+            ),
+        )
+        dao.updateDetail(1, 10, 7, Json.encodeToString(detail(7, "Retained", "2026-09-01T00:00:00Z")))
+
+        dao.replaceRecipes(
+            1,
+            10,
+            listOf(RecipeEntity(1, 10, 7, 0, Json.encodeToString(summary(7, "Retained")))),
+        )
+
+        assertTrue(dao.recipe(1, 10, 7)?.detailJson != null)
+        assertNull(dao.recipe(1, 10, 8))
     }
 
     @Test
