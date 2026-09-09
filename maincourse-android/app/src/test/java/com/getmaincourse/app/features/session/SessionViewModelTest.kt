@@ -22,6 +22,8 @@ import java.io.IOException
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.lang.reflect.Proxy
+import coil3.ImageLoader
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,6 +36,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
 
@@ -74,6 +77,32 @@ class SessionViewModelTest {
         assertEquals(store.value!!.response, provider.session.value)
         assertEquals(listOf(USER_ID), preparedUsers)
         assertEquals(emptyList<String>(), cleared)
+    }
+
+    @Test
+    fun asynchronouslyPreparedImageLoaderIsPublishedAndClearedWithTheSession() = runTest(dispatcher) {
+        val loader = imageLoader()
+        val preparation = CompletableDeferred<ImageLoader>()
+        store.value = StoredSession(BASE_URL, session())
+        val viewModel = buildViewModel(prepareImages = {
+            preparedUsers += it
+            preparation.await()
+        })
+
+        val restore = viewModel.restore()
+        runCurrent()
+
+        assertEquals(SessionUiState.Restoring, viewModel.state.value)
+        assertNull(viewModel.imageLoader.value)
+
+        preparation.complete(loader)
+        restore.join()
+
+        assertSame(loader, viewModel.imageLoader.value)
+
+        viewModel.signOut().join()
+
+        assertNull(viewModel.imageLoader.value)
     }
 
     @Test
@@ -263,6 +292,10 @@ class SessionViewModelTest {
 
     private fun buildViewModel(
         databaseCleanup: suspend () -> Unit = { cleared += "database" },
+        prepareImages: suspend (Long) -> ImageLoader? = {
+            preparedUsers += it
+            null
+        },
     ) = SessionViewModel(
         service = service,
         sessionStore = store,
@@ -270,10 +303,7 @@ class SessionViewModelTest {
         sessionEvents = events,
         baseUrl = BASE_URL,
         clock = CLOCK,
-        prepareImages = {
-            preparedUsers += it
-            null
-        },
+        prepareImages = prepareImages,
         clearDatabase = databaseCleanup,
         clearImages = { cleared += "images" },
     )
@@ -359,5 +389,17 @@ class SessionViewModelTest {
             expiresAt = expiresAt,
             user = User(USER_ID, "Cook", "cook@example.com", true),
         )
+
+        private fun imageLoader() = Proxy.newProxyInstance(
+            ImageLoader::class.java.classLoader,
+            arrayOf(ImageLoader::class.java),
+        ) { proxy, method, arguments ->
+            when (method.name) {
+                "equals" -> proxy === arguments?.firstOrNull()
+                "hashCode" -> System.identityHashCode(proxy)
+                "toString" -> "TestImageLoader"
+                else -> null
+            }
+        } as ImageLoader
     }
 }

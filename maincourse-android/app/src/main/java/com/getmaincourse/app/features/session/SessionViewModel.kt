@@ -60,11 +60,11 @@ class SessionViewModel internal constructor(
     )
 
     private val mutableState = MutableStateFlow<SessionUiState>(SessionUiState.Restoring)
+    private val mutableImageLoader = MutableStateFlow<ImageLoader?>(null)
     private var foregroundAction: Job? = null
 
     val state = mutableState.asStateFlow()
-    var imageLoader: ImageLoader? = null
-        private set
+    val imageLoader = mutableImageLoader.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -106,7 +106,7 @@ class SessionViewModel internal constructor(
                 throw failure
             } catch (failure: Throwable) {
                 sessionProvider.clear()
-                imageLoader = null
+                mutableImageLoader.value = null
                 mutableState.value = SessionUiState.RestoreError(
                     failure.userMessage("Could not restore the saved session"),
                 )
@@ -225,13 +225,13 @@ class SessionViewModel internal constructor(
     private suspend fun publish(session: SessionResponse) {
         val loader = prepareImages(session.user.id)
         sessionProvider.set(session)
-        imageLoader = loader
+        mutableImageLoader.value = loader
         mutableState.value = SessionUiState.SignedIn(session)
     }
 
     private suspend fun hideAndClear(success: SessionUiState = SessionUiState.SignedOut()) {
         mutableState.value = SessionUiState.Restoring
-        imageLoader = null
+        mutableImageLoader.value = null
         sessionProvider.clear()
         var firstFailure: Throwable? = null
         suspend fun clear(action: suspend () -> Unit) {

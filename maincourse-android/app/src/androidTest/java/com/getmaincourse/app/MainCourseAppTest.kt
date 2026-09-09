@@ -1,5 +1,7 @@
 package com.getmaincourse.app
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,6 +18,10 @@ import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.ui.theme.MainCourseTheme
+import coil3.ImageLoader
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Rule
@@ -68,17 +74,106 @@ class MainCourseAppTest {
         compose.onNodeWithTag("navigation_bar").assertIsDisplayed()
     }
 
-    private fun show(state: SessionUiState) {
+    @Test
+    fun removingDetailEntryCancelsItsViewModelWork() {
+        val refreshStarted = CompletableDeferred<Unit>()
+        val refreshCancelled = AtomicBoolean(false)
+        val factories = factories(
+            detail = null,
+            detailRefresh = {
+                refreshStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    refreshCancelled.set(true)
+                }
+            },
+        )
+        show(SessionUiState.SignedIn(SESSION), factories)
+
+        compose.onNodeWithText(SUMMARY.name).performClick()
+        compose.waitUntil(5_000) { refreshStarted.isCompleted }
+        compose.onNodeWithTag("navigate_back").performClick()
+
+        compose.waitUntil(5_000) { refreshCancelled.get() }
+    }
+
+    @Test
+    fun removingProtectedShellCancelsItsViewModelWork() {
+        val refreshStarted = CompletableDeferred<Unit>()
+        val refreshCancelled = AtomicBoolean(false)
+        val state: MutableState<SessionUiState> = mutableStateOf(SessionUiState.SignedIn(SESSION))
+        val factories = factories(
+            cookbookRefresh = {
+                refreshStarted.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    refreshCancelled.set(true)
+                }
+            },
+        )
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    MainCourseAppContent(state = state.value, factories = factories)
+                }
+            }
+        }
+        compose.waitUntil(5_000) { refreshStarted.isCompleted }
+
+        compose.runOnIdle { state.value = SessionUiState.SignedOut() }
+
+        compose.waitUntil(5_000) { refreshCancelled.get() }
+    }
+
+    @Test
+    fun recipeImageAppearsWhenPreparedLoaderIsPublished() {
+        val loader = MutableStateFlow<ImageLoader?>(null)
+        val recipe = SUMMARY.copy(coverImageUrl = "/rails/active_storage/image.jpg")
+        show(
+            state = SessionUiState.SignedIn(SESSION),
+            factories = factories(summary = recipe),
+            imageLoader = loader,
+        )
+        compose.onNodeWithTag("recipe_image_${recipe.id}", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.runOnIdle { loader.value = ImageLoader.Builder(compose.activity).build() }
+
+        compose.onNodeWithTag("recipe_image_${recipe.id}", useUnmergedTree = true).assertExists()
+    }
+
+    private fun show(
+        state: SessionUiState,
+        factories: BrowsingViewModelFactories = factories(),
+        imageLoader: MutableStateFlow<ImageLoader?> = MutableStateFlow(null),
+    ) {
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    MainCourseAppContent(state = state, factories = factories, imageLoader = imageLoader)
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun factories(
+        cookbookRefresh: suspend () -> Unit = {},
+        detail: RecipeDetail? = DETAIL,
+        detailRefresh: suspend () -> Unit = {},
+        summary: RecipeSummary = SUMMARY,
+    ): BrowsingViewModelFactories {
         val selection = MutableStateFlow(CookbookSelection(listOf(COOKBOOK), COOKBOOK.id))
-        val recipes = MutableStateFlow(listOf(SUMMARY))
-        val detail = MutableStateFlow<RecipeDetail?>(DETAIL)
-        val factories = BrowsingViewModelFactories(
+        val recipes = MutableStateFlow(listOf(summary))
+        val detailState = MutableStateFlow(detail)
+        return BrowsingViewModelFactories(
             recipes = {
                 simpleViewModelFactory {
                     RecipesViewModel(
                         observeCookbooks = { selection },
                         observeRecipes = { recipes },
-                        refreshCookbooks = {},
+                        refreshCookbooks = cookbookRefresh,
                         refreshRecipes = {},
                         selectCookbook = {},
                     )
@@ -87,20 +182,12 @@ class MainCourseAppTest {
             detail = { _, _, _ ->
                 simpleViewModelFactory {
                     RecipeDetailViewModel(
-                        observeDetail = { detail },
-                        refreshDetail = {},
+                        observeDetail = { detailState },
+                        refreshDetail = detailRefresh,
                     )
                 }
             },
         )
-        compose.runOnIdle {
-            MainCourseTestContent.content = {
-                MainCourseTheme {
-                    MainCourseAppContent(state = state, factories = factories)
-                }
-            }
-        }
-        compose.waitForIdle()
     }
 
     private companion object {

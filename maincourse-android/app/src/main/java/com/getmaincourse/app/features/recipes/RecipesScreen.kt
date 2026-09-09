@@ -167,7 +167,7 @@ private fun RecipeCard(
                         model = model,
                         imageLoader = imageLoader,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().testTag("recipe_image_${recipe.id}"),
                         contentScale = ContentScale.Crop,
                     )
                 }

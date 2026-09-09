@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
@@ -33,9 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import com.getmaincourse.app.data.CookbookRepository
@@ -49,6 +52,8 @@ import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.ui.theme.MainCourseColors
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -66,6 +71,18 @@ data object SearchRoute : NavKey
 @Serializable
 data object SettingsRoute : NavKey
 
+@Serializable
+private data object RestoringSessionRoute : NavKey
+
+@Serializable
+private data object AuthenticationRoute : NavKey
+
+@Serializable
+private data object SessionRecoveryRoute : NavKey
+
+@Serializable
+private data class ProtectedRoute(val userId: Long) : NavKey
+
 internal data class BrowsingViewModelFactories(
     val recipes: (Long) -> ViewModelProvider.Factory,
     val detail: (userId: Long, cookbookId: Long, recipeId: Long) -> ViewModelProvider.Factory,
@@ -76,7 +93,6 @@ fun MainCourseApp(
     sessionViewModel: SessionViewModel,
     cookbookRepository: CookbookRepository,
     recipeRepository: RecipeRepository,
-    imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
@@ -98,7 +114,7 @@ fun MainCourseApp(
                 }
             },
         ),
-        imageLoader = imageLoader,
+        imageLoader = sessionViewModel.imageLoader,
         resolveImage = resolveImage,
     )
 }
@@ -111,31 +127,58 @@ internal fun MainCourseAppContent(
     onRetryRestore: () -> Unit = {},
     onRetryCleanup: () -> Unit = {},
     factories: BrowsingViewModelFactories? = null,
-    imageLoader: ImageLoader? = null,
+    imageLoader: StateFlow<ImageLoader?> = EmptyImageLoader,
     resolveImage: (String?) -> String? = { it },
 ) {
-    when (state) {
-        SessionUiState.Restoring -> LoadingScreen()
-        is SessionUiState.SignedOut -> AuthScreen(
-            busy = state.busy,
-            error = state.authError,
-            onSignIn = onSignIn,
-            onSignUp = onSignUp,
-        )
-        is SessionUiState.RestoreError -> RecoveryScreen(state.message, onRetryRestore)
-        is SessionUiState.CleanupError -> RecoveryScreen(state.message, onRetryCleanup)
-        is SessionUiState.SignedIn -> {
-            val availableFactories = checkNotNull(factories) { "Browsing factories are required when signed in" }
-            key(state.session.user.id) {
-                ProtectedShell(
-                    userId = state.session.user.id,
-                    factories = availableFactories,
-                    imageLoader = imageLoader,
-                    resolveImage = resolveImage,
-                )
-            }
+    val currentImageLoader by imageLoader.collectAsStateWithLifecycle()
+    val target = state.sessionRoute()
+    val backStack = rememberNavBackStack(target)
+    LaunchedEffect(target) {
+        if (backStack.lastOrNull() != target) {
+            backStack.clear()
+            backStack.add(target)
         }
     }
+    NavDisplay(
+        backStack = backStack,
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
+        onBack = {},
+        entryProvider = entryProvider {
+            entry<RestoringSessionRoute> { LoadingScreen() }
+            entry<AuthenticationRoute> {
+                val signedOut = state as? SessionUiState.SignedOut
+                AuthScreen(
+                    busy = signedOut?.busy == true,
+                    error = signedOut?.authError,
+                    onSignIn = onSignIn,
+                    onSignUp = onSignUp,
+                )
+            }
+            entry<SessionRecoveryRoute> {
+                when (state) {
+                    is SessionUiState.CleanupError -> RecoveryScreen(state.message, onRetryCleanup)
+                    is SessionUiState.RestoreError -> RecoveryScreen(state.message, onRetryRestore)
+                    else -> LoadingScreen()
+                }
+            }
+            entry<ProtectedRoute> { route ->
+                val availableFactories = checkNotNull(factories) {
+                    "Browsing factories are required when signed in"
+                }
+                key(route.userId) {
+                    ProtectedShell(
+                        userId = route.userId,
+                        factories = availableFactories,
+                        imageLoader = currentImageLoader,
+                        resolveImage = resolveImage,
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -159,7 +202,6 @@ private fun ProtectedShell(
         backStack.clear()
         backStack.add(destination)
     }
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MainCourseColors.Canvas,
@@ -210,6 +252,10 @@ private fun ProtectedShell(
         NavDisplay(
             backStack = backStack,
             modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
+            entryDecorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator(),
+            ),
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
                 entry<RecipesRoute> {
@@ -313,3 +359,12 @@ private fun NavKey.routeName(): String = when (this) {
     SettingsRoute -> "Settings"
     else -> error("Not a top-level route")
 }
+
+private fun SessionUiState.sessionRoute(): NavKey = when (this) {
+    SessionUiState.Restoring -> RestoringSessionRoute
+    is SessionUiState.SignedOut -> AuthenticationRoute
+    is SessionUiState.RestoreError, is SessionUiState.CleanupError -> SessionRecoveryRoute
+    is SessionUiState.SignedIn -> ProtectedRoute(session.user.id)
+}
+
+private val EmptyImageLoader = MutableStateFlow<ImageLoader?>(null)
