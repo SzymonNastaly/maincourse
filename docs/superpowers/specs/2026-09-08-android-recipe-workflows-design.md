@@ -186,9 +186,14 @@ Add focused `features/search`, recipe action/editor/formatting files, and a
 small image-preparation owner. Extract mutation orchestration to a dedicated
 RecipeActionController with narrow session-owned hooks; do not grow every new
 operation inside SessionController or introduce a general workflow framework.
-Before imports/sharing adds further lifetime work, prefer structured child Jobs
-and scopes to overlapping manual job sets, preserving tested generation and
-write guards. Evaluate this as an isolated lifetime refactor, not a new framework.
+Before imports/sharing, #104 evaluated replacing the selective job sets with
+structured child scopes. The prototype was rejected: it added 203 production
+lines plus launch and recovery machinery rather than reducing maintenance. The
+accepted result keeps the existing ViewModel-parented work and cancellation
+groups, and adds only nine lines of root-activity admission/commit guards while
+preserving the generation and write guards. Reconsider a hierarchy only if a
+future design demonstrates a concrete simplification rather than a parallel
+ownership framework.
 Use existing Room JSON records and membership keys; no search schema migration
 or persistent cursor is required. Saveable draft state is user/cookbook/recipe
 scoped and carries no bearer. Keep app-resource cleanup integrated with the

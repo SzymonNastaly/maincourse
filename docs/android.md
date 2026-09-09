@@ -20,9 +20,9 @@ and is tracked in [issue #98](https://github.com/SzymonNastaly/maincourse/issues
 The core, Google, and Apple implementation gates have passed locally. Real
 Google and Apple accounts, release-signed provider verification, production App
 Link association, and the full Milestone 2 review remain outstanding. Milestone
-3's core recipe workflow gate and final fix review have also passed locally;
-imports, Android sharing, and the isolated coroutine-lifetime follow-up in #104
-remain before Milestone 3 can be called complete.
+3's core recipe workflow gate and final fix review have also passed locally.
+The #104 session-lifetime assessment and minimal cancellation hardening passed
+its local gate and awaits final review; imports and Android sharing follow next.
 
 ## Bootstrap Contract
 | Setting | Pinned value |
@@ -209,13 +209,26 @@ cookbooks, and recoverable cookbook discovery, preserving Retry and Back instead
 of dead-ending; this resolves the Milestone 3 cases tracked by
 [#96](https://github.com/SzymonNastaly/maincourse/issues/96).
 
-The session coordinator owns the authenticated coroutine lifetime. User,
-cookbook, catalog, and detail generations plus serialized cache writes prevent a
-late request from publishing or persisting into a newer scope. Switching a
-cookbook immediately removes the previous scope from view. A cookbook `403`
-hides and purges that membership before one bounded rediscovery; a detail `404`
-removes the stale recipe. Cancellation remains cancellation rather than a
-user-visible server error.
+`SessionController` launches work from the lifecycle-retained ViewModel scope
+and keeps seven selective job groups for the different cancellation boundaries.
+An evaluated child-scope hierarchy was rejected because removing those groups
+added 203 production lines, duplicated launch scaffolding, and required extra
+recovery handoffs. The retained hardening adds nine production lines instead:
+existing session and recipe-action commit predicates now also require the
+injected root `Job` to remain active, and authentication rechecks root activity
+and admission immediately before writing credentials. No new scope hierarchy,
+ownership framework, or dependency was introduced.
+
+User, cookbook, catalog, and detail generations plus serialized cache writes
+still prevent a late request from publishing or persisting into a newer scope.
+An authenticated `401` from the active session continues to run protected-state
+cleanup. A late outcome, including `401`, from a controller whose root has been
+retired is ignored, so it cannot clear a newer controller instance; cleanup
+admitted before cancellation still completes its local work under
+`NonCancellable`. Switching a cookbook immediately removes the previous scope
+from view. A cookbook `403` hides and purges that membership before one bounded
+rediscovery; a detail `404` removes the stale recipe. Cancellation remains
+cancellation rather than a user-visible server error.
 
 Profile updates and deletion are online-only account operations and never send
 `X-Cookbook-Id`. Profile request ownership uses the user generation, user ID,
