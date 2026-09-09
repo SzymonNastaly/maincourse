@@ -167,7 +167,11 @@ fun RecipeEditScreen(
                 if (actionState.canRetryPhoto || (actionState.needsPhotoSelection && payload.stagedImage != null)) {
                     Button(enabled = !actionState.isBusy, onClick = { onRetryPhoto(payload.stagedImage) }) { Text(stringResource(R.string.recipe_retry_photo)) }
                 }
-                if (actionState.canRetryReconciliation) Button(enabled = !actionState.isBusy, onClick = onRetryReconciliation) { Text(stringResource(R.string.recipe_refresh_data)) }
+                if (actionState.canRetryReconciliation) Button(
+                    enabled = !actionState.isBusy,
+                    onClick = onRetryReconciliation,
+                    modifier = Modifier.testTag("editor_reconciliation_retry"),
+                ) { Text(stringResource(R.string.recipe_refresh_data)) }
             }
         }
         item {

@@ -148,7 +148,7 @@ class RecipeActionController internal constructor(
             return@launch
         }
         val pending = if (replacement == null) owned else owned.copy(image = replacement)
-        if (!prepareMutation(context, version, pending.recipeId)) return@launch
+        if (!prepareMutation(context, version, pending.recipeId, pending.requestKey)) return@launch
         publishRunning(context, version, RecipeActionOperation.UPLOADING_PHOTO, pending.recipeId, requestKey = pending.requestKey)
         mutateAndSettle(context) { permit ->
             val file = try {
@@ -303,11 +303,13 @@ class RecipeActionController internal constructor(
             return@launch
         }
         val recipeId = pending.recipeId
-        publishRunning(context, version, RecipeActionOperation.RECONCILING, recipeId)
+        val requestKey = pending.requestKey
+        if (!prepareMutation(context, version, recipeId, requestKey)) return@launch
+        publishRunning(context, version, RecipeActionOperation.RECONCILING, recipeId, requestKey = requestKey)
         if (host.settleRecipeReads(context)) {
-            publishSuccess(context, version, recipeId, "Recipe data refreshed")
+            publishSuccess(context, version, recipeId, "Recipe data refreshed", requestKey)
         } else {
-            publishReconciliation(context, version, recipeId, "Recipe data still needs refreshing")
+            publishReconciliation(context, version, recipeId, "Recipe data still needs refreshing", requestKey)
         }
     }
 

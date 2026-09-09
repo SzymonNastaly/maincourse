@@ -463,7 +463,6 @@ private fun ProtectedApp(
                                     },
                                     onEditRecipe = { recipeId ->
                                         state.activeCookbookId?.let { cookbookId ->
-                                            actions.openRecipe(recipeId)
                                             backStack.add(RecipeEditDestination(user.id, cookbookId, recipeId, java.util.UUID.randomUUID().toString()))
                                         }
                                     },
@@ -512,7 +511,7 @@ private fun ProtectedApp(
                                             resolveImage = resolveImage,
                                             onQueryChange = actions.updateSearchQuery,
                                             onOpenRecipe = { backStack.add(RecipeDestination(user.id, cookbookId, it)) },
-                                            onEditRecipe = { recipeId -> actions.openRecipe(recipeId); backStack.add(RecipeEditDestination(user.id, cookbookId, recipeId, java.util.UUID.randomUUID().toString())) },
+                                            onEditRecipe = { recipeId -> backStack.add(RecipeEditDestination(user.id, cookbookId, recipeId, java.util.UUID.randomUUID().toString())) },
                                             onMoveRecipe = { pendingMoveRecipe = RecipeRoute(user.id, cookbookId, it) },
                                             onDeleteRecipe = { pendingDeleteRecipe = RecipeRoute(user.id, cookbookId, it) },
                                             actionsEnabled = !recipeActionState.isBusy,
@@ -542,13 +541,7 @@ private fun ProtectedApp(
                                 }?.importStatus == "failed",
                                 imageLoader = imageLoader,
                                 resolveImage = resolveImage,
-                                onRetry = {
-                                    if (awaitingListRecovery) {
-                                        actions.refresh()
-                                    } else {
-                                        actions.openRecipe(destination.recipeId)
-                                    }
-                                },
+                                onRetry = { retryRecipeRoute(state, destination.recipeId, actions) },
                                 actionState = recipeActionState,
                                 onEdit = { backStack.add(RecipeEditDestination(destination.userId, destination.cookbookId, destination.recipeId, java.util.UUID.randomUUID().toString())) },
                                 onMove = { pendingMoveRecipe = destination.recipeRoute() },
@@ -566,7 +559,7 @@ private fun ProtectedApp(
                                 RecipeRouteState(
                                     state = state,
                                     destination = destination.recipeRoute(),
-                                    onRetry = { actions.openRecipe(destination.recipeId) },
+                                    onRetry = { retryRecipeRoute(state, destination.recipeId, actions) },
                                 ) { backStack.removeLastOrNull() }
                             } else {
                                 RecipeEditScreen(
@@ -593,7 +586,7 @@ private fun ProtectedApp(
                                 RecipeRouteState(
                                     state = state,
                                     destination = destination.recipeRoute(),
-                                    onRetry = { actions.openRecipe(destination.recipeId) },
+                                    onRetry = { retryRecipeRoute(state, destination.recipeId, actions) },
                                 ) { backStack.removeLastOrNull() }
                             } else {
                                 IngredientReviewScreen(
@@ -679,6 +672,12 @@ private fun ProtectedApp(
 }
 
 private data class RecipeRoute(val userId: Long, val cookbookId: Long, val recipeId: Long)
+
+private fun retryRecipeRoute(state: SessionState, recipeId: Long, actions: MainCourseActions) {
+    val recipeKnown = state.recipes.any { it.id == recipeId }
+    val listOrScopeUnresolved = !state.recipesFetched || state.activeCookbookId == null
+    if (!recipeKnown && listOrScopeUnresolved) actions.refresh() else actions.openRecipe(recipeId)
+}
 
 private fun Any?.recipeRoute(): RecipeRoute? = when (this) {
     is RecipeDestination -> RecipeRoute(userId, cookbookId, recipeId)

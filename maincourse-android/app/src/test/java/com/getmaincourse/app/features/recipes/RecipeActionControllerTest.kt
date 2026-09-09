@@ -209,6 +209,43 @@ class RecipeActionControllerTest {
     }
 
     @Test
+    fun reconciliationRetryKeepsTheOwningEditorRequestThroughFailureAndSuccess() = runTest {
+        val host = FakeHost(this).apply { settleResult = false }
+        val api = FakeApi()
+        val controller = controller(api, FakeStore().apply { saveFailure = IOException("disk") }, host)
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-a"), null).join()
+        assertEquals("editor-a", controller.state.value.requestKey)
+
+        controller.retryRecipeReconciliation().join()
+        assertEquals(RecipeActionOutcome.RECONCILIATION_REQUIRED, controller.state.value.outcome)
+        assertEquals("editor-a", controller.state.value.requestKey)
+        assertEquals(1, api.updateCalls)
+
+        host.settleResult = true
+        controller.retryRecipeReconciliation().join()
+        assertEquals(RecipeActionOutcome.SUCCEEDED, controller.state.value.outcome)
+        assertEquals("editor-a", controller.state.value.requestKey)
+        assertEquals(1, api.updateCalls)
+    }
+
+    @Test
+    fun blockedPhotoRetryKeepsThePendingEditorsRequestKey() = runTest {
+        val image = File.createTempFile("blocked-photo", ".jpg")
+        val prepared = PreparedRecipeImage("/private/photo.jpg", 7, "photo")
+        val host = FakeHost(this)
+        val api = FakeApi().apply { coverFailure = IOException("offline") }
+        val controller = controller(api, FakeStore(), host) { _, _ -> image }
+        controller.saveRecipe(changedDraft().copy(requestKey = "editor-a"), prepared).join()
+        host.preparationAllowed = false
+
+        controller.retryRecipePhoto().join()
+
+        assertEquals(RecipeActionOutcome.RECONCILIATION_REQUIRED, controller.state.value.outcome)
+        assertEquals("editor-a", controller.state.value.requestKey)
+        image.delete()
+    }
+
+    @Test
     fun reconciliationReportsSuccessOnlyWhenPurgeAndRefreshActuallyResolve() = runTest {
         val host = FakeHost(this).apply { settleResult = false }
         val controller = controller(FakeApi(), FakeStore().apply { saveFailure = IOException("disk") }, host)

@@ -51,6 +51,7 @@ import com.getmaincourse.app.features.session.SessionState
 import com.getmaincourse.app.features.onboarding.OnboardingState
 import com.getmaincourse.app.features.onboarding.OnboardingStep
 import com.getmaincourse.app.features.recipes.RecipeActionOutcome
+import com.getmaincourse.app.features.recipes.RecipeActionOperation
 import com.getmaincourse.app.features.recipes.RecipeActionState
 import com.getmaincourse.app.features.recipes.RecipeEditDraft
 import com.getmaincourse.app.features.settings.AccountOperation
@@ -973,6 +974,72 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun ownedEditorReconciliationRetryKeepsBusyAndFailureBeforeSuccessClosesIt() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithTag("detail_actions").performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        var editorRequestKey: String? = null
+        recorder.afterRecipeSave = { draft ->
+            editorRequestKey = draft.requestKey
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.RECONCILIATION_REQUIRED,
+                scope = draft.scope,
+                recipeId = draft.recipeId,
+                message = "Recipe data needs refreshing",
+                canRetryReconciliation = true,
+                requestKey = draft.requestKey,
+            )
+        }
+        compose.onNodeWithTag("editor_name").performTextInput(" updated")
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_save"))
+        compose.onNodeWithTag("editor_save").performClick()
+        compose.onNodeWithTag("editor_save").assertIsNotEnabled()
+
+        recorder.afterRecipeReconciliation = {
+            recipeActionState.value = RecipeActionState(
+                operation = RecipeActionOperation.RECONCILING,
+                outcome = RecipeActionOutcome.RUNNING,
+                scope = RecipeScope(USER.id, PERSONAL.id),
+                recipeId = SOUP.id,
+                message = "Refreshing recipe data",
+                isBusy = true,
+                requestKey = editorRequestKey,
+            )
+        }
+        compose.onNodeWithTag("editor_list").performScrollToNode(hasTestTag("editor_reconciliation_retry"))
+        compose.onNodeWithTag("editor_reconciliation_retry").performClick()
+        compose.onNodeWithTag("editor_save").assertIsNotEnabled()
+        assertEquals(1, recorder.recipeReconciliationCount)
+
+        compose.runOnIdle {
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.RECONCILIATION_REQUIRED,
+                scope = RecipeScope(USER.id, PERSONAL.id),
+                recipeId = SOUP.id,
+                message = "Recipe data still needs refreshing",
+                canRetryReconciliation = true,
+                requestKey = editorRequestKey,
+            )
+        }
+        compose.onNodeWithTag("editor_reconciliation_retry").assertIsDisplayed()
+        recorder.afterRecipeReconciliation = {
+            recipeActionState.value = RecipeActionState(
+                outcome = RecipeActionOutcome.SUCCEEDED,
+                scope = RecipeScope(USER.id, PERSONAL.id),
+                recipeId = SOUP.id,
+                message = "Recipe data refreshed",
+                requestKey = editorRequestKey,
+            )
+        }
+        compose.onNodeWithTag("editor_reconciliation_retry").performClick()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        assertEquals(1, recorder.recipeSaveCount)
+        assertEquals(2, recorder.recipeReconciliationCount)
+    }
+
+    @Test
     fun cookingModeRestoresAcrossRotationAndClearsOnBack() {
         compose.onNodeWithText("Vegetable soup").performClick()
         show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
@@ -1110,6 +1177,58 @@ class MainCourseAppTest {
 
         compose.onNodeWithText(compose.activity.getString(R.string.recipe_unavailable)).assertIsDisplayed()
         compose.onAllNodesWithText(compose.activity.getString(R.string.recipe_load_error)).assertCountEquals(0)
+        compose.onAllNodesWithText(compose.activity.getString(R.string.retry)).assertCountEquals(0)
+    }
+
+    @Test
+    fun editorRecoveryRetriesListWhenRecipeScopeIsUnresolved() {
+        compose.onNodeWithTag("recipe_actions_20").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_edit)).performClick()
+        compose.waitForIdle()
+        val opensBeforeFailure = recorder.openRecipeCount
+        val refreshesBeforeFailure = recorder.refreshCount
+        show(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                recipesFetched = false,
+                catalogStatus = LoadStatus.ERROR,
+                recipeStatus = LoadStatus.ERROR,
+            ),
+        )
+
+        compose.onNodeWithTag("recipe_route_error").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.retry)).performClick()
+
+        assertEquals(opensBeforeFailure, recorder.openRecipeCount)
+        assertEquals(refreshesBeforeFailure + 1, recorder.refreshCount)
+    }
+
+    @Test
+    fun ingredientReviewRecoveryOpensKnownRecipeButRefreshesUnresolvedScope() {
+        compose.onNodeWithText("Vegetable soup").performClick()
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.FRESH, SOUP_DETAIL)))
+        compose.onNodeWithText(compose.activity.getString(R.string.recipe_add_to_shopping)).performScrollTo().performClick()
+        val opensBeforeDetailFailure = recorder.openRecipeCount
+        show(readyState().copy(detail = RecipeDetailState(20L, DetailStatus.ERROR)))
+
+        compose.onNodeWithText(compose.activity.getString(R.string.retry)).performClick()
+        assertEquals(opensBeforeDetailFailure + 1, recorder.openRecipeCount)
+
+        val opensBeforeScopeFailure = recorder.openRecipeCount
+        val refreshesBeforeScopeFailure = recorder.refreshCount
+        show(
+            SessionState(
+                phase = SessionPhase.LOADING_COOKBOOKS,
+                user = USER,
+                recipesFetched = false,
+                catalogStatus = LoadStatus.ERROR,
+                recipeStatus = LoadStatus.ERROR,
+            ),
+        )
+        compose.onNodeWithText(compose.activity.getString(R.string.retry)).performClick()
+        assertEquals(opensBeforeScopeFailure, recorder.openRecipeCount)
+        assertEquals(refreshesBeforeScopeFailure + 1, recorder.refreshCount)
     }
 
     private fun show(value: SessionState) {
@@ -1156,6 +1275,8 @@ class MainCourseAppTest {
         var clearAccountErrorCount = 0
         var recipeSaveCount = 0
         var afterRecipeSave: (RecipeEditDraft) -> Unit = {}
+        var recipeReconciliationCount = 0
+        var afterRecipeReconciliation: () -> Unit = {}
         var movedRecipe: Pair<Long, Long>? = null
         var deletedRecipe: Long? = null
         var afterSignIn: () -> Unit = {}
@@ -1188,6 +1309,7 @@ class MainCourseAppTest {
             },
             closeRecipe = { state.value = state.value.copy(detail = null) },
             saveRecipe = { draft, _ -> recipeSaveCount++; afterRecipeSave(draft) },
+            retryRecipeReconciliation = { recipeReconciliationCount++; afterRecipeReconciliation() },
             moveRecipe = { recipeId, targetId -> movedRecipe = recipeId to targetId },
             deleteRecipe = { deletedRecipe = it },
             updateName = { updatedName = it },
