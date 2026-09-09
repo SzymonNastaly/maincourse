@@ -48,6 +48,24 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun authBusyAndErrorUpdatesDoNotRequireARouteChange() {
+        val state: MutableState<SessionUiState> = mutableStateOf(SessionUiState.SignedOut())
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme { MainCourseAppContent(state = state.value) }
+            }
+        }
+        compose.onNodeWithTag("auth_form").assertIsDisplayed()
+
+        compose.runOnIdle {
+            state.value = SessionUiState.SignedOut(authError = "Try again", busy = true)
+        }
+
+        compose.onNodeWithText("Try again").assertIsDisplayed()
+        compose.onNodeWithTag("auth_email_progress").assertIsDisplayed()
+    }
+
+    @Test
     fun signedInSessionNavigatesFromRecipesToDetailAndBack() {
         show(SessionUiState.SignedIn(SESSION))
 
@@ -125,6 +143,26 @@ class MainCourseAppTest {
         compose.runOnIdle { state.value = SessionUiState.SignedOut() }
 
         compose.waitUntil(5_000) { refreshCancelled.get() }
+    }
+
+    @Test
+    fun restoringImmediatelyRemovesProtectedContent() {
+        val state: MutableState<SessionUiState> = mutableStateOf(SessionUiState.SignedIn(SESSION))
+        val factories = factories()
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    MainCourseAppContent(state = state.value, factories = factories)
+                }
+            }
+        }
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+
+        compose.runOnIdle { state.value = SessionUiState.Restoring }
+
+        compose.onNodeWithTag("session_loading").assertIsDisplayed()
+        compose.onNodeWithTag("screen_Recipes").assertDoesNotExist()
+        compose.onNodeWithTag("navigation_bar").assertDoesNotExist()
     }
 
     @Test

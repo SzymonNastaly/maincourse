@@ -21,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
@@ -33,7 +33,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreOwner
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -70,18 +72,6 @@ data object SearchRoute : NavKey
 
 @Serializable
 data object SettingsRoute : NavKey
-
-@Serializable
-private data object RestoringSessionRoute : NavKey
-
-@Serializable
-private data object AuthenticationRoute : NavKey
-
-@Serializable
-private data object SessionRecoveryRoute : NavKey
-
-@Serializable
-private data class ProtectedRoute(val userId: Long) : NavKey
 
 internal data class BrowsingViewModelFactories(
     val recipes: (Long) -> ViewModelProvider.Factory,
@@ -131,54 +121,33 @@ internal fun MainCourseAppContent(
     resolveImage: (String?) -> String? = { it },
 ) {
     val currentImageLoader by imageLoader.collectAsStateWithLifecycle()
-    val target = state.sessionRoute()
-    val backStack = rememberNavBackStack(target)
-    LaunchedEffect(target) {
-        if (backStack.lastOrNull() != target) {
-            backStack.clear()
-            backStack.add(target)
-        }
-    }
-    NavDisplay(
-        backStack = backStack,
-        entryDecorators = listOf(
-            rememberSaveableStateHolderNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator(),
-        ),
-        onBack = {},
-        entryProvider = entryProvider {
-            entry<RestoringSessionRoute> { LoadingScreen() }
-            entry<AuthenticationRoute> {
-                val signedOut = state as? SessionUiState.SignedOut
-                AuthScreen(
-                    busy = signedOut?.busy == true,
-                    error = signedOut?.authError,
-                    onSignIn = onSignIn,
-                    onSignUp = onSignUp,
-                )
+    when (state) {
+        SessionUiState.Restoring -> LoadingScreen()
+        is SessionUiState.SignedOut -> AuthScreen(
+            busy = state.busy,
+            error = state.authError,
+            onSignIn = onSignIn,
+            onSignUp = onSignUp,
+        )
+        is SessionUiState.RestoreError -> RecoveryScreen(state.message, onRetryRestore)
+        is SessionUiState.CleanupError -> RecoveryScreen(state.message, onRetryCleanup)
+        is SessionUiState.SignedIn -> {
+            val availableFactories = checkNotNull(factories) {
+                "Browsing factories are required when signed in"
             }
-            entry<SessionRecoveryRoute> {
-                when (state) {
-                    is SessionUiState.CleanupError -> RecoveryScreen(state.message, onRetryCleanup)
-                    is SessionUiState.RestoreError -> RecoveryScreen(state.message, onRetryRestore)
-                    else -> LoadingScreen()
-                }
-            }
-            entry<ProtectedRoute> { route ->
-                val availableFactories = checkNotNull(factories) {
-                    "Browsing factories are required when signed in"
-                }
-                key(route.userId) {
+            key(state.session.user.id) {
+                val shellOwner = rememberViewModelStoreOwner()
+                CompositionLocalProvider(LocalViewModelStoreOwner provides shellOwner) {
                     ProtectedShell(
-                        userId = route.userId,
+                        userId = state.session.user.id,
                         factories = availableFactories,
                         imageLoader = currentImageLoader,
                         resolveImage = resolveImage,
                     )
                 }
             }
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -358,13 +327,6 @@ private fun NavKey.routeName(): String = when (this) {
     SearchRoute -> "Search"
     SettingsRoute -> "Settings"
     else -> error("Not a top-level route")
-}
-
-private fun SessionUiState.sessionRoute(): NavKey = when (this) {
-    SessionUiState.Restoring -> RestoringSessionRoute
-    is SessionUiState.SignedOut -> AuthenticationRoute
-    is SessionUiState.RestoreError, is SessionUiState.CleanupError -> SessionRecoveryRoute
-    is SessionUiState.SignedIn -> ProtectedRoute(session.user.id)
 }
 
 private val EmptyImageLoader = MutableStateFlow<ImageLoader?>(null)
