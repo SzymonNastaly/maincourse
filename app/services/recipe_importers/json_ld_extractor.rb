@@ -101,15 +101,14 @@ module RecipeImporters
     end
 
     def extract_name(recipe)
-      recipe["name"].to_s.strip.presence
+      normalize_text(recipe["name"])
     end
 
     def extract_ingredients(recipe)
       ingredients = recipe["recipeIngredient"] || recipe["ingredients"] || []
       ingredients = [ ingredients ] unless ingredients.is_a?(Array)
       ingredients
-        .map { |ingredient| ingredient.to_s.strip }
-        .reject(&:blank?)
+        .filter_map { |ingredient| normalize_text(ingredient) }
         .map { |line| { raw: line, name: line } }
     end
 
@@ -126,7 +125,7 @@ module RecipeImporters
       instructions.flat_map do |instruction|
         case instruction
         when String
-          instruction.strip
+          normalize_text(instruction)
         when Hash
           # HowToStep or HowToSection
           type = instruction["@type"]
@@ -135,7 +134,7 @@ module RecipeImporters
           elsif type == "ListItem"
             extract_list_item_text(instruction)
           else
-            instruction["text"].to_s.strip
+            normalize_text(instruction["text"])
           end
         else
           nil
@@ -147,18 +146,18 @@ module RecipeImporters
       item = list_item["item"]
       case item
       when String
-        item.strip
+        normalize_text(item)
       when Hash
-        item["text"].to_s.strip
+        normalize_text(item["text"])
       else
-        list_item["name"].to_s.strip
+        normalize_text(list_item["name"])
       end
     end
 
     def extract_section_steps(section)
       steps = section["itemListElement"] || []
       steps.map do |step|
-        step.is_a?(Hash) ? step["text"].to_s.strip : step.to_s.strip
+        normalize_text(step.is_a?(Hash) ? step["text"] : step)
       end
     end
 
@@ -209,8 +208,11 @@ module RecipeImporters
 
     def extract_notes(recipe)
       # Some recipes have notes in description
-      description = recipe["description"].to_s.strip
-      description.presence
+      normalize_text(recipe["description"])
+    end
+
+    def normalize_text(value)
+      Nokogiri::HTML.fragment(value.to_s).text.strip.presence
     end
   end
 end

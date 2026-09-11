@@ -17,13 +17,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,11 +58,15 @@ import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.features.auth.AuthScreen
 import com.getmaincourse.app.features.preview.PreviewScreen
+import com.getmaincourse.app.features.recipes.CookbookTitleMenu
 import com.getmaincourse.app.features.recipes.IngredientReviewScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
+import com.getmaincourse.app.features.recipes.RecipeImportScreen
+import com.getmaincourse.app.features.recipes.RecipeImportViewModel
 import com.getmaincourse.app.features.recipes.RecipesScreen
 import com.getmaincourse.app.features.recipes.RecipesViewModel
+import com.getmaincourse.app.features.recipes.SharedRecipeInput
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.features.shopping.ShoppingListScreen
@@ -66,6 +76,7 @@ import com.getmaincourse.app.features.settings.SettingsViewModel
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -78,6 +89,9 @@ data class RecipeDetailRoute(val recipeId: Long, val cookbookId: Long) : NavKey
 data class IngredientReviewRoute(val recipeId: Long, val cookbookId: Long, val portions: Int) : NavKey
 
 @Serializable
+data object RecipeImportRoute : NavKey
+
+@Serializable
 data object ShoppingRoute : NavKey
 
 @Serializable
@@ -88,6 +102,7 @@ data object SettingsRoute : NavKey
 
 internal data class BrowsingViewModelFactories(
     val recipes: (Long) -> ViewModelProvider.Factory,
+    val import: (Long) -> ViewModelProvider.Factory,
     val detail: (userId: Long, cookbookId: Long, recipeId: Long) -> ViewModelProvider.Factory,
     val shopping: (Long) -> ViewModelProvider.Factory,
     val settings: () -> ViewModelProvider.Factory,
@@ -103,8 +118,11 @@ fun MainCourseApp(
     sessionStore: SessionStore,
     sessionProvider: SessionProvider,
     resolveImage: (String?) -> String?,
+    sharedRecipeInput: StateFlow<SharedRecipeInput?>,
+    onSharedRecipeInputConsumed: () -> Unit,
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
+    val pendingShare by sharedRecipeInput.collectAsStateWithLifecycle()
     MainCourseAppContent(
         state = sessionState,
         onSignIn = sessionViewModel::signIn,
@@ -115,6 +133,11 @@ fun MainCourseApp(
             recipes = { userId ->
                 simpleViewModelFactory {
                     RecipesViewModel(userId, cookbookRepository, recipeRepository)
+                }
+            },
+            import = { userId ->
+                simpleViewModelFactory {
+                    RecipeImportViewModel(userId, cookbookRepository, recipeRepository)
                 }
             },
             detail = { userId, cookbookId, recipeId ->
@@ -148,6 +171,8 @@ fun MainCourseApp(
         ),
         imageLoader = sessionViewModel.imageLoader,
         resolveImage = resolveImage,
+        sharedRecipeInput = pendingShare,
+        onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
     )
 }
 
@@ -161,6 +186,8 @@ internal fun MainCourseAppContent(
     factories: BrowsingViewModelFactories? = null,
     imageLoader: StateFlow<ImageLoader?> = EmptyImageLoader,
     resolveImage: (String?) -> String? = { it },
+    sharedRecipeInput: SharedRecipeInput? = null,
+    onSharedRecipeInputConsumed: () -> Unit = {},
 ) {
     val currentImageLoader by imageLoader.collectAsStateWithLifecycle()
     when (state) {
@@ -185,6 +212,8 @@ internal fun MainCourseAppContent(
                         factories = availableFactories,
                         imageLoader = currentImageLoader,
                         resolveImage = resolveImage,
+                        sharedRecipeInput = sharedRecipeInput,
+                        onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
                     )
                 }
             }
@@ -199,11 +228,26 @@ private fun ProtectedShell(
     factories: BrowsingViewModelFactories,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
+    sharedRecipeInput: SharedRecipeInput?,
+    onSharedRecipeInputConsumed: () -> Unit,
 ) {
     val backStack = rememberNavBackStack(RecipesRoute)
     val latestImageLoader by rememberUpdatedState(imageLoader)
     val latestResolveImage by rememberUpdatedState(resolveImage)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val shellScope = rememberCoroutineScope()
+    val importStartedMessage = stringResource(R.string.recipe_import_accepted)
+    val recipesViewModel: RecipesViewModel = viewModel(
+        key = "recipes-$userId",
+        factory = factories.recipes(userId),
+    )
+    val recipesState by recipesViewModel.state.collectAsStateWithLifecycle()
     val current = backStack.last()
+    LaunchedEffect(sharedRecipeInput) {
+        if (sharedRecipeInput != null && backStack.lastOrNull() != RecipeImportRoute) {
+            backStack.add(RecipeImportRoute)
+        }
+    }
     val selected = backStack.filter { it.isTopLevel() }.lastOrNull() ?: RecipesRoute
     val destinations = listOf(
         NavigationDestination(RecipesRoute, R.string.recipes, R.drawable.ic_recipes),
@@ -218,28 +262,48 @@ private fun ProtectedShell(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MainCourseColors.Canvas,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        when (current) {
-                            RecipesRoute, is RecipeDetailRoute -> stringResource(R.string.recipes)
-                            is IngredientReviewRoute -> stringResource(R.string.recipe_ingredients)
-                            ShoppingRoute -> stringResource(R.string.shopping_list)
-                            SearchRoute -> stringResource(R.string.search)
-                            SettingsRoute -> stringResource(R.string.settings)
-                            else -> stringResource(R.string.app_name)
-                        },
-                    )
+                    when (current) {
+                        RecipesRoute -> CookbookTitleMenu(
+                            cookbooks = recipesState.cookbooks,
+                            selectedId = recipesState.selectedCookbookId,
+                            onSelect = recipesViewModel::selectCookbook,
+                        )
+                        else -> Text(
+                            when (current) {
+                                is RecipeDetailRoute -> stringResource(R.string.recipes)
+                                RecipeImportRoute -> stringResource(R.string.recipe_import)
+                                is IngredientReviewRoute -> stringResource(R.string.recipe_ingredients)
+                                ShoppingRoute -> stringResource(R.string.shopping_list)
+                                SearchRoute -> stringResource(R.string.search)
+                                SettingsRoute -> stringResource(R.string.settings)
+                                else -> stringResource(R.string.app_name)
+                            },
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MainCourseColors.Canvas),
                 navigationIcon = {
-                    if (current is RecipeDetailRoute || current is IngredientReviewRoute) {
+                    if (current is RecipeDetailRoute || current is IngredientReviewRoute || current == RecipeImportRoute) {
                         IconButton(
                             onClick = { backStack.removeLastOrNull() },
                             modifier = Modifier.testTag("navigate_back"),
                         ) {
                             Icon(painterResource(R.drawable.ic_back), stringResource(R.string.back))
+                        }
+                    }
+                },
+                actions = {
+                    if (current == RecipesRoute) {
+                        TextButton(
+                            onClick = { backStack.add(RecipeImportRoute) },
+                            enabled = recipesState.selectedCookbookId != null,
+                            modifier = Modifier.testTag("open_recipe_import"),
+                        ) {
+                            Text(stringResource(R.string.recipe_import_short))
                         }
                     }
                 },
@@ -273,22 +337,45 @@ private fun ProtectedShell(
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
                 entry<RecipesRoute> {
-                    val recipesViewModel: RecipesViewModel = viewModel(
-                        key = "recipes-$userId",
-                        factory = factories.recipes(userId),
-                    )
-                    val recipesState by recipesViewModel.state.collectAsStateWithLifecycle()
                     RecipesScreen(
                         state = recipesState,
                         imageLoader = latestImageLoader,
                         resolveImage = latestResolveImage,
-                        onSelectCookbook = { recipesViewModel.selectCookbook(it) },
                         onRefresh = { recipesViewModel.refresh() },
                         onOpenRecipe = { recipeId ->
                             recipesState.selectedCookbookId?.let { cookbookId ->
                                 backStack.add(RecipeDetailRoute(recipeId, cookbookId))
                             }
                         },
+                    )
+                }
+                entry<RecipeImportRoute> {
+                    val importViewModel: RecipeImportViewModel = viewModel(
+                        key = "recipe-import-$userId",
+                        factory = factories.import(userId),
+                    )
+                    val importState by importViewModel.state.collectAsStateWithLifecycle()
+                    LaunchedEffect(sharedRecipeInput) {
+                        sharedRecipeInput?.let { input ->
+                            importViewModel.acceptSharedInput(input.value)
+                            onSharedRecipeInputConsumed()
+                        }
+                    }
+                    LaunchedEffect(importState.importedRecipeId) {
+                        if (importState.importedRecipeId != null) {
+                            importState.selectedCookbookId?.let(recipesViewModel::importAccepted)
+                            importViewModel.acknowledgeImport()
+                            backStack.removeLastOrNull()
+                            shellScope.launch { snackbarHostState.showSnackbar(importStartedMessage) }
+                        }
+                    }
+                    RecipeImportScreen(
+                        state = importState,
+                        onSelectCookbook = importViewModel::selectCookbook,
+                        onModeChange = importViewModel::setMode,
+                        onUrlChange = importViewModel::updateUrl,
+                        onTextChange = importViewModel::updateText,
+                        onSubmit = { importViewModel.submit() },
                     )
                 }
                 entry<RecipeDetailRoute> { route ->

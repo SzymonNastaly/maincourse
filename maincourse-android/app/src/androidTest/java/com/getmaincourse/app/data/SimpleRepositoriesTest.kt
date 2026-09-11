@@ -127,6 +127,35 @@ class SimpleRepositoriesTest {
     }
 
     @Test
+    fun acceptedUrlImportRefreshesTheScopedRecipeCache() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        server.enqueue(jsonResponse("""{"id":8,"import_status":"pending"}""", 202))
+        server.enqueue(jsonResponse("[${summaryJson(8, "Importing...", "pending")}]"))
+
+        val response = recipes.importUrl(USER_ID, 10, "https://example.com/soup")
+
+        assertEquals(8L, response.id)
+        assertEquals(listOf(8L), recipes.observeSummaries(USER_ID, 10).first().map { it.id })
+        val importRequest = server.takeRequest()
+        assertEquals("/api/v1/recipes/import", importRequest.path)
+        assertEquals("10", importRequest.getHeader("X-Cookbook-Id"))
+        assertEquals("""{"url":"https://example.com/soup"}""", importRequest.body.readUtf8())
+    }
+
+    @Test
+    fun acceptedTextImportSucceedsWhenItsBestEffortRefreshFails() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Cached"))
+        server.enqueue(jsonResponse("""{"id":9,"import_status":"pending"}""", 202))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        val response = recipes.importText(USER_ID, 10, "Soup\n1 onion")
+
+        assertEquals(9L, response.id)
+        assertEquals(listOf("Cached"), recipes.observeSummaries(USER_ID, 10).first().map { it.name })
+    }
+
+    @Test
     fun malformedCachedJsonMapsToAbsenceUntilRefreshReplacesIt() = runBlocking {
         seedCookbook(USER_ID, 10)
         database.catalogDao().upsertRecipes(
@@ -413,8 +442,8 @@ class SimpleRepositoriesTest {
     private fun cookbookJson(id: Long) =
         """{"id":$id,"name":"Cookbook $id","personal":${id == 10L},"recipe_count":1,"members":[]}"""
 
-    private fun summaryJson(id: Long, name: String) =
-        """{"id":$id,"name":"$name","prep_time":10,"cook_time":20,"favorite":false,"cover_image_url":null,"cover_images":null,"import_status":"completed","error_message":null,"updated_at":"2026-09-09T08:00:00Z"}"""
+    private fun summaryJson(id: Long, name: String, importStatus: String = "completed") =
+        """{"id":$id,"name":"$name","prep_time":10,"cook_time":20,"favorite":false,"cover_image_url":null,"cover_images":null,"import_status":"$importStatus","error_message":null,"updated_at":"2026-09-09T08:00:00Z"}"""
 
     private fun detailJson(id: Long, name: String) =
         """{"id":$id,"name":"$name","prep_time":10,"cook_time":20,"servings":2,"favorite":false,"ingredients":[],"structured_ingredients":[],"instructions":[],"notes":null,"source_url":null,"tags":[],"cover_image_url":null,"cover_images":null,"created_at":"2026-09-01T08:00:00Z","updated_at":"2026-09-09T08:00:00Z"}"""

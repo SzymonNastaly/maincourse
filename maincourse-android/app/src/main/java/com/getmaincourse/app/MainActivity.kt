@@ -1,5 +1,6 @@
 package com.getmaincourse.app
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -13,7 +14,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
+import com.getmaincourse.app.features.recipes.SharedRecipeInput
+import com.getmaincourse.app.features.recipes.sharedRecipeInput
 import com.getmaincourse.app.ui.theme.MainCourseTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 class MainActivity : ComponentActivity() {
@@ -22,6 +26,8 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel by viewModels<SessionViewModel> { appContainer.sessionViewModelFactory }
     private var contentInstalled = false
+    private val pendingSharedRecipe = MutableStateFlow<SharedRecipeInput?>(null)
+    private var sharedRecipeConsumed = false
     private val localNetworkPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         installAppContent()
     }
@@ -29,6 +35,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        sharedRecipeConsumed = savedInstanceState?.getBoolean(SHARED_RECIPE_CONSUMED_KEY) == true
+        if (!sharedRecipeConsumed) pendingSharedRecipe.value = intent.sharedRecipeInput()
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
@@ -44,6 +52,20 @@ class MainActivity : ComponentActivity() {
         } else {
             installAppContent()
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.sharedRecipeInput()?.let { input ->
+            sharedRecipeConsumed = false
+            pendingSharedRecipe.value = input
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean(SHARED_RECIPE_CONSUMED_KEY, sharedRecipeConsumed)
+        super.onSaveInstanceState(outState)
     }
 
     private fun installAppContent() {
@@ -63,6 +85,11 @@ class MainActivity : ComponentActivity() {
                     sessionStore = appContainer.sessionStore,
                     sessionProvider = appContainer.sessionProvider,
                     resolveImage = appContainer.images::resolve,
+                    sharedRecipeInput = pendingSharedRecipe,
+                    onSharedRecipeInputConsumed = {
+                        sharedRecipeConsumed = true
+                        pendingSharedRecipe.value = null
+                    },
                 )
             }
         }
@@ -77,4 +104,5 @@ internal fun shouldRequestLocalNetworkAccess(
 ): Boolean = isDebugBuild && sdkInt >= 37 && !permissionGranted && apiHost in LOCAL_API_HOSTS
 
 private const val LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
+private const val SHARED_RECIPE_CONSUMED_KEY = "shared_recipe_consumed"
 private val LOCAL_API_HOSTS = setOf("10.0.2.2", "localhost", "127.0.0.1")

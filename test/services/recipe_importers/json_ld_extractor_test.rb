@@ -29,6 +29,24 @@ module RecipeImporters
       assert_equal "https://example.com/cookies", result.recipe_attributes[:source_url]
     end
 
+    test "decodes HTML entities in user-facing text" do
+      html = build_html_with_json_ld({
+        "@type" => "Recipe",
+        "name" => "Easy &amp; Cheesy Baked Spaghetti",
+        "recipeIngredient" => [ "Kosher salt &amp; black pepper" ],
+        "recipeInstructions" => [ { "@type" => "HowToStep", "text" => "Mix &amp; bake" } ],
+        "description" => "Quick &amp; cozy"
+      })
+
+      result = JsonLdExtractor.new(html, "https://example.com/baked-spaghetti").extract
+
+      assert result.success?
+      assert_equal "Easy & Cheesy Baked Spaghetti", result.recipe_attributes[:name]
+      assert_equal [ "Kosher salt & black pepper" ], result.recipe_attributes[:ingredients].map { |ingredient| ingredient[:raw] }
+      assert_equal [ "Mix & bake" ], result.recipe_attributes[:instructions]
+      assert_equal "Quick & cozy", result.recipe_attributes[:notes]
+    end
+
     test "returns failure when no JSON-LD found" do
       html = "<html><body><h1>No recipe here</h1></body></html>"
 

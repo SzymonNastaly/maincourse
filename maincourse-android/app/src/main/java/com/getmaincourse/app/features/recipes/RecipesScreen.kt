@@ -18,8 +18,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,10 +25,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +39,6 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.images.cardImagePath
-import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
@@ -57,7 +50,6 @@ fun RecipesScreen(
     state: RecipesUiState,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
-    onSelectCookbook: (Long) -> Unit,
     onRefresh: () -> Unit,
     onOpenRecipe: (Long) -> Unit,
 ) {
@@ -72,9 +64,6 @@ fun RecipesScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                CookbookPicker(state.cookbooks, state.selectedCookbookId, onSelectCookbook)
-            }
             state.error?.let { error ->
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     StatusPanel(error, onRefresh)
@@ -93,42 +82,6 @@ fun RecipesScreen(
                 else -> items(state.recipes, key = { it.id }) { recipe ->
                     RecipeCard(recipe, imageLoader, resolveImage, onOpenRecipe)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CookbookPicker(
-    cookbooks: List<Cookbook>,
-    selectedId: Long?,
-    onSelect: (Long) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selected = cookbooks.firstOrNull { it.id == selectedId }
-    Box {
-        Surface(
-            modifier = Modifier.fillMaxWidth().clip(MainCourseShapes.Control)
-                .clickable(enabled = cookbooks.isNotEmpty()) { expanded = true }
-                .testTag("cookbook_picker"),
-            shape = MainCourseShapes.Control,
-            border = BorderStroke(1.dp, MainCourseColors.Hairline),
-            color = MainCourseColors.Surface,
-        ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text(stringResource(R.string.cookbook_picker), style = MaterialTheme.typography.labelSmall, color = MainCourseColors.Muted)
-                Text(selected?.name ?: stringResource(R.string.cookbook_none_selected), style = MaterialTheme.typography.titleMedium)
-            }
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            cookbooks.forEach { cookbook ->
-                DropdownMenuItem(
-                    text = { Text(cookbook.name) },
-                    onClick = {
-                        expanded = false
-                        if (cookbook.id != selectedId) onSelect(cookbook.id)
-                    },
-                )
             }
         }
     }

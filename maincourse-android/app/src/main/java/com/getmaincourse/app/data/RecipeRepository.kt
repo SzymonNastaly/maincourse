@@ -9,7 +9,10 @@ import com.getmaincourse.app.data.cache.toJson
 import com.getmaincourse.app.data.cache.toSummary
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.network.MainCourseService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -47,6 +50,22 @@ class RecipeRepository(
     suspend fun refreshDetail(userId: Long, cookbookId: Long, recipeId: Long) {
         val response = service.recipe(cookbookId, recipeId)
         dao.updateDetail(userId, cookbookId, recipeId, response.toJson(json))
+    }
+
+    suspend fun importUrl(
+        userId: Long,
+        cookbookId: Long,
+        url: String,
+    ): RecipeImportResponse = importAndRefresh(userId, cookbookId) {
+        service.importRecipe(cookbookId, RecipeUrlImportRequest(url))
+    }
+
+    suspend fun importText(
+        userId: Long,
+        cookbookId: Long,
+        text: String,
+    ): RecipeImportResponse = importAndRefresh(userId, cookbookId) {
+        service.importRecipeText(cookbookId, RecipeTextImportRequest(text))
     }
 
     suspend fun move(
@@ -90,6 +109,22 @@ class RecipeRepository(
     suspend fun delete(userId: Long, cookbookId: Long, recipeId: Long) = listWrites.withLock {
         service.deleteRecipe(cookbookId, recipeId)
         dao.removeRecipe(userId, cookbookId, recipeId)
+    }
+
+    private suspend fun importAndRefresh(
+        userId: Long,
+        cookbookId: Long,
+        request: suspend () -> RecipeImportResponse,
+    ): RecipeImportResponse {
+        val response = request()
+        try {
+            refreshList(userId, cookbookId)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (_: Throwable) {
+            // The import is already accepted; a later refresh will reconcile the cache.
+        }
+        return response
     }
 
 }

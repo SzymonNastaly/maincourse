@@ -20,7 +20,10 @@ import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.data.model.User
@@ -36,7 +39,9 @@ import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
+import com.getmaincourse.app.features.recipes.RecipeImportViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
+import com.getmaincourse.app.features.recipes.SharedRecipeInput
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.shopping.ShoppingListViewModel
 import com.getmaincourse.app.features.settings.SettingsViewModel
@@ -45,11 +50,15 @@ import coil3.ImageLoader
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -102,6 +111,100 @@ class MainCourseAppTest {
 
         compose.onNodeWithTag("navigate_back").performClick()
         compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+    }
+
+    @Test
+    fun signedInSessionImportsARecipeUrlIntoTheSelectedCookbook() {
+        val imported = AtomicReference<Pair<Long, String>?>(null)
+        show(
+            SessionUiState.SignedIn(SESSION),
+            factories = factories(
+                importUrl = { cookbookId, url ->
+                    imported.set(cookbookId to url)
+                    RecipeImportResponse(11, "pending")
+                },
+            ),
+        )
+
+        compose.onNodeWithTag("open_recipe_import").performClick()
+        compose.onNodeWithTag("screen_RecipeImport").assertIsDisplayed()
+        compose.onNodeWithTag("import_url").performTextInput("https://example.com/soup")
+        compose.onNodeWithTag("import_submit").assertIsEnabled().performClick()
+
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+        compose.onNodeWithText("Import started").assertIsDisplayed()
+        assertEquals(COOKBOOK.id to "https://example.com/soup", imported.get())
+    }
+
+    @Test
+    fun activeCookbookIsSelectedFromTheCompactTitleMenu() {
+        show(
+            SessionUiState.SignedIn(SESSION),
+            factories = factories(cookbooks = listOf(COOKBOOK, SHARED_COOKBOOK)),
+        )
+
+        compose.onNodeWithTag("cookbook_picker").assertTextContains(COOKBOOK.name).performClick()
+        compose.onNodeWithText(SHARED_COOKBOOK.name).performClick()
+
+        compose.onNodeWithTag("cookbook_picker").assertTextContains(SHARED_COOKBOOK.name)
+    }
+
+    @Test
+    fun sharedRecipeTextOpensThePrefilledTextImporter() {
+        val consumed = AtomicBoolean(false)
+        show(
+            state = SessionUiState.SignedIn(SESSION),
+            sharedRecipeInput = SharedRecipeInput("Soup\n1 onion"),
+            onSharedRecipeInputConsumed = { consumed.set(true) },
+        )
+
+        compose.onNodeWithTag("screen_RecipeImport").assertIsDisplayed()
+        compose.onNodeWithTag("import_mode_text").assertIsDisplayed()
+        compose.onNodeWithTag("import_text").assertTextContains("Soup\n1 onion")
+        assertTrue(consumed.get())
+    }
+
+    @Test
+    fun acceptedShareImportClearsAnEarlierOfflineRefreshError() {
+        show(
+            state = SessionUiState.SignedIn(SESSION),
+            factories = factories(cookbookRefresh = { throw IOException("offline") }),
+            sharedRecipeInput = SharedRecipeInput("https://example.com/soup"),
+        )
+
+        compose.onNodeWithTag("screen_RecipeImport").assertIsDisplayed()
+        compose.onNodeWithTag("import_submit").assertIsEnabled().performClick()
+
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+        compose.onNodeWithText("You're offline").assertDoesNotExist()
+    }
+
+    @Test
+    fun sharedRecipeWaitsForAuthenticationBeforeOpeningTheImporter() {
+        val state: MutableState<SessionUiState> = mutableStateOf(SessionUiState.SignedOut())
+        val consumed = AtomicBoolean(false)
+        val appFactories = factories()
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    MainCourseAppContent(
+                        state = state.value,
+                        factories = appFactories,
+                        sharedRecipeInput = SharedRecipeInput("https://example.com/soup"),
+                        onSharedRecipeInputConsumed = { consumed.set(true) },
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("auth_form").assertIsDisplayed()
+        assertFalse(consumed.get())
+
+        compose.runOnIdle { state.value = SessionUiState.SignedIn(SESSION) }
+
+        compose.onNodeWithTag("screen_RecipeImport").assertIsDisplayed()
+        compose.onNodeWithTag("import_url").assertTextContains("https://example.com/soup")
+        assertTrue(consumed.get())
     }
 
     @Test
@@ -317,11 +420,19 @@ class MainCourseAppTest {
         state: SessionUiState,
         factories: BrowsingViewModelFactories = factories(),
         imageLoader: MutableStateFlow<ImageLoader?> = MutableStateFlow(null),
+        sharedRecipeInput: SharedRecipeInput? = null,
+        onSharedRecipeInputConsumed: () -> Unit = {},
     ) {
         compose.runOnIdle {
             MainCourseTestContent.content = {
                 MainCourseTheme {
-                    MainCourseAppContent(state = state, factories = factories, imageLoader = imageLoader)
+                    MainCourseAppContent(
+                        state = state,
+                        factories = factories,
+                        imageLoader = imageLoader,
+                        sharedRecipeInput = sharedRecipeInput,
+                        onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
+                    )
                 }
             }
         }
@@ -330,6 +441,7 @@ class MainCourseAppTest {
 
     private fun factories(
         cookbookRefresh: suspend () -> Unit = {},
+        cookbooks: List<Cookbook> = listOf(COOKBOOK),
         detail: RecipeDetail? = DETAIL,
         detailRefresh: suspend () -> Unit = {},
         summary: RecipeSummary = SUMMARY,
@@ -337,8 +449,14 @@ class MainCourseAppTest {
         onDetailCreated: () -> Unit = {},
         onDeleteAccount: () -> Unit = {},
         pendingSettingsSession: SessionResponse? = null,
+        importUrl: suspend (Long, String) -> RecipeImportResponse = { _, _ ->
+            RecipeImportResponse(11, "pending")
+        },
+        importText: suspend (Long, String) -> RecipeImportResponse = { _, _ ->
+            RecipeImportResponse(12, "pending")
+        },
     ): BrowsingViewModelFactories {
-        val selection = MutableStateFlow(CookbookSelection(listOf(COOKBOOK), COOKBOOK.id))
+        val selection = MutableStateFlow(CookbookSelection(cookbooks, cookbooks.firstOrNull()?.id))
         val recipes = MutableStateFlow(listOf(summary))
         val detailState = MutableStateFlow(detail)
         val shoppingItems = MutableStateFlow(emptyList<ShoppingItem>())
@@ -356,7 +474,22 @@ class MainCourseAppTest {
                         observeRecipes = { recipes },
                         refreshCookbooks = cookbookRefresh,
                         refreshRecipes = {},
-                        selectCookbook = {},
+                        selectCookbook = { cookbookId ->
+                            selection.value = selection.value.copy(selectedId = cookbookId)
+                        },
+                    )
+                }
+            },
+            import = {
+                simpleViewModelFactory {
+                    RecipeImportViewModel(
+                        observeCookbooks = { selection },
+                        refreshCookbooks = {},
+                        selectCookbook = { cookbookId ->
+                            selection.value = selection.value.copy(selectedId = cookbookId)
+                        },
+                        importUrl = importUrl,
+                        importText = importText,
                     )
                 }
             },
@@ -415,6 +548,14 @@ class MainCourseAppTest {
         override suspend fun cookbooks(): List<Cookbook> = error("Not used")
         override suspend fun recipes(cookbookId: Long): List<RecipeSummary> = error("Not used")
         override suspend fun recipe(cookbookId: Long, recipeId: Long): RecipeDetail = error("Not used")
+        override suspend fun importRecipe(
+            cookbookId: Long,
+            request: RecipeUrlImportRequest,
+        ): RecipeImportResponse = error("Not used")
+        override suspend fun importRecipeText(
+            cookbookId: Long,
+            request: RecipeTextImportRequest,
+        ): RecipeImportResponse = error("Not used")
         override suspend fun moveRecipe(
             cookbookId: Long,
             recipeId: Long,
@@ -444,6 +585,7 @@ class MainCourseAppTest {
         val USER = User(1, "Reader", "reader@example.test", true)
         val SESSION = SessionResponse("token", "2099-01-01T00:00:00Z", USER)
         val COOKBOOK = Cookbook(10, "Home", true, 1, emptyList())
+        val SHARED_COOKBOOK = Cookbook(11, "Family", false, 3, emptyList())
         val SUMMARY = RecipeSummary(
             id = 7,
             name = "Tomato soup",

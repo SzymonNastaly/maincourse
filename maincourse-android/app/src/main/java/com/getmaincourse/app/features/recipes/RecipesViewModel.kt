@@ -11,15 +11,20 @@ import com.getmaincourse.app.data.network.userMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 data class RecipesUiState(
@@ -53,6 +58,8 @@ class RecipesViewModel internal constructor(
 
     private val refreshState = MutableStateFlow(RefreshState(running = true))
     private var refreshJob: Job? = null
+    private var pollingJob: Job? = null
+    private var pollingCookbookId: Long? = null
 
     private val content = observeCookbooks().flatMapLatest { selection ->
         val recipes = selection.selectedId?.let(observeRecipes) ?: flowOf(emptyList())
@@ -77,6 +84,13 @@ class RecipesViewModel internal constructor(
 
     init {
         refresh()
+        viewModelScope.launch {
+            content.map { (selection, recipes) ->
+                selection.selectedId?.takeIf { recipes.any(RecipeSummary::isImportPending) }
+            }.distinctUntilChanged().collect { cookbookId ->
+                cookbookId?.let(::startPolling)
+            }
+        }
     }
 
     fun refresh(): Job {
@@ -90,6 +104,7 @@ class RecipesViewModel internal constructor(
             } catch (failure: CancellationException) {
                 throw failure
             } catch (failure: Throwable) {
+                currentCoroutineContext().ensureActive()
                 refreshState.value = RefreshState(
                     running = false,
                     error = failure.userMessage("Could not refresh recipes"),
@@ -111,8 +126,41 @@ class RecipesViewModel internal constructor(
         }
     }
 
+    fun importAccepted(cookbookId: Long) {
+        refreshJob?.cancel()
+        refreshState.value = RefreshState(running = false)
+        startPolling(cookbookId, restart = true)
+    }
+
+    private fun startPolling(cookbookId: Long, restart: Boolean = false) {
+        if (!restart && pollingCookbookId == cookbookId && pollingJob?.isActive == true) return
+        pollingJob?.cancel()
+        pollingCookbookId = cookbookId
+        pollingJob = viewModelScope.launch {
+            repeat(IMPORT_POLL_ATTEMPTS) {
+                delay(IMPORT_POLL_INTERVAL_MILLIS)
+                try {
+                    refreshRecipes(cookbookId)
+                    refreshState.value = RefreshState(running = false)
+                    val stillPending = observeRecipes(cookbookId).first()
+                        .any(RecipeSummary::isImportPending)
+                    if (!stillPending) return@launch
+                } catch (failure: CancellationException) {
+                    throw failure
+                } catch (_: Throwable) {
+                    // Import polling is best-effort and should not replace visible cached content.
+                }
+            }
+        }
+    }
+
     private data class RefreshState(
         val running: Boolean,
         val error: String? = null,
     )
 }
+
+private fun RecipeSummary.isImportPending(): Boolean = importStatus == "pending" || importStatus == "processing"
+
+private const val IMPORT_POLL_INTERVAL_MILLIS = 3_000L
+private const val IMPORT_POLL_ATTEMPTS = 10

@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -163,6 +165,72 @@ class RecipesViewModelTest {
     }
 
     @Test
+    fun acceptedShareImportClearsStaleErrorAndPollsUntilTerminal() = runTest(dispatcher) {
+        val selection = MutableStateFlow(CookbookSelection(listOf(cookbook(10)), 10))
+        val recipes = MutableStateFlow(listOf(recipeSummary(7)))
+        var refreshCalls = 0
+        val viewModel = RecipesViewModel(
+            observeCookbooks = { selection },
+            observeRecipes = { recipes },
+            refreshCookbooks = {},
+            refreshRecipes = {
+                refreshCalls += 1
+                if (refreshCalls == 1) throw IOException("offline")
+                recipes.value = listOf(recipeSummary(8, "completed"))
+            },
+            selectCookbook = {},
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        advanceUntilIdle()
+        assertEquals("You're offline", viewModel.state.value.error)
+
+        recipes.value = listOf(recipeSummary(8, "pending"))
+        viewModel.importAccepted(10)
+        runCurrent()
+
+        assertNull(viewModel.state.value.error)
+        advanceTimeBy(3_000)
+        runCurrent()
+
+        assertEquals("completed", viewModel.state.value.recipes.single().importStatus)
+        assertEquals(2, refreshCalls)
+        advanceTimeBy(30_000)
+        runCurrent()
+        assertEquals(2, refreshCalls)
+        collection.cancel()
+    }
+
+    @Test
+    fun cachedPendingImportStartsPollingWithoutANewImportHandoff() = runTest(dispatcher) {
+        val selection = MutableStateFlow(CookbookSelection(listOf(cookbook(10)), 10))
+        val recipes = MutableStateFlow(listOf(recipeSummary(8, "pending")))
+        var refreshCalls = 0
+        val viewModel = RecipesViewModel(
+            observeCookbooks = { selection },
+            observeRecipes = { recipes },
+            refreshCookbooks = {},
+            refreshRecipes = {
+                refreshCalls += 1
+                if (refreshCalls == 1) throw IOException("offline")
+                if (refreshCalls == 2) recipes.value = listOf(recipeSummary(8, "completed"))
+            },
+            selectCookbook = {},
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        runCurrent()
+
+        assertEquals(1, refreshCalls)
+        assertEquals("You're offline", viewModel.state.value.error)
+        advanceTimeBy(3_000)
+        runCurrent()
+
+        assertEquals(2, refreshCalls)
+        assertEquals("completed", viewModel.state.value.recipes.single().importStatus)
+        assertNull(viewModel.state.value.error)
+        collection.cancel()
+    }
+
+    @Test
     fun cachedDetailIsShownWithoutFetching() = runTest(dispatcher) {
         val detail = recipeDetail(7)
         val cached = MutableStateFlow<RecipeDetail?>(detail)
@@ -233,7 +301,7 @@ class RecipesViewModelTest {
     private companion object {
         fun cookbook(id: Long) = Cookbook(id, "Cookbook $id", true, 1, emptyList())
 
-        fun recipeSummary(id: Long) = RecipeSummary(
+        fun recipeSummary(id: Long, importStatus: String = "completed") = RecipeSummary(
             id = id,
             name = "Recipe $id",
             prepTime = null,
@@ -241,7 +309,7 @@ class RecipesViewModelTest {
             favorite = false,
             coverImageUrl = null,
             coverImages = null,
-            importStatus = "completed",
+            importStatus = importStatus,
             errorMessage = null,
             updatedAt = "2026-09-09T00:00:00Z",
         )

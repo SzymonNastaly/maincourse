@@ -5,7 +5,10 @@ import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
@@ -46,6 +49,18 @@ interface MainCourseService {
         @Header("X-Cookbook-Id") cookbookId: Long,
         @Path("recipeId") recipeId: Long,
     ): RecipeDetail
+
+    @POST("api/v1/recipes/import")
+    suspend fun importRecipe(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Body request: RecipeUrlImportRequest,
+    ): RecipeImportResponse
+
+    @POST("api/v1/recipes/extract_from_text")
+    suspend fun importRecipeText(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Body request: RecipeTextImportRequest,
+    ): RecipeImportResponse
 
     @PATCH("api/v1/recipes/{recipeId}")
     suspend fun moveRecipe(

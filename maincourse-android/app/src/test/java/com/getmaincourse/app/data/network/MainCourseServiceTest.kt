@@ -3,6 +3,8 @@ package com.getmaincourse.app.data.network
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
@@ -115,6 +117,34 @@ class MainCourseServiceTest {
         assertEquals("GET", request.method)
         assertEquals("/api/v1/recipes", request.path)
         assertEquals("42", request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun recipeImportsUseScopedUrlAndTextContracts() = runTest {
+        server.enqueue(jsonResponse(202, """{"id":8,"import_status":"pending"}"""))
+        server.enqueue(jsonResponse(202, """{"id":9,"import_status":"pending"}"""))
+
+        val urlImport = service.importRecipe(42, RecipeUrlImportRequest("https://example.com/soup"))
+        val textImport = service.importRecipeText(42, RecipeTextImportRequest("Soup\n\n1 onion"))
+
+        assertEquals(8L, urlImport.id)
+        assertEquals("pending", textImport.importStatus)
+        val urlRequest = server.takeRequest()
+        assertEquals("POST", urlRequest.method)
+        assertEquals("/api/v1/recipes/import", urlRequest.path)
+        assertEquals("42", urlRequest.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            json("""{"url":"https://example.com/soup"}"""),
+            json(urlRequest.body.readUtf8()),
+        )
+        val textRequest = server.takeRequest()
+        assertEquals("POST", textRequest.method)
+        assertEquals("/api/v1/recipes/extract_from_text", textRequest.path)
+        assertEquals("42", textRequest.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            json("""{"text":"Soup\n\n1 onion"}"""),
+            json(textRequest.body.readUtf8()),
+        )
     }
 
     @Test
