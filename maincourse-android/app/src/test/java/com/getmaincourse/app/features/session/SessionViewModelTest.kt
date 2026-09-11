@@ -10,6 +10,7 @@ import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import okhttp3.MultipartBody
 import com.getmaincourse.app.data.model.SessionResponse
@@ -403,6 +404,16 @@ class SessionViewModelTest {
             cookbookId: Long,
             recipeId: Long,
             request: MoveRecipeRequest,
+        ): RecipeDetail = error("Not used")
+        override suspend fun updateRecipe(
+            cookbookId: Long,
+            recipeId: Long,
+            request: RecipeUpdateRequest,
+        ): RecipeDetail = error("Not used")
+        override suspend fun updateRecipeCoverImage(
+            cookbookId: Long,
+            recipeId: Long,
+            coverImage: MultipartBody.Part,
         ): RecipeDetail = error("Not used")
         override suspend fun deleteRecipe(cookbookId: Long, recipeId: Long) = error("Not used")
         override suspend fun shoppingListItems(cookbookId: Long): List<ShoppingItem> = error("Not used")

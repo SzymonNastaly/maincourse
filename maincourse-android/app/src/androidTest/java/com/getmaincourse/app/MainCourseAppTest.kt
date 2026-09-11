@@ -25,6 +25,7 @@ import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import okhttp3.MultipartBody
 import com.getmaincourse.app.data.model.SessionResponse
@@ -42,6 +43,7 @@ import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
+import com.getmaincourse.app.features.recipes.RecipeEditViewModel
 import com.getmaincourse.app.features.recipes.RecipeImportViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.recipes.SharedRecipeInput
@@ -116,6 +118,46 @@ class MainCourseAppTest {
 
         compose.onNodeWithTag("navigate_back").performClick()
         compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+    }
+
+    @Test
+    fun recipeCanBeEditedFromDetailAndReturnsWithAcknowledgedChanges() {
+        val updated = AtomicReference<RecipeUpdateRequest?>(null)
+        show(
+            SessionUiState.SignedIn(SESSION),
+            factories = factories(onRecipeUpdated = updated::set),
+        )
+
+        compose.onNodeWithText(SUMMARY.name).performClick()
+        compose.onNodeWithTag("recipe_edit_open").performScrollTo().performClick()
+        compose.onNodeWithTag("recipe_edit").assertIsDisplayed()
+        compose.onNodeWithTag("navigation_bar").assertDoesNotExist()
+        compose.onNodeWithTag("recipe_edit_name").performTextReplacement("Roasted tomato soup")
+        compose.onNodeWithTag("recipe_edit_save").assertIsEnabled().performClick()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        compose.onNodeWithText("Roasted tomato soup").assertIsDisplayed()
+        compose.onNodeWithText("Recipe updated").assertIsDisplayed()
+        assertEquals("Roasted tomato soup", updated.get()?.name)
+    }
+
+    @Test
+    fun leavingADirtyRecipeEditorRequiresDiscardConfirmation() {
+        show(SessionUiState.SignedIn(SESSION))
+
+        compose.onNodeWithText(SUMMARY.name).performClick()
+        compose.onNodeWithTag("recipe_edit_open").performScrollTo().performClick()
+        compose.onNodeWithTag("recipe_edit_name").performTextReplacement("Unpublished soup")
+        compose.onNodeWithTag("recipe_edit_back").performClick()
+
+        compose.onNodeWithText("Discard changes?").assertIsDisplayed()
+        compose.onNodeWithText("Keep editing").performClick()
+        compose.onNodeWithTag("recipe_edit").assertIsDisplayed()
+
+        compose.onNodeWithTag("recipe_edit_back").performClick()
+        compose.onNodeWithTag("recipe_edit_discard").performClick()
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        compose.onNodeWithText(SUMMARY.name).assertIsDisplayed()
     }
 
     @Test
@@ -474,6 +516,7 @@ class MainCourseAppTest {
         importText: suspend (Long, String) -> RecipeImportResponse = { _, _ ->
             RecipeImportResponse(12, "pending")
         },
+        onRecipeUpdated: (RecipeUpdateRequest) -> Unit = {},
     ): BrowsingViewModelFactories {
         val selection = MutableStateFlow(CookbookSelection(cookbooks, cookbooks.firstOrNull()?.id))
         val recipes = MutableStateFlow(listOf(summary))
@@ -518,6 +561,28 @@ class MainCourseAppTest {
                     RecipeDetailViewModel(
                         observeDetail = { detailState },
                         refreshDetail = detailRefresh,
+                    )
+                }
+            },
+            edit = { _, _, _ ->
+                simpleViewModelFactory {
+                    RecipeEditViewModel(
+                        observeRecipe = { detailState },
+                        updateRecipe = { request, _ ->
+                            onRecipeUpdated(request)
+                            detailState.value = detailState.value?.copy(
+                                name = request.name,
+                                prepTime = request.prepTime,
+                                cookTime = request.cookTime,
+                                servings = request.servings,
+                                ingredients = request.ingredients,
+                                structuredIngredients = emptyList(),
+                                instructions = request.instructions,
+                                notes = request.notes,
+                                sourceUrl = request.sourceUrl,
+                                updatedAt = "2026-09-11T12:00:00Z",
+                            )
+                        },
                     )
                 }
             },
@@ -605,6 +670,16 @@ class MainCourseAppTest {
             cookbookId: Long,
             recipeId: Long,
             request: MoveRecipeRequest,
+        ): RecipeDetail = error("Not used")
+        override suspend fun updateRecipe(
+            cookbookId: Long,
+            recipeId: Long,
+            request: RecipeUpdateRequest,
+        ): RecipeDetail = error("Not used")
+        override suspend fun updateRecipeCoverImage(
+            cookbookId: Long,
+            recipeId: Long,
+            coverImage: MultipartBody.Part,
         ): RecipeDetail = error("Not used")
         override suspend fun deleteRecipe(cookbookId: Long, recipeId: Long) = error("Not used")
         override suspend fun shoppingListItems(cookbookId: Long): List<ShoppingItem> = error("Not used")

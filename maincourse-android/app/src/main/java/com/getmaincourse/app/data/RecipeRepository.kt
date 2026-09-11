@@ -17,6 +17,7 @@ import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipePageContent
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.network.MainCourseService
 import java.time.Instant
@@ -208,6 +209,26 @@ class RecipeRepository(
         }
     }
 
+    suspend fun update(
+        userId: Long,
+        cookbookId: Long,
+        recipeId: Long,
+        request: RecipeUpdateRequest,
+        coverImage: ByteArray? = null,
+        coverImageMimeType: String? = null,
+    ) = listWrites.withLock {
+        val updated = service.updateRecipe(cookbookId, recipeId, request)
+        saveRecipeDetails(userId, cookbookId, listOf(updated))
+
+        if (coverImage != null && coverImageMimeType != null) {
+            val extension = imageExtension(coverImageMimeType)
+            val body = coverImage.toRequestBody(coverImageMimeType.toMediaType())
+            val part = MultipartBody.Part.createFormData("cover_image", "cover.$extension", body)
+            val withImage = service.updateRecipeCoverImage(cookbookId, recipeId, part)
+            saveRecipeDetails(userId, cookbookId, listOf(withImage))
+        }
+    }
+
     suspend fun delete(userId: Long, cookbookId: Long, recipeId: Long) = listWrites.withLock {
         service.deleteRecipe(cookbookId, recipeId)
         dao.removeRecipe(userId, cookbookId, recipeId)
@@ -234,6 +255,13 @@ class RecipeRepository(
             // The import is already accepted; a later refresh will reconcile the cache.
         }
         return response
+    }
+
+    private fun imageExtension(mimeType: String): String = when (mimeType.lowercase()) {
+        "image/png" -> "png"
+        "image/webp" -> "webp"
+        "image/heic", "image/heif" -> "heic"
+        else -> "jpg"
     }
 
     private suspend fun saveRecipeDetails(

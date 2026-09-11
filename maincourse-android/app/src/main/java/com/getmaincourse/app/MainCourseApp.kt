@@ -63,6 +63,8 @@ import com.getmaincourse.app.features.recipes.CookbookTitleMenu
 import com.getmaincourse.app.features.recipes.IngredientReviewScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
+import com.getmaincourse.app.features.recipes.RecipeEditScreen
+import com.getmaincourse.app.features.recipes.RecipeEditViewModel
 import com.getmaincourse.app.features.recipes.RecipeImportScreen
 import com.getmaincourse.app.features.recipes.RecipeImportViewModel
 import com.getmaincourse.app.features.recipes.RecipesScreen
@@ -89,6 +91,9 @@ data object RecipesRoute : NavKey
 data class RecipeDetailRoute(val recipeId: Long, val cookbookId: Long) : NavKey
 
 @Serializable
+data class RecipeEditRoute(val recipeId: Long, val cookbookId: Long) : NavKey
+
+@Serializable
 data class IngredientReviewRoute(val recipeId: Long, val cookbookId: Long, val portions: Int) : NavKey
 
 @Serializable
@@ -107,6 +112,7 @@ internal data class BrowsingViewModelFactories(
     val recipes: (Long) -> ViewModelProvider.Factory,
     val import: (Long) -> ViewModelProvider.Factory,
     val detail: (userId: Long, cookbookId: Long, recipeId: Long) -> ViewModelProvider.Factory,
+    val edit: (userId: Long, cookbookId: Long, recipeId: Long) -> ViewModelProvider.Factory,
     val shopping: (Long) -> ViewModelProvider.Factory,
     val search: (Long) -> ViewModelProvider.Factory,
     val settings: () -> ViewModelProvider.Factory,
@@ -154,6 +160,11 @@ fun MainCourseApp(
                         shoppingListRepository,
                         cookbookRepository,
                     )
+                }
+            },
+            edit = { userId, cookbookId, recipeId ->
+                simpleViewModelFactory {
+                    RecipeEditViewModel(userId, cookbookId, recipeId, recipeRepository)
                 }
             },
             shopping = { userId ->
@@ -246,6 +257,7 @@ private fun ProtectedShell(
     val snackbarHostState = remember { SnackbarHostState() }
     val shellScope = rememberCoroutineScope()
     val importStartedMessage = stringResource(R.string.recipe_import_accepted)
+    val recipeSavedMessage = stringResource(R.string.recipe_edit_saved)
     val recipesViewModel: RecipesViewModel = viewModel(
         key = "recipes-$userId",
         factory = factories.recipes(userId),
@@ -276,7 +288,7 @@ private fun ProtectedShell(
         containerColor = MainCourseColors.Canvas,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            if (current !is RecipeEditRoute) TopAppBar(
                 title = {
                     when (current) {
                         RecipesRoute -> CookbookTitleMenu(
@@ -322,7 +334,7 @@ private fun ProtectedShell(
             )
         },
         bottomBar = {
-            NavigationBar(
+            if (current !is RecipeEditRoute) NavigationBar(
                 modifier = Modifier.testTag("navigation_bar"),
                 containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp,
@@ -407,10 +419,50 @@ private fun ProtectedShell(
                         actionState = actionState,
                         onMove = { detailViewModel.moveTo(it) },
                         onDelete = { detailViewModel.delete() },
+                        onEdit = {
+                            backStack.add(RecipeEditRoute(route.recipeId, route.cookbookId))
+                        },
                         onAddIngredients = { portions ->
                             backStack.add(IngredientReviewRoute(route.recipeId, route.cookbookId, portions))
                         },
                         onActionSucceeded = { backStack.removeLastOrNull() },
+                    )
+                }
+                entry<RecipeEditRoute> { route ->
+                    val editViewModel: RecipeEditViewModel = viewModel(
+                        key = "recipe-edit-$userId-${route.cookbookId}-${route.recipeId}",
+                        factory = factories.edit(userId, route.cookbookId, route.recipeId),
+                    )
+                    val editState by editViewModel.state.collectAsStateWithLifecycle()
+                    LaunchedEffect(editState.saved) {
+                        if (editState.saved) {
+                            backStack.removeLastOrNull()
+                            shellScope.launch { snackbarHostState.showSnackbar(recipeSavedMessage) }
+                        }
+                    }
+                    RecipeEditScreen(
+                        state = editState,
+                        imageLoader = latestImageLoader,
+                        resolveImage = latestResolveImage,
+                        onBack = { backStack.removeLastOrNull() },
+                        onSave = { editViewModel.save() },
+                        onNameChange = editViewModel::updateName,
+                        onPrepTimeChange = editViewModel::updatePrepTime,
+                        onCookTimeChange = editViewModel::updateCookTime,
+                        onServingsChange = editViewModel::updateServings,
+                        onIngredientChange = editViewModel::updateIngredient,
+                        onAddIngredient = editViewModel::addIngredient,
+                        onRemoveIngredient = editViewModel::removeIngredient,
+                        onMoveIngredient = editViewModel::moveIngredient,
+                        onInstructionChange = editViewModel::updateInstruction,
+                        onAddInstruction = editViewModel::addInstruction,
+                        onRemoveInstruction = editViewModel::removeInstruction,
+                        onMoveInstruction = editViewModel::moveInstruction,
+                        onNotesChange = editViewModel::updateNotes,
+                        onSourceUrlChange = editViewModel::updateSourceUrl,
+                        onImageSelected = editViewModel::selectImage,
+                        onImageError = editViewModel::reportImageError,
+                        onClearError = editViewModel::clearError,
                     )
                 }
                 entry<IngredientReviewRoute> { route ->

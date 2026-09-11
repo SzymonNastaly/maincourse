@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -56,6 +58,7 @@ fun RecipeDetailScreen(
     actionState: RecipeActionUiState = RecipeActionUiState.Idle,
     onMove: (Long) -> Unit = {},
     onDelete: () -> Unit = {},
+    onEdit: () -> Unit = {},
     onAddIngredients: (Int) -> Unit = {},
     onActionSucceeded: () -> Unit = {},
 ) {
@@ -92,6 +95,7 @@ fun RecipeDetailScreen(
                     onRefresh = onRefresh,
                     onMove = onMove,
                     onDelete = onDelete,
+                    onEdit = onEdit,
                     onAddIngredients = onAddIngredients,
                     cookbooks = state.cookbooks,
                     cookbookId = cookbookId,
@@ -103,6 +107,7 @@ fun RecipeDetailScreen(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun DetailContent(
     recipe: RecipeDetail,
     imageLoader: ImageLoader?,
@@ -111,6 +116,7 @@ private fun DetailContent(
     onRefresh: () -> Unit,
     onMove: (Long) -> Unit,
     onDelete: () -> Unit,
+    onEdit: () -> Unit,
     onAddIngredients: (Int) -> Unit,
     cookbooks: List<Cookbook>,
     cookbookId: Long,
@@ -187,9 +193,19 @@ private fun DetailContent(
             )
         }
         Text(recipe.name, style = MaterialTheme.typography.headlineMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             OutlinedButton(onClick = onRefresh, enabled = !refreshing) {
                 Text(stringResource(R.string.retry))
+            }
+            OutlinedButton(
+                onClick = onEdit,
+                enabled = !actionRunning,
+                modifier = Modifier.testTag("recipe_edit_open"),
+            ) {
+                Text(stringResource(R.string.recipe_edit))
             }
             OutlinedButton(
                 onClick = { showMove = true },

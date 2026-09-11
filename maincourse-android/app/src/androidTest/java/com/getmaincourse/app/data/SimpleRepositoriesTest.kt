@@ -10,6 +10,7 @@ import com.getmaincourse.app.data.cache.RecipeEntity
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.network.MainCourseService
@@ -467,6 +468,68 @@ class SimpleRepositoriesTest {
         assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
         assertEquals(listOf("Refreshed"), recipes.observeSummaries(USER_ID, 20).first().map { it.name })
         assertEquals("Moved", recipes.observeDetail(USER_ID, 20, 7).first()?.name)
+    }
+
+    @Test
+    fun confirmedRecipeEditUpdatesDetailSummaryAndSearchDocument() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Cached soup"))
+        server.enqueue(
+            jsonResponse(
+                detailJson(
+                    7,
+                    "Roasted tomato soup",
+                    ingredients = "[\"tomatoes\",\"salt\"]",
+                    instructions = "[\"Roast\",\"Blend\"]",
+                    updatedAt = "2026-09-11T12:00:00Z",
+                ),
+            ),
+        )
+
+        recipes.update(
+            userId = USER_ID,
+            cookbookId = 10,
+            recipeId = 7,
+            request = RecipeUpdateRequest(
+                name = "Roasted tomato soup",
+                prepTime = 5,
+                cookTime = 30,
+                servings = 4,
+                ingredients = listOf("tomatoes", "salt"),
+                instructions = listOf("Roast", "Blend"),
+                notes = null,
+                sourceUrl = null,
+            ),
+        )
+
+        assertEquals("Roasted tomato soup", recipes.observeDetail(USER_ID, 10, 7).first()?.name)
+        assertEquals("Roasted tomato soup", recipes.observeSummaries(USER_ID, 10).first().single().name)
+        assertEquals(listOf(7L), recipes.searchSummaries(USER_ID, 10, "roast").first().map { it.id })
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api/v1/recipes/7", request.path)
+        assertEquals("10", request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun failedRecipeEditLeavesCachedRecipeUnchanged() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Cached soup"))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        assertTrue(
+            runCatching {
+                recipes.update(
+                    USER_ID,
+                    10,
+                    7,
+                    RecipeUpdateRequest("Edited", null, null, null, emptyList(), emptyList(), null, null),
+                )
+            }.isFailure,
+        )
+
+        assertEquals("Cached soup", recipes.observeSummaries(USER_ID, 10).first().single().name)
+        assertNull(recipes.observeDetail(USER_ID, 10, 7).first())
     }
 
     @Test

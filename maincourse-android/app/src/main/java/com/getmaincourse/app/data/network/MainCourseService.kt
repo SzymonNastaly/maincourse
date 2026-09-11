@@ -10,6 +10,7 @@ import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.ShoppingItem
@@ -93,6 +94,21 @@ interface MainCourseService {
         @Header("X-Cookbook-Id") cookbookId: Long,
         @Path("recipeId") recipeId: Long,
         @Body request: MoveRecipeRequest,
+    ): RecipeDetail
+
+    @PATCH("api/v1/recipes/{recipeId}")
+    suspend fun updateRecipe(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Path("recipeId") recipeId: Long,
+        @Body request: RecipeUpdateRequest,
+    ): RecipeDetail
+
+    @Multipart
+    @PATCH("api/v1/recipes/{recipeId}")
+    suspend fun updateRecipeCoverImage(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Path("recipeId") recipeId: Long,
+        @Part coverImage: MultipartBody.Part,
     ): RecipeDetail
 
     @DELETE("api/v1/recipes/{recipeId}")

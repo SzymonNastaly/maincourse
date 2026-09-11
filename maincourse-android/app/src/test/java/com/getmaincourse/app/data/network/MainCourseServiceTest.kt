@@ -6,6 +6,7 @@ import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipePageContent
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
+import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
@@ -236,6 +237,59 @@ class MainCourseServiceTest {
         assertEquals("/api/v1/recipes/7", request.path)
         assertEquals("42", request.getHeader("X-Cookbook-Id"))
         assertEquals(json("""{"cookbook_id":84}"""), json(request.body.readUtf8()))
+    }
+
+    @Test
+    fun updateRecipeUsesScopedPatchAndIncludesClearedNullableFields() = runTest {
+        server.enqueue(jsonResponse(200, recipeJson()))
+
+        service.updateRecipe(
+            42,
+            7,
+            RecipeUpdateRequest(
+                name = "New soup",
+                prepTime = null,
+                cookTime = 25,
+                servings = null,
+                ingredients = listOf("onion", "salt"),
+                instructions = listOf("Cook"),
+                notes = null,
+                sourceUrl = null,
+            ),
+        )
+
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api/v1/recipes/7", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            json(
+                """{"name":"New soup","prep_time":null,"cook_time":25,"servings":null,"ingredients":["onion","salt"],"instructions":["Cook"],"notes":null,"source_url":null}""",
+            ),
+            json(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun coverImageUpdateUsesScopedMultipartPatch() = runTest {
+        server.enqueue(jsonResponse(200, recipeJson()))
+        val part = MultipartBody.Part.createFormData(
+            "cover_image",
+            "cover.jpg",
+            "image-bytes".toRequestBody("image/jpeg".toMediaType()),
+        )
+
+        service.updateRecipeCoverImage(42, 7, part)
+
+        val request = server.takeRequest()
+        assertEquals("PATCH", request.method)
+        assertEquals("/api/v1/recipes/7", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+        assertTrue(request.getHeader("Content-Type")?.startsWith("multipart/form-data;") == true)
+        val body = request.body.readUtf8()
+        assertTrue(body.contains("name=\"cover_image\"; filename=\"cover.jpg\""))
+        assertTrue(body.contains("Content-Type: image/jpeg"))
+        assertTrue(body.contains("image-bytes"))
     }
 
     @Test

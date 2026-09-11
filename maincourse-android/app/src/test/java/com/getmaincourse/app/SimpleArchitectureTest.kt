@@ -90,7 +90,6 @@ class SimpleArchitectureTest {
             "com/getmaincourse/app/features/recipes/RecipeActionController.kt",
             "com/getmaincourse/app/features/recipes/RecipeActionState.kt",
             "com/getmaincourse/app/features/recipes/RecipeEditDraft.kt",
-            "com/getmaincourse/app/features/recipes/RecipeEditScreen.kt",
             "com/getmaincourse/app/features/recipes/RecipeImagePreparationState.kt",
             "com/getmaincourse/app/features/recipes/RecipeUiSavedState.kt",
             "com/getmaincourse/app/features/search/RecipeSearchDocument.kt",
