@@ -47,7 +47,7 @@ module LlmStubHelper
   def build_openrouter_response(content)
     {
       "id" => "gen-test-123",
-      "model" => "openai/gpt-oss-120b",
+      "model" => "google/gemini-3.5-flash-lite",
       "choices" => [
         {
           "message" => {

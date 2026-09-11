@@ -6,7 +6,8 @@ class RecipeLlmService
   include Llm::RecipeExtraction
 
   MAX_TEXT_LENGTH = 15_000
-  MODEL = "google/gemini-3.1-flash-lite-preview"
+  MODEL = "google/gemini-3.5-flash-lite"
+  OPENROUTER_PROVIDER = "google-vertex/eu"
   PROMPT_TYPES = %i[webpage raw_text].freeze
 
   def initialize(text, prompt_type: :webpage, source_url: nil)
@@ -40,7 +41,8 @@ class RecipeLlmService
   private
 
   def call_llm(text)
-    chat = RubyLLM.chat(model: MODEL, provider: :openrouter)
+    chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
+    chat.with_params(provider: { only: [ OPENROUTER_PROVIDER ] })
     chat.with_schema(Llm::RecipeSchema).ask(prompt_for(text))
   end
 

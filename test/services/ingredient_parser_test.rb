@@ -37,6 +37,18 @@ class IngredientParserTest < ActiveSupport::TestCase
     assert_equal [ "flour", "salt" ], result.map { |h| h[:name] }
   end
 
+  test "routes the configured model exclusively through EU Vertex" do
+    stub_ingredient_parse_response([ { "raw" => "salt", "name" => "salt" } ])
+
+    IngredientParser.call([ "salt" ])
+
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) do |req|
+      body = JSON.parse(req.body)
+      body["model"] == "google/gemini-3.5-flash-lite" &&
+        body.dig("provider", "only") == [ "google-vertex/eu" ]
+    end
+  end
+
   test "falls back to raw=name on missing entries" do
     stub_ingredient_parse_response([
       { "raw" => "2 cups flour", "name" => "flour", "amount" => 2 }

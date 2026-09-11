@@ -28,6 +28,18 @@ class RecipeImageLlmServiceTest < ActiveSupport::TestCase
     assert_equal "Looks good", result.recipe_attributes[:notes]
   end
 
+  test "routes the configured model exclusively through EU Vertex" do
+    stub_llm_response(name: "Photo Recipe", ingredients: [], instructions: [])
+
+    RecipeImageLlmService.new(@image_path).extract
+
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) do |req|
+      body = JSON.parse(req.body)
+      body["model"] == "google/gemini-3.5-flash-lite" &&
+        body.dig("provider", "only") == [ "google-vertex/eu" ]
+    end
+  end
+
   test "returns failure when image path is blank" do
     result = RecipeImageLlmService.new("").extract
 

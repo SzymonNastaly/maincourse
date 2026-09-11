@@ -69,6 +69,18 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
     end
   end
 
+  test "routes the configured model exclusively through EU Vertex" do
+    stub_llm_response(name: "Test Recipe", ingredients: [], instructions: [])
+
+    RecipeLlmService.new("Some text").extract
+
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) do |req|
+      body = JSON.parse(req.body)
+      body["model"] == "google/gemini-3.5-flash-lite" &&
+        body.dig("provider", "only") == [ "google-vertex/eu" ]
+    end
+  end
+
   test "uses raw_text prompt when specified" do
     stub_llm_response(name: "Test Recipe", ingredients: [], instructions: [])
 

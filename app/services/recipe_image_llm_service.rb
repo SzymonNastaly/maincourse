@@ -4,7 +4,8 @@ require "ruby_llm/schema"
 class RecipeImageLlmService
   include Llm::RecipeExtraction
 
-  MODEL = "meta-llama/llama-4-maverick"
+  MODEL = "google/gemini-3.5-flash-lite"
+  OPENROUTER_PROVIDER = "google-vertex/eu"
 
   def initialize(image_path)
     @image_path = image_path
@@ -26,7 +27,8 @@ class RecipeImageLlmService
   private
 
   def call_llm
-    chat = RubyLLM.chat(model: MODEL, provider: :openrouter)
+    chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
+    chat.with_params(provider: { only: [ OPENROUTER_PROVIDER ] })
     chat.with_schema(Llm::RecipeSchema).ask(prompt, with: @image_path)
   end
 
