@@ -119,7 +119,7 @@
     <string name="recipe_processing">Preparing recipe</string>
     <string name="recipe_failed">Import failed</string>
     <string name="recipe_import">Import recipe</string>
-    <string name="recipe_import_short">Import</string>
+    <string name="recipe_import_short">Add Recipe</string>
     <string name="recipe_import_help">Add a recipe from a web link or paste its written ingredients and instructions.</string>
     <string name="recipe_import_source">Import from</string>
     <string name="recipe_import_url">Link</string>

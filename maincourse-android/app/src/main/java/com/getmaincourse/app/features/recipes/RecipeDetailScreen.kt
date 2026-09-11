@@ -86,7 +86,6 @@ fun RecipeDetailScreen(
                     imageLoader = imageLoader,
                     resolveImage = resolveImage,
                     refreshing = state.refreshing,
-                    onRefresh = onRefresh,
                     onMove = onMove,
                     onDelete = onDelete,
                     onEdit = onEdit,
@@ -107,7 +106,6 @@ private fun DetailContent(
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     refreshing: Boolean,
-    onRefresh: () -> Unit,
     onMove: (Long) -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
@@ -191,9 +189,6 @@ private fun DetailContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedButton(onClick = onRefresh, enabled = !refreshing) {
-                Text(stringResource(R.string.retry))
-            }
             OutlinedButton(
                 onClick = onEdit,
                 enabled = !actionRunning,
