@@ -45,8 +45,8 @@ MainCourse has a shared Rails backend and three client surfaces:
 - **Rails 8.1 backend and web app** (`app/`, `config/`, `db/`) — Ruby 3.4.7, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web UI. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
 - **SwiftUI iOS app** (`hauptgang-ios/`) — Offline-first iPhone and iPad client. Generated with XcodeGen, uses RevenueCat for subscriptions.
 - **Kotlin/Jetpack Compose Android app** (`maincourse-android/`) — Android 10+
-  native client. Its current scope and development guide are documented in
-  [`docs/android.md`](docs/android.md).
+  native client. Development guidance is in
+  [`maincourse-android/AGENTS.md`](maincourse-android/AGENTS.md).
 
 The app was originally called Hauptgang, so `hauptgang` still appears throughout the codebase — directory names, Swift module and target names, and the Rails app module. Only the user-facing branding changed.
 
@@ -66,9 +66,10 @@ bin/dev                    # start the Rails dev server
 The iOS project file is generated — run `xcodegen` inside `hauptgang-ios/` after changing `project.yml`.
 
 Open `maincourse-android/` in Android Studio for Android development. See
-[`docs/android.md`](docs/android.md) for SDK setup, build commands, and design
-conventions. Android builds and automated tests do not require Rails or provider
-credentials; live email/recipe integration uses a local or public Rails API.
+[`maincourse-android/AGENTS.md`](maincourse-android/AGENTS.md) for build and
+design guidance. Android builds and automated tests do not require Rails or
+provider credentials; live email/recipe integration uses a local or public Rails
+API.
 
 ### Quality checks
 

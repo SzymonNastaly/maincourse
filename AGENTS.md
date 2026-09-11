@@ -20,7 +20,8 @@ Hauptgang is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventi
 
 This app is used by a handful of people. Prefer pragmatic, working, sensible solutions
 for that scale — avoid architecture, abstraction, or infrastructure justified only by
-large user counts.
+large user counts. Prefer established, well-tested, production-proven libraries to
+hand-rolled solutions.
 
 ## Essential Commands
 
@@ -71,9 +72,8 @@ nowhere else.
 
 ## Documentation
 
-The native Android client is in `maincourse-android/`. Read `docs/android.md`
-and `maincourse-android/AGENTS.md` before changing it. The current scope is the
-simple MVP documented in `docs/android.md`. Use `bin/android-build`,
+The native Android client is in `maincourse-android/`. Read
+`maincourse-android/AGENTS.md` before changing it. Use `bin/android-build`,
 `bin/android-test`, and `bin/android-test --device` (running emulator/device)
 for Android checks; these run separately from the Rails `bin/ci` suite.
 
