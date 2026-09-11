@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
                     sessionViewModel = viewModel,
                     cookbookRepository = appContainer.cookbookRepository,
                     recipeRepository = appContainer.recipeRepository,
+                    shoppingListRepository = appContainer.shoppingListRepository,
                     service = appContainer.service,
                     sessionStore = appContainer.sessionStore,
                     sessionProvider = appContainer.sessionProvider,

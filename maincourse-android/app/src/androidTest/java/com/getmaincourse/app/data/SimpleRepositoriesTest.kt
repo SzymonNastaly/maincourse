@@ -11,6 +11,7 @@ import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.ShoppingItemRequest
+import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.network.MainCourseService
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -43,6 +44,7 @@ class SimpleRepositoriesTest {
     private lateinit var server: MockWebServer
     private lateinit var cookbooks: CookbookRepository
     private lateinit var recipes: RecipeRepository
+    private lateinit var shopping: ShoppingListRepository
 
     @Before
     fun setUp() {
@@ -56,6 +58,7 @@ class SimpleRepositoriesTest {
             .create(MainCourseService::class.java)
         cookbooks = CookbookRepository(database, service, json)
         recipes = RecipeRepository(database, service, json)
+        shopping = ShoppingListRepository(database, service, json)
     }
 
     @After
@@ -279,10 +282,11 @@ class SimpleRepositoriesTest {
 
     @Test
     fun addIngredientsSendsReviewedRowsOnce() = runBlocking {
-        server.enqueue(jsonResponse("[]"))
+        seedCookbook(USER_ID, 10)
+        server.enqueue(jsonResponse("[${shoppingItemJson(9, "stable-id", "Salt", null)}]", 201))
         val rows = listOf(ShoppingItemRequest("stable-id", "Salt", "to taste", null, 7))
 
-        recipes.addIngredients(10, rows)
+        shopping.create(USER_ID, 10, rows)
 
         val request = server.takeRequest()
         assertEquals("POST", request.method)
@@ -292,6 +296,56 @@ class SimpleRepositoriesTest {
             request.body.readUtf8(),
         )
         assertEquals(1, server.requestCount)
+        assertEquals(listOf("Salt"), shopping.observeItems(USER_ID, 10).first().map { it.name })
+    }
+
+    @Test
+    fun shoppingRefreshIsScopedAndOrdersUncheckedBeforeChecked() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedCookbook(OTHER_USER_ID, 10)
+        server.enqueue(
+            jsonResponse(
+                "[" +
+                    shoppingItemJson(2, "bread", "Bread", null) + "," +
+                    shoppingItemJson(1, "milk", "Milk", "2026-09-11T10:00:00Z") +
+                    "]",
+            ),
+        )
+
+        shopping.refresh(USER_ID, 10)
+
+        assertEquals(listOf("Bread", "Milk"), shopping.observeItems(USER_ID, 10).first().map { it.name })
+        assertEquals(emptyList<ShoppingItem>(), shopping.observeItems(USER_ID, 20).first())
+        assertEquals(emptyList<ShoppingItem>(), shopping.observeItems(OTHER_USER_ID, 10).first())
+    }
+
+    @Test
+    fun failedShoppingMutationsLeaveAcknowledgedCacheUnchanged() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        server.enqueue(jsonResponse("[${shoppingItemJson(1, "milk", "Milk", null)}]"))
+        shopping.refresh(USER_ID, 10)
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        assertTrue(runCatching { shopping.setChecked(USER_ID, 10, 1, true) }.isFailure)
+
+        val cached = shopping.observeItems(USER_ID, 10).first().single()
+        assertNull(cached.checkedAt)
+    }
+
+    @Test
+    fun confirmedShoppingMutationsUpdateAndRemoveCachedRows() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        server.enqueue(jsonResponse("[${shoppingItemJson(1, "milk", "Milk", null)}]"))
+        shopping.refresh(USER_ID, 10)
+        server.enqueue(jsonResponse(shoppingItemJson(1, "milk", "Milk", "2026-09-11T10:00:00Z")))
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        shopping.setChecked(USER_ID, 10, 1, true)
+        assertNotNull(shopping.observeItems(USER_ID, 10).first().single().checkedAt)
+
+        shopping.delete(USER_ID, 10, 1)
+        assertTrue(shopping.observeItems(USER_ID, 10).first().isEmpty())
     }
 
     @Test
@@ -365,8 +419,11 @@ class SimpleRepositoriesTest {
     private fun detailJson(id: Long, name: String) =
         """{"id":$id,"name":"$name","prep_time":10,"cook_time":20,"servings":2,"favorite":false,"ingredients":[],"structured_ingredients":[],"instructions":[],"notes":null,"source_url":null,"tags":[],"cover_image_url":null,"cover_images":null,"created_at":"2026-09-01T08:00:00Z","updated_at":"2026-09-09T08:00:00Z"}"""
 
-    private fun jsonResponse(body: String) = MockResponse()
-        .setResponseCode(200)
+    private fun shoppingItemJson(id: Long, clientId: String, name: String, checkedAt: String?) =
+        """{"id":$id,"client_id":"$clientId","name":"$name","details":null,"checked_at":${checkedAt?.let { "\"$it\"" } ?: "null"},"source_recipe_id":null,"created_at":"2026-09-11T09:00:00Z","updated_at":"2026-09-11T10:00:00Z"}"""
+
+    private fun jsonResponse(body: String, status: Int = 200) = MockResponse()
+        .setResponseCode(status)
         .setHeader("Content-Type", "application/json")
         .setBody(body)
 

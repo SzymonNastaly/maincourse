@@ -3,6 +3,7 @@ package com.getmaincourse.app
 import android.app.Application
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.RecipeRepository
+import com.getmaincourse.app.data.ShoppingListRepository
 import com.getmaincourse.app.data.cache.MainCourseDatabase
 import com.getmaincourse.app.data.images.SessionImages
 import com.getmaincourse.app.data.network.AuthInterceptor
@@ -45,6 +46,7 @@ class AppContainer(application: Application) {
         .create(MainCourseService::class.java)
     val cookbookRepository = CookbookRepository(database, service, json)
     val recipeRepository = RecipeRepository(database, service, json)
+    val shoppingListRepository = ShoppingListRepository(database, service, json)
     val images = SessionImages(application, BuildConfig.API_BASE_URL)
     val sessionViewModelFactory = simpleViewModelFactory {
         SessionViewModel(

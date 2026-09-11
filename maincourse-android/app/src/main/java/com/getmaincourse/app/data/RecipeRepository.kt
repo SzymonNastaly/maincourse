@@ -10,8 +10,6 @@ import com.getmaincourse.app.data.cache.toSummary
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
-import com.getmaincourse.app.data.model.ShoppingItemRequest
-import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.network.MainCourseService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -94,7 +92,4 @@ class RecipeRepository(
         dao.removeRecipe(userId, cookbookId, recipeId)
     }
 
-    suspend fun addIngredients(cookbookId: Long, rows: List<ShoppingItemRequest>) {
-        service.addRecipeIngredients(cookbookId, ShoppingItemsRequest(rows))
-    }
 }

@@ -9,6 +9,7 @@ import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
+import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.User
@@ -377,10 +378,18 @@ class SessionViewModelTest {
             request: MoveRecipeRequest,
         ): RecipeDetail = error("Not used")
         override suspend fun deleteRecipe(cookbookId: Long, recipeId: Long) = error("Not used")
-        override suspend fun addRecipeIngredients(
+        override suspend fun shoppingListItems(cookbookId: Long): List<ShoppingItem> = error("Not used")
+        override suspend fun createShoppingItems(
             cookbookId: Long,
             request: ShoppingItemsRequest,
         ): List<ShoppingItem> = error("Not used")
+        override suspend fun updateShoppingItem(
+            cookbookId: Long,
+            itemId: Long,
+            request: ShoppingItemUpdateRequest,
+        ): ShoppingItem = error("Not used")
+        override suspend fun deleteShoppingItem(cookbookId: Long, itemId: Long) = error("Not used")
+        override suspend fun clearShoppingItems(cookbookId: Long) = error("Not used")
         override suspend fun updateAccount(request: AccountUpdateRequest): AccountResponse = error("Not used")
     }
 

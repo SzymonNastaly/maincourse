@@ -5,6 +5,7 @@ import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
+import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import java.io.IOException
@@ -166,7 +167,7 @@ class MainCourseServiceTest {
             listOf(ShoppingItemRequest("row-1", "Onion", null, null, 7)),
         )
 
-        val items = service.addRecipeIngredients(42, payload)
+        val items = service.createShoppingItems(42, payload)
 
         assertEquals(9L, items.single().id)
         val request = server.takeRequest()
@@ -179,6 +180,42 @@ class MainCourseServiceTest {
             ),
             json(request.body.readUtf8()),
         )
+    }
+
+    @Test
+    fun shoppingListOperationsUseExplicitCookbookScope() = runTest {
+        val itemJson =
+            """{"id":9,"client_id":"row-1","name":"Onion","details":null,"checked_at":"2026-09-11T10:00:00Z","source_recipe_id":null,"created_at":"2026-09-11T09:00:00Z","updated_at":"2026-09-11T10:00:00Z"}"""
+        server.enqueue(jsonResponse(200, "[$itemJson]"))
+        server.enqueue(jsonResponse(200, itemJson))
+        server.enqueue(MockResponse().setResponseCode(204))
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        assertEquals(9L, service.shoppingListItems(42).single().id)
+        service.updateShoppingItem(42, 9, ShoppingItemUpdateRequest(checked = true))
+        service.deleteShoppingItem(42, 9)
+        service.clearShoppingItems(42)
+
+        val list = server.takeRequest()
+        assertEquals("GET", list.method)
+        assertEquals("/api/v1/shopping_list_items", list.path)
+        assertEquals("42", list.getHeader("X-Cookbook-Id"))
+
+        val update = server.takeRequest()
+        assertEquals("PATCH", update.method)
+        assertEquals("/api/v1/shopping_list_items/9", update.path)
+        assertEquals("42", update.getHeader("X-Cookbook-Id"))
+        assertEquals(json("""{"checked":true}"""), json(update.body.readUtf8()))
+
+        val delete = server.takeRequest()
+        assertEquals("DELETE", delete.method)
+        assertEquals("/api/v1/shopping_list_items/9", delete.path)
+        assertEquals("42", delete.getHeader("X-Cookbook-Id"))
+
+        val clear = server.takeRequest()
+        assertEquals("DELETE", clear.method)
+        assertEquals("/api/v1/shopping_list_items/destroy_all", clear.path)
+        assertEquals("42", clear.getHeader("X-Cookbook-Id"))
     }
 
     @Test

@@ -76,3 +76,26 @@ data class RecipeEntity(
     val summaryJson: String,
     val detailJson: String? = null,
 )
+
+@Entity(
+    tableName = "shopping_list_items",
+    primaryKeys = ["userId", "cookbookId", "itemId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = CookbookEntity::class,
+            parentColumns = ["userId", "cookbookId"],
+            childColumns = ["userId", "cookbookId"],
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["userId", "cookbookId"])],
+)
+data class ShoppingItemEntity(
+    val userId: Long,
+    val cookbookId: Long,
+    val itemId: Long,
+    val checkedAt: String?,
+    val createdAt: String,
+    val itemJson: String,
+)

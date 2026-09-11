@@ -24,9 +24,9 @@ These instructions apply to `maincourse-android/`.
   `viewModelScope` cancellation.
 - Prefer small Compose screens with explicit state and callback parameters.
 - Current features are email auth, cached cookbook/recipe browsing, recipe
-  move/delete/add-to-shopping actions, profile settings with read-only account
-  email, account deletion, and logout. Shopping and Search are labeled
-  placeholders.
+  move/delete/add-to-shopping actions, a cached cookbook-scoped shopping list,
+  profile settings with read-only account email, account deletion, and logout.
+  Search remains a labeled placeholder.
 - Do not restore onboarding, provider sign-in, search, recipe editing/photo
   upload, imports/sharing, design gallery, or adaptive navigation without an
   approved scope change.
@@ -59,11 +59,13 @@ These instructions apply to `maincourse-android/`.
   authenticated `401`. Cleanup failure must block admission of another account.
 - Keep `X-Cookbook-Id` explicit on recipe/shopping requests and scope all Room
   data by user and cookbook where applicable.
-- Room is the observable source of truth. Full list responses replace only their
-  scope while preserving retained details; detail fetches update one row and do
-  not prune peers. Keep schema exports and explicit migrations.
-- Mutations are online-only and are never automatically replayed. Keep profile
-  persistence-before-publication and local-only retry for a matching
+- Room is the observable source of truth. Full recipe and shopping-list
+  responses replace only their user/cookbook scope while recipe refreshes
+  preserve retained details; detail fetches update one row and do not prune
+  peers. Keep schema exports and explicit migrations.
+- Mutations are online-only and are never automatically replayed. Shopping-list
+  cache changes follow server acknowledgement; there is no offline outbox. Keep
+  profile persistence-before-publication and local-only retry for a matching
   server-accepted profile response.
 - Keep Coil image caches user-owned, best effort, and bearer-free.
 

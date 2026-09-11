@@ -108,4 +108,44 @@ interface CatalogDao {
     )
     suspend fun removeRecipe(userId: Long, cookbookId: Long, recipeId: Long)
 
+    @Query(
+        "SELECT * FROM shopping_list_items " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId " +
+            "ORDER BY CASE WHEN checkedAt IS NULL THEN 0 ELSE 1 END, " +
+            "CASE WHEN checkedAt IS NULL THEN createdAt ELSE checkedAt END DESC",
+    )
+    fun observeShoppingItems(userId: Long, cookbookId: Long): Flow<List<ShoppingItemEntity>>
+
+    @Upsert
+    suspend fun upsertShoppingItems(items: List<ShoppingItemEntity>)
+
+    @Query("DELETE FROM shopping_list_items WHERE userId = :userId AND cookbookId = :cookbookId")
+    suspend fun deleteShoppingItems(userId: Long, cookbookId: Long)
+
+    @Query(
+        "DELETE FROM shopping_list_items " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId AND itemId = :itemId",
+    )
+    suspend fun deleteShoppingItem(userId: Long, cookbookId: Long, itemId: Long)
+
+    @Query(
+        "DELETE FROM shopping_list_items " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId AND itemId NOT IN (:retainedIds)",
+    )
+    suspend fun deleteShoppingItemsExcept(userId: Long, cookbookId: Long, retainedIds: List<Long>)
+
+    @Transaction
+    suspend fun replaceShoppingItems(
+        userId: Long,
+        cookbookId: Long,
+        items: List<ShoppingItemEntity>,
+    ) {
+        if (items.isNotEmpty()) upsertShoppingItems(items)
+        if (items.isEmpty()) {
+            deleteShoppingItems(userId, cookbookId)
+        } else {
+            deleteShoppingItemsExcept(userId, cookbookId, items.map(ShoppingItemEntity::itemId))
+        }
+    }
+
 }

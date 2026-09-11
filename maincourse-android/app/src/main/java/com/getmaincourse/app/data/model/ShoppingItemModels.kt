@@ -21,6 +21,11 @@ data class ShoppingItemRequest(
 )
 
 @Serializable
+data class ShoppingItemUpdateRequest(
+    val checked: Boolean,
+)
+
+@Serializable
 data class ShoppingItem(
     val id: Long,
     @SerialName("client_id")

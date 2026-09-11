@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.RecipeRepository
+import com.getmaincourse.app.data.ShoppingListRepository
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.network.userMessage
@@ -57,6 +58,7 @@ class RecipeDetailViewModel internal constructor(
         cookbookId: Long,
         recipeId: Long,
         repository: RecipeRepository,
+        shoppingListRepository: ShoppingListRepository,
         cookbookRepository: CookbookRepository? = null,
     ) : this(
         observeDetail = { repository.observeDetail(userId, cookbookId, recipeId) },
@@ -69,7 +71,7 @@ class RecipeDetailViewModel internal constructor(
         },
         deleteRecipe = { repository.delete(userId, cookbookId, recipeId) },
         addReviewedIngredients = { rows ->
-            repository.addIngredients(cookbookId, rows.map(ShoppingItemInput::toRequest))
+            shoppingListRepository.create(userId, cookbookId, rows.map(ShoppingItemInput::toRequest))
         },
     )
 

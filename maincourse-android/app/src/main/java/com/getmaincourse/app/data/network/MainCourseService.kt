@@ -9,6 +9,7 @@ import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
+import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import retrofit2.http.Body
@@ -59,11 +60,34 @@ interface MainCourseService {
         @Path("recipeId") recipeId: Long,
     )
 
+    @GET("api/v1/shopping_list_items")
+    suspend fun shoppingListItems(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+    ): List<ShoppingItem>
+
     @POST("api/v1/shopping_list_items")
-    suspend fun addRecipeIngredients(
+    suspend fun createShoppingItems(
         @Header("X-Cookbook-Id") cookbookId: Long,
         @Body request: ShoppingItemsRequest,
     ): List<ShoppingItem>
+
+    @PATCH("api/v1/shopping_list_items/{itemId}")
+    suspend fun updateShoppingItem(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Path("itemId") itemId: Long,
+        @Body request: ShoppingItemUpdateRequest,
+    ): ShoppingItem
+
+    @DELETE("api/v1/shopping_list_items/{itemId}")
+    suspend fun deleteShoppingItem(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Path("itemId") itemId: Long,
+    )
+
+    @DELETE("api/v1/shopping_list_items/destroy_all")
+    suspend fun clearShoppingItems(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+    )
 
     @PATCH("api/v1/account")
     suspend fun updateAccount(@Body request: AccountUpdateRequest): AccountResponse

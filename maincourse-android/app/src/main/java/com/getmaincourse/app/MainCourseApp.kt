@@ -46,6 +46,7 @@ import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.RecipeRepository
+import com.getmaincourse.app.data.ShoppingListRepository
 import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
@@ -58,6 +59,8 @@ import com.getmaincourse.app.features.recipes.RecipesScreen
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
+import com.getmaincourse.app.features.shopping.ShoppingListScreen
+import com.getmaincourse.app.features.shopping.ShoppingListViewModel
 import com.getmaincourse.app.features.settings.SettingsScreen
 import com.getmaincourse.app.features.settings.SettingsViewModel
 import com.getmaincourse.app.ui.theme.MainCourseColors
@@ -86,6 +89,7 @@ data object SettingsRoute : NavKey
 internal data class BrowsingViewModelFactories(
     val recipes: (Long) -> ViewModelProvider.Factory,
     val detail: (userId: Long, cookbookId: Long, recipeId: Long) -> ViewModelProvider.Factory,
+    val shopping: (Long) -> ViewModelProvider.Factory,
     val settings: () -> ViewModelProvider.Factory,
 )
 
@@ -94,6 +98,7 @@ fun MainCourseApp(
     sessionViewModel: SessionViewModel,
     cookbookRepository: CookbookRepository,
     recipeRepository: RecipeRepository,
+    shoppingListRepository: ShoppingListRepository,
     service: MainCourseService,
     sessionStore: SessionStore,
     sessionProvider: SessionProvider,
@@ -119,8 +124,14 @@ fun MainCourseApp(
                         cookbookId,
                         recipeId,
                         recipeRepository,
+                        shoppingListRepository,
                         cookbookRepository,
                     )
+                }
+            },
+            shopping = { userId ->
+                simpleViewModelFactory {
+                    ShoppingListViewModel(userId, cookbookRepository, shoppingListRepository)
                 }
             },
             settings = {
@@ -214,7 +225,7 @@ private fun ProtectedShell(
                         when (current) {
                             RecipesRoute, is RecipeDetailRoute -> stringResource(R.string.recipes)
                             is IngredientReviewRoute -> stringResource(R.string.recipe_ingredients)
-                            ShoppingRoute -> stringResource(R.string.shopping)
+                            ShoppingRoute -> stringResource(R.string.shopping_list)
                             SearchRoute -> stringResource(R.string.search)
                             SettingsRoute -> stringResource(R.string.settings)
                             else -> stringResource(R.string.app_name)
@@ -324,10 +335,21 @@ private fun ProtectedShell(
                     }
                 }
                 entry<ShoppingRoute> {
-                    PreviewScreen(
-                        title = stringResource(R.string.shopping_preview_title),
-                        body = stringResource(R.string.shopping_preview_body),
-                        testTag = "screen_Shopping",
+                    val shoppingViewModel: ShoppingListViewModel = viewModel(
+                        key = "shopping-$userId",
+                        factory = factories.shopping(userId),
+                    )
+                    val shoppingState by shoppingViewModel.state.collectAsStateWithLifecycle()
+                    ShoppingListScreen(
+                        state = shoppingState,
+                        onSelectCookbook = shoppingViewModel::selectCookbook,
+                        onRefresh = shoppingViewModel::refresh,
+                        onDraftChange = shoppingViewModel::updateDraft,
+                        onAdd = shoppingViewModel::addItem,
+                        onToggle = shoppingViewModel::toggleItem,
+                        onDelete = shoppingViewModel::deleteItem,
+                        onClear = shoppingViewModel::clearItems,
+                        onClearError = shoppingViewModel::clearError,
                     )
                 }
                 entry<SearchRoute> {

@@ -11,17 +11,19 @@ Implemented:
 - Email sign-up and sign-in, encrypted session restoration, sign-out, and
   account deletion.
 - Cookbook selection and cached recipe list/detail browsing.
-- Online recipe move, delete, and reviewed ingredient addition to the shopping
-  list.
+- Online recipe move and delete, plus a cookbook-scoped shopping list with
+  reviewed ingredient addition, manual item creation, check/uncheck, deletion,
+  and clear-all.
 - Account name and recipe-reminder settings, with the account email displayed
   read-only.
-- Four bottom destinations: Recipes and Settings are functional; Shopping and
-  Search are clearly labeled placeholders.
+- Four bottom destinations: Recipes, Shopping, and Settings are functional;
+  Search is a clearly labeled placeholder.
 
 Not in this MVP: onboarding, provider sign-in, recipe search, recipe editing or
-photo upload, imports/sharing, a shopping-list UI, collaboration, billing,
-notifications, a design gallery, or adaptive navigation. Do not reintroduce
-these while extending the MVP without an approved scope change.
+photo upload, imports/sharing, offline shopping mutations or a mutation outbox,
+collaboration, billing, notifications, a design gallery, or adaptive navigation.
+Do not reintroduce these while extending the MVP without an approved scope
+change.
 
 ## Project And Dependencies
 
@@ -59,11 +61,11 @@ Code is package-by-feature under
 - `data/network` defines the Retrofit API and authentication interceptor;
   `data/session` owns credentials; `data/cache` owns Room entities and queries;
   `data/images` owns image URL and cache policy.
-- `CookbookRepository` and `RecipeRepository` connect the API to Room. They do
-  not own UI state or coroutine scopes.
+- `CookbookRepository`, `RecipeRepository`, and `ShoppingListRepository`
+  connect the API to Room. They do not own UI state or coroutine scopes.
 - Focused lifecycle view models under `features/session`, `features/recipes`,
-  and `features/settings` expose `StateFlow` UI state and launch cancellable
-  foreground work in `viewModelScope`.
+  `features/shopping`, and `features/settings` expose `StateFlow` UI state and
+  launch cancellable foreground work in `viewModelScope`.
 - `MainCourseApp.kt` switches between restoration, authentication, recovery,
   and the protected Navigation 3 shell. Compose screens receive explicit state
   and callbacks.
@@ -96,9 +98,10 @@ release signing material remains outside the repository.
 
 ## Room Cache
 
-`maincourse.db` is the source of truth for cookbook and recipe screens. Room
-`Flow`s update those screens immediately. Every row and query is scoped by user,
-and recipes are additionally scoped by cookbook.
+`maincourse.db` is the source of truth for cookbook, recipe, and shopping-list
+screens. Room `Flow`s update those screens immediately. Every row and query is
+scoped by user; recipes and shopping-list items are additionally scoped by
+cookbook.
 
 A successful cookbook refresh replaces that user's memberships and keeps a
 valid selection, otherwise selecting the first cookbook. A successful recipe
@@ -107,12 +110,14 @@ retained recipe IDs, and removes missing recipes. Opening a recipe fetches its
 detail only when absent; Pull to Refresh fetches it explicitly. Previously
 cached lists and details remain readable when refresh fails.
 
-Move, delete, ingredient addition, profile save, account deletion, and sign-out
-are direct online actions with no automatic replay. A confirmed move is
-reconciled locally before a best-effort target refresh; confirmed deletion
-removes the cached row. Malformed cached JSON maps to absence and is repaired by
-the next successful refresh. Keep schema exports and add explicit Room
-migrations rather than destructive fallback.
+Move, delete, ingredient addition, shopping-list mutations, profile save,
+account deletion, and sign-out are direct online actions with no automatic
+replay. Shopping-list rows are changed in Room only after the server confirms
+the action; refresh failures leave the last acknowledged list readable. A
+confirmed recipe move is reconciled locally before a best-effort target refresh;
+confirmed deletion removes the cached row. Malformed cached JSON maps to absence
+and is repaired by the next successful refresh. Keep schema exports and add
+explicit Room migrations rather than destructive fallback.
 
 Coil image caches are user-owned and best effort. Image requests never carry the
 API bearer token.
@@ -186,6 +191,7 @@ compile evidence only.
 Automated tests do not prove the real Rails flow. Final live acceptance must use
 the installed `MainActivity` and a dedicated account to verify sign-up/sign-in,
 cookbook switching, list/detail and offline reopening, move/delete/add-to-shopping,
-profile save, failure messages, logout, account deletion, and the two placeholder
-tabs. Account deletion is destructive and must remain an explicit manual check
-with disposable data.
+manual shopping additions, check/uncheck, per-item deletion, clear-all,
+profile save, failure messages, logout, account deletion, and the Search
+placeholder. Account deletion is destructive and must remain an explicit manual
+check with disposable data.

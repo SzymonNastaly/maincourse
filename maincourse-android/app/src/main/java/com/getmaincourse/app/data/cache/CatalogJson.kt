@@ -3,6 +3,7 @@ package com.getmaincourse.app.data.cache
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.model.ShoppingItem
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
@@ -46,6 +47,17 @@ internal fun RecipeDetail.toSummary(previous: RecipeSummary?): RecipeSummary = R
     errorMessage = previous?.errorMessage,
     updatedAt = updatedAt,
 )
+
+internal fun ShoppingItem.toEntity(userId: Long, cookbookId: Long, json: Json) = ShoppingItemEntity(
+    userId = userId,
+    cookbookId = cookbookId,
+    itemId = id,
+    checkedAt = checkedAt,
+    createdAt = createdAt,
+    itemJson = json.encodeToString(this),
+)
+
+internal fun ShoppingItemEntity.toShoppingItem(json: Json): ShoppingItem? = json.decodeOrNull(itemJson)
 
 private inline fun <reified T> Json.decodeOrNull(value: String): T? = try {
     decodeFromString<T>(value)

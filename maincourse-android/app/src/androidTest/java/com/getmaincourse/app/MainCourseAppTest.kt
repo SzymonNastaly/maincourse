@@ -27,6 +27,8 @@ import com.getmaincourse.app.data.model.User
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
+import com.getmaincourse.app.data.model.ShoppingItemRequest
+import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.network.MainCourseService
@@ -36,6 +38,7 @@ import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.session.SessionUiState
+import com.getmaincourse.app.features.shopping.ShoppingListViewModel
 import com.getmaincourse.app.features.settings.SettingsViewModel
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import coil3.ImageLoader
@@ -338,6 +341,7 @@ class MainCourseAppTest {
         val selection = MutableStateFlow(CookbookSelection(listOf(COOKBOOK), COOKBOOK.id))
         val recipes = MutableStateFlow(listOf(summary))
         val detailState = MutableStateFlow(detail)
+        val shoppingItems = MutableStateFlow(emptyList<ShoppingItem>())
         val settingsProvider = SessionProvider().apply {
             set(SESSION)
             pendingSettingsSession?.let(::setPendingAcceptedSession)
@@ -362,6 +366,21 @@ class MainCourseAppTest {
                     RecipeDetailViewModel(
                         observeDetail = { detailState },
                         refreshDetail = detailRefresh,
+                    )
+                }
+            },
+            shopping = {
+                simpleViewModelFactory {
+                    ShoppingListViewModel(
+                        observeCookbooks = { selection },
+                        observeItems = { shoppingItems },
+                        refreshCookbooks = {},
+                        refreshItems = {},
+                        selectCookbook = {},
+                        createItem = { _, _: ShoppingItemRequest -> },
+                        setItemChecked = { _, _, _ -> },
+                        deleteItem = { _, _ -> },
+                        clearItems = {},
                     )
                 }
             },
@@ -402,10 +421,18 @@ class MainCourseAppTest {
             request: MoveRecipeRequest,
         ): RecipeDetail = error("Not used")
         override suspend fun deleteRecipe(cookbookId: Long, recipeId: Long) = error("Not used")
-        override suspend fun addRecipeIngredients(
+        override suspend fun shoppingListItems(cookbookId: Long): List<ShoppingItem> = error("Not used")
+        override suspend fun createShoppingItems(
             cookbookId: Long,
             request: ShoppingItemsRequest,
         ): List<ShoppingItem> = error("Not used")
+        override suspend fun updateShoppingItem(
+            cookbookId: Long,
+            itemId: Long,
+            request: ShoppingItemUpdateRequest,
+        ): ShoppingItem = error("Not used")
+        override suspend fun deleteShoppingItem(cookbookId: Long, itemId: Long) = error("Not used")
+        override suspend fun clearShoppingItems(cookbookId: Long) = error("Not used")
         override suspend fun updateAccount(request: AccountUpdateRequest): AccountResponse = error("Not used")
         override suspend fun deleteAccount() = error("Not used")
     }
