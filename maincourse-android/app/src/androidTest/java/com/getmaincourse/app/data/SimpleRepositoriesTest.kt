@@ -28,6 +28,7 @@ import okhttp3.mockwebserver.RecordedRequest
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -136,6 +137,9 @@ class SimpleRepositoriesTest {
 
         assertEquals(8L, response.id)
         assertEquals(listOf(8L), recipes.observeSummaries(USER_ID, 10).first().map { it.id })
+        assertTrue(recipes.hasUnsettledImport(10))
+        recipes.markImportSettled(10)
+        assertFalse(recipes.hasUnsettledImport(10))
         val importRequest = server.takeRequest()
         assertEquals("/api/v1/recipes/import", importRequest.path)
         assertEquals("10", importRequest.getHeader("X-Cookbook-Id"))

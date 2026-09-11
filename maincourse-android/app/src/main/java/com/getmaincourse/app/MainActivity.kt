@@ -103,6 +103,6 @@ internal fun shouldRequestLocalNetworkAccess(
     apiHost: String,
 ): Boolean = isDebugBuild && sdkInt >= 37 && !permissionGranted && apiHost in LOCAL_API_HOSTS
 
-private const val LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
+internal const val LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
 private const val SHARED_RECIPE_CONSUMED_KEY = "shared_recipe_consumed"
 private val LOCAL_API_HOSTS = setOf("10.0.2.2", "localhost", "127.0.0.1")

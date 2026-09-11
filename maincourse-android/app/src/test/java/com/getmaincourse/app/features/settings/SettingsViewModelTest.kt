@@ -7,9 +7,11 @@ import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeImportResponse
+import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
+import okhttp3.MultipartBody
 import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
@@ -233,9 +235,17 @@ class SettingsViewModelTest {
             cookbookId: Long,
             request: RecipeUrlImportRequest,
         ): RecipeImportResponse = error("Not used")
+        override suspend fun importRecipeContent(
+            cookbookId: Long,
+            request: RecipeContentImportRequest,
+        ): RecipeImportResponse = error("Not used")
         override suspend fun importRecipeText(
             cookbookId: Long,
             request: RecipeTextImportRequest,
+        ): RecipeImportResponse = error("Not used")
+        override suspend fun importRecipeImage(
+            cookbookId: Long,
+            image: MultipartBody.Part,
         ): RecipeImportResponse = error("Not used")
         override suspend fun moveRecipe(
             cookbookId: Long,

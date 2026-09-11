@@ -165,6 +165,84 @@ class RecipesViewModelTest {
     }
 
     @Test
+    fun returningToAppImmediatelyRefreshesTheSelectedCookbook() = runTest(dispatcher) {
+        val selection = MutableStateFlow(CookbookSelection(listOf(cookbook(10)), 10))
+        val recipes = MutableStateFlow(listOf(recipeSummary(7)))
+        var refreshCalls = 0
+        val viewModel = RecipesViewModel(
+            observeCookbooks = { selection },
+            observeRecipes = { recipes },
+            refreshCookbooks = {},
+            refreshRecipes = {
+                refreshCalls += 1
+                recipes.value = listOf(recipeSummary(8))
+            },
+            selectCookbook = {},
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        advanceUntilIdle()
+
+        viewModel.reconcileAfterResume().join()
+        advanceUntilIdle()
+
+        assertEquals(2, refreshCalls)
+        assertEquals(listOf(8L), viewModel.state.value.recipes.map { it.id })
+        assertFalse(viewModel.state.value.refreshing)
+        collection.cancel()
+    }
+
+    @Test
+    fun returningToAppPollsARecentImportUntilItsImageIsReconciled() = runTest(dispatcher) {
+        val selection = MutableStateFlow(CookbookSelection(listOf(cookbook(10)), 10))
+        val recipes = MutableStateFlow(listOf(recipeSummary(8, "completed")))
+        var refreshCalls = 0
+        var unsettled = true
+        var settledCalls = 0
+        val viewModel = RecipesViewModel(
+            observeCookbooks = { selection },
+            observeRecipes = { recipes },
+            refreshCookbooks = {},
+            refreshRecipes = {
+                refreshCalls += 1
+                if (refreshCalls == 7) {
+                    recipes.value = listOf(
+                        recipeSummary(8, "completed", coverImageUrl = "/rails/active_storage/cover.webp"),
+                    )
+                }
+            },
+            selectCookbook = {},
+            hasUnsettledImport = { unsettled },
+            markImportSettled = {
+                unsettled = false
+                settledCalls += 1
+            },
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        advanceUntilIdle()
+
+        viewModel.reconcileAfterResume().join()
+        runCurrent()
+
+        assertEquals(2, refreshCalls)
+        advanceTimeBy(14_999)
+        runCurrent()
+        assertTrue(unsettled)
+        assertNull(viewModel.state.value.recipes.single().coverImageUrl)
+
+        advanceTimeBy(1)
+        runCurrent()
+
+        assertEquals(7, refreshCalls)
+        assertEquals("/rails/active_storage/cover.webp", viewModel.state.value.recipes.single().coverImageUrl)
+        assertFalse(unsettled)
+        assertEquals(1, settledCalls)
+        advanceTimeBy(30_000)
+        runCurrent()
+        assertEquals(7, refreshCalls)
+        collection.cancel()
+    }
+
+    @Test
     fun acceptedShareImportClearsStaleErrorAndPollsUntilTerminal() = runTest(dispatcher) {
         val selection = MutableStateFlow(CookbookSelection(listOf(cookbook(10)), 10))
         val recipes = MutableStateFlow(listOf(recipeSummary(7)))
@@ -196,7 +274,7 @@ class RecipesViewModelTest {
         assertEquals(2, refreshCalls)
         advanceTimeBy(30_000)
         runCurrent()
-        assertEquals(2, refreshCalls)
+        assertEquals(6, refreshCalls)
         collection.cancel()
     }
 
@@ -301,13 +379,17 @@ class RecipesViewModelTest {
     private companion object {
         fun cookbook(id: Long) = Cookbook(id, "Cookbook $id", true, 1, emptyList())
 
-        fun recipeSummary(id: Long, importStatus: String = "completed") = RecipeSummary(
+        fun recipeSummary(
+            id: Long,
+            importStatus: String = "completed",
+            coverImageUrl: String? = null,
+        ) = RecipeSummary(
             id = id,
             name = "Recipe $id",
             prepTime = null,
             cookTime = null,
             favorite = false,
-            coverImageUrl = null,
+            coverImageUrl = coverImageUrl,
             coverImages = null,
             importStatus = importStatus,
             errorMessage = null,

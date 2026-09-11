@@ -1,12 +1,11 @@
 package com.getmaincourse.app.features.recipes
 
 import android.content.Intent
+import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -29,12 +28,28 @@ class RecipeShareIntentTest {
     }
 
     @Test
-    fun manifestRegistersTextButNotImageSharing() {
+    fun imageIntentExtractsTheGrantedContentUri() {
+        val intent = Intent(Intent.ACTION_SEND)
+            .setType("image/jpeg")
+            .putExtra(Intent.EXTRA_STREAM, Uri.parse("content://images/recipe"))
+
+        assertEquals(
+            RecipeShareContent.Image("content://images/recipe", "image/jpeg"),
+            intent.recipeShareContent(),
+        )
+    }
+
+    @Test
+    fun manifestRoutesTextHtmlAndImagesToTheCompactShareActivity() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val textIntent = Intent(Intent.ACTION_SEND).setType("text/plain").setPackage(context.packageName)
+        val htmlIntent = Intent(Intent.ACTION_SEND).setType("text/html").setPackage(context.packageName)
         val imageIntent = Intent(Intent.ACTION_SEND).setType("image/jpeg").setPackage(context.packageName)
 
-        assertTrue(context.packageManager.queryIntentActivities(textIntent, 0).isNotEmpty())
-        assertFalse(context.packageManager.queryIntentActivities(imageIntent, 0).isNotEmpty())
+        listOf(textIntent, htmlIntent, imageIntent).forEach { intent ->
+            val matches = context.packageManager.queryIntentActivities(intent, 0)
+            assertEquals(1, matches.size)
+            assertEquals("com.getmaincourse.app.RecipeShareActivity", matches.single().activityInfo.name)
+        }
     }
 }

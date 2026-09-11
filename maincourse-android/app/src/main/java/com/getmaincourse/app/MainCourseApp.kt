@@ -38,7 +38,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -242,6 +244,9 @@ private fun ProtectedShell(
         factory = factories.recipes(userId),
     )
     val recipesState by recipesViewModel.state.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        recipesViewModel.reconcileAfterResume()
+    }
     val current = backStack.last()
     LaunchedEffect(sharedRecipeInput) {
         if (sharedRecipeInput != null && backStack.lastOrNull() != RecipeImportRoute) {

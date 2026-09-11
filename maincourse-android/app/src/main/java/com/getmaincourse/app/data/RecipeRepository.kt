@@ -10,16 +10,23 @@ import com.getmaincourse.app.data.cache.toSummary
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeImportResponse
+import com.getmaincourse.app.data.model.RecipeContentImportRequest
+import com.getmaincourse.app.data.model.RecipePageContent
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.network.MainCourseService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class RecipeRepository(
     private val database: MainCourseDatabase,
@@ -29,6 +36,7 @@ class RecipeRepository(
     private val dao = database.catalogDao()
     private val json = Json(json) { ignoreUnknownKeys = true }
     private val listWrites = Mutex()
+    private val unsettledImportCookbooks = MutableStateFlow(emptySet<Long>())
 
     fun observeSummaries(userId: Long, cookbookId: Long): Flow<List<RecipeSummary>> =
         dao.observeRecipes(userId, cookbookId).map { entities ->
@@ -66,6 +74,31 @@ class RecipeRepository(
         text: String,
     ): RecipeImportResponse = importAndRefresh(userId, cookbookId) {
         service.importRecipeText(cookbookId, RecipeTextImportRequest(text))
+    }
+
+    suspend fun importContent(
+        userId: Long,
+        cookbookId: Long,
+        content: RecipePageContent,
+    ): RecipeImportResponse = importAndRefresh(userId, cookbookId) {
+        service.importRecipeContent(cookbookId, RecipeContentImportRequest(content))
+    }
+
+    suspend fun importImage(
+        userId: Long,
+        cookbookId: Long,
+        bytes: ByteArray,
+        mimeType: String,
+    ): RecipeImportResponse = importAndRefresh(userId, cookbookId) {
+        val extension = when (mimeType.lowercase()) {
+            "image/png" -> "png"
+            "image/webp" -> "webp"
+            "image/heic", "image/heif" -> "heic"
+            else -> "jpg"
+        }
+        val body = bytes.toRequestBody(mimeType.toMediaType())
+        val part = MultipartBody.Part.createFormData("image", "shared-recipe.$extension", body)
+        service.importRecipeImage(cookbookId, part)
     }
 
     suspend fun move(
@@ -111,12 +144,19 @@ class RecipeRepository(
         dao.removeRecipe(userId, cookbookId, recipeId)
     }
 
+    fun hasUnsettledImport(cookbookId: Long): Boolean = cookbookId in unsettledImportCookbooks.value
+
+    fun markImportSettled(cookbookId: Long) {
+        unsettledImportCookbooks.update { it - cookbookId }
+    }
+
     private suspend fun importAndRefresh(
         userId: Long,
         cookbookId: Long,
         request: suspend () -> RecipeImportResponse,
     ): RecipeImportResponse {
         val response = request()
+        unsettledImportCookbooks.update { it + cookbookId }
         try {
             refreshList(userId, cookbookId)
         } catch (failure: CancellationException) {

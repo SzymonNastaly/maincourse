@@ -43,6 +43,8 @@ class RecipesViewModel internal constructor(
     private val refreshCookbooks: suspend () -> Unit,
     private val refreshRecipes: suspend (Long) -> Unit,
     private val selectCookbook: suspend (Long) -> Unit,
+    private val hasUnsettledImport: (Long) -> Boolean = { false },
+    private val markImportSettled: (Long) -> Unit = {},
 ) : ViewModel() {
     constructor(
         userId: Long,
@@ -54,10 +56,13 @@ class RecipesViewModel internal constructor(
         refreshCookbooks = { cookbookRepository.refresh(userId) },
         refreshRecipes = { cookbookId -> recipeRepository.refreshList(userId, cookbookId) },
         selectCookbook = { cookbookId -> cookbookRepository.select(userId, cookbookId) },
+        hasUnsettledImport = recipeRepository::hasUnsettledImport,
+        markImportSettled = recipeRepository::markImportSettled,
     )
 
     private val refreshState = MutableStateFlow(RefreshState(running = true))
     private var refreshJob: Job? = null
+    private var resumeReconciliationJob: Job? = null
     private var pollingJob: Job? = null
     private var pollingCookbookId: Long? = null
 
@@ -132,25 +137,61 @@ class RecipesViewModel internal constructor(
         startPolling(cookbookId, restart = true)
     }
 
+    fun reconcileAfterResume(): Job {
+        resumeReconciliationJob?.cancel()
+        pollingJob?.cancel()
+        pollingCookbookId = null
+        return viewModelScope.launch {
+            val cookbookId = observeCookbooks().first().selectedId ?: return@launch
+            try {
+                refreshRecipes(cookbookId)
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (_: Throwable) {
+                // Foreground reconciliation is best-effort and must not hide cached content.
+            }
+
+            val hasPendingRecipe = observeRecipes(cookbookId).first().any(RecipeSummary::isImportPending)
+            if (hasUnsettledImport(cookbookId) || hasPendingRecipe) {
+                startPolling(cookbookId, restart = true)
+            }
+        }.also { resumeReconciliationJob = it }
+    }
+
     private fun startPolling(cookbookId: Long, restart: Boolean = false) {
         if (!restart && pollingCookbookId == cookbookId && pollingJob?.isActive == true) return
         pollingJob?.cancel()
         pollingCookbookId = cookbookId
         pollingJob = viewModelScope.launch {
-            repeat(IMPORT_POLL_ATTEMPTS) {
+            var pendingAttempts = 0
+            var settledAttempts = 0
+            var totalAttempts = 0
+            while (
+                pendingAttempts < IMPORT_POLL_ATTEMPTS &&
+                settledAttempts < IMPORT_SETTLE_ATTEMPTS &&
+                totalAttempts < IMPORT_MAX_POLL_ATTEMPTS
+            ) {
                 delay(IMPORT_POLL_INTERVAL_MILLIS)
+                totalAttempts += 1
                 try {
                     refreshRecipes(cookbookId)
                     refreshState.value = RefreshState(running = false)
                     val stillPending = observeRecipes(cookbookId).first()
                         .any(RecipeSummary::isImportPending)
-                    if (!stillPending) return@launch
+                    if (stillPending) {
+                        pendingAttempts += 1
+                        settledAttempts = 0
+                    } else {
+                        settledAttempts += 1
+                    }
                 } catch (failure: CancellationException) {
                     throw failure
                 } catch (_: Throwable) {
                     // Import polling is best-effort and should not replace visible cached content.
+                    if (settledAttempts == 0) pendingAttempts += 1
                 }
             }
+            if (settledAttempts == IMPORT_SETTLE_ATTEMPTS) markImportSettled(cookbookId)
         }
     }
 
@@ -164,3 +205,5 @@ private fun RecipeSummary.isImportPending(): Boolean = importStatus == "pending"
 
 private const val IMPORT_POLL_INTERVAL_MILLIS = 3_000L
 private const val IMPORT_POLL_ATTEMPTS = 10
+private const val IMPORT_SETTLE_ATTEMPTS = 5
+private const val IMPORT_MAX_POLL_ATTEMPTS = IMPORT_POLL_ATTEMPTS + IMPORT_SETTLE_ATTEMPTS

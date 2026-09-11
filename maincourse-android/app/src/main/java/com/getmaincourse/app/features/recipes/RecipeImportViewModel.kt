@@ -8,7 +8,6 @@ import com.getmaincourse.app.data.RecipeRepository
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.network.userMessage
-import java.net.URI
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -189,8 +188,3 @@ class RecipeImportViewModel internal constructor(
 }
 
 internal const val MAX_RECIPE_IMPORT_TEXT_LENGTH = 50_000
-
-private fun String.isHttpUrl(): Boolean {
-    val uri = runCatching { URI(this) }.getOrNull() ?: return false
-    return uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank()
-}

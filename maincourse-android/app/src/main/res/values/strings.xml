@@ -64,6 +64,16 @@
     <string name="recipe_import_accepted">Import started</string>
     <string name="recipe_import_background_help">The recipe will appear in your cookbook while MainCourse prepares it.</string>
     <string name="recipe_import_share_target">Import to MainCourse</string>
+    <string name="recipe_share_preparing">Preparing your import…</string>
+    <string name="recipe_share_reading_page">Reading this page…</string>
+    <string name="recipe_share_sending">Starting the import…</string>
+    <string name="recipe_share_destination">Saving to %1$s</string>
+    <string name="recipe_share_success">Import started</string>
+    <string name="recipe_share_success_help">You can return to what you were doing. The recipe will appear in MainCourse when it is ready.</string>
+    <string name="recipe_share_sign_in">Sign in to import this recipe</string>
+    <string name="recipe_share_sign_in_help">Open MainCourse to sign in, then share the recipe again.</string>
+    <string name="recipe_share_open_app">Open MainCourse</string>
+    <string name="recipe_share_startup_failed">Could not open the importer</string>
     <string name="recipe_unavailable">This recipe is no longer available.</string>
     <string name="recipe_time">%1$d min</string>
     <string name="recipe_prep">Prep</string>

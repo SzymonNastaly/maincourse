@@ -5,6 +5,7 @@ import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
@@ -20,9 +21,12 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Headers
+import retrofit2.http.Multipart
 import retrofit2.http.PATCH
+import retrofit2.http.Part
 import retrofit2.http.POST
 import retrofit2.http.Path
+import okhttp3.MultipartBody
 
 interface MainCourseService {
     @Headers("$ANONYMOUS_HEADER: true")
@@ -56,10 +60,23 @@ interface MainCourseService {
         @Body request: RecipeUrlImportRequest,
     ): RecipeImportResponse
 
+    @POST("api/v1/recipes/import_with_content")
+    suspend fun importRecipeContent(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Body request: RecipeContentImportRequest,
+    ): RecipeImportResponse
+
     @POST("api/v1/recipes/extract_from_text")
     suspend fun importRecipeText(
         @Header("X-Cookbook-Id") cookbookId: Long,
         @Body request: RecipeTextImportRequest,
+    ): RecipeImportResponse
+
+    @Multipart
+    @POST("api/v1/recipes/extract_from_image")
+    suspend fun importRecipeImage(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Part image: MultipartBody.Part,
     ): RecipeImportResponse
 
     @PATCH("api/v1/recipes/{recipeId}")

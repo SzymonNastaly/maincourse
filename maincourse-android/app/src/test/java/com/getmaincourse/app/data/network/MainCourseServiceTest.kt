@@ -3,6 +3,8 @@ package com.getmaincourse.app.data.network
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.RecipeContentImportRequest
+import com.getmaincourse.app.data.model.RecipePageContent
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.model.ShoppingItemRequest
@@ -15,6 +17,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -145,6 +149,48 @@ class MainCourseServiceTest {
             json("""{"text":"Soup\n\n1 onion"}"""),
             json(textRequest.body.readUtf8()),
         )
+    }
+
+    @Test
+    fun renderedPageAndImageImportsUseTheIosCompatibleContracts() = runTest {
+        server.enqueue(jsonResponse(202, """{"id":10,"import_status":"pending"}"""))
+        server.enqueue(jsonResponse(202, """{"id":11,"import_status":"pending"}"""))
+        val content = RecipePageContent(
+            url = "https://example.com/soup",
+            jsonLd = listOf("{\"@type\":\"Recipe\"}"),
+            metaTags = mapOf("og:title" to "Soup"),
+            coverImageCandidates = listOf("https://example.com/soup.jpg"),
+            html = "<body>Soup</body>",
+        )
+
+        service.importRecipeContent(42, RecipeContentImportRequest(content))
+        service.importRecipeImage(
+            42,
+            MultipartBody.Part.createFormData(
+                "image",
+                "shared-recipe.jpg",
+                "fake-image".toRequestBody("image/jpeg".toMediaType()),
+            ),
+        )
+
+        val contentRequest = server.takeRequest()
+        assertEquals("/api/v1/recipes/import_with_content", contentRequest.path)
+        assertEquals("42", contentRequest.getHeader("X-Cookbook-Id"))
+        assertEquals(
+            json(
+                """{"url":"https://example.com/soup","json_ld":["{\"@type\":\"Recipe\"}"],"meta_tags":{"og:title":"Soup"},"cover_image_candidates":["https://example.com/soup.jpg"],"html":"<body>Soup</body>"}""",
+            ),
+            json(contentRequest.body.readUtf8()),
+        )
+
+        val imageRequest = server.takeRequest()
+        assertEquals("/api/v1/recipes/extract_from_image", imageRequest.path)
+        assertEquals("42", imageRequest.getHeader("X-Cookbook-Id"))
+        assertTrue(imageRequest.getHeader("Content-Type")?.startsWith("multipart/form-data;") == true)
+        val multipart = imageRequest.body.readUtf8()
+        assertTrue(multipart.contains("name=\"image\"; filename=\"shared-recipe.jpg\""))
+        assertTrue(multipart.contains("Content-Type: image/jpeg"))
+        assertTrue(multipart.contains("fake-image"))
     }
 
     @Test
