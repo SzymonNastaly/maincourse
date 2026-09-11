@@ -148,26 +148,12 @@ class RecipeWorkflowScreenTest {
     @Test
     fun recipeMoveRequiresChoosingAnotherCookbook() {
         var movedTo: Long? = null
-        compose.runOnIdle {
-            MainCourseTestContent.content = {
-                MainCourseTheme {
-                    RecipeDetailScreen(
-                        state = RecipeDetailUiState(
-                            recipe = DETAIL,
-                            cookbooks = listOf(cookbook(1, "Home"), cookbook(2, "Shared")),
-                            loading = false,
-                        ),
-                        imageLoader = null,
-                        resolveImage = { it },
-                        onRefresh = {},
-                        cookbookId = 1,
-                        onMove = { movedTo = it },
-                    )
-                }
-            }
-        }
+        showEditor(
+            cookbooks = listOf(cookbook(1, "Home"), cookbook(2, "Shared")),
+            onMove = { movedTo = it },
+        )
 
-        compose.onNodeWithTag("recipe_move").performScrollTo().performClick()
+        compose.onNodeWithTag("recipe_move").performClick()
         compose.onNodeWithTag("move_target_2").performClick()
 
         assertEquals(2L, movedTo)
@@ -176,24 +162,53 @@ class RecipeWorkflowScreenTest {
     @Test
     fun recipeDeleteRequiresConfirmation() {
         var deletes = 0
+        showEditor(onDelete = { deletes++ })
+
+        compose.onNodeWithTag("recipe_delete").performClick()
+        assertEquals(0, deletes)
+        compose.onNodeWithTag("confirm_delete").performClick()
+        assertEquals(1, deletes)
+    }
+
+    private fun showEditor(
+        cookbooks: List<Cookbook> = listOf(cookbook(1, "Home")),
+        onMove: (Long) -> Unit = {},
+        onDelete: () -> Unit = {},
+    ) {
         compose.runOnIdle {
             MainCourseTestContent.content = {
                 MainCourseTheme {
-                    RecipeDetailScreen(
-                        state = RecipeDetailUiState(recipe = DETAIL, loading = false),
+                    RecipeEditScreen(
+                        state = RecipeEditUiState(loaded = true, name = DETAIL.name),
                         imageLoader = null,
                         resolveImage = { it },
-                        onRefresh = {},
-                        onDelete = { deletes++ },
+                        onBack = {},
+                        onSave = {},
+                        onNameChange = {},
+                        onPrepTimeChange = {},
+                        onCookTimeChange = {},
+                        onServingsChange = {},
+                        onIngredientChange = { _, _ -> },
+                        onAddIngredient = {},
+                        onRemoveIngredient = {},
+                        onMoveIngredient = { _, _ -> },
+                        onInstructionChange = { _, _ -> },
+                        onAddInstruction = {},
+                        onRemoveInstruction = {},
+                        onMoveInstruction = { _, _ -> },
+                        onNotesChange = {},
+                        onSourceUrlChange = {},
+                        onImageSelected = {},
+                        onImageError = {},
+                        onClearError = {},
+                        cookbooks = cookbooks,
+                        cookbookId = 1,
+                        onMove = onMove,
+                        onDelete = onDelete,
                     )
                 }
             }
         }
-
-        compose.onNodeWithTag("recipe_delete").performScrollTo().performClick()
-        assertEquals(0, deletes)
-        compose.onNodeWithTag("confirm_delete").performClick()
-        assertEquals(1, deletes)
     }
 
     @Test
@@ -206,7 +221,7 @@ class RecipeWorkflowScreenTest {
                     }) {
                         RecipeDetailScreen(
                             state = RecipeDetailUiState(
-                                recipe = DETAIL.copy(sourceUrl = "https://example.test/recipe"),
+                                recipe = DETAIL.copy(sourceUrl = "https://www.example.test/recipe"),
                                 loading = false,
                             ),
                             imageLoader = null,
@@ -218,7 +233,8 @@ class RecipeWorkflowScreenTest {
             }
         }
 
-        compose.onNodeWithTag("recipe_detail").performScrollToNode(hasTestTag("recipe_source"))
+        compose.onNodeWithText("example.test").assertIsDisplayed()
+        compose.onNodeWithText("https://www.example.test/recipe").assertDoesNotExist()
         compose.onNodeWithTag("recipe_source").performClick()
         compose.onNodeWithTag("source_open_error").assertIsDisplayed()
     }

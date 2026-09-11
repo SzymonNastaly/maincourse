@@ -176,6 +176,8 @@ class MainCourseAppTest {
         compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
         compose.onNodeWithText(DETAIL.name).assertIsDisplayed()
         compose.onNodeWithTag("recipe_back").assertDoesNotExist()
+        compose.onNodeWithTag("recipe_move").assertDoesNotExist()
+        compose.onNodeWithTag("recipe_delete").assertDoesNotExist()
 
         compose.onNodeWithTag("navigate_back").performClick()
         compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()

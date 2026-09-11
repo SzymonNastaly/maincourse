@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
+import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -82,8 +84,18 @@ fun RecipeEditScreen(
     onImageSelected: (SharedImage) -> Unit,
     onImageError: (String) -> Unit,
     onClearError: () -> Unit,
+    cookbooks: List<Cookbook> = emptyList(),
+    cookbookId: Long = 0,
+    actionState: RecipeActionUiState = RecipeActionUiState.Idle,
+    onMove: (Long) -> Unit = {},
+    onDelete: () -> Unit = {},
+    onActionSucceeded: () -> Unit = {},
 ) {
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showMoveDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val actionRunning = actionState is RecipeActionUiState.Running
+    val moveTargets = cookbooks.filter { it.id != cookbookId }
     val context = LocalContext.current
     val imageFailedMessage = stringResource(R.string.recipe_edit_image_failed)
     val imageReader = remember(context) { SharedImageReader(context) }
@@ -101,13 +113,17 @@ fun RecipeEditScreen(
     }
     val requestBack = {
         when {
-            state.saving -> Unit
+            state.saving || actionRunning -> Unit
             state.dirty -> showDiscardDialog = true
             else -> onBack()
         }
     }
 
-    BackHandler(enabled = state.saving || state.dirty) { requestBack() }
+    BackHandler(enabled = state.saving || actionRunning || state.dirty) { requestBack() }
+
+    LaunchedEffect(actionState) {
+        if (actionState is RecipeActionUiState.Succeeded) onActionSucceeded()
+    }
 
     if (showDiscardDialog) {
         AlertDialog(
@@ -130,6 +146,58 @@ fun RecipeEditScreen(
             },
         )
     }
+    if (showMoveDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!actionRunning) showMoveDialog = false },
+            title = { Text(stringResource(R.string.recipe_move_title, state.name)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (state.dirty) Text(stringResource(R.string.recipe_move_unsaved_body))
+                    moveTargets.forEach { cookbook ->
+                        OutlinedButton(
+                            onClick = {
+                                showMoveDialog = false
+                                onMove(cookbook.id)
+                            },
+                            enabled = !actionRunning,
+                            modifier = Modifier.fillMaxWidth().testTag("move_target_${cookbook.id}"),
+                        ) {
+                            Text(stringResource(R.string.recipe_move_target, cookbook.name))
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                OutlinedButton(onClick = { showMoveDialog = false }, enabled = !actionRunning) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!actionRunning) showDeleteDialog = false },
+            title = { Text(stringResource(R.string.recipe_delete_title, state.name)) },
+            text = { Text(stringResource(R.string.recipe_delete_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDelete()
+                    },
+                    enabled = !actionRunning,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MainCourseColors.Danger),
+                    modifier = Modifier.testTag("confirm_delete"),
+                ) { Text(stringResource(R.string.recipe_delete)) }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteDialog = false }, enabled = !actionRunning) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize().testTag("recipe_edit"),
@@ -141,7 +209,7 @@ fun RecipeEditScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = requestBack,
-                        enabled = !state.saving,
+                        enabled = !state.saving && !actionRunning,
                         modifier = Modifier.testTag("recipe_edit_back"),
                     ) {
                         Icon(painterResource(R.drawable.ic_back), stringResource(R.string.back))
@@ -150,7 +218,7 @@ fun RecipeEditScreen(
                 actions = {
                     TextButton(
                         onClick = onSave,
-                        enabled = state.canSave && state.dirty,
+                        enabled = state.canSave && state.dirty && !actionRunning,
                         modifier = Modifier.testTag("recipe_edit_save"),
                     ) {
                         if (state.saving) {
@@ -175,6 +243,11 @@ fun RecipeEditScreen(
                 imageLoader = imageLoader,
                 resolveImage = resolveImage,
                 contentPadding = padding,
+                moveEnabled = moveTargets.isNotEmpty() && !actionRunning && !state.saving,
+                deleteEnabled = !actionRunning && !state.saving,
+                actionState = actionState,
+                onMove = { showMoveDialog = true },
+                onDelete = { showDeleteDialog = true },
                 onChooseImage = {
                     photoPicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -206,6 +279,11 @@ private fun RecipeEditForm(
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     contentPadding: PaddingValues,
+    moveEnabled: Boolean,
+    deleteEnabled: Boolean,
+    actionState: RecipeActionUiState,
+    onMove: () -> Unit,
+    onDelete: () -> Unit,
     onChooseImage: () -> Unit,
     onNameChange: (String) -> Unit,
     onPrepTimeChange: (String) -> Unit,
@@ -233,6 +311,41 @@ private fun RecipeEditForm(
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item("actions") {
+            SectionCard(title = stringResource(R.string.recipe_edit_actions)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onMove,
+                        enabled = moveEnabled,
+                        modifier = Modifier.weight(1f).testTag("recipe_move"),
+                    ) {
+                        Text(stringResource(R.string.recipe_move))
+                    }
+                    OutlinedButton(
+                        onClick = onDelete,
+                        enabled = deleteEnabled,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MainCourseColors.Danger),
+                        modifier = Modifier.weight(1f).testTag("recipe_delete"),
+                    ) {
+                        Text(stringResource(R.string.recipe_delete))
+                    }
+                }
+                when (actionState) {
+                    is RecipeActionUiState.Failed -> Text(
+                        actionState.message,
+                        color = MainCourseColors.Danger,
+                        modifier = Modifier.testTag("recipe_action_error"),
+                    )
+                    is RecipeActionUiState.Running -> CircularProgressIndicator(
+                        Modifier.testTag("recipe_action_running"),
+                    )
+                    else -> Unit
+                }
+            }
+        }
         item("cover") {
             SectionCard(title = stringResource(R.string.recipe_edit_cover)) {
                 val imageModel: Any? = state.selectedImage?.bytes

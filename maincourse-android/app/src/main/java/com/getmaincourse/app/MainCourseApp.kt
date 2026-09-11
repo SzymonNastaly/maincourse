@@ -485,23 +485,17 @@ private fun ProtectedShell(
                         factory = factories.detail(userId, route.cookbookId, route.recipeId),
                     )
                     val detailState by detailViewModel.state.collectAsStateWithLifecycle()
-                    val actionState by detailViewModel.action.collectAsStateWithLifecycle()
                     RecipeDetailScreen(
                         state = detailState,
                         imageLoader = latestImageLoader,
                         resolveImage = latestResolveImage,
                         onRefresh = { detailViewModel.refresh() },
-                        cookbookId = route.cookbookId,
-                        actionState = actionState,
-                        onMove = { detailViewModel.moveTo(it) },
-                        onDelete = { detailViewModel.delete() },
                         onEdit = {
                             backStack.add(RecipeEditRoute(route.recipeId, route.cookbookId))
                         },
                         onAddIngredients = { portions ->
                             backStack.add(IngredientReviewRoute(route.recipeId, route.cookbookId, portions))
                         },
-                        onActionSucceeded = { backStack.removeLastOrNull() },
                     )
                 }
                 entry<RecipeEditRoute> { route ->
@@ -510,6 +504,12 @@ private fun ProtectedShell(
                         factory = factories.edit(userId, route.cookbookId, route.recipeId),
                     )
                     val editState by editViewModel.state.collectAsStateWithLifecycle()
+                    val detailViewModel: RecipeDetailViewModel = viewModel(
+                        key = "recipe-edit-actions-$userId-${route.cookbookId}-${route.recipeId}",
+                        factory = factories.detail(userId, route.cookbookId, route.recipeId),
+                    )
+                    val detailState by detailViewModel.state.collectAsStateWithLifecycle()
+                    val actionState by detailViewModel.action.collectAsStateWithLifecycle()
                     LaunchedEffect(editState.saved) {
                         if (editState.saved) {
                             backStack.removeLastOrNull()
@@ -539,6 +539,15 @@ private fun ProtectedShell(
                         onImageSelected = editViewModel::selectImage,
                         onImageError = editViewModel::reportImageError,
                         onClearError = editViewModel::clearError,
+                        cookbooks = detailState.cookbooks,
+                        cookbookId = route.cookbookId,
+                        actionState = actionState,
+                        onMove = { detailViewModel.moveTo(it) },
+                        onDelete = { detailViewModel.delete() },
+                        onActionSucceeded = {
+                            backStack.removeLastOrNull()
+                            backStack.removeLastOrNull()
+                        },
                     )
                 }
                 entry<IngredientReviewRoute> { route ->

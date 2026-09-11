@@ -155,6 +155,7 @@
     <string name="recipe_delete">Delete</string>
     <string name="recipe_edit">Edit</string>
     <string name="recipe_edit_title">Edit recipe</string>
+    <string name="recipe_edit_actions">Recipe actions</string>
     <string name="recipe_edit_saved">Recipe updated</string>
     <string name="recipe_edit_cover">Cover photo</string>
     <string name="recipe_edit_no_photo">No cover photo</string>
@@ -189,6 +190,7 @@
     <string name="recipe_add_to_shopping">Add ingredients to Shopping</string>
     <string name="recipe_portions">Portions</string>
     <string name="recipe_move_title">Move “%1$s”?</string>
+    <string name="recipe_move_unsaved_body">Unsaved edits will be discarded when this recipe is moved.</string>
     <string name="recipe_delete_title">Delete “%1$s”?</string>
     <string name="recipe_delete_body">Wait for confirmation before this recipe is removed.</string>
     <string name="recipe_move_target">Move to %1$s</string>

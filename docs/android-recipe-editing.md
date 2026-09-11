@@ -7,6 +7,15 @@ Picker, outlined fields, explicit row controls, and an unsaved-changes dialog.
 The bottom navigation is hidden while editing so leaving always goes through
 the editor's back handling.
 
+Move and delete are recipe-management actions within the editor, displayed in
+the first form section. The detail screen only offers Edit near the title. Both
+actions keep their confirmation dialogs; moving warns when it will discard an
+unsaved draft, and a successful move or deletion returns to the recipe list.
+
+Recipe detail shows a safe HTTP(S) source link immediately below the title. As
+on the web, the label is the source host without a leading `www.`, accompanied
+by an external-link icon; the full URL is not used as visible link text.
+
 ## Data flow
 
 `RecipeEditViewModel` initializes once from the cookbook-scoped Room detail
