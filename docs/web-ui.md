@@ -3,10 +3,6 @@
 How the MainCourse web app (desktop + mobile browser) is put together. The iOS
 app is a separate client on the same API; this doc is only about the HTML side.
 
-Visual reference: `docs/web-design/` (mockups + the `T` token table in
-`parts.mjs`). Design decisions and their rationale:
-`docs/superpowers/specs/2026-09-01-web-redesign-design.md`.
-
 ## Design tokens
 
 Tokens live in the `@theme` block of `app/assets/tailwind/application.css` and

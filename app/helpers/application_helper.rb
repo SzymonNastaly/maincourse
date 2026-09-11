@@ -1,6 +1,5 @@
 module ApplicationHelper
-  # Inline lucide icon at the design's 1.9 stroke. `size` is in px, matching
-  # the numbers in docs/web-design/parts.mjs.
+  # Inline lucide icon at the design system's 1.9 stroke. `size` is in px.
   def icon(name, size: 16, stroke: 1.9, **options)
     options[:class] = [ "shrink-0", options[:class] ].compact.join(" ")
     lucide_icon(name.to_s, size: size, "stroke-width" => stroke, **options)

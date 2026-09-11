@@ -4,7 +4,7 @@ require "test_helper"
 # Ruby test suite that runs in bin/ci -- unlike Xcode tests, it runs on every
 # push regardless of whether anyone remembers to run the iOS suite. That
 # matters here because forgetting this one is a security problem, not just a
-# broken build: see docs/superpowers/specs/2026-08-30-getmaincourse-domain-migration-design.md.
+# broken build.
 class IosEntitlementsTest < ActiveSupport::TestCase
   LEGACY_HOST = "cook.hauptgang.app"
 
@@ -30,8 +30,7 @@ class IosEntitlementsTest < ActiveSupport::TestCase
           "and once someone else registers it, they can claim this app's associated domains " \
           "(applinks/webcredentials) and hijack universal links and shared web credentials for " \
           "any install still trusting this entitlement. Remove the applinks:#{LEGACY_HOST} and " \
-          "webcredentials:#{LEGACY_HOST} entries. See " \
-          "docs/superpowers/specs/2026-08-30-getmaincourse-domain-migration-design.md."
+          "webcredentials:#{LEGACY_HOST} entries."
       end
     else
       # Before the deadline, the legacy entries are expected and required --

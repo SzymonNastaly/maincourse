@@ -101,8 +101,7 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   # Both are served during the transition. cook.hauptgang.app is removed in
-  # December 2026, before the domain expires — see
-  # docs/superpowers/specs/2026-08-30-getmaincourse-domain-migration-design.md
+  # December 2026, before the domain expires.
   config.hosts = [
     "app.getmaincourse.com",
     "cook.hauptgang.app"

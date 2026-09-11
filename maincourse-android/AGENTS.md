@@ -4,9 +4,8 @@ These instructions apply to `maincourse-android/`.
 
 ## Read First
 
-- `docs/android.md` is the durable architecture, setup, and verification guide.
-- `docs/superpowers/specs/2026-09-09-android-simple-mvp-design.md` defines the
-  current MVP. The older native Android roadmap is historical only.
+- `docs/android.md` defines the current MVP scope and is the durable
+  architecture, setup, and verification guide.
 - `app/assets/tailwind/application.css` and
   `hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift` are the shared
   design-token sources.

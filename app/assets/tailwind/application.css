@@ -2,8 +2,8 @@
 
 /*
  * Design tokens for the MainCourse web app.
- * Source of truth: docs/web-design/parts.mjs (the `T` object) and the README table.
- * The old brown/Lato Hauptgang tokens are superseded here; they still describe iOS.
+ * These definitions are the source of truth. The old brown/Lato Hauptgang
+ * theme is superseded; brown remains only in the brand artwork.
  */
 @theme {
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;

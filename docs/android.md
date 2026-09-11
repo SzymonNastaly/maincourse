@@ -1,8 +1,7 @@
 # Android Development
 
 `maincourse-android/` is the native Kotlin and Jetpack Compose client. The
-current scope is the deliberately small MVP defined in
-`docs/superpowers/specs/2026-09-09-android-simple-mvp-design.md`.
+current scope is the deliberately small MVP described below.
 
 ## MVP Scope
 
