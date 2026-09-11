@@ -5,13 +5,36 @@
       "source": "openai/plugins",
       "ref": "main",
       "sourceType": "github",
-      "computedHash": "94c87b7b139fa748ab4522b71a9abe8c572f8b7f15b67342c13313449c533ec5"
+      "skillPath": "plugins/build-ios-apps/skills/ios-app-intents/SKILL.md",
+      "computedHash": "6a51b9444a7370ccaa6915c3c3455e757d2df451707e62c1db0550e8cbf0c6b2"
     },
     "ios-debugger-agent": {
       "source": "openai/plugins",
       "ref": "main",
       "sourceType": "github",
-      "computedHash": "cc28bb00c138bf1d8c841c5a137185a63d05a4b3197f5d360de0534b5e492c1a"
+      "skillPath": "plugins/build-ios-apps/skills/ios-debugger-agent/SKILL.md",
+      "computedHash": "11284439fa49b8eb8f94a49e991240c700afd934b89635ba0e1fca1c247831d6"
+    },
+    "ios-ettrace-performance": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "plugins/build-ios-apps/skills/ios-ettrace-performance/SKILL.md",
+      "computedHash": "c23f54cf4d19b6fbd94669ac05dac7cd80daf55268421247a4509eef3bd1ec6b"
+    },
+    "ios-memgraph-leaks": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "plugins/build-ios-apps/skills/ios-memgraph-leaks/SKILL.md",
+      "computedHash": "4a1934c701282f07437e2fbb08d9098dec9477136321f25935aaf284ba22ee0a"
+    },
+    "ios-simulator-browser": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "plugins/build-ios-apps/skills/ios-simulator-browser/SKILL.md",
+      "computedHash": "f7946845cb45e56aaf915a25a9de6d2eaf7230f2e087e65c7b2dfdf6f2d6fc6f"
     },
     "shots": {
       "source": "hypersocialinc/shots",
@@ -23,25 +46,29 @@
       "source": "openai/plugins",
       "ref": "main",
       "sourceType": "github",
-      "computedHash": "55231be46b195bf670980324a806b042cba1604ae5118dbd20ccca60dbc99d31"
+      "skillPath": "plugins/build-ios-apps/skills/swiftui-liquid-glass/SKILL.md",
+      "computedHash": "44624d6194665c98615d0695b5c37559267948c4695dfd9bcecb379f7d495e53"
     },
     "swiftui-performance-audit": {
       "source": "openai/plugins",
       "ref": "main",
       "sourceType": "github",
-      "computedHash": "8f99ca4b21f37ba956469b4792af47415cb1d8ae5bb49501381c9ea4d911e073"
+      "skillPath": "plugins/build-ios-apps/skills/swiftui-performance-audit/SKILL.md",
+      "computedHash": "92a32dcc2bfc5cd685b9059f316c28219f812db5dab8610e0e761882d74def8c"
     },
     "swiftui-ui-patterns": {
       "source": "openai/plugins",
       "ref": "main",
       "sourceType": "github",
-      "computedHash": "053bbbb4cc1e554ca6f44a6eb8f7f2943566c3dcff4ff3431d1acd1f36ba528c"
+      "skillPath": "plugins/build-ios-apps/skills/swiftui-ui-patterns/SKILL.md",
+      "computedHash": "52090c667e7df9f0a7c4fb56f628a7c3d03f6a7b2c8377738985ac1f3e9ca15e"
     },
     "swiftui-view-refactor": {
       "source": "openai/plugins",
       "ref": "main",
       "sourceType": "github",
-      "computedHash": "71e5e4409443aa9ccd845df6536822dde7df1a566aa4ce3ceb00f82f22731960"
+      "skillPath": "plugins/build-ios-apps/skills/swiftui-view-refactor/SKILL.md",
+      "computedHash": "8de80dd1e8d7e750bbccd7028ae6e0878061ccb4afeec6db38098cea947e8f16"
     },
     "xcodebuildmcp-cli": {
       "source": "getsentry/XcodeBuildMCP",
