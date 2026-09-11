@@ -19,6 +19,10 @@ import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.CookbookInvitation
+import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
+import com.getmaincourse.app.data.model.CookbookInvitationPreview
+import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeImportResponse
@@ -43,6 +47,8 @@ import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
+import com.getmaincourse.app.features.cookbooks.CookbookManagementViewModel
+import com.getmaincourse.app.features.cookbooks.InvitationViewModel
 import com.getmaincourse.app.features.recipes.RecipeEditViewModel
 import com.getmaincourse.app.features.recipes.RecipeImportViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
@@ -309,6 +315,51 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun settingsOpensCookbookManagementAndCreatesASharedCookbook() {
+        show(SessionUiState.SignedIn(SESSION))
+
+        compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("settings_cookbooks").performClick()
+
+        compose.onNodeWithTag("screen_Cookbooks").assertIsDisplayed()
+        compose.onNodeWithText(COOKBOOK.name).assertIsDisplayed()
+        compose.onNodeWithTag("cookbook_name").performTextInput("Family recipes")
+        compose.onNodeWithTag("cookbook_move_recipes").performClick()
+        compose.onNodeWithTag("cookbook_create").assertIsEnabled().performClick()
+    }
+
+    @Test
+    fun invitationWaitsForAuthenticationThenCanBeAccepted() {
+        val state: MutableState<SessionUiState> = mutableStateOf(SessionUiState.SignedOut())
+        val consumed = AtomicBoolean(false)
+        val appFactories = factories()
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    MainCourseAppContent(
+                        state = state.value,
+                        factories = appFactories,
+                        invitationToken = "invite-token",
+                        onInvitationConsumed = { consumed.set(true) },
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("auth_form").assertIsDisplayed()
+        assertFalse(consumed.get())
+
+        compose.runOnIdle { state.value = SessionUiState.SignedIn(SESSION) }
+        compose.onNodeWithTag("screen_Invitation").assertIsDisplayed()
+        compose.onNodeWithText("Family").assertIsDisplayed()
+        assertTrue(consumed.get())
+        compose.onNodeWithTag("invitation_accept").performClick()
+        compose.onNodeWithText("You’re in!").assertIsDisplayed()
+        compose.onNodeWithTag("invitation_done").performClick()
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+    }
+
+    @Test
     fun recipeSearchOpensAResultAndReturnsToTheQuery() {
         show(SessionUiState.SignedIn(SESSION))
 
@@ -491,6 +542,8 @@ class MainCourseAppTest {
         imageLoader: MutableStateFlow<ImageLoader?> = MutableStateFlow(null),
         sharedRecipeInput: SharedRecipeInput? = null,
         onSharedRecipeInputConsumed: () -> Unit = {},
+        invitationToken: String? = null,
+        onInvitationConsumed: () -> Unit = {},
     ) {
         compose.runOnIdle {
             MainCourseTestContent.content = {
@@ -501,6 +554,8 @@ class MainCourseAppTest {
                         imageLoader = imageLoader,
                         sharedRecipeInput = sharedRecipeInput,
                         onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
+                        invitationToken = invitationToken,
+                        onInvitationConsumed = onInvitationConsumed,
                     )
                 }
             }
@@ -632,6 +687,35 @@ class MainCourseAppTest {
                     )
                 }
             },
+            cookbooks = {
+                simpleViewModelFactory {
+                    CookbookManagementViewModel(
+                        userId = USER.id,
+                        observeCookbooks = { selection },
+                        refreshCookbooks = {},
+                        createSharedCookbook = { _, _, _ -> SHARED_COOKBOOK },
+                        deleteSharedCookbook = { _, _ -> },
+                        leaveSharedCookbook = { _, _ -> },
+                        createCookbookInvitation = {
+                            CookbookInvitation(1, "token", "$BASE_URL/invite/token", "2099-01-01T00:00:00Z")
+                        },
+                    )
+                }
+            },
+            invitation = { _, token ->
+                simpleViewModelFactory {
+                    InvitationViewModel(
+                        userId = USER.id,
+                        token = token,
+                        observeCookbooks = { selection },
+                        loadInvitation = {
+                            CookbookInvitationPreview("Family", "owner@example.test", "2099-01-01T00:00:00Z", "pending")
+                        },
+                        acceptInvitation = { _, _ -> CookbookInvitationAcceptance(SHARED_COOKBOOK.id, SHARED_COOKBOOK.name) },
+                        rejectInvitation = {},
+                    )
+                }
+            },
         )
     }
 
@@ -650,6 +734,13 @@ class MainCourseAppTest {
         override suspend fun signUp(request: SignUpRequest): SessionResponse = error("Not used")
         override suspend fun signOut() = error("Not used")
         override suspend fun cookbooks(): List<Cookbook> = error("Not used")
+        override suspend fun createCookbook(request: CreateCookbookRequest): Cookbook = error("Not used")
+        override suspend fun deleteCookbook(cookbookId: Long) = error("Not used")
+        override suspend fun leaveCookbook(cookbookId: Long) = error("Not used")
+        override suspend fun createCookbookInvitation(cookbookId: Long): CookbookInvitation = error("Not used")
+        override suspend fun cookbookInvitation(token: String): CookbookInvitationPreview = error("Not used")
+        override suspend fun acceptCookbookInvitation(token: String): CookbookInvitationAcceptance = error("Not used")
+        override suspend fun rejectCookbookInvitation(token: String) = error("Not used")
         override suspend fun recipes(cookbookId: Long): List<RecipeSummary> = error("Not used")
         override suspend fun recipe(cookbookId: Long, recipeId: Long): RecipeDetail = error("Not used")
         override suspend fun recipeDetails(

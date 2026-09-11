@@ -38,6 +38,42 @@ data class CookbookMember(
 )
 
 @Serializable
+data class CreateCookbookRequest(
+    val name: String,
+    @SerialName("move_personal_recipes")
+    val movePersonalRecipes: Boolean,
+)
+
+@Serializable
+data class CookbookInvitation(
+    val id: Long,
+    val token: String,
+    @SerialName("invite_url")
+    val inviteUrl: String,
+    @SerialName("expires_at")
+    val expiresAt: String,
+)
+
+@Serializable
+data class CookbookInvitationPreview(
+    @SerialName("cookbook_name")
+    val cookbookName: String,
+    @SerialName("inviter_email")
+    val inviterEmail: String,
+    @SerialName("expires_at")
+    val expiresAt: String,
+    val status: String,
+)
+
+@Serializable
+data class CookbookInvitationAcceptance(
+    @SerialName("cookbook_id")
+    val cookbookId: Long,
+    @SerialName("cookbook_name")
+    val cookbookName: String,
+)
+
+@Serializable
 data class RecipeSummary(
     val id: Long,
     val name: String,

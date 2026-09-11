@@ -43,6 +43,41 @@
     <string name="cookbook_change">Change cookbook</string>
     <string name="cookbook_selected">Selected cookbook</string>
     <string name="cookbook_none_selected">No cookbook selected</string>
+    <string name="cookbook_manage">Manage Cookbooks</string>
+    <string name="cookbook_personal">PERSONAL COOKBOOK</string>
+    <string name="cookbook_shared">SHARED COOKBOOK</string>
+    <string name="cookbook_create_shared">Create a shared cookbook</string>
+    <string name="cookbook_create_help">Share recipes and a shopping list with someone else.</string>
+    <string name="cookbook_name">Cookbook name</string>
+    <string name="cookbook_move_personal">Move my current recipes</string>
+    <string name="cookbook_move_personal_help">Your personal recipes and shopping list will move into the shared cookbook.</string>
+    <string name="cookbook_create">Create Cookbook</string>
+    <string name="cookbook_members">Members</string>
+    <string name="cookbook_owner">Owner</string>
+    <string name="cookbook_member">Member</string>
+    <string name="cookbook_invite">Generate Invite Link</string>
+    <string name="cookbook_leave">Leave Cookbook</string>
+    <string name="cookbook_delete">Delete Shared Cookbook</string>
+    <string name="cookbook_leave_title">Leave shared cookbook?</string>
+    <string name="cookbook_leave_body">Your recipes will stay in the shared cookbook. You can rejoin later with a new invitation.</string>
+    <string name="cookbook_delete_title">Delete shared cookbook?</string>
+    <string name="cookbook_delete_body">This permanently deletes the shared cookbook and every recipe and shopping-list item in it.</string>
+    <string name="invitation_created">Invite Link Created</string>
+    <string name="invitation_share_help">Share this link to invite someone to your cookbook. It expires after seven days.</string>
+    <string name="invitation_link">MainCourse invitation</string>
+    <string name="invitation_share">Share invitation</string>
+    <string name="share">Share</string>
+    <string name="copy">Copy</string>
+    <string name="invitation_loading">Loading invitation…</string>
+    <string name="invitation_joining">Joining cookbook…</string>
+    <string name="invitation_joined">You’re in!</string>
+    <string name="invitation_joined_name">You’ve joined %1$s.</string>
+    <string name="invitation_error_title">Invitation unavailable</string>
+    <string name="invitation_title">You’re invited</string>
+    <string name="invitation_from">Invited by %1$s</string>
+    <string name="invitation_existing_shared">You already have a shared cookbook. Leave or delete it before joining another.</string>
+    <string name="invitation_join">Join Cookbook</string>
+    <string name="invitation_decline">Decline</string>
     <string name="cookbooks_empty">No cookbooks are available for this account.</string>
     <string name="recipes_empty">No recipes in this cookbook yet.</string>
     <string name="recipes_loading">Loading recipes…</string>
@@ -145,5 +180,9 @@
     <plurals name="add_items">
         <item quantity="one">Add %1$d item</item>
         <item quantity="other">Add %1$d items</item>
+    </plurals>
+    <plurals name="cookbook_recipes">
+        <item quantity="one">%1$d recipe</item>
+        <item quantity="other">%1$d recipes</item>
     </plurals>
 </resources>

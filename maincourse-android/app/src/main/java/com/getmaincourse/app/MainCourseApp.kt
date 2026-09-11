@@ -59,6 +59,10 @@ import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.features.auth.AuthScreen
+import com.getmaincourse.app.features.cookbooks.CookbookManagementScreen
+import com.getmaincourse.app.features.cookbooks.CookbookManagementViewModel
+import com.getmaincourse.app.features.cookbooks.InvitationScreen
+import com.getmaincourse.app.features.cookbooks.InvitationViewModel
 import com.getmaincourse.app.features.recipes.CookbookTitleMenu
 import com.getmaincourse.app.features.recipes.IngredientReviewScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
@@ -108,6 +112,12 @@ data object SearchRoute : NavKey
 @Serializable
 data object SettingsRoute : NavKey
 
+@Serializable
+data object CookbookSettingsRoute : NavKey
+
+@Serializable
+data class InvitationRoute(val token: String) : NavKey
+
 internal data class BrowsingViewModelFactories(
     val recipes: (Long) -> ViewModelProvider.Factory,
     val import: (Long) -> ViewModelProvider.Factory,
@@ -116,6 +126,8 @@ internal data class BrowsingViewModelFactories(
     val shopping: (Long) -> ViewModelProvider.Factory,
     val search: (Long) -> ViewModelProvider.Factory,
     val settings: () -> ViewModelProvider.Factory,
+    val cookbooks: (Long) -> ViewModelProvider.Factory,
+    val invitation: (userId: Long, token: String) -> ViewModelProvider.Factory,
 )
 
 @Composable
@@ -130,9 +142,12 @@ fun MainCourseApp(
     resolveImage: (String?) -> String?,
     sharedRecipeInput: StateFlow<SharedRecipeInput?>,
     onSharedRecipeInputConsumed: () -> Unit,
+    invitationToken: StateFlow<String?>,
+    onInvitationConsumed: () -> Unit,
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
     val pendingShare by sharedRecipeInput.collectAsStateWithLifecycle()
+    val pendingInvitation by invitationToken.collectAsStateWithLifecycle()
     MainCourseAppContent(
         state = sessionState,
         onSignIn = sessionViewModel::signIn,
@@ -188,11 +203,19 @@ fun MainCourseApp(
                     )
                 }
             },
+            cookbooks = { userId ->
+                simpleViewModelFactory { CookbookManagementViewModel(userId, cookbookRepository) }
+            },
+            invitation = { userId, token ->
+                simpleViewModelFactory { InvitationViewModel(userId, token, cookbookRepository) }
+            },
         ),
         imageLoader = sessionViewModel.imageLoader,
         resolveImage = resolveImage,
         sharedRecipeInput = pendingShare,
         onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
+        invitationToken = pendingInvitation,
+        onInvitationConsumed = onInvitationConsumed,
     )
 }
 
@@ -208,6 +231,8 @@ internal fun MainCourseAppContent(
     resolveImage: (String?) -> String? = { it },
     sharedRecipeInput: SharedRecipeInput? = null,
     onSharedRecipeInputConsumed: () -> Unit = {},
+    invitationToken: String? = null,
+    onInvitationConsumed: () -> Unit = {},
 ) {
     val currentImageLoader by imageLoader.collectAsStateWithLifecycle()
     when (state) {
@@ -234,6 +259,8 @@ internal fun MainCourseAppContent(
                         resolveImage = resolveImage,
                         sharedRecipeInput = sharedRecipeInput,
                         onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
+                        invitationToken = invitationToken,
+                        onInvitationConsumed = onInvitationConsumed,
                     )
                 }
             }
@@ -250,6 +277,8 @@ private fun ProtectedShell(
     resolveImage: (String?) -> String?,
     sharedRecipeInput: SharedRecipeInput?,
     onSharedRecipeInputConsumed: () -> Unit,
+    invitationToken: String?,
+    onInvitationConsumed: () -> Unit,
 ) {
     val backStack = rememberNavBackStack(RecipesRoute)
     val latestImageLoader by rememberUpdatedState(imageLoader)
@@ -270,6 +299,14 @@ private fun ProtectedShell(
     LaunchedEffect(sharedRecipeInput) {
         if (sharedRecipeInput != null && backStack.lastOrNull() != RecipeImportRoute) {
             backStack.add(RecipeImportRoute)
+        }
+    }
+    LaunchedEffect(invitationToken) {
+        invitationToken?.let { token ->
+            if (backStack.lastOrNull() != InvitationRoute(token)) {
+                backStack.add(InvitationRoute(token))
+            }
+            onInvitationConsumed()
         }
     }
     val selected = backStack.filter { it.isTopLevel() }.lastOrNull() ?: RecipesRoute
@@ -304,6 +341,8 @@ private fun ProtectedShell(
                                 ShoppingRoute -> stringResource(R.string.shopping_list)
                                 SearchRoute -> stringResource(R.string.search)
                                 SettingsRoute -> stringResource(R.string.settings)
+                                CookbookSettingsRoute -> stringResource(R.string.cookbook_manage)
+                                is InvitationRoute -> stringResource(R.string.invitation_title)
                                 else -> stringResource(R.string.app_name)
                             },
                         )
@@ -311,7 +350,10 @@ private fun ProtectedShell(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MainCourseColors.Canvas),
                 navigationIcon = {
-                    if (current is RecipeDetailRoute || current is IngredientReviewRoute || current == RecipeImportRoute) {
+                    if (
+                        current is RecipeDetailRoute || current is IngredientReviewRoute ||
+                        current == RecipeImportRoute || current == CookbookSettingsRoute || current is InvitationRoute
+                    ) {
                         IconButton(
                             onClick = { backStack.removeLastOrNull() },
                             modifier = Modifier.testTag("navigate_back"),
@@ -532,6 +574,40 @@ private fun ProtectedShell(
                         onDeleteAccount = { settingsViewModel.deleteAccount() },
                         onSignOut = { settingsViewModel.signOut() },
                         onClearError = settingsViewModel::clearError,
+                        onManageCookbooks = { backStack.add(CookbookSettingsRoute) },
+                    )
+                }
+                entry<CookbookSettingsRoute> {
+                    val cookbookViewModel: CookbookManagementViewModel = viewModel(
+                        key = "cookbook-management-$userId",
+                        factory = factories.cookbooks(userId),
+                    )
+                    val cookbookState by cookbookViewModel.state.collectAsStateWithLifecycle()
+                    CookbookManagementScreen(
+                        userId = userId,
+                        state = cookbookState,
+                        onCreate = cookbookViewModel::create,
+                        onGenerateInvitation = cookbookViewModel::generateInvitation,
+                        onLeave = cookbookViewModel::leave,
+                        onDelete = cookbookViewModel::delete,
+                        onDismissInvitation = cookbookViewModel::clearInvitation,
+                        onClearError = cookbookViewModel::clearError,
+                    )
+                }
+                entry<InvitationRoute> { route ->
+                    val invitationViewModel: InvitationViewModel = viewModel(
+                        key = "invitation-$userId-${route.token}",
+                        factory = factories.invitation(userId, route.token),
+                    )
+                    val invitationState by invitationViewModel.state.collectAsStateWithLifecycle()
+                    LaunchedEffect(invitationState.declined) {
+                        if (invitationState.declined) backStack.removeLastOrNull()
+                    }
+                    InvitationScreen(
+                        state = invitationState,
+                        onAccept = invitationViewModel::accept,
+                        onDecline = invitationViewModel::decline,
+                        onDone = { backStack.removeLastOrNull() },
                     )
                 }
             },

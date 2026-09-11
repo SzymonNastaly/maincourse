@@ -3,6 +3,10 @@ package com.getmaincourse.app.features.session
 import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.CookbookInvitation
+import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
+import com.getmaincourse.app.data.model.CookbookInvitationPreview
+import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
@@ -377,6 +381,13 @@ class SessionViewModelTest {
         }
 
         override suspend fun cookbooks(): List<Cookbook> = error("Not used")
+        override suspend fun createCookbook(request: CreateCookbookRequest): Cookbook = error("Not used")
+        override suspend fun deleteCookbook(cookbookId: Long) = error("Not used")
+        override suspend fun leaveCookbook(cookbookId: Long) = error("Not used")
+        override suspend fun createCookbookInvitation(cookbookId: Long): CookbookInvitation = error("Not used")
+        override suspend fun cookbookInvitation(token: String): CookbookInvitationPreview = error("Not used")
+        override suspend fun acceptCookbookInvitation(token: String): CookbookInvitationAcceptance = error("Not used")
+        override suspend fun rejectCookbookInvitation(token: String) = error("Not used")
         override suspend fun recipes(cookbookId: Long): List<RecipeSummary> = error("Not used")
         override suspend fun recipe(cookbookId: Long, recipeId: Long): RecipeDetail = error("Not used")
         override suspend fun recipeDetails(

@@ -2,6 +2,7 @@ package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
+import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipePageContent
@@ -109,6 +110,35 @@ class MainCourseServiceTest {
         assertEquals("GET", request.method)
         assertEquals("/api/v1/cookbooks", request.path)
         assertNull(request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun cookbookCollaborationUsesUnscopedServerContracts() = runTest {
+        val cookbookJson = """{"id":42,"name":"Family","personal":false,"recipe_count":0,"members":[]}"""
+        server.enqueue(jsonResponse(201, cookbookJson))
+        server.enqueue(jsonResponse(201, """{"id":3,"token":"tok","invite_url":"https://app.getmaincourse.com/invite/tok","expires_at":"2099-01-01T00:00:00Z"}"""))
+        server.enqueue(jsonResponse(200, """{"cookbook_name":"Family","inviter_email":"owner@example.test","expires_at":"2099-01-01T00:00:00Z","status":"pending"}"""))
+        server.enqueue(jsonResponse(200, """{"cookbook_id":42,"cookbook_name":"Family"}"""))
+        repeat(3) { server.enqueue(MockResponse().setResponseCode(204)) }
+
+        service.createCookbook(CreateCookbookRequest("Family", true))
+        service.createCookbookInvitation(42)
+        service.cookbookInvitation("tok")
+        service.acceptCookbookInvitation("tok")
+        service.leaveCookbook(42)
+        service.deleteCookbook(42)
+        service.rejectCookbookInvitation("tok")
+
+        val create = server.takeRequest()
+        assertEquals("POST", create.method)
+        assertEquals("/api/v1/cookbooks", create.path)
+        assertEquals(json("""{"name":"Family","move_personal_recipes":true}"""), json(create.body.readUtf8()))
+        assertEquals("/api/v1/cookbooks/42/invitations", server.takeRequest().path)
+        assertEquals("/api/v1/invitations/tok", server.takeRequest().path)
+        assertEquals("/api/v1/invitations/tok/accept", server.takeRequest().path)
+        assertEquals("/api/v1/cookbooks/42/leave", server.takeRequest().path)
+        assertEquals("DELETE", server.takeRequest().method)
+        assertEquals("/api/v1/invitations/tok/reject", server.takeRequest().path)
     }
 
     @Test

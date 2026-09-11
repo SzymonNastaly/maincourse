@@ -47,6 +47,7 @@ fun SettingsScreen(
     onDeleteAccount: () -> Unit,
     onSignOut: () -> Unit,
     onClearError: () -> Unit,
+    onManageCookbooks: () -> Unit,
 ) {
     val user = state.user ?: return
     var name by rememberSaveable(user.id) { mutableStateOf(user.name.orEmpty()) }
@@ -163,6 +164,34 @@ fun SettingsScreen(
                             CircularProgressIndicator(Modifier.padding(end = 8.dp), strokeWidth = 2.dp)
                         }
                         Text(stringResource(R.string.save))
+                    }
+                }
+            }
+        }
+        item {
+            Surface(
+                modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+                shape = MainCourseShapes.Panel,
+                color = MainCourseColors.Surface,
+                border = BorderStroke(1.dp, MainCourseColors.Hairline),
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(stringResource(R.string.cookbook_manage), style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        stringResource(R.string.cookbook_create_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MainCourseColors.Body,
+                    )
+                    OutlinedButton(
+                        onClick = onManageCookbooks,
+                        modifier = Modifier.fillMaxWidth().testTag("settings_cookbooks"),
+                        enabled = !busy,
+                        shape = MainCourseShapes.Control,
+                    ) {
+                        Text(stringResource(R.string.cookbook_manage))
                     }
                 }
             }

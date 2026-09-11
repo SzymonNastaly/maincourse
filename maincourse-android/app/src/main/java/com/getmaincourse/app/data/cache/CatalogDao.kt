@@ -11,11 +11,17 @@ interface CatalogDao {
     @Query("SELECT * FROM cookbooks WHERE userId = :userId ORDER BY listPosition")
     fun observeCookbooks(userId: Long): Flow<List<CookbookEntity>>
 
+    @Query("SELECT * FROM cookbooks WHERE userId = :userId ORDER BY listPosition")
+    suspend fun cookbooks(userId: Long): List<CookbookEntity>
+
     @Upsert
     suspend fun upsertCookbooks(items: List<CookbookEntity>)
 
     @Query("DELETE FROM cookbooks WHERE userId = :userId")
     suspend fun deleteCookbooks(userId: Long)
+
+    @Query("DELETE FROM cookbooks WHERE userId = :userId AND cookbookId = :cookbookId")
+    suspend fun deleteCookbook(userId: Long, cookbookId: Long)
 
     @Query("DELETE FROM cookbooks WHERE userId = :userId AND cookbookId NOT IN (:retainedIds)")
     suspend fun deleteCookbooksExcept(userId: Long, retainedIds: List<Long>)

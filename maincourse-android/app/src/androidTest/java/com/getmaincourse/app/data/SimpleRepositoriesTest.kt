@@ -96,6 +96,55 @@ class SimpleRepositoriesTest {
     }
 
     @Test
+    fun cookbookCreationAndDeletionReconcileTheRoomSelection() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        cookbooks.select(USER_ID, 10)
+        server.enqueue(jsonResponse(cookbookJson(20), 201))
+
+        val created = cookbooks.createShared(USER_ID, "Cookbook 20", movePersonalRecipes = true)
+
+        assertEquals(20L, created.id)
+        assertEquals(listOf(10L, 20L), cookbooks.observe(USER_ID).first().cookbooks.map { it.id })
+        assertEquals(20L, cookbooks.observe(USER_ID).first().selectedId)
+
+        server.enqueue(MockResponse().setResponseCode(204))
+        cookbooks.deleteShared(USER_ID, 20)
+
+        assertEquals(listOf(10L), cookbooks.observe(USER_ID).first().cookbooks.map { it.id })
+        assertEquals(10L, cookbooks.observe(USER_ID).first().selectedId)
+    }
+
+    @Test
+    fun acceptedInvitationRefreshesAndSelectsTheJoinedCookbook() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        cookbooks.select(USER_ID, 10)
+        server.enqueue(jsonResponse("""{"cookbook_id":20,"cookbook_name":"Cookbook 20"}"""))
+        server.enqueue(jsonResponse("[${cookbookJson(10)},${cookbookJson(20)}]"))
+
+        val acceptance = cookbooks.acceptInvitation(USER_ID, "invite-token")
+
+        assertEquals(20L, acceptance.cookbookId)
+        assertEquals(20L, cookbooks.observe(USER_ID).first().selectedId)
+        assertEquals("/api/v1/invitations/invite-token/accept", server.takeRequest().path)
+        assertEquals("/api/v1/cookbooks", server.takeRequest().path)
+    }
+
+    @Test
+    fun acceptedInvitationKeepsASelectedPlaceholderWhenRefreshFails() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        cookbooks.select(USER_ID, 10)
+        server.enqueue(jsonResponse("""{"cookbook_id":20,"cookbook_name":"Family"}"""))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        val acceptance = cookbooks.acceptInvitation(USER_ID, "invite-token")
+
+        assertEquals(20L, acceptance.cookbookId)
+        val selection = cookbooks.observe(USER_ID).first()
+        assertEquals(20L, selection.selectedId)
+        assertEquals("Family", selection.cookbooks.first { it.id == 20L }.name)
+    }
+
+    @Test
     fun recipeRefreshesPublishOnlyTheirUserAndCookbookScope() = runBlocking {
         seedCookbook(USER_ID, 10)
         seedCookbook(USER_ID, 20)

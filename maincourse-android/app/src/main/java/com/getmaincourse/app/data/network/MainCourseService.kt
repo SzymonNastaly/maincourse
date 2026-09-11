@@ -3,6 +3,10 @@ package com.getmaincourse.app.data.network
 import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.data.model.CookbookInvitation
+import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
+import com.getmaincourse.app.data.model.CookbookInvitationPreview
+import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
@@ -45,6 +49,33 @@ interface MainCourseService {
 
     @GET("api/v1/cookbooks")
     suspend fun cookbooks(): List<Cookbook>
+
+    @POST("api/v1/cookbooks")
+    suspend fun createCookbook(@Body request: CreateCookbookRequest): Cookbook
+
+    @DELETE("api/v1/cookbooks/{cookbookId}")
+    suspend fun deleteCookbook(@Path("cookbookId") cookbookId: Long)
+
+    @POST("api/v1/cookbooks/{cookbookId}/leave")
+    suspend fun leaveCookbook(@Path("cookbookId") cookbookId: Long)
+
+    @POST("api/v1/cookbooks/{cookbookId}/invitations")
+    suspend fun createCookbookInvitation(
+        @Path("cookbookId") cookbookId: Long,
+    ): CookbookInvitation
+
+    @GET("api/v1/invitations/{token}")
+    suspend fun cookbookInvitation(
+        @Path("token") token: String,
+    ): CookbookInvitationPreview
+
+    @POST("api/v1/invitations/{token}/accept")
+    suspend fun acceptCookbookInvitation(
+        @Path("token") token: String,
+    ): CookbookInvitationAcceptance
+
+    @POST("api/v1/invitations/{token}/reject")
+    suspend fun rejectCookbookInvitation(@Path("token") token: String)
 
     @GET("api/v1/recipes")
     suspend fun recipes(
