@@ -108,7 +108,7 @@ group :test do
 end
 
 # Admin dashboard [https://avohq.io]
-gem "avo", "~> 4.0"
+gem "avo", "~> 4.2"
 gem "ransack"
 
 gem "tailwindcss-rails", "~> 4.4"
