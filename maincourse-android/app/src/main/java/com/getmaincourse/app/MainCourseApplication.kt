@@ -9,9 +9,11 @@ import com.getmaincourse.app.data.images.SessionImages
 import com.getmaincourse.app.data.network.AuthInterceptor
 import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.network.SessionEvents
+import com.getmaincourse.app.data.onboarding.OnboardingPreferences
 import com.getmaincourse.app.data.session.EncryptedSessionStore
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.features.session.SessionViewModel
+import com.getmaincourse.app.features.auth.PreAuthViewModel
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -31,6 +33,7 @@ class MainCourseApplication : Application() {
 class AppContainer(application: Application) {
     val database = MainCourseDatabase.open(application)
     val sessionStore = EncryptedSessionStore(application)
+    val onboardingPreferences = OnboardingPreferences(application)
     val sessionProvider = SessionProvider()
     val sessionEvents = SessionEvents()
     private val authenticatedClient = OkHttpClient.Builder()
@@ -56,7 +59,15 @@ class AppContainer(application: Application) {
             sessionEvents = sessionEvents,
             database = database,
             images = images,
+            onboardingDeviceId = onboardingPreferences::pendingDeviceId,
+            clearOnboardingDeviceId = onboardingPreferences::clearPendingDeviceId,
             baseUrl = BuildConfig.API_BASE_URL,
+        )
+    }
+    val preAuthViewModelFactory = simpleViewModelFactory {
+        PreAuthViewModel(
+            preferences = onboardingPreferences,
+            submitOnboarding = { service.submitOnboarding(it) },
         )
     }
 }

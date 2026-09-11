@@ -58,7 +58,13 @@ import com.getmaincourse.app.data.ShoppingListRepository
 import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
-import com.getmaincourse.app.features.auth.AuthScreen
+import com.getmaincourse.app.features.auth.DietOption
+import com.getmaincourse.app.features.auth.HouseholdSize
+import com.getmaincourse.app.features.auth.PreAuthScreen
+import com.getmaincourse.app.features.auth.PreAuthStep
+import com.getmaincourse.app.features.auth.PreAuthUiState
+import com.getmaincourse.app.features.auth.PreAuthViewModel
+import com.getmaincourse.app.features.auth.SaveTodayOption
 import com.getmaincourse.app.features.cookbooks.CookbookManagementScreen
 import com.getmaincourse.app.features.cookbooks.CookbookManagementViewModel
 import com.getmaincourse.app.features.cookbooks.InvitationScreen
@@ -133,6 +139,7 @@ internal data class BrowsingViewModelFactories(
 @Composable
 fun MainCourseApp(
     sessionViewModel: SessionViewModel,
+    preAuthViewModel: PreAuthViewModel,
     cookbookRepository: CookbookRepository,
     recipeRepository: RecipeRepository,
     shoppingListRepository: ShoppingListRepository,
@@ -146,10 +153,22 @@ fun MainCourseApp(
     onInvitationConsumed: () -> Unit,
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
+    val preAuthState by preAuthViewModel.state.collectAsStateWithLifecycle()
     val pendingShare by sharedRecipeInput.collectAsStateWithLifecycle()
     val pendingInvitation by invitationToken.collectAsStateWithLifecycle()
+    LaunchedEffect(sessionState) {
+        if (sessionState is SessionUiState.SignedIn) preAuthViewModel.authenticated()
+    }
     MainCourseAppContent(
         state = sessionState,
+        preAuthState = preAuthState,
+        onStartOnboarding = preAuthViewModel::start,
+        onSelectHousehold = preAuthViewModel::selectHousehold,
+        onToggleSaveToday = preAuthViewModel::toggleSaveToday,
+        onToggleDiet = preAuthViewModel::toggleDiet,
+        onAdvanceOnboarding = preAuthViewModel::advance,
+        onBackOnboarding = preAuthViewModel::goBack,
+        onSkipOnboarding = preAuthViewModel::skip,
         onSignIn = sessionViewModel::signIn,
         onSignUp = sessionViewModel::signUp,
         onRetryRestore = sessionViewModel::restore,
@@ -222,6 +241,14 @@ fun MainCourseApp(
 @Composable
 internal fun MainCourseAppContent(
     state: SessionUiState,
+    preAuthState: PreAuthUiState = PreAuthUiState(PreAuthStep.AUTH, onboarding = false),
+    onStartOnboarding: () -> Unit = {},
+    onSelectHousehold: (HouseholdSize) -> Unit = {},
+    onToggleSaveToday: (SaveTodayOption) -> Unit = {},
+    onToggleDiet: (DietOption) -> Unit = {},
+    onAdvanceOnboarding: () -> Unit = {},
+    onBackOnboarding: () -> Unit = {},
+    onSkipOnboarding: () -> Unit = {},
     onSignIn: (String, String) -> Unit = { _, _ -> },
     onSignUp: (String?, String, String, String) -> Unit = { _, _, _, _ -> },
     onRetryRestore: () -> Unit = {},
@@ -237,9 +264,17 @@ internal fun MainCourseAppContent(
     val currentImageLoader by imageLoader.collectAsStateWithLifecycle()
     when (state) {
         SessionUiState.Restoring -> LoadingScreen()
-        is SessionUiState.SignedOut -> AuthScreen(
+        is SessionUiState.SignedOut -> PreAuthScreen(
+            state = preAuthState,
             busy = state.busy,
             error = state.authError,
+            onStart = onStartOnboarding,
+            onSelectHousehold = onSelectHousehold,
+            onToggleSaveToday = onToggleSaveToday,
+            onToggleDiet = onToggleDiet,
+            onAdvance = onAdvanceOnboarding,
+            onBack = onBackOnboarding,
+            onSkip = onSkipOnboarding,
             onSignIn = onSignIn,
             onSignUp = onSignUp,
         )

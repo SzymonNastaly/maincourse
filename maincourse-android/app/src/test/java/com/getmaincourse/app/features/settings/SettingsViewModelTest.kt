@@ -9,6 +9,8 @@ import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
 import com.getmaincourse.app.data.model.CookbookInvitationPreview
 import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeImportResponse
@@ -233,6 +235,7 @@ class SettingsViewModelTest {
 
         override suspend fun signIn(request: SignInRequest): SessionResponse = error("Not used")
         override suspend fun signUp(request: SignUpRequest): SessionResponse = error("Not used")
+        override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse = error("Not used")
         override suspend fun signOut() = error("Not used")
         override suspend fun cookbooks(): List<Cookbook> = error("Not used")
         override suspend fun createCookbook(request: CreateCookbookRequest): Cookbook = error("Not used")

@@ -2,6 +2,7 @@ package com.getmaincourse.app.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class User(
@@ -161,6 +162,8 @@ data class SignInRequest(
     val password: String,
     @SerialName("device_name")
     val deviceName: String,
+    @SerialName("onboarding_device_id")
+    val onboardingDeviceId: String? = null,
 )
 
 @Serializable
@@ -172,4 +175,21 @@ data class SignUpRequest(
     val passwordConfirmation: String,
     @SerialName("device_name")
     val deviceName: String,
+    @SerialName("onboarding_device_id")
+    val onboardingDeviceId: String? = null,
+)
+
+@Serializable
+data class OnboardingRequest(
+    @SerialName("device_id")
+    val deviceId: String,
+    val answers: JsonObject,
+)
+
+@Serializable
+data class OnboardingResponse(
+    val id: Long,
+    @SerialName("device_id")
+    val deviceId: String,
+    val answers: JsonObject,
 )

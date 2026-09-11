@@ -36,6 +36,8 @@ import com.getmaincourse.app.data.model.SessionResponse
 import com.getmaincourse.app.data.model.StructuredIngredient
 import com.getmaincourse.app.data.model.User
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.ShoppingItemRequest
@@ -47,6 +49,9 @@ import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
+import com.getmaincourse.app.features.auth.HouseholdSize
+import com.getmaincourse.app.features.auth.PreAuthStep
+import com.getmaincourse.app.features.auth.PreAuthUiState
 import com.getmaincourse.app.features.cookbooks.CookbookManagementViewModel
 import com.getmaincourse.app.features.cookbooks.InvitationViewModel
 import com.getmaincourse.app.features.recipes.RecipeEditViewModel
@@ -93,6 +98,55 @@ class MainCourseAppTest {
         compose.onNodeWithTag("auth_form").assertIsDisplayed()
         compose.onNodeWithTag("auth_email").assertIsDisplayed()
         compose.onNodeWithTag("auth_password").assertIsDisplayed()
+    }
+
+    @Test
+    fun freshInstallStartsOnWelcomeAndUsesMaterialQuestionFlow() {
+        val preAuth: MutableState<PreAuthUiState> = mutableStateOf(
+            PreAuthUiState(PreAuthStep.WELCOME, onboarding = true),
+        )
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    MainCourseAppContent(
+                        state = SessionUiState.SignedOut(),
+                        preAuthState = preAuth.value,
+                        onStartOnboarding = {
+                            preAuth.value = preAuth.value.copy(step = PreAuthStep.HOUSEHOLD)
+                        },
+                        onSelectHousehold = {
+                            preAuth.value = preAuth.value.copy(household = it)
+                        },
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("onboarding_logo").assertIsDisplayed()
+        compose.onNodeWithTag("onboarding_start").performClick()
+        compose.onNodeWithText("How big is your household?").assertIsDisplayed()
+        compose.onNodeWithTag("onboarding_continue").assertIsNotEnabled()
+        compose.onNodeWithTag("onboarding_household_one").performClick()
+        compose.onNodeWithTag("onboarding_continue").assertIsEnabled()
+        assertEquals(HouseholdSize.ONE, preAuth.value.household)
+    }
+
+    @Test
+    fun onboardingAuthenticationReusesBrandedSignupScreen() {
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    MainCourseAppContent(
+                        state = SessionUiState.SignedOut(),
+                        preAuthState = PreAuthUiState(PreAuthStep.AUTH, onboarding = true),
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithText("Create your account").assertIsDisplayed()
+        compose.onNodeWithTag("auth_name").assertIsDisplayed()
+        compose.onNodeWithTag("auth_logo").assertIsDisplayed()
     }
 
     @Test
@@ -732,6 +786,7 @@ class MainCourseAppTest {
     private object UnusedService : MainCourseService {
         override suspend fun signIn(request: SignInRequest): SessionResponse = error("Not used")
         override suspend fun signUp(request: SignUpRequest): SessionResponse = error("Not used")
+        override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse = error("Not used")
         override suspend fun signOut() = error("Not used")
         override suspend fun cookbooks(): List<Cookbook> = error("Not used")
         override suspend fun createCookbook(request: CreateCookbookRequest): Cookbook = error("Not used")

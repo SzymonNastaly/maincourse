@@ -8,6 +8,8 @@ import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
 import com.getmaincourse.app.data.model.CookbookInvitationPreview
 import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeImportResponse
@@ -49,6 +51,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -172,6 +175,41 @@ class SessionViewModelTest {
         )
         assertEquals(SessionUiState.SignedIn(response), viewModel.state.value)
         assertNull(provider.pendingAcceptedSession.value)
+    }
+
+    @Test
+    fun emailAuthenticationLinksAndThenClearsPendingOnboarding() = runTest(dispatcher) {
+        var clearedOnboarding = false
+        val viewModel = buildViewModel(
+            onboardingDeviceId = { "android-device" },
+            clearOnboardingDeviceId = { clearedOnboarding = true },
+        )
+        viewModel.restore().join()
+
+        viewModel.signIn("cook@example.com", "secret").join()
+
+        assertEquals(
+            SignInRequest("cook@example.com", "secret", "Android", "android-device"),
+            service.signInRequest,
+        )
+        assertTrue(clearedOnboarding)
+
+        viewModel.signOut().join()
+        clearedOnboarding = false
+        viewModel.signUp("Cook", "cook@example.com", "123456789012", "123456789012").join()
+
+        assertEquals(
+            SignUpRequest(
+                "Cook",
+                "cook@example.com",
+                "123456789012",
+                "123456789012",
+                "Android",
+                "android-device",
+            ),
+            service.signUpRequest,
+        )
+        assertTrue(clearedOnboarding)
     }
 
     @Test
@@ -316,6 +354,8 @@ class SessionViewModelTest {
             preparedUsers += it
             null
         },
+        onboardingDeviceId: () -> String? = { null },
+        clearOnboardingDeviceId: () -> Unit = {},
     ) = SessionViewModel(
         service = service,
         sessionStore = store,
@@ -326,6 +366,8 @@ class SessionViewModelTest {
         prepareImages = prepareImages,
         clearDatabase = databaseCleanup,
         clearImages = { cleared += "images" },
+        onboardingDeviceId = onboardingDeviceId,
+        clearOnboardingDeviceId = clearOnboardingDeviceId,
     )
 
     private class FakeSessionStore : SessionStore {
@@ -370,6 +412,8 @@ class SessionViewModelTest {
             signUpRequest = request
             return signUpResponse
         }
+
+        override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse = error("Not used")
 
         override suspend fun signOut() {
             signOutCalls += 1

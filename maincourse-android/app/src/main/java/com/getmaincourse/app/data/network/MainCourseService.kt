@@ -8,6 +8,8 @@ import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
 import com.getmaincourse.app.data.model.CookbookInvitationPreview
 import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.OnboardingRequest
+import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
@@ -43,6 +45,10 @@ interface MainCourseService {
     @Headers("$ANONYMOUS_HEADER: true")
     @POST("api/v1/registration")
     suspend fun signUp(@Body request: SignUpRequest): SessionResponse
+
+    @Headers("$ANONYMOUS_HEADER: true")
+    @POST("api/v1/onboarding_response")
+    suspend fun submitOnboarding(@Body request: OnboardingRequest): OnboardingResponse
 
     @DELETE("api/v1/session")
     suspend fun signOut()

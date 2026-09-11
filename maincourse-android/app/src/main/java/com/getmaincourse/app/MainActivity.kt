@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
+import com.getmaincourse.app.features.auth.PreAuthViewModel
 import com.getmaincourse.app.features.recipes.SharedRecipeInput
 import com.getmaincourse.app.features.recipes.sharedRecipeInput
 import com.getmaincourse.app.features.cookbooks.invitationToken
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity() {
         get() = (application as MainCourseApplication).container
 
     private val viewModel by viewModels<SessionViewModel> { appContainer.sessionViewModelFactory }
+    private val preAuthViewModel by viewModels<PreAuthViewModel> { appContainer.preAuthViewModelFactory }
     private var contentInstalled = false
     private val pendingSharedRecipe = MutableStateFlow<SharedRecipeInput?>(null)
     private val pendingInvitationToken = MutableStateFlow<String?>(null)
@@ -88,6 +90,7 @@ class MainActivity : ComponentActivity() {
                 }
                 MainCourseApp(
                     sessionViewModel = viewModel,
+                    preAuthViewModel = preAuthViewModel,
                     cookbookRepository = appContainer.cookbookRepository,
                     recipeRepository = appContainer.recipeRepository,
                     shoppingListRepository = appContainer.shoppingListRepository,

@@ -4,6 +4,7 @@ import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.CreateCookbookRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipePageContent
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
@@ -18,6 +19,8 @@ import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -63,7 +66,7 @@ class MainCourseServiceTest {
     fun signInUsesAnonymousSessionContract() = runTest {
         server.enqueue(jsonResponse(201, sessionJson()))
 
-        val response = service.signIn(SignInRequest("cook@example.com", "secret", "Android"))
+        val response = service.signIn(SignInRequest("cook@example.com", "secret", "Android", "android-device"))
 
         assertEquals("token", response.token)
         val request = server.takeRequest()
@@ -71,7 +74,9 @@ class MainCourseServiceTest {
         assertEquals("/api/v1/session", request.path)
         assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
         assertEquals(
-            json("""{"email":"cook@example.com","password":"secret","device_name":"Android"}"""),
+            json(
+                """{"email":"cook@example.com","password":"secret","device_name":"Android","onboarding_device_id":"android-device"}""",
+            ),
             json(request.body.readUtf8()),
         )
     }
@@ -80,7 +85,9 @@ class MainCourseServiceTest {
     fun signUpUsesAnonymousRegistrationContract() = runTest {
         server.enqueue(jsonResponse(201, sessionJson()))
 
-        service.signUp(SignUpRequest("Cook", "cook@example.com", "password", "password", "Android"))
+        service.signUp(
+            SignUpRequest("Cook", "cook@example.com", "password", "password", "Android", "android-device"),
+        )
 
         val request = server.takeRequest()
         assertEquals("POST", request.method)
@@ -88,8 +95,38 @@ class MainCourseServiceTest {
         assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
         assertEquals(
             json(
-                """{"name":"Cook","email":"cook@example.com","password":"password","password_confirmation":"password","device_name":"Android"}""",
+                """{"name":"Cook","email":"cook@example.com","password":"password","password_confirmation":"password","device_name":"Android","onboarding_device_id":"android-device"}""",
             ),
+            json(request.body.readUtf8()),
+        )
+    }
+
+    @Test
+    fun onboardingUsesAnonymousResponseContract() = runTest {
+        server.enqueue(
+            jsonResponse(
+                201,
+                """{"id":9,"device_id":"android-device","answers":{"household_size":2,"diet":[]}}""",
+            ),
+        )
+
+        val response = service.submitOnboarding(
+            OnboardingRequest(
+                deviceId = "android-device",
+                answers = buildJsonObject {
+                    put("household_size", 2)
+                    put("diet", kotlinx.serialization.json.JsonArray(emptyList()))
+                },
+            ),
+        )
+
+        assertEquals(9L, response.id)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/onboarding_response", request.path)
+        assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
+        assertEquals(
+            json("""{"device_id":"android-device","answers":{"household_size":2,"diet":[]}}"""),
             json(request.body.readUtf8()),
         )
     }

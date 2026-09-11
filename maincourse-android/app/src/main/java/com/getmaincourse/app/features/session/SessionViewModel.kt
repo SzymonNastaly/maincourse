@@ -39,6 +39,8 @@ class SessionViewModel internal constructor(
     private val prepareImages: suspend (Long) -> ImageLoader?,
     private val clearDatabase: suspend () -> Unit,
     private val clearImages: suspend () -> Unit,
+    private val onboardingDeviceId: () -> String? = { null },
+    private val clearOnboardingDeviceId: () -> Unit = {},
 ) : ViewModel() {
     constructor(
         service: MainCourseService,
@@ -47,6 +49,8 @@ class SessionViewModel internal constructor(
         sessionEvents: SessionEvents,
         database: MainCourseDatabase,
         images: SessionImages,
+        onboardingDeviceId: () -> String? = { null },
+        clearOnboardingDeviceId: () -> Unit = {},
         baseUrl: String,
         clock: Clock = Clock.systemUTC(),
     ) : this(
@@ -59,6 +63,8 @@ class SessionViewModel internal constructor(
         prepareImages = images::prepare,
         clearDatabase = { withContext(Dispatchers.IO) { database.clearAllTables() } },
         clearImages = images::clear,
+        onboardingDeviceId = onboardingDeviceId,
+        clearOnboardingDeviceId = clearOnboardingDeviceId,
     )
 
     private val mutableState = MutableStateFlow<SessionUiState>(SessionUiState.Restoring)
@@ -131,7 +137,7 @@ class SessionViewModel internal constructor(
             mutableState.value = SessionUiState.SignedOut(it)
             return@authenticate null
         }
-        service.signIn(SignInRequest(normalizedEmail, password, DEVICE_NAME))
+        service.signIn(SignInRequest(normalizedEmail, password, DEVICE_NAME, onboardingDeviceId()))
     }
 
     fun signUp(
@@ -157,6 +163,7 @@ class SessionViewModel internal constructor(
                 password = password,
                 passwordConfirmation = confirmation,
                 deviceName = DEVICE_NAME,
+                onboardingDeviceId = onboardingDeviceId(),
             ),
         )
     }
@@ -216,6 +223,7 @@ class SessionViewModel internal constructor(
             try {
                 sessionStore.write(StoredSession(baseUrl, response))
                 publish(response)
+                clearOnboardingDeviceId()
             } catch (failure: CancellationException) {
                 throw failure
             } catch (failure: Throwable) {
