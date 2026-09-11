@@ -5,6 +5,7 @@ import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeSummary
@@ -26,6 +27,7 @@ import retrofit2.http.PATCH
 import retrofit2.http.Part
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 import okhttp3.MultipartBody
 
 interface MainCourseService {
@@ -53,6 +55,13 @@ interface MainCourseService {
         @Header("X-Cookbook-Id") cookbookId: Long,
         @Path("recipeId") recipeId: Long,
     ): RecipeDetail
+
+    @GET("api/v1/recipes/batch")
+    suspend fun recipeDetails(
+        @Header("X-Cookbook-Id") cookbookId: Long,
+        @Query("cursor") cursor: String? = null,
+        @Query("limit") limit: Int,
+    ): RecipeDetailBatchResponse
 
     @POST("api/v1/recipes/import")
     suspend fun importRecipe(

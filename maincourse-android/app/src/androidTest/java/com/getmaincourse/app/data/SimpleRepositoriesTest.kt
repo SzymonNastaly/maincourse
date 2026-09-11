@@ -111,20 +111,295 @@ class SimpleRepositoriesTest {
         recipes.refreshDetail(USER_ID, 10, 7)
 
         assertEquals("Detailed", recipes.observeDetail(USER_ID, 10, 7).first()?.name)
+        assertEquals("Detailed", recipes.observeSummaries(USER_ID, 10).first().single().name)
         assertNull(recipes.observeDetail(OTHER_USER_ID, 10, 7).first())
     }
 
     @Test
-    fun recipeRefreshDoesNotWriteLegacyFetchMetadata() = runBlocking {
+    fun recipeListRefreshDoesNotAdvanceDetailCursor() = runBlocking {
         seedCookbook(USER_ID, 10)
         server.enqueue(jsonResponse("[${summaryJson(7, "Fresh")}]"))
 
         recipes.refreshList(USER_ID, 10)
 
-        database.openHelper.readableDatabase.query("SELECT COUNT(*) FROM recipe_fetches").use { cursor ->
-            assertTrue(cursor.moveToFirst())
-            assertEquals(0, cursor.getInt(0))
+        assertNull(database.catalogDao().recipeDetailSyncCursor(USER_ID, 10))
+    }
+
+    @Test
+    fun recipeSearchUsesNameIngredientAndInstructionPrefixesWithinItsScope() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedCookbook(USER_ID, 20)
+        seedCookbook(OTHER_USER_ID, 10)
+        server.enqueue(
+            jsonResponse(
+                "[" +
+                    summaryJson(7, "Café tomato pasta") + "," +
+                    summaryJson(8, "Weeknight bowl") + "," +
+                    summaryJson(9, "Broken tomato", "failed") +
+                    "]",
+            ),
+        )
+        recipes.refreshList(USER_ID, 10)
+        val enrichedResults = async(Dispatchers.IO) {
+            recipes.searchSummaries(USER_ID, 10, "cori").first { it.isNotEmpty() }
         }
+        server.enqueue(
+            jsonResponse(
+                batchJson(
+                    listOf(
+                        detailJson(
+                            7,
+                            "Café tomato pasta",
+                            structuredIngredients =
+                                "[{\"id\":1,\"position\":0,\"amount\":null," +
+                                    "\"amount_max\":null,\"unit\":null,\"name\":\"Coriander\"," +
+                                    "\"note\":null,\"raw\":\"fresh coriander\"}]",
+                            instructions = "[\"Simmer gently\"]",
+                        ),
+                        detailJson(
+                            8,
+                            "Weeknight bowl",
+                            ingredients = "[\"tomatoes\"]",
+                            instructions = "[\"Bake until golden\"]",
+                        ),
+                    ).joinToString(","),
+                    "page-1",
+                ),
+            ),
+        )
+        server.enqueue(jsonResponse(batchJson()))
+
+        recipes.syncDetails(USER_ID, 10)
+
+        assertEquals(listOf(7L), enrichedResults.await().map { it.id })
+        assertEquals(listOf(7L), recipes.searchSummaries(USER_ID, 10, "cafe").first().map { it.id })
+        assertEquals(listOf(7L), recipes.searchSummaries(USER_ID, 10, "cori").first().map { it.id })
+        assertEquals(listOf(7L), recipes.searchSummaries(USER_ID, 10, "simm").first().map { it.id })
+        assertEquals(
+            listOf(7L, 8L),
+            recipes.searchSummaries(USER_ID, 10, "tom").first().map { it.id },
+        )
+        assertTrue(recipes.searchSummaries(USER_ID, 10, "broken").first().isEmpty())
+        assertTrue(recipes.searchSummaries(USER_ID, 20, "tom").first().isEmpty())
+        assertTrue(recipes.searchSummaries(OTHER_USER_ID, 10, "tom").first().isEmpty())
+    }
+
+    @Test
+    fun searchIndexRebuildsFromRoomAndRecipeDeletionCleansItUp() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Cached noodles"))
+
+        assertTrue(recipes.searchSummaries(USER_ID, 10, "nood").first().isEmpty())
+
+        recipes.rebuildSearchIndex(USER_ID, 10)
+
+        assertEquals(listOf(7L), recipes.searchSummaries(USER_ID, 10, "nood").first().map { it.id })
+
+        database.catalogDao().removeRecipe(USER_ID, 10, 7)
+
+        assertTrue(recipes.searchSummaries(USER_ID, 10, "nood").first().isEmpty())
+        assertTrue(database.catalogDao().recipeSearchDocuments(USER_ID, 10).isEmpty())
+    }
+
+    @Test
+    fun searchDocumentFailureRollsBackRecipeAndIndexReplacementTogether() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        server.enqueue(jsonResponse("[${summaryJson(7, "Cached")}]"))
+        recipes.refreshList(USER_ID, 10)
+        database.openHelper.writableDatabase.execSQL(
+            """
+            CREATE TRIGGER fail_search_document
+            BEFORE INSERT ON recipe_search_documents
+            WHEN NEW.name = 'Fresh'
+            BEGIN
+                SELECT RAISE(FAIL, 'forced search document failure');
+            END
+            """.trimIndent(),
+        )
+        server.enqueue(jsonResponse("[${summaryJson(8, "Fresh")}]"))
+
+        assertTrue(runCatching { recipes.refreshList(USER_ID, 10) }.isFailure)
+
+        assertEquals(listOf("Cached"), recipes.observeSummaries(USER_ID, 10).first().map { it.name })
+        assertEquals(listOf(7L), recipes.searchSummaries(USER_ID, 10, "cach").first().map { it.id })
+        assertTrue(recipes.searchSummaries(USER_ID, 10, "fresh").first().isEmpty())
+    }
+
+    @Test
+    fun detailSyncPagesFromRoomCursorAndUpdatesSummaryWithDetail() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Summary"))
+        database.catalogDao().upsertRecipes(
+            listOf(RecipeEntity(USER_ID, 10, 8, 1, Json.encodeToString(summary(8, "Peer")))),
+        )
+        server.enqueue(jsonResponse(batchJson(detailJson(7, "Detailed"), "page-1")))
+        server.enqueue(jsonResponse(batchJson(detailJson(8, "Peer detail"), "page-2")))
+        server.enqueue(jsonResponse(batchJson()))
+
+        recipes.syncDetails(USER_ID, 10)
+
+        assertEquals("Detailed", recipes.observeDetail(USER_ID, 10, 7).first()?.name)
+        assertEquals("Peer detail", recipes.observeDetail(USER_ID, 10, 8).first()?.name)
+        assertEquals(
+            listOf("Detailed", "Peer detail"),
+            recipes.observeSummaries(USER_ID, 10).first().map(RecipeSummary::name),
+        )
+        assertEquals("page-2", database.catalogDao().recipeDetailSyncCursor(USER_ID, 10))
+        val first = server.takeRequest()
+        assertEquals("/api/v1/recipes/batch?limit=100", first.path)
+        assertEquals("10", first.getHeader("X-Cookbook-Id"))
+        assertEquals("/api/v1/recipes/batch?cursor=page-1&limit=100", server.takeRequest().path)
+        assertEquals("/api/v1/recipes/batch?cursor=page-2&limit=100", server.takeRequest().path)
+    }
+
+    @Test
+    fun failedDetailPageKeepsCommittedCursorAndLaterRunResumes() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "First"))
+        database.catalogDao().upsertRecipes(
+            listOf(RecipeEntity(USER_ID, 10, 8, 1, Json.encodeToString(summary(8, "Second")))),
+        )
+        server.enqueue(jsonResponse(batchJson(detailJson(7, "First detail"), "page-1")))
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        assertTrue(runCatching { recipes.syncDetails(USER_ID, 10) }.isFailure)
+        assertEquals("page-1", database.catalogDao().recipeDetailSyncCursor(USER_ID, 10))
+        assertEquals("First detail", recipes.observeDetail(USER_ID, 10, 7).first()?.name)
+        assertNull(recipes.observeDetail(USER_ID, 10, 8).first())
+        assertEquals(
+            listOf("First detail", "Second"),
+            recipes.observeSummaries(USER_ID, 10).first().map(RecipeSummary::name),
+        )
+        assertEquals("/api/v1/recipes/batch?limit=100", server.takeRequest().path)
+        assertEquals("/api/v1/recipes/batch?cursor=page-1&limit=100", server.takeRequest().path)
+
+        server.enqueue(jsonResponse(batchJson(detailJson(8, "Second detail"), "page-2")))
+        server.enqueue(jsonResponse(batchJson()))
+        recipes.syncDetails(USER_ID, 10)
+
+        assertEquals("Second detail", recipes.observeDetail(USER_ID, 10, 8).first()?.name)
+        assertEquals("page-2", database.catalogDao().recipeDetailSyncCursor(USER_ID, 10))
+        assertEquals("/api/v1/recipes/batch?cursor=page-1&limit=100", server.takeRequest().path)
+        assertEquals("/api/v1/recipes/batch?cursor=page-2&limit=100", server.takeRequest().path)
+    }
+
+    @Test
+    fun detailSyncSkipsUnknownIncompleteAndStaleRowsButAdvancesCursor() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Current"))
+        database.catalogDao().upsertRecipes(
+            listOf(
+                RecipeEntity(
+                    USER_ID,
+                    10,
+                    8,
+                    1,
+                    Json.encodeToString(summary(8, "Pending").copy(importStatus = "pending")),
+                ),
+                RecipeEntity(
+                    USER_ID,
+                    10,
+                    9,
+                    2,
+                    Json.encodeToString(summary(9, "Failed").copy(importStatus = "failed")),
+                ),
+                RecipeEntity(
+                    USER_ID,
+                    10,
+                    10,
+                    3,
+                    Json.encodeToString(summary(10, "Fresh detail")),
+                    detailJson(10, "Fresh detail", updatedAt = "2026-09-11T08:00:00Z"),
+                ),
+            ),
+        )
+        server.enqueue(
+            jsonResponse(
+                batchJson(
+                    listOf(
+                        detailJson(7, "Stale", updatedAt = "2026-09-08T08:00:00Z"),
+                        detailJson(8, "Pending detail", updatedAt = "2026-09-10T08:00:00Z"),
+                        detailJson(9, "Failed detail", updatedAt = "2026-09-10T08:00:00Z"),
+                        detailJson(10, "Older detail", updatedAt = "2026-09-10T08:00:00Z"),
+                        detailJson(99, "Unknown", updatedAt = "2026-09-10T08:00:00Z"),
+                    ).joinToString(","),
+                    "page-1",
+                ),
+            ),
+        )
+        server.enqueue(jsonResponse(batchJson()))
+
+        recipes.syncDetails(USER_ID, 10)
+
+        assertNull(recipes.observeDetail(USER_ID, 10, 7).first())
+        assertNull(recipes.observeDetail(USER_ID, 10, 8).first())
+        assertNull(recipes.observeDetail(USER_ID, 10, 9).first())
+        assertEquals("Fresh detail", recipes.observeDetail(USER_ID, 10, 10).first()?.name)
+        assertNull(recipes.observeDetail(USER_ID, 10, 99).first())
+        assertEquals(
+            listOf("Current", "Pending", "Failed", "Fresh detail"),
+            recipes.observeSummaries(USER_ID, 10).first().map(RecipeSummary::name),
+        )
+        assertEquals("page-1", database.catalogDao().recipeDetailSyncCursor(USER_ID, 10))
+    }
+
+    @Test
+    fun failedDetailPageWriteDoesNotAdvanceItsCursor() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Summary"))
+        database.openHelper.writableDatabase.execSQL(
+            """
+            CREATE TRIGGER fail_detail_sync
+            BEFORE UPDATE ON recipes
+            WHEN OLD.recipeId = 7
+            BEGIN
+                SELECT RAISE(FAIL, 'forced detail write failure');
+            END
+            """.trimIndent(),
+        )
+        server.enqueue(jsonResponse(batchJson(detailJson(7, "Detailed"), "page-1")))
+
+        assertTrue(runCatching { recipes.syncDetails(USER_ID, 10) }.isFailure)
+
+        assertNull(recipes.observeDetail(USER_ID, 10, 7).first())
+        assertEquals("Summary", recipes.observeSummaries(USER_ID, 10).first().single().name)
+        assertNull(database.catalogDao().recipeDetailSyncCursor(USER_ID, 10))
+    }
+
+    @Test
+    fun detailSyncRejectsRepeatedCursorWithoutSavingItsPage() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        seedRecipe(USER_ID, 10, summary(7, "Summary"))
+        server.enqueue(jsonResponse(batchJson(detailJson(7, "Detailed"), "same")))
+        server.enqueue(jsonResponse(batchJson(detailJson(7, "Must not save"), "same")))
+
+        assertTrue(runCatching { recipes.syncDetails(USER_ID, 10) }.isFailure)
+
+        assertEquals("Detailed", recipes.observeDetail(USER_ID, 10, 7).first()?.name)
+        assertEquals("same", database.catalogDao().recipeDetailSyncCursor(USER_ID, 10))
+    }
+
+    @Test
+    fun authoritativeListDeletionRemovesItsCachedDetail() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        database.catalogDao().upsertRecipes(
+            listOf(
+                RecipeEntity(
+                    USER_ID,
+                    10,
+                    7,
+                    0,
+                    Json.encodeToString(summary(7, "Summary")),
+                    detailJson(7, "Detailed"),
+                ),
+            ),
+        )
+        server.enqueue(jsonResponse("[]"))
+
+        recipes.refreshList(USER_ID, 10)
+
+        assertEquals(emptyList<RecipeSummary>(), recipes.observeSummaries(USER_ID, 10).first())
+        assertNull(recipes.observeDetail(USER_ID, 10, 7).first())
     }
 
     @Test
@@ -449,8 +724,17 @@ class SimpleRepositoriesTest {
     private fun summaryJson(id: Long, name: String, importStatus: String = "completed") =
         """{"id":$id,"name":"$name","prep_time":10,"cook_time":20,"favorite":false,"cover_image_url":null,"cover_images":null,"import_status":"$importStatus","error_message":null,"updated_at":"2026-09-09T08:00:00Z"}"""
 
-    private fun detailJson(id: Long, name: String) =
-        """{"id":$id,"name":"$name","prep_time":10,"cook_time":20,"servings":2,"favorite":false,"ingredients":[],"structured_ingredients":[],"instructions":[],"notes":null,"source_url":null,"tags":[],"cover_image_url":null,"cover_images":null,"created_at":"2026-09-01T08:00:00Z","updated_at":"2026-09-09T08:00:00Z"}"""
+    private fun detailJson(
+        id: Long,
+        name: String,
+        updatedAt: String = "2026-09-09T08:00:00Z",
+        ingredients: String = "[]",
+        structuredIngredients: String = "[]",
+        instructions: String = "[]",
+    ) = """{"id":$id,"name":"$name","prep_time":10,"cook_time":20,"servings":2,"favorite":false,"ingredients":$ingredients,"structured_ingredients":$structuredIngredients,"instructions":$instructions,"notes":null,"source_url":null,"tags":[],"cover_image_url":null,"cover_images":null,"created_at":"2026-09-01T08:00:00Z","updated_at":"$updatedAt"}"""
+
+    private fun batchJson(recipes: String = "", nextCursor: String? = null) =
+        """{"recipes":[$recipes],"next_cursor":${nextCursor?.let { "\"$it\"" } ?: "null"}}"""
 
     private fun shoppingItemJson(id: Long, clientId: String, name: String, checkedAt: String?) =
         """{"id":$id,"client_id":"$clientId","name":"$name","details":null,"checked_at":${checkedAt?.let { "\"$it\"" } ?: "null"},"source_recipe_id":null,"created_at":"2026-09-11T09:00:00Z","updated_at":"2026-09-11T10:00:00Z"}"""

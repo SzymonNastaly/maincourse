@@ -71,6 +71,7 @@ class RecipesViewModelTest {
         assertFalse(viewModel.state.value.initialLoading)
         assertFalse(viewModel.state.value.refreshing)
         assertNull(viewModel.state.value.error)
+        assertEquals(listOf(10L), fixture.detailSyncs)
         collection.cancel()
     }
 
@@ -108,6 +109,30 @@ class RecipesViewModelTest {
 
         assertEquals(20L, viewModel.state.value.selectedCookbookId)
         assertEquals(listOf(9L), viewModel.state.value.recipes.map { it.id })
+        assertEquals(listOf(10L, 20L), fixture.refreshCalls)
+        assertEquals(listOf(10L, 20L), fixture.detailSyncs)
+        collection.cancel()
+    }
+
+    @Test
+    fun cookbookSelectionKeepsItsCachedScopeWhenRefreshFails() = runTest(dispatcher) {
+        val fixture = RecipesFixture().apply {
+            selection.value = CookbookSelection(listOf(cookbook(10), cookbook(20)), 10)
+            summaries(10).value = listOf(recipeSummary(7))
+            summaries(20).value = listOf(recipeSummary(9))
+            refreshFailures[20] = IOException("offline")
+        }
+        val viewModel = fixture.viewModel()
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        advanceUntilIdle()
+
+        viewModel.selectCookbook(20).join()
+        advanceUntilIdle()
+
+        assertEquals(20L, viewModel.state.value.selectedCookbookId)
+        assertEquals(listOf(9L), viewModel.state.value.recipes.map { it.id })
+        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals(listOf(10L), fixture.detailSyncs)
         collection.cancel()
     }
 
@@ -309,7 +334,7 @@ class RecipesViewModelTest {
     }
 
     @Test
-    fun cachedDetailIsShownWithoutFetching() = runTest(dispatcher) {
+    fun cachedDetailIsShownWhileRevalidating() = runTest(dispatcher) {
         val detail = recipeDetail(7)
         val cached = MutableStateFlow<RecipeDetail?>(detail)
         var refreshes = 0
@@ -322,7 +347,7 @@ class RecipesViewModelTest {
         advanceUntilIdle()
 
         assertEquals(detail, viewModel.state.value.recipe)
-        assertEquals(0, refreshes)
+        assertEquals(1, refreshes)
         assertFalse(viewModel.state.value.loading)
         collection.cancel()
     }
@@ -356,6 +381,9 @@ class RecipesViewModelTest {
         var refreshFailure: Throwable? = null
         var selectionFailure: Throwable? = null
         var suspendRecipeRefresh = false
+        val refreshFailures = mutableMapOf<Long, Throwable>()
+        val refreshCalls = mutableListOf<Long>()
+        val detailSyncs = mutableListOf<Long>()
 
         fun summaries(cookbookId: Long): MutableStateFlow<List<RecipeSummary>> =
             recipeFlows.getOrPut(cookbookId) { MutableStateFlow(emptyList()) }
@@ -366,9 +394,12 @@ class RecipesViewModelTest {
             refreshCookbooks = {},
             refreshRecipes = { cookbookId ->
                 if (suspendRecipeRefresh) kotlinx.coroutines.awaitCancellation()
+                refreshCalls += cookbookId
                 refreshFailure?.let { throw it }
+                refreshFailures[cookbookId]?.let { throw it }
                 refreshedRecipes?.let { summaries(cookbookId).value = it }
             },
+            syncRecipeDetails = { detailSyncs += it },
             selectCookbook = { cookbookId ->
                 selectionFailure?.let { throw it }
                 selection.value = selection.value.copy(selectedId = cookbookId)

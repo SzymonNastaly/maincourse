@@ -59,7 +59,6 @@ import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.features.auth.AuthScreen
-import com.getmaincourse.app.features.preview.PreviewScreen
 import com.getmaincourse.app.features.recipes.CookbookTitleMenu
 import com.getmaincourse.app.features.recipes.IngredientReviewScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
@@ -69,6 +68,8 @@ import com.getmaincourse.app.features.recipes.RecipeImportViewModel
 import com.getmaincourse.app.features.recipes.RecipesScreen
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.recipes.SharedRecipeInput
+import com.getmaincourse.app.features.search.SearchScreen
+import com.getmaincourse.app.features.search.SearchViewModel
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.features.shopping.ShoppingListScreen
@@ -107,6 +108,7 @@ internal data class BrowsingViewModelFactories(
     val import: (Long) -> ViewModelProvider.Factory,
     val detail: (userId: Long, cookbookId: Long, recipeId: Long) -> ViewModelProvider.Factory,
     val shopping: (Long) -> ViewModelProvider.Factory,
+    val search: (Long) -> ViewModelProvider.Factory,
     val settings: () -> ViewModelProvider.Factory,
 )
 
@@ -157,6 +159,11 @@ fun MainCourseApp(
             shopping = { userId ->
                 simpleViewModelFactory {
                     ShoppingListViewModel(userId, cookbookRepository, shoppingListRepository)
+                }
+            },
+            search = { userId ->
+                simpleViewModelFactory {
+                    SearchViewModel(userId, cookbookRepository, recipeRepository)
                 }
             },
             settings = {
@@ -445,10 +452,22 @@ private fun ProtectedShell(
                     )
                 }
                 entry<SearchRoute> {
-                    PreviewScreen(
-                        title = stringResource(R.string.search),
-                        body = stringResource(R.string.search_prompt),
-                        testTag = "screen_Search",
+                    val searchViewModel: SearchViewModel = viewModel(
+                        key = "search-$userId",
+                        factory = factories.search(userId),
+                    )
+                    val searchState by searchViewModel.state.collectAsStateWithLifecycle()
+                    SearchScreen(
+                        state = searchState,
+                        imageLoader = latestImageLoader,
+                        resolveImage = latestResolveImage,
+                        onQueryChange = searchViewModel::updateQuery,
+                        onRetry = searchViewModel::retry,
+                        onOpenRecipe = { recipeId ->
+                            searchState.selectedCookbookId?.let { cookbookId ->
+                                backStack.add(RecipeDetailRoute(recipeId, cookbookId))
+                            }
+                        },
                     )
                 }
                 entry<SettingsRoute> {

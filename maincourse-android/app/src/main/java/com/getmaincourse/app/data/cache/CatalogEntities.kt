@@ -1,8 +1,12 @@
 package com.getmaincourse.app.data.cache
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Fts4
+import androidx.room.FtsOptions
 import androidx.room.Index
+import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "cookbooks",
@@ -34,10 +38,8 @@ data class SelectedCookbookEntity(
     val cookbookId: Long,
 )
 
-// Retained only to keep Room schema version 1 compatible with existing installs.
-// The simple MVP never reads or writes this legacy table; remove it with a deliberate migration.
 @Entity(
-    tableName = "recipe_fetches",
+    tableName = "recipe_detail_syncs",
     primaryKeys = ["userId", "cookbookId"],
     foreignKeys = [
         ForeignKey(
@@ -49,9 +51,10 @@ data class SelectedCookbookEntity(
         ),
     ],
 )
-data class RecipeFetchEntity(
+data class RecipeDetailSyncEntity(
     val userId: Long,
     val cookbookId: Long,
+    val cursor: String,
 )
 
 @Entity(
@@ -75,6 +78,45 @@ data class RecipeEntity(
     val listPosition: Int,
     val summaryJson: String,
     val detailJson: String? = null,
+)
+
+@Entity(
+    tableName = "recipe_search_documents",
+    foreignKeys = [
+        ForeignKey(
+            entity = RecipeEntity::class,
+            parentColumns = ["userId", "cookbookId", "recipeId"],
+            childColumns = ["userId", "cookbookId", "recipeId"],
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["userId", "cookbookId", "recipeId"], unique = true)],
+)
+data class RecipeSearchDocumentEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "rowid")
+    val rowId: Long = 0,
+    val userId: Long,
+    val cookbookId: Long,
+    val recipeId: Long,
+    val name: String,
+    val ingredients: String,
+    val instructions: String,
+    val updatedAt: String,
+)
+
+@Fts4(
+    contentEntity = RecipeSearchDocumentEntity::class,
+    tokenizer = FtsOptions.TOKENIZER_UNICODE61,
+    tokenizerArgs = ["remove_diacritics=2"],
+    prefix = [2, 3, 4],
+)
+@Entity(tableName = "recipe_search_documents_fts")
+data class RecipeSearchFtsEntity(
+    val name: String,
+    val ingredients: String,
+    val instructions: String,
 )
 
 @Entity(

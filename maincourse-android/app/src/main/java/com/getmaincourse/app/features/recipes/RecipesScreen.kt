@@ -88,7 +88,7 @@ fun RecipesScreen(
 }
 
 @Composable
-private fun RecipeCard(
+internal fun RecipeCard(
     recipe: RecipeSummary,
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,

@@ -87,6 +87,13 @@ data class RecipeDetail(
 )
 
 @Serializable
+data class RecipeDetailBatchResponse(
+    val recipes: List<RecipeDetail>,
+    @SerialName("next_cursor")
+    val nextCursor: String?,
+)
+
+@Serializable
 data class StructuredIngredient(
     val id: Long,
     val position: Int,

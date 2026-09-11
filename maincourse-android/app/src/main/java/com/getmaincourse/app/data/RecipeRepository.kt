@@ -2,7 +2,10 @@ package com.getmaincourse.app.data
 
 import androidx.room.withTransaction
 import com.getmaincourse.app.data.cache.MainCourseDatabase
+import com.getmaincourse.app.data.cache.RecipeDetailSyncEntity
 import com.getmaincourse.app.data.cache.RecipeEntity
+import com.getmaincourse.app.data.cache.RecipeSearchDocumentEntity
+import com.getmaincourse.app.data.cache.RecipeSearchQuery
 import com.getmaincourse.app.data.cache.toDetail
 import com.getmaincourse.app.data.cache.toEntity
 import com.getmaincourse.app.data.cache.toJson
@@ -16,9 +19,13 @@ import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
 import com.getmaincourse.app.data.network.MainCourseService
+import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -46,18 +53,75 @@ class RecipeRepository(
     fun observeDetail(userId: Long, cookbookId: Long, recipeId: Long): Flow<RecipeDetail?> =
         dao.observeRecipe(userId, cookbookId, recipeId).map { it?.toDetail(json) }
 
+    fun searchSummaries(
+        userId: Long,
+        cookbookId: Long,
+        rawQuery: String,
+        limit: Int = SEARCH_RESULT_LIMIT,
+    ): Flow<List<RecipeSummary>> {
+        val query = RecipeSearchQuery.build(rawQuery) ?: return flowOf(emptyList())
+        val nameQuery = checkNotNull(RecipeSearchQuery.build(rawQuery, "name"))
+        val ingredientQuery = checkNotNull(RecipeSearchQuery.build(rawQuery, "ingredients"))
+
+        fun results() = dao.observeRecipeSearchResults(
+            userId = userId,
+            cookbookId = cookbookId,
+            query = query,
+            nameQuery = nameQuery,
+            ingredientQuery = ingredientQuery,
+            limit = limit.coerceAtLeast(1),
+        ).map { entities -> entities.mapNotNull { it.toSummary(json) } }
+
+        return results().catch { failure ->
+            if (failure is CancellationException) throw failure
+            rebuildSearchIndex(userId, cookbookId)
+            emitAll(results())
+        }
+    }
+
+    suspend fun rebuildSearchIndex(userId: Long, cookbookId: Long) {
+        database.withTransaction {
+            dao.deleteRecipeSearchDocuments(userId, cookbookId)
+            val documents = dao.recipes(userId, cookbookId).mapNotNull { it.toSearchDocument() }
+            if (documents.isNotEmpty()) dao.upsertRecipeSearchDocuments(documents)
+        }
+    }
+
     suspend fun refreshList(userId: Long, cookbookId: Long) = listWrites.withLock {
         val response = service.recipes(cookbookId)
-        dao.replaceRecipes(
-            userId,
-            cookbookId,
-            response.mapIndexed { index, summary -> summary.toEntity(userId, cookbookId, index, json) },
-        )
+        database.withTransaction {
+            dao.replaceRecipes(
+                userId,
+                cookbookId,
+                response.mapIndexed { index, summary -> summary.toEntity(userId, cookbookId, index, json) },
+            )
+            val documents = dao.recipes(userId, cookbookId).mapNotNull { it.toSearchDocument() }
+            if (documents.isNotEmpty()) dao.upsertRecipeSearchDocuments(documents)
+        }
     }
 
     suspend fun refreshDetail(userId: Long, cookbookId: Long, recipeId: Long) {
         val response = service.recipe(cookbookId, recipeId)
-        dao.updateDetail(userId, cookbookId, recipeId, response.toJson(json))
+        saveRecipeDetails(userId, cookbookId, listOf(response))
+    }
+
+    suspend fun syncDetails(userId: Long, cookbookId: Long) {
+        var cursor = dao.recipeDetailSyncCursor(userId, cookbookId)
+        val seenCursors = cursor?.let { mutableSetOf(it) } ?: mutableSetOf()
+
+        while (true) {
+            val response = service.recipeDetails(cookbookId, cursor, DETAIL_BATCH_SIZE)
+            if (response.recipes.isEmpty()) return
+
+            val nextCursor = response.nextCursor?.takeIf(String::isNotBlank)
+                ?: error("Recipe detail sync returned a non-empty page without a cursor")
+            check(seenCursors.add(nextCursor)) {
+                "Recipe detail sync returned a repeated cursor"
+            }
+
+            saveRecipeDetails(userId, cookbookId, response.recipes, nextCursor)
+            cursor = nextCursor
+        }
     }
 
     suspend fun importUrl(
@@ -126,6 +190,11 @@ class RecipeRepository(
                         ),
                     ),
                 )
+                updateSearchDocuments(
+                    userId,
+                    targetCookbookId,
+                    listOfNotNull(dao.recipe(userId, targetCookbookId, recipeId)),
+                )
                 dao.removeRecipe(userId, sourceCookbookId, recipeId)
             }
         }
@@ -167,4 +236,85 @@ class RecipeRepository(
         return response
     }
 
+    private suspend fun saveRecipeDetails(
+        userId: Long,
+        cookbookId: Long,
+        details: List<RecipeDetail>,
+        nextCursor: String? = null,
+    ) {
+        database.withTransaction {
+            val updates = details.mapNotNull { detail ->
+                val existing = dao.recipe(userId, cookbookId, detail.id) ?: return@mapNotNull null
+                val summary = existing.toSummary(json) ?: return@mapNotNull null
+                if (summary.importStatus != COMPLETED_IMPORT_STATUS) return@mapNotNull null
+
+                val cachedDetail = existing.toDetail(json)
+                if (detail.isOlderThan(summary.updatedAt) ||
+                    cachedDetail?.let { detail.isOlderThan(it.updatedAt) } == true
+                ) {
+                    return@mapNotNull null
+                }
+
+                existing.copy(
+                    summaryJson = json.encodeToString(detail.toSummary(summary)),
+                    detailJson = detail.toJson(json),
+                )
+            }
+            if (updates.isNotEmpty()) dao.upsertRecipes(updates)
+            updateSearchDocuments(userId, cookbookId, updates)
+            if (nextCursor != null) {
+                dao.upsertRecipeDetailSync(RecipeDetailSyncEntity(userId, cookbookId, nextCursor))
+            }
+        }
+    }
+
+    private fun RecipeDetail.isOlderThan(otherUpdatedAt: String): Boolean {
+        val incoming = runCatching { Instant.parse(updatedAt) }.getOrNull() ?: return true
+        val existing = runCatching { Instant.parse(otherUpdatedAt) }.getOrNull() ?: return false
+        return incoming.isBefore(existing)
+    }
+
+    private suspend fun updateSearchDocuments(
+        userId: Long,
+        cookbookId: Long,
+        recipes: List<RecipeEntity>,
+    ) {
+        if (recipes.isEmpty()) return
+        val existing = dao.recipeSearchDocuments(userId, cookbookId).associateBy { it.recipeId }
+        val documents = recipes.mapNotNull { recipe ->
+            recipe.toSearchDocument(existing[recipe.recipeId]?.rowId ?: 0)
+        }
+        val indexedIds = documents.map(RecipeSearchDocumentEntity::recipeId).toSet()
+        val excludedIds = recipes.map(RecipeEntity::recipeId) - indexedIds
+        if (excludedIds.isNotEmpty()) {
+            dao.deleteRecipeSearchDocuments(userId, cookbookId, excludedIds)
+        }
+        if (documents.isNotEmpty()) dao.upsertRecipeSearchDocuments(documents)
+    }
+
+    private fun RecipeEntity.toSearchDocument(rowId: Long = 0): RecipeSearchDocumentEntity? {
+        val summary = toSummary(json) ?: return null
+        if (summary.importStatus == FAILED_IMPORT_STATUS) return null
+        val detail = toDetail(json)
+        val ingredients = detail?.structuredIngredients
+            ?.map { ingredient -> ingredient.name?.takeIf(String::isNotBlank) ?: ingredient.raw }
+            ?.takeIf { it.isNotEmpty() }
+            ?: detail?.ingredients.orEmpty()
+        return RecipeSearchDocumentEntity(
+            rowId = rowId,
+            userId = userId,
+            cookbookId = cookbookId,
+            recipeId = recipeId,
+            name = summary.name,
+            ingredients = ingredients.joinToString("\n"),
+            instructions = detail?.instructions.orEmpty().joinToString("\n"),
+            updatedAt = summary.updatedAt,
+        )
+    }
+
 }
+
+private const val COMPLETED_IMPORT_STATUS = "completed"
+private const val FAILED_IMPORT_STATUS = "failed"
+private const val DETAIL_BATCH_SIZE = 100
+private const val SEARCH_RESULT_LIMIT = 50

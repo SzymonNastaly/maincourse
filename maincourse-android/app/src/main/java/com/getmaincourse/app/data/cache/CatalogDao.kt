@@ -67,6 +67,15 @@ interface CatalogDao {
     suspend fun upsertRecipes(items: List<RecipeEntity>)
 
     @Query(
+        "SELECT cursor FROM recipe_detail_syncs " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId",
+    )
+    suspend fun recipeDetailSyncCursor(userId: Long, cookbookId: Long): String?
+
+    @Upsert
+    suspend fun upsertRecipeDetailSync(sync: RecipeDetailSyncEntity)
+
+    @Query(
         "SELECT COALESCE(MAX(listPosition), -1) + 1 FROM recipes " +
             "WHERE userId = :userId AND cookbookId = :cookbookId",
     )
@@ -92,21 +101,69 @@ interface CatalogDao {
     }
 
     @Query(
-        "UPDATE recipes SET detailJson = :detailJson " +
-            "WHERE userId = :userId AND cookbookId = :cookbookId AND recipeId = :recipeId",
-    )
-    suspend fun updateDetail(
-        userId: Long,
-        cookbookId: Long,
-        recipeId: Long,
-        detailJson: String,
-    ): Int
-
-    @Query(
         "DELETE FROM recipes " +
             "WHERE userId = :userId AND cookbookId = :cookbookId AND recipeId = :recipeId",
     )
     suspend fun removeRecipe(userId: Long, cookbookId: Long, recipeId: Long)
+
+    @Query(
+        "SELECT * FROM recipe_search_documents " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId",
+    )
+    suspend fun recipeSearchDocuments(userId: Long, cookbookId: Long): List<RecipeSearchDocumentEntity>
+
+    @Upsert
+    suspend fun upsertRecipeSearchDocuments(items: List<RecipeSearchDocumentEntity>)
+
+    @Query(
+        "DELETE FROM recipe_search_documents " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId",
+    )
+    suspend fun deleteRecipeSearchDocuments(userId: Long, cookbookId: Long)
+
+    @Query(
+        "DELETE FROM recipe_search_documents " +
+            "WHERE userId = :userId AND cookbookId = :cookbookId AND recipeId IN (:recipeIds)",
+    )
+    suspend fun deleteRecipeSearchDocuments(userId: Long, cookbookId: Long, recipeIds: List<Long>)
+
+    @Query(
+        """
+        SELECT recipes.*
+        FROM recipe_search_documents_fts
+        JOIN recipe_search_documents
+            ON recipe_search_documents_fts.rowid = recipe_search_documents.rowid
+        JOIN recipes
+            ON recipes.userId = recipe_search_documents.userId
+            AND recipes.cookbookId = recipe_search_documents.cookbookId
+            AND recipes.recipeId = recipe_search_documents.recipeId
+        WHERE recipe_search_documents.userId = :userId
+            AND recipe_search_documents.cookbookId = :cookbookId
+            AND recipe_search_documents_fts MATCH :query
+        ORDER BY CASE
+            WHEN recipe_search_documents_fts.rowid IN (
+                SELECT rowid FROM recipe_search_documents_fts
+                WHERE recipe_search_documents_fts MATCH :nameQuery
+            ) THEN 0
+            WHEN recipe_search_documents_fts.rowid IN (
+                SELECT rowid FROM recipe_search_documents_fts
+                WHERE recipe_search_documents_fts MATCH :ingredientQuery
+            ) THEN 1
+            ELSE 2
+        END,
+        recipe_search_documents.updatedAt DESC,
+        recipes.listPosition
+        LIMIT :limit
+        """,
+    )
+    fun observeRecipeSearchResults(
+        userId: Long,
+        cookbookId: Long,
+        query: String,
+        nameQuery: String,
+        ingredientQuery: String,
+        limit: Int,
+    ): Flow<List<RecipeEntity>>
 
     @Query(
         "SELECT * FROM shopping_list_items " +

@@ -1,0 +1,440 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "2752b7496aa6875dd03786ef47e9dd4e",
+    "entities": [
+      {
+        "tableName": "cookbooks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, `listPosition` INTEGER NOT NULL, `cookbookJson` TEXT NOT NULL, PRIMARY KEY(`userId`, `cookbookId`))",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookbookId",
+            "columnName": "cookbookId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "listPosition",
+            "columnName": "listPosition",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookbookJson",
+            "columnName": "cookbookJson",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId",
+            "cookbookId"
+          ]
+        }
+      },
+      {
+        "tableName": "selected_cookbooks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, PRIMARY KEY(`userId`), FOREIGN KEY(`userId`, `cookbookId`) REFERENCES `cookbooks`(`userId`, `cookbookId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookbookId",
+            "columnName": "cookbookId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_selected_cookbooks_userId_cookbookId",
+            "unique": true,
+            "columnNames": [
+              "userId",
+              "cookbookId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_selected_cookbooks_userId_cookbookId` ON `${TABLE_NAME}` (`userId`, `cookbookId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "cookbooks",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "userId",
+              "cookbookId"
+            ],
+            "referencedColumns": [
+              "userId",
+              "cookbookId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "recipe_detail_syncs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, `cursor` TEXT NOT NULL, PRIMARY KEY(`userId`, `cookbookId`), FOREIGN KEY(`userId`, `cookbookId`) REFERENCES `cookbooks`(`userId`, `cookbookId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookbookId",
+            "columnName": "cookbookId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cursor",
+            "columnName": "cursor",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId",
+            "cookbookId"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "cookbooks",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "userId",
+              "cookbookId"
+            ],
+            "referencedColumns": [
+              "userId",
+              "cookbookId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "recipes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, `recipeId` INTEGER NOT NULL, `listPosition` INTEGER NOT NULL, `summaryJson` TEXT NOT NULL, `detailJson` TEXT, PRIMARY KEY(`userId`, `cookbookId`, `recipeId`), FOREIGN KEY(`userId`, `cookbookId`) REFERENCES `cookbooks`(`userId`, `cookbookId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookbookId",
+            "columnName": "cookbookId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipeId",
+            "columnName": "recipeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "listPosition",
+            "columnName": "listPosition",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "summaryJson",
+            "columnName": "summaryJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "detailJson",
+            "columnName": "detailJson",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId",
+            "cookbookId",
+            "recipeId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recipes_userId_cookbookId",
+            "unique": false,
+            "columnNames": [
+              "userId",
+              "cookbookId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipes_userId_cookbookId` ON `${TABLE_NAME}` (`userId`, `cookbookId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "cookbooks",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "userId",
+              "cookbookId"
+            ],
+            "referencedColumns": [
+              "userId",
+              "cookbookId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "recipe_search_documents",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, `recipeId` INTEGER NOT NULL, `name` TEXT NOT NULL, `ingredients` TEXT NOT NULL, `instructions` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, FOREIGN KEY(`userId`, `cookbookId`, `recipeId`) REFERENCES `recipes`(`userId`, `cookbookId`, `recipeId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "rowId",
+            "columnName": "rowid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookbookId",
+            "columnName": "cookbookId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipeId",
+            "columnName": "recipeId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ingredients",
+            "columnName": "ingredients",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "instructions",
+            "columnName": "instructions",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "rowid"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recipe_search_documents_userId_cookbookId_recipeId",
+            "unique": true,
+            "columnNames": [
+              "userId",
+              "cookbookId",
+              "recipeId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_recipe_search_documents_userId_cookbookId_recipeId` ON `${TABLE_NAME}` (`userId`, `cookbookId`, `recipeId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "recipes",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "userId",
+              "cookbookId",
+              "recipeId"
+            ],
+            "referencedColumns": [
+              "userId",
+              "cookbookId",
+              "recipeId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "recipe_search_documents_fts",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`name` TEXT NOT NULL, `ingredients` TEXT NOT NULL, `instructions` TEXT NOT NULL, tokenize=unicode61 `remove_diacritics=2`, content=`recipe_search_documents`, prefix=`2,3,4`)",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ingredients",
+            "columnName": "ingredients",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "instructions",
+            "columnName": "instructions",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": []
+        },
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "unicode61",
+          "tokenizerArgs": [
+            "remove_diacritics=2"
+          ],
+          "contentTable": "recipe_search_documents",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [
+            2,
+            3,
+            4
+          ],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_recipe_search_documents_fts_BEFORE_UPDATE BEFORE UPDATE ON `recipe_search_documents` BEGIN DELETE FROM `recipe_search_documents_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_recipe_search_documents_fts_BEFORE_DELETE BEFORE DELETE ON `recipe_search_documents` BEGIN DELETE FROM `recipe_search_documents_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_recipe_search_documents_fts_AFTER_UPDATE AFTER UPDATE ON `recipe_search_documents` BEGIN INSERT INTO `recipe_search_documents_fts`(`docid`, `name`, `ingredients`, `instructions`) VALUES (NEW.`rowid`, NEW.`name`, NEW.`ingredients`, NEW.`instructions`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_recipe_search_documents_fts_AFTER_INSERT AFTER INSERT ON `recipe_search_documents` BEGIN INSERT INTO `recipe_search_documents_fts`(`docid`, `name`, `ingredients`, `instructions`) VALUES (NEW.`rowid`, NEW.`name`, NEW.`ingredients`, NEW.`instructions`); END"
+        ]
+      },
+      {
+        "tableName": "shopping_list_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `cookbookId` INTEGER NOT NULL, `itemId` INTEGER NOT NULL, `checkedAt` TEXT, `createdAt` TEXT NOT NULL, `itemJson` TEXT NOT NULL, PRIMARY KEY(`userId`, `cookbookId`, `itemId`), FOREIGN KEY(`userId`, `cookbookId`) REFERENCES `cookbooks`(`userId`, `cookbookId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookbookId",
+            "columnName": "cookbookId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemId",
+            "columnName": "itemId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkedAt",
+            "columnName": "checkedAt",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemJson",
+            "columnName": "itemJson",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId",
+            "cookbookId",
+            "itemId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_shopping_list_items_userId_cookbookId",
+            "unique": false,
+            "columnNames": [
+              "userId",
+              "cookbookId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_shopping_list_items_userId_cookbookId` ON `${TABLE_NAME}` (`userId`, `cookbookId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "cookbooks",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "userId",
+              "cookbookId"
+            ],
+            "referencedColumns": [
+              "userId",
+              "cookbookId"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2752b7496aa6875dd03786ef47e9dd4e')"
+    ]
+  }
+}

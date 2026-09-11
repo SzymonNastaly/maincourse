@@ -42,6 +42,7 @@ class RecipesViewModel internal constructor(
     private val observeRecipes: (Long) -> Flow<List<RecipeSummary>>,
     private val refreshCookbooks: suspend () -> Unit,
     private val refreshRecipes: suspend (Long) -> Unit,
+    private val syncRecipeDetails: suspend (Long) -> Unit = {},
     private val selectCookbook: suspend (Long) -> Unit,
     private val hasUnsettledImport: (Long) -> Boolean = { false },
     private val markImportSettled: (Long) -> Unit = {},
@@ -55,6 +56,7 @@ class RecipesViewModel internal constructor(
         observeRecipes = { cookbookId -> recipeRepository.observeSummaries(userId, cookbookId) },
         refreshCookbooks = { cookbookRepository.refresh(userId) },
         refreshRecipes = { cookbookId -> recipeRepository.refreshList(userId, cookbookId) },
+        syncRecipeDetails = { cookbookId -> recipeRepository.syncDetails(userId, cookbookId) },
         selectCookbook = { cookbookId -> cookbookRepository.select(userId, cookbookId) },
         hasUnsettledImport = recipeRepository::hasUnsettledImport,
         markImportSettled = recipeRepository::markImportSettled,
@@ -65,6 +67,7 @@ class RecipesViewModel internal constructor(
     private var resumeReconciliationJob: Job? = null
     private var pollingJob: Job? = null
     private var pollingCookbookId: Long? = null
+    private var detailSyncJob: Job? = null
 
     private val content = observeCookbooks().flatMapLatest { selection ->
         val recipes = selection.selectedId?.let(observeRecipes) ?: flowOf(emptyList())
@@ -104,7 +107,7 @@ class RecipesViewModel internal constructor(
             refreshState.value = RefreshState(running = true)
             try {
                 refreshCookbooks()
-                observeCookbooks().first().selectedId?.let { refreshRecipes(it) }
+                observeCookbooks().first().selectedId?.let { refreshRecipeCache(it) }
                 refreshState.value = RefreshState(running = false)
             } catch (failure: CancellationException) {
                 throw failure
@@ -119,14 +122,30 @@ class RecipesViewModel internal constructor(
     }
 
     fun selectCookbook(cookbookId: Long): Job = viewModelScope.launch {
+        detailSyncJob?.cancel()
         refreshState.value = refreshState.value.copy(error = null)
         try {
             selectCookbook.invoke(cookbookId)
         } catch (failure: CancellationException) {
             throw failure
         } catch (failure: Throwable) {
-            refreshState.value = refreshState.value.copy(
+            refreshState.value = RefreshState(
+                running = false,
                 error = failure.userMessage("Could not select cookbook"),
+            )
+            return@launch
+        }
+
+        refreshState.value = RefreshState(running = true)
+        try {
+            refreshRecipeCache(cookbookId)
+            refreshState.value = RefreshState(running = false)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (failure: Throwable) {
+            refreshState.value = RefreshState(
+                running = false,
+                error = failure.userMessage("Could not refresh recipes"),
             )
         }
     }
@@ -144,7 +163,7 @@ class RecipesViewModel internal constructor(
         return viewModelScope.launch {
             val cookbookId = observeCookbooks().first().selectedId ?: return@launch
             try {
-                refreshRecipes(cookbookId)
+                refreshRecipeCache(cookbookId)
             } catch (failure: CancellationException) {
                 throw failure
             } catch (_: Throwable) {
@@ -174,7 +193,7 @@ class RecipesViewModel internal constructor(
                 delay(IMPORT_POLL_INTERVAL_MILLIS)
                 totalAttempts += 1
                 try {
-                    refreshRecipes(cookbookId)
+                    refreshRecipeCache(cookbookId)
                     refreshState.value = RefreshState(running = false)
                     val stillPending = observeRecipes(cookbookId).first()
                         .any(RecipeSummary::isImportPending)
@@ -192,6 +211,24 @@ class RecipesViewModel internal constructor(
                 }
             }
             if (settledAttempts == IMPORT_SETTLE_ATTEMPTS) markImportSettled(cookbookId)
+        }
+    }
+
+    private suspend fun refreshRecipeCache(cookbookId: Long) {
+        refreshRecipes(cookbookId)
+        startDetailSync(cookbookId)
+    }
+
+    private fun startDetailSync(cookbookId: Long) {
+        detailSyncJob?.cancel()
+        detailSyncJob = viewModelScope.launch {
+            try {
+                syncRecipeDetails(cookbookId)
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (_: Throwable) {
+                // Detail hydration is best-effort; its Room cursor makes a later run resumable.
+            }
         }
     }
 

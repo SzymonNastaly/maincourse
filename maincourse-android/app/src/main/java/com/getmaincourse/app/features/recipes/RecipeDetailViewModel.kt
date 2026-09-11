@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -96,10 +95,10 @@ class RecipeDetailViewModel internal constructor(
     )
 
     init {
-        launchRefresh(onlyWhenMissing = true)
+        launchRefresh()
     }
 
-    fun refresh(): Job = launchRefresh(onlyWhenMissing = false)
+    fun refresh(): Job = launchRefresh()
 
     fun moveTo(targetCookbookId: Long): Job = launchAction(
         action = RecipeAction.MOVE,
@@ -124,12 +123,12 @@ class RecipeDetailViewModel internal constructor(
         addReviewedIngredients(rows)
     }
 
-    private fun launchRefresh(onlyWhenMissing: Boolean): Job {
+    private fun launchRefresh(): Job {
         refreshJob?.cancel()
         return viewModelScope.launch {
             refreshState.value = RefreshState(running = true)
             try {
-                if (!onlyWhenMissing || observeDetail().first() == null) refreshDetail()
+                refreshDetail()
                 refreshState.value = RefreshState(running = false)
             } catch (failure: CancellationException) {
                 throw failure

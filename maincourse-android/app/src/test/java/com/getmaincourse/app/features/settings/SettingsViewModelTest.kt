@@ -6,6 +6,7 @@ import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.MoveRecipeRequest
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeSummary
@@ -231,6 +232,11 @@ class SettingsViewModelTest {
         override suspend fun cookbooks(): List<Cookbook> = error("Not used")
         override suspend fun recipes(cookbookId: Long): List<RecipeSummary> = error("Not used")
         override suspend fun recipe(cookbookId: Long, recipeId: Long): RecipeDetail = error("Not used")
+        override suspend fun recipeDetails(
+            cookbookId: Long,
+            cursor: String?,
+            limit: Int,
+        ): RecipeDetailBatchResponse = error("Not used")
         override suspend fun importRecipe(
             cookbookId: Long,
             request: RecipeUrlImportRequest,

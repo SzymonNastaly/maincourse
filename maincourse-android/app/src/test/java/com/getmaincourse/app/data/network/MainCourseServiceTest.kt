@@ -124,6 +124,25 @@ class MainCourseServiceTest {
     }
 
     @Test
+    fun recipeDetailBatchUsesCursorLimitAndExplicitCookbookHeader() = runTest {
+        server.enqueue(
+            jsonResponse(
+                200,
+                """{"recipes":[${recipeJson()}],"next_cursor":"next-page"}""",
+            ),
+        )
+
+        val response = service.recipeDetails(cookbookId = 42, cursor = "current-page", limit = 100)
+
+        assertEquals(listOf(7L), response.recipes.map { it.id })
+        assertEquals("next-page", response.nextCursor)
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/api/v1/recipes/batch?cursor=current-page&limit=100", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
     fun recipeImportsUseScopedUrlAndTextContracts() = runTest {
         server.enqueue(jsonResponse(202, """{"id":8,"import_status":"pending"}"""))
         server.enqueue(jsonResponse(202, """{"id":9,"import_status":"pending"}"""))

@@ -83,7 +83,11 @@
     <string name="recipe_notes">Notes</string>
     <string name="recipe_move">Move</string>
     <string name="recipe_delete">Delete</string>
-    <string name="search_prompt">Recipe search is coming after the first Android release.</string>
+    <string name="search_hint">Search recipes</string>
+    <string name="search_prompt">Search your recipes</string>
+    <string name="search_cookbook">Searching in %1$s</string>
+    <string name="search_no_results">No results</string>
+    <string name="search_try_another">Try a different search term</string>
     <string name="recipe_source_open_failed">No app is available to open this source.</string>
     <string name="recipe_review_help">Choose the ingredients to add to Shopping.</string>
     <string name="recipe_add_to_shopping">Add ingredients to Shopping</string>

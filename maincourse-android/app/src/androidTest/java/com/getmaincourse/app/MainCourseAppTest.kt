@@ -20,6 +20,7 @@ import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeImportResponse
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeSummary
@@ -44,6 +45,7 @@ import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
 import com.getmaincourse.app.features.recipes.RecipeImportViewModel
 import com.getmaincourse.app.features.recipes.RecipesViewModel
 import com.getmaincourse.app.features.recipes.SharedRecipeInput
+import com.getmaincourse.app.features.search.SearchViewModel
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.shopping.ShoppingListViewModel
 import com.getmaincourse.app.features.settings.SettingsViewModel
@@ -57,6 +59,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -253,6 +256,20 @@ class MainCourseAppTest {
         compose.onNodeWithTag("settings_delete").assertIsDisplayed()
         compose.onNodeWithTag("settings_sign_out").assertIsDisplayed()
         compose.onNodeWithTag("navigation_bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun recipeSearchOpensAResultAndReturnsToTheQuery() {
+        show(SessionUiState.SignedIn(SESSION))
+
+        compose.onNodeWithTag("nav_Search").performClick()
+        compose.onNodeWithTag("search_input").performTextInput("Tomato")
+        compose.onNodeWithTag("recipe_${SUMMARY.id}").assertIsDisplayed().performClick()
+
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        compose.onNodeWithTag("navigate_back").performClick()
+        compose.onNodeWithTag("screen_Search").assertIsDisplayed()
+        compose.onNodeWithTag("search_input").assertTextContains("Tomato")
     }
 
     @Test
@@ -519,6 +536,19 @@ class MainCourseAppTest {
                     )
                 }
             },
+            search = {
+                simpleViewModelFactory {
+                    SearchViewModel(
+                        observeCookbooks = { selection },
+                        prepareSearchIndex = {},
+                        searchRecipes = { _, query ->
+                            recipes.map { items ->
+                                items.filter { recipe -> recipe.name.contains(query, ignoreCase = true) }
+                            }
+                        },
+                    )
+                }
+            },
             settings = {
                 simpleViewModelFactory {
                     SettingsViewModel(
@@ -550,6 +580,11 @@ class MainCourseAppTest {
         override suspend fun cookbooks(): List<Cookbook> = error("Not used")
         override suspend fun recipes(cookbookId: Long): List<RecipeSummary> = error("Not used")
         override suspend fun recipe(cookbookId: Long, recipeId: Long): RecipeDetail = error("Not used")
+        override suspend fun recipeDetails(
+            cookbookId: Long,
+            cursor: String?,
+            limit: Int,
+        ): RecipeDetailBatchResponse = error("Not used")
         override suspend fun importRecipe(
             cookbookId: Long,
             request: RecipeUrlImportRequest,
