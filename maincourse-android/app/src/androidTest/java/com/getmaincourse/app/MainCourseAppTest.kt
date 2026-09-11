@@ -185,7 +185,7 @@ class MainCourseAppTest {
     }
 
     @Test
-    fun activeCookbookIsSelectedFromTheCompactTitleMenu() {
+    fun activeCookbookCanBeSelectedFromEveryCookbookScopedTopLevelScreen() {
         show(
             SessionUiState.SignedIn(SESSION),
             factories = factories(cookbooks = listOf(COOKBOOK, SHARED_COOKBOOK)),
@@ -195,6 +195,13 @@ class MainCourseAppTest {
         compose.onNodeWithText(SHARED_COOKBOOK.name).performClick()
 
         compose.onNodeWithTag("cookbook_picker").assertTextContains(SHARED_COOKBOOK.name)
+
+        compose.onNodeWithTag("nav_Shopping").performClick()
+        compose.onNodeWithTag("cookbook_picker").assertTextContains(SHARED_COOKBOOK.name).performClick()
+        compose.onNodeWithText(COOKBOOK.name).performClick()
+
+        compose.onNodeWithTag("nav_Search").performClick()
+        compose.onNodeWithTag("cookbook_picker").assertTextContains(COOKBOOK.name)
     }
 
     @Test
@@ -594,7 +601,6 @@ class MainCourseAppTest {
                         observeItems = { shoppingItems },
                         refreshCookbooks = {},
                         refreshItems = {},
-                        selectCookbook = {},
                         createItem = { _, _: ShoppingItemRequest -> },
                         setItemChecked = { _, _, _ -> },
                         deleteItem = { _, _ -> },

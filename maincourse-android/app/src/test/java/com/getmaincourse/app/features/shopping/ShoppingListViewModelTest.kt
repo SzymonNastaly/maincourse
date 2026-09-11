@@ -68,6 +68,19 @@ class ShoppingListViewModelTest {
     }
 
     @Test
+    fun cookbookChangeRefreshesTheNewShoppingListScope() = runTest(dispatcher) {
+        val refreshedCookbooks = mutableListOf<Long>()
+        val viewModel = viewModel(refreshItems = { refreshedCookbooks += it })
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+        advanceUntilIdle()
+
+        selection.value = CookbookSelection(listOf(COOKBOOK, SHARED_COOKBOOK), SHARED_COOKBOOK.id)
+        advanceUntilIdle()
+
+        assertEquals(listOf(COOKBOOK.id, SHARED_COOKBOOK.id), refreshedCookbooks)
+    }
+
+    @Test
     fun addWaitsForAcknowledgementAndReusesClientIdForAnExplicitRetry() = runTest(dispatcher) {
         val requests = mutableListOf<ShoppingItemRequest>()
         var attempts = 0
@@ -128,7 +141,7 @@ class ShoppingListViewModelTest {
     }
 
     private fun viewModel(
-        refreshItems: suspend () -> Unit = {},
+        refreshItems: suspend (Long) -> Unit = {},
         createItem: suspend (ShoppingItemRequest) -> Unit = {},
         setChecked: suspend (Long, Boolean) -> Unit = { _, _ -> },
         deleteItem: suspend (Long) -> Unit = {},
@@ -137,8 +150,7 @@ class ShoppingListViewModelTest {
         observeCookbooks = { selection },
         observeItems = { items },
         refreshCookbooks = {},
-        refreshItems = { refreshItems() },
-        selectCookbook = {},
+        refreshItems = refreshItems,
         createItem = { _, item -> createItem(item) },
         setItemChecked = { _, id, checked -> setChecked(id, checked) },
         deleteItem = { _, id -> deleteItem(id) },
@@ -163,5 +175,6 @@ class ShoppingListViewModelTest {
 
     private companion object {
         val COOKBOOK = Cookbook(10, "Home", true, 0, emptyList())
+        val SHARED_COOKBOOK = Cookbook(20, "Family", false, 0, emptyList())
     }
 }

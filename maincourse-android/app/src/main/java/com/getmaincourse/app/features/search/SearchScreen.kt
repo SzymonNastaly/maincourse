@@ -60,9 +60,6 @@ fun SearchScreen(
                 leadingIcon = {
                     Icon(painterResource(R.drawable.ic_search), contentDescription = null)
                 },
-                supportingText = state.selectedCookbookName?.let { cookbookName ->
-                    { Text(stringResource(R.string.search_cookbook, cookbookName)) }
-                },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 shape = MainCourseShapes.Card,

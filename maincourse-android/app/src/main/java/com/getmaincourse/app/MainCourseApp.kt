@@ -291,7 +291,7 @@ private fun ProtectedShell(
             if (current !is RecipeEditRoute) TopAppBar(
                 title = {
                     when (current) {
-                        RecipesRoute -> CookbookTitleMenu(
+                        RecipesRoute, ShoppingRoute, SearchRoute -> CookbookTitleMenu(
                             cookbooks = recipesState.cookbooks,
                             selectedId = recipesState.selectedCookbookId,
                             onSelect = recipesViewModel::selectCookbook,
@@ -492,7 +492,6 @@ private fun ProtectedShell(
                     val shoppingState by shoppingViewModel.state.collectAsStateWithLifecycle()
                     ShoppingListScreen(
                         state = shoppingState,
-                        onSelectCookbook = shoppingViewModel::selectCookbook,
                         onRefresh = shoppingViewModel::refresh,
                         onDraftChange = shoppingViewModel::updateDraft,
                         onAdd = shoppingViewModel::addItem,

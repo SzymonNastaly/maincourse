@@ -16,7 +16,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -58,7 +61,6 @@ class ShoppingListViewModel internal constructor(
     observeItems: (Long) -> Flow<List<ShoppingItem>>,
     private val refreshCookbooks: suspend () -> Unit,
     private val refreshItems: suspend (Long) -> Unit,
-    private val selectCookbook: suspend (Long) -> Unit,
     private val createItem: suspend (Long, ShoppingItemRequest) -> Unit,
     private val setItemChecked: suspend (Long, Long, Boolean) -> Unit,
     private val deleteItem: suspend (Long, Long) -> Unit,
@@ -74,7 +76,6 @@ class ShoppingListViewModel internal constructor(
         observeItems = { cookbookId -> shoppingListRepository.observeItems(userId, cookbookId) },
         refreshCookbooks = { cookbookRepository.refresh(userId) },
         refreshItems = { cookbookId -> shoppingListRepository.refresh(userId, cookbookId) },
-        selectCookbook = { cookbookId -> cookbookRepository.select(userId, cookbookId) },
         createItem = { cookbookId, item -> shoppingListRepository.create(userId, cookbookId, listOf(item)) },
         setItemChecked = { cookbookId, itemId, checked ->
             shoppingListRepository.setChecked(userId, cookbookId, itemId, checked)
@@ -117,6 +118,15 @@ class ShoppingListViewModel internal constructor(
 
     init {
         refresh()
+        viewModelScope.launch {
+            cookbookFlow
+                .map { selection -> selection.selectedId }
+                .distinctUntilChanged()
+                .drop(1)
+                .collectLatest { cookbookId ->
+                    cookbookId?.let { refreshSelectedCookbook(it) }
+                }
+        }
     }
 
     fun refresh(): Job {
@@ -133,26 +143,6 @@ class ShoppingListViewModel internal constructor(
                 refreshState.value = OperationState(
                     running = false,
                     error = failure.userMessage("Could not refresh shopping list"),
-                )
-            }
-        }.also { refreshJob = it }
-    }
-
-    fun selectCookbook(cookbookId: Long): Job {
-        if (mutationJob?.isActive == true) return mutationJob!!
-        refreshJob?.cancel()
-        return viewModelScope.launch {
-            refreshState.value = OperationState(running = true)
-            try {
-                selectCookbook.invoke(cookbookId)
-                refreshItems(cookbookId)
-                refreshState.value = OperationState(running = false)
-            } catch (failure: CancellationException) {
-                throw failure
-            } catch (failure: Throwable) {
-                refreshState.value = OperationState(
-                    running = false,
-                    error = failure.userMessage("Could not open cookbook"),
                 )
             }
         }.also { refreshJob = it }
@@ -205,6 +195,21 @@ class ShoppingListViewModel internal constructor(
     fun clearError() {
         mutationState.value = mutationState.value.copy(error = null)
         refreshState.value = refreshState.value.copy(error = null)
+    }
+
+    private suspend fun refreshSelectedCookbook(cookbookId: Long) {
+        refreshState.value = OperationState(running = true)
+        try {
+            refreshItems(cookbookId)
+            refreshState.value = OperationState(running = false)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (failure: Throwable) {
+            refreshState.value = OperationState(
+                running = false,
+                error = failure.userMessage("Could not open cookbook"),
+            )
+        }
     }
 
     private fun launchMutation(

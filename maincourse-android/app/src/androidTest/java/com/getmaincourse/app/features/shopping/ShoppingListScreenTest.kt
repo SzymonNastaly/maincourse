@@ -132,7 +132,6 @@ class ShoppingListScreenTest {
                 MainCourseTheme {
                     ShoppingListScreen(
                         state = state.value,
-                        onSelectCookbook = {},
                         onRefresh = {},
                         onDraftChange = onDraftChange,
                         onAdd = onAdd,
