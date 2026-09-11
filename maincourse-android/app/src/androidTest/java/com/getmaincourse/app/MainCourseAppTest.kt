@@ -115,6 +115,7 @@ class MainCourseAppTest {
         compose.onNodeWithText(SUMMARY.name).performClick()
         compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
         compose.onNodeWithText(DETAIL.name).assertIsDisplayed()
+        compose.onNodeWithTag("recipe_back").assertDoesNotExist()
 
         compose.onNodeWithTag("navigate_back").performClick()
         compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()

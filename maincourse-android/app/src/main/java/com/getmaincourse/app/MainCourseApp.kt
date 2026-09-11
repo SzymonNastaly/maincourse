@@ -414,7 +414,6 @@ private fun ProtectedShell(
                         imageLoader = latestImageLoader,
                         resolveImage = latestResolveImage,
                         onRefresh = { detailViewModel.refresh() },
-                        onBack = { backStack.removeLastOrNull() },
                         cookbookId = route.cookbookId,
                         actionState = actionState,
                         onMove = { detailViewModel.moveTo(it) },

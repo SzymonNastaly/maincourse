@@ -160,7 +160,6 @@ class RecipeWorkflowScreenTest {
                         imageLoader = null,
                         resolveImage = { it },
                         onRefresh = {},
-                        onBack = {},
                         cookbookId = 1,
                         onMove = { movedTo = it },
                     )
@@ -185,7 +184,6 @@ class RecipeWorkflowScreenTest {
                         imageLoader = null,
                         resolveImage = { it },
                         onRefresh = {},
-                        onBack = {},
                         onDelete = { deletes++ },
                     )
                 }
@@ -214,7 +212,6 @@ class RecipeWorkflowScreenTest {
                             imageLoader = null,
                             resolveImage = { it },
                             onRefresh = {},
-                            onBack = {},
                         )
                     }
                 }

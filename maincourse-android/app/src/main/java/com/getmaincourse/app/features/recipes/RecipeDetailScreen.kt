@@ -53,7 +53,6 @@ fun RecipeDetailScreen(
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     onRefresh: () -> Unit,
-    onBack: () -> Unit,
     cookbookId: Long = 0,
     actionState: RecipeActionUiState = RecipeActionUiState.Idle,
     onMove: (Long) -> Unit = {},
@@ -70,11 +69,6 @@ fun RecipeDetailScreen(
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        item {
-            OutlinedButton(onClick = onBack, modifier = Modifier.testTag("recipe_back")) {
-                Text(stringResource(R.string.back))
-            }
-        }
         val recipe = state.recipe
         if (recipe == null) {
             item {
