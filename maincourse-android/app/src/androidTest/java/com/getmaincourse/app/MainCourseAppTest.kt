@@ -192,7 +192,7 @@ class MainCourseAppTest {
         )
 
         compose.onNodeWithText(SUMMARY.name).performClick()
-        compose.onNodeWithTag("recipe_edit_open").performScrollTo().performClick()
+        compose.onNodeWithTag("recipe_edit_open").performClick()
         compose.onNodeWithTag("recipe_edit").assertIsDisplayed()
         compose.onNodeWithTag("navigation_bar").assertDoesNotExist()
         compose.onNodeWithTag("recipe_edit_name").performTextReplacement("Roasted tomato soup")
@@ -209,7 +209,7 @@ class MainCourseAppTest {
         show(SessionUiState.SignedIn(SESSION))
 
         compose.onNodeWithText(SUMMARY.name).performClick()
-        compose.onNodeWithTag("recipe_edit_open").performScrollTo().performClick()
+        compose.onNodeWithTag("recipe_edit_open").performClick()
         compose.onNodeWithTag("recipe_edit_name").performTextReplacement("Unpublished soup")
         compose.onNodeWithTag("recipe_edit_back").performClick()
 

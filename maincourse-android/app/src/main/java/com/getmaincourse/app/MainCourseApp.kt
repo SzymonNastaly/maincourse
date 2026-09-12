@@ -398,14 +398,25 @@ private fun ProtectedShell(
                     }
                 },
                 actions = {
-                    if (current == RecipesRoute) {
-                        TextButton(
-                            onClick = { backStack.add(RecipeImportRoute) },
-                            enabled = recipesState.selectedCookbookId != null,
-                            modifier = Modifier.testTag("open_recipe_import"),
-                        ) {
-                            Text(stringResource(R.string.recipe_import_short))
+                    when (val route = current) {
+                        RecipesRoute -> {
+                            TextButton(
+                                onClick = { backStack.add(RecipeImportRoute) },
+                                enabled = recipesState.selectedCookbookId != null,
+                                modifier = Modifier.testTag("open_recipe_import"),
+                            ) {
+                                Text(stringResource(R.string.recipe_import_short))
+                            }
                         }
+                        is RecipeDetailRoute -> {
+                            TextButton(
+                                onClick = { backStack.add(RecipeEditRoute(route.recipeId, route.cookbookId)) },
+                                modifier = Modifier.testTag("recipe_edit_open"),
+                            ) {
+                                Text(stringResource(R.string.recipe_edit))
+                            }
+                        }
+                        else -> Unit
                     }
                 },
             )
@@ -490,9 +501,6 @@ private fun ProtectedShell(
                         imageLoader = latestImageLoader,
                         resolveImage = latestResolveImage,
                         onRefresh = { detailViewModel.refresh() },
-                        onEdit = {
-                            backStack.add(RecipeEditRoute(route.recipeId, route.cookbookId))
-                        },
                         onAddIngredients = { portions ->
                             backStack.add(IngredientReviewRoute(route.recipeId, route.cookbookId, portions))
                         },

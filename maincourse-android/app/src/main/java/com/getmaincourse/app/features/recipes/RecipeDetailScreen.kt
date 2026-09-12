@@ -55,7 +55,6 @@ fun RecipeDetailScreen(
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     onRefresh: () -> Unit,
-    onEdit: () -> Unit = {},
     onAddIngredients: (Int) -> Unit = {},
 ) {
     LazyColumn(
@@ -80,7 +79,6 @@ fun RecipeDetailScreen(
                     imageLoader = imageLoader,
                     resolveImage = resolveImage,
                     refreshing = state.refreshing,
-                    onEdit = onEdit,
                     onAddIngredients = onAddIngredients,
                 )
             }
@@ -94,7 +92,6 @@ private fun DetailContent(
     imageLoader: ImageLoader?,
     resolveImage: (String?) -> String?,
     refreshing: Boolean,
-    onEdit: () -> Unit,
     onAddIngredients: (Int) -> Unit,
 ) {
     val baseServings = recipe.servings?.takeIf { it > 0 }
@@ -144,12 +141,6 @@ private fun DetailContent(
                     )
                 }
             }
-        }
-        OutlinedButton(
-            onClick = onEdit,
-            modifier = Modifier.testTag("recipe_edit_open"),
-        ) {
-            Text(stringResource(R.string.recipe_edit))
         }
         if (refreshing) CircularProgressIndicator(Modifier.testTag("recipe_refreshing"))
         val facts = buildList {
