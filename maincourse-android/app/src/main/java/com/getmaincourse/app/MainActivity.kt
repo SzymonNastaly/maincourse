@@ -1,9 +1,11 @@
 package com.getmaincourse.app
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -12,14 +14,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import com.getmaincourse.app.features.session.SessionUiState
 import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.features.auth.PreAuthViewModel
 import com.getmaincourse.app.features.recipes.SharedRecipeInput
 import com.getmaincourse.app.features.recipes.sharedRecipeInput
 import com.getmaincourse.app.features.cookbooks.invitationToken
+import com.getmaincourse.app.notifications.NotificationDestination
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 class MainActivity : ComponentActivity() {
@@ -31,10 +37,17 @@ class MainActivity : ComponentActivity() {
     private var contentInstalled = false
     private val pendingSharedRecipe = MutableStateFlow<SharedRecipeInput?>(null)
     private val pendingInvitationToken = MutableStateFlow<String?>(null)
+    private val pendingNotification = MutableStateFlow<NotificationDestination?>(null)
+    private val notificationsEnabled = MutableStateFlow(false)
     private var sharedRecipeConsumed = false
     private var invitationConsumed = false
+    private var notificationConsumed = false
     private val localNetworkPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         installAppContent()
+    }
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        refreshNotificationState()
+        if (it) lifecycleScope.launch { appContainer.pushRegistrationManager.synchronizeIfAllowed() }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,8 +55,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         sharedRecipeConsumed = savedInstanceState?.getBoolean(SHARED_RECIPE_CONSUMED_KEY) == true
         invitationConsumed = savedInstanceState?.getBoolean(INVITATION_CONSUMED_KEY) == true
+        notificationConsumed = savedInstanceState?.getBoolean(NOTIFICATION_CONSUMED_KEY) == true
         if (!sharedRecipeConsumed) pendingSharedRecipe.value = intent.sharedRecipeInput()
         if (!invitationConsumed) pendingInvitationToken.value = invitationToken(intent.dataString)
+        if (!notificationConsumed) pendingNotification.value = NotificationDestination.from(intent)
+        refreshNotificationState()
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
@@ -72,11 +88,22 @@ class MainActivity : ComponentActivity() {
             invitationConsumed = false
             pendingInvitationToken.value = token
         }
+        NotificationDestination.from(intent)?.let { destination ->
+            notificationConsumed = false
+            pendingNotification.value = destination
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshNotificationState()
+        lifecycleScope.launch { appContainer.pushRegistrationManager.synchronizeIfAllowed() }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean(SHARED_RECIPE_CONSUMED_KEY, sharedRecipeConsumed)
         outState.putBoolean(INVITATION_CONSUMED_KEY, invitationConsumed)
+        outState.putBoolean(NOTIFICATION_CONSUMED_KEY, notificationConsumed)
         super.onSaveInstanceState(outState)
     }
 
@@ -108,9 +135,46 @@ class MainActivity : ComponentActivity() {
                         invitationConsumed = true
                         pendingInvitationToken.value = null
                     },
+                    notificationDestination = pendingNotification,
+                    onNotificationConsumed = { deliveryId ->
+                        notificationConsumed = true
+                        pendingNotification.value = null
+                        deliveryId?.let(appContainer.pushRegistrationManager::markOpened)
+                    },
+                    notificationsEnabled = notificationsEnabled,
+                    onRequestNotificationPermission = ::requestNotificationPermission,
+                    onOpenNotificationSettings = ::openNotificationSettings,
                 )
             }
         }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            lifecycleScope.launch { appContainer.pushRegistrationManager.synchronizeIfAllowed() }
+            return
+        }
+        if (appContainer.pushRegistrationManager.notificationsEnabled()) {
+            lifecycleScope.launch { appContainer.pushRegistrationManager.synchronizeIfAllowed() }
+            return
+        }
+        if (!appContainer.pushRegistrationManager.canAskPermission()) return
+
+        appContainer.pushRegistrationManager.markPermissionAsked()
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun openNotificationSettings() {
+        startActivity(
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                data = "package:$packageName".toUri()
+                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            },
+        )
+    }
+
+    private fun refreshNotificationState() {
+        notificationsEnabled.value = appContainer.pushRegistrationManager.notificationsEnabled()
     }
 }
 
@@ -124,4 +188,5 @@ internal fun shouldRequestLocalNetworkAccess(
 internal const val LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
 private const val SHARED_RECIPE_CONSUMED_KEY = "shared_recipe_consumed"
 private const val INVITATION_CONSUMED_KEY = "invitation_consumed"
+private const val NOTIFICATION_CONSUMED_KEY = "notification_consumed"
 private val LOCAL_API_HOSTS = setOf("10.0.2.2", "localhost", "127.0.0.1")

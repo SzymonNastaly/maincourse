@@ -3,7 +3,9 @@ package com.getmaincourse.app.data.network
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
 import com.getmaincourse.app.data.model.CreateCookbookRequest
+import com.getmaincourse.app.data.model.DeviceTokenRequest
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.NotificationOpenedRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipePageContent
@@ -462,6 +464,54 @@ class MainCourseServiceTest {
         assertEquals("DELETE", delete.method)
         assertEquals("/api/v1/account", delete.path)
         assertNull(delete.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun pushRegistrationUsesProviderAwareContract() = runTest {
+        server.enqueue(
+            jsonResponse(
+                201,
+                """{"id":11,"token":"installation-id","provider":"fcm","environment":"production"}""",
+            ),
+        )
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        val response = service.registerDeviceToken(
+            DeviceTokenRequest(
+                token = "installation-id",
+                provider = "fcm",
+                environment = "production",
+                timeZone = "Europe/Berlin",
+            ),
+        )
+        service.deleteDeviceToken("installation-id", "fcm")
+
+        assertEquals("fcm", response.provider)
+        val register = server.takeRequest()
+        assertEquals("POST", register.method)
+        assertEquals("/api/v1/device_tokens", register.path)
+        assertEquals(
+            json(
+                """{"token":"installation-id","provider":"fcm","environment":"production","time_zone":"Europe/Berlin"}""",
+            ),
+            json(register.body.readUtf8()),
+        )
+
+        val delete = server.takeRequest()
+        assertEquals("DELETE", delete.method)
+        assertEquals("/api/v1/device_tokens/installation-id?provider=fcm", delete.path)
+    }
+
+    @Test
+    fun notificationOpenedUsesDeliveryContract() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        service.markNotificationOpened(27, NotificationOpenedRequest(actionTaken = "opened"))
+
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/notification_deliveries/27/opened", request.path)
+        assertEquals(json("""{"action_taken":"opened"}"""), json(request.body.readUtf8()))
     }
 
     @Test

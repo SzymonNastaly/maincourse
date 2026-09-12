@@ -14,6 +14,12 @@ import com.getmaincourse.app.data.session.EncryptedSessionStore
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.features.auth.PreAuthViewModel
+import com.getmaincourse.app.notifications.NotificationPresenter
+import com.getmaincourse.app.notifications.PushRegistrationManager
+import com.getmaincourse.app.notifications.PushRegistrationStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -27,10 +33,12 @@ class MainCourseApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        NotificationPresenter.createChannels(this)
     }
 }
 
 class AppContainer(application: Application) {
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val database = MainCourseDatabase.open(application)
     val sessionStore = EncryptedSessionStore(application)
     val onboardingPreferences = OnboardingPreferences(application)
@@ -47,6 +55,13 @@ class AppContainer(application: Application) {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(MainCourseService::class.java)
+    val pushRegistrationManager = PushRegistrationManager(
+        context = application,
+        service = service,
+        sessionProvider = sessionProvider,
+        store = PushRegistrationStore(application),
+        applicationScope = applicationScope,
+    )
     val cookbookRepository = CookbookRepository(database, service, json)
     val recipeRepository = RecipeRepository(database, service, json)
     val shoppingListRepository = ShoppingListRepository(database, service, json)
@@ -61,6 +76,9 @@ class AppContainer(application: Application) {
             images = images,
             onboardingDeviceId = onboardingPreferences::pendingDeviceId,
             clearOnboardingDeviceId = onboardingPreferences::clearPendingDeviceId,
+            synchronizePush = pushRegistrationManager::synchronizeIfAllowed,
+            unregisterPush = pushRegistrationManager::unregisterCurrent,
+            invalidatePush = pushRegistrationManager::invalidateLocalToken,
             baseUrl = BuildConfig.API_BASE_URL,
         )
     }

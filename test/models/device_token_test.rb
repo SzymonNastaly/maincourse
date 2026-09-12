@@ -12,6 +12,7 @@ class DeviceTokenTest < ActiveSupport::TestCase
     assert_equal @user, record.user
     assert_equal "abc123", record.token
     assert_equal "sandbox", record.environment
+    assert_equal "apns", record.provider
     assert_not_nil record.last_used_at
   end
 
@@ -38,5 +39,20 @@ class DeviceTokenTest < ActiveSupport::TestCase
     record = DeviceToken.new(user: @user, token: "x", environment: "weird")
     assert_not record.valid?
     assert_includes record.errors[:environment], "is not included in the list"
+  end
+
+  test "the same opaque token can exist for different providers" do
+    apns = DeviceToken.register!(user: @user, token: "shared-value", provider: "apns", environment: "production")
+    fcm = DeviceToken.register!(user: @user, token: "shared-value", provider: "fcm", environment: "production")
+
+    assert_not_equal apns.id, fcm.id
+    assert_equal 2, DeviceToken.where(token: "shared-value").count
+  end
+
+  test "validates provider" do
+    record = DeviceToken.new(user: @user, token: "x", provider: "unknown", environment: "production")
+
+    assert_not record.valid?
+    assert_includes record.errors[:provider], "is not included in the list"
   end
 end

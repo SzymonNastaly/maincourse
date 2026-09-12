@@ -8,7 +8,10 @@ import com.getmaincourse.app.data.model.CookbookInvitation
 import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
 import com.getmaincourse.app.data.model.CookbookInvitationPreview
 import com.getmaincourse.app.data.model.CreateCookbookRequest
+import com.getmaincourse.app.data.model.DeviceTokenRequest
+import com.getmaincourse.app.data.model.DeviceTokenResponse
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.NotificationOpenedRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -225,6 +228,10 @@ class SettingsViewModelTest {
         var updateRequest: AccountUpdateRequest? = null
         var updateFailure: Throwable? = null
         var updateCalls = 0
+
+        override suspend fun registerDeviceToken(request: DeviceTokenRequest): DeviceTokenResponse = error("Not used")
+        override suspend fun deleteDeviceToken(token: String, provider: String) = error("Not used")
+        override suspend fun markNotificationOpened(id: Long, request: NotificationOpenedRequest) = error("Not used")
 
         override suspend fun updateAccount(request: AccountUpdateRequest): AccountResponse {
             updateCalls += 1

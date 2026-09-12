@@ -202,7 +202,11 @@
     <string name="edit_name_help">Shown to members of cookbooks you share.</string>
     <string name="name_too_long">Use 50 characters or fewer.</string>
     <string name="recipe_reminders">Recipe reminders</string>
-    <string name="recipe_reminders_help">This setting applies across your account. Android reminder delivery is not enabled yet.</string>
+    <string name="recipe_reminders_help">Occasional nudges about saved recipes and unfinished shopping lists. This setting applies across your account.</string>
+    <string name="notifications_disabled_device">Notifications are turned off on this device. Your other signed-in devices are unaffected.</string>
+    <string name="open_notification_settings">Open notification settings</string>
+    <string name="notification_channel_reminders">Recipe reminders</string>
+    <string name="notification_channel_activity">Cookbook activity</string>
     <string name="delete_account">Delete Account</string>
     <string name="delete_warning">This cannot be undone</string>
     <string name="delete_account_details">Your personal cookbook, recipes, shopping list, and meal plans will be permanently removed. Your subscription will not be refunded.</string>

@@ -75,6 +75,8 @@ gem "lograge"
 
 # APNs HTTP/2 client for iOS push notifications [https://github.com/ostinelli/apnotic]
 gem "apnotic"
+# Official Google OAuth client used to authorize FCM HTTP v1 requests.
+gem "googleauth", "~> 1.17"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

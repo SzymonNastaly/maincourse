@@ -39,6 +39,9 @@ class SessionViewModel internal constructor(
     private val prepareImages: suspend (Long) -> ImageLoader?,
     private val clearDatabase: suspend () -> Unit,
     private val clearImages: suspend () -> Unit,
+    private val synchronizePush: suspend () -> Unit = {},
+    private val unregisterPush: suspend () -> Unit = {},
+    private val invalidatePush: suspend () -> Unit = {},
     private val onboardingDeviceId: () -> String? = { null },
     private val clearOnboardingDeviceId: () -> Unit = {},
 ) : ViewModel() {
@@ -51,6 +54,9 @@ class SessionViewModel internal constructor(
         images: SessionImages,
         onboardingDeviceId: () -> String? = { null },
         clearOnboardingDeviceId: () -> Unit = {},
+        synchronizePush: suspend () -> Unit = {},
+        unregisterPush: suspend () -> Unit = {},
+        invalidatePush: suspend () -> Unit = {},
         baseUrl: String,
         clock: Clock = Clock.systemUTC(),
     ) : this(
@@ -63,6 +69,9 @@ class SessionViewModel internal constructor(
         prepareImages = images::prepare,
         clearDatabase = { withContext(Dispatchers.IO) { database.clearAllTables() } },
         clearImages = images::clear,
+        synchronizePush = synchronizePush,
+        unregisterPush = unregisterPush,
+        invalidatePush = invalidatePush,
         onboardingDeviceId = onboardingDeviceId,
         clearOnboardingDeviceId = clearOnboardingDeviceId,
     )
@@ -82,6 +91,7 @@ class SessionViewModel internal constructor(
                 ) {
                     mutableState.value = SessionUiState.Restoring
                     foregroundAction?.cancelAndJoin()
+                    invalidatePush()
                     launchForeground { hideAndClear() }.join()
                 }
             }
@@ -104,6 +114,7 @@ class SessionViewModel internal constructor(
             }
 
             if (stored == null || stored.baseUrl != baseUrl || stored.response.isExpired()) {
+                invalidatePush()
                 hideAndClear()
                 return@launchForeground
             }
@@ -173,7 +184,10 @@ class SessionViewModel internal constructor(
         return launchForeground {
             mutableState.value = SessionUiState.Restoring
             try {
-                withTimeout(SIGN_OUT_TIMEOUT_MILLIS) { service.signOut() }
+                withTimeout(SIGN_OUT_TIMEOUT_MILLIS) {
+                    unregisterPush()
+                    service.signOut()
+                }
             } catch (_: TimeoutCancellationException) {
                 // Remote revocation is best effort; local credentials are authoritative.
             } catch (failure: CancellationException) {
@@ -190,6 +204,7 @@ class SessionViewModel internal constructor(
         return launchForeground {
             try {
                 service.deleteAccount()
+                invalidatePush()
                 hideAndClear()
             } catch (failure: CancellationException) {
                 throw failure
@@ -237,6 +252,7 @@ class SessionViewModel internal constructor(
         sessionProvider.set(session)
         mutableImageLoader.value = loader
         mutableState.value = SessionUiState.SignedIn(session)
+        synchronizePush()
     }
 
     private suspend fun hideAndClear(success: SessionUiState = SessionUiState.SignedOut()) {

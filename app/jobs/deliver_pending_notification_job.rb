@@ -1,8 +1,6 @@
 class DeliverPendingNotificationJob < ApplicationJob
   queue_as :default
 
-  INVALID_TOKEN_REASONS = %w[BadDeviceToken Unregistered DeviceTokenNotForTopic TopicDisallowed].freeze
-
   def perform(pending_notification_id)
     snapshot = PendingNotification.transaction do
       pending = PendingNotification.lock.find_by(id: pending_notification_id)
@@ -21,29 +19,22 @@ class DeliverPendingNotificationJob < ApplicationJob
 
     return if snapshot.nil? || snapshot[:payload].empty?
 
-    aps = build_aps(category: snapshot[:category], cookbook: snapshot[:cookbook], actor: snapshot[:actor], events: snapshot[:payload])
+    alert = build_alert(category: snapshot[:category], cookbook: snapshot[:cookbook], actor: snapshot[:actor], events: snapshot[:payload])
     custom = { cookbook_id: snapshot[:cookbook].id, category: snapshot[:category] }
 
-    snapshot[:recipient].device_tokens.active.find_each do |device_token|
-      result = Apns::Client.push(
-        token: device_token.token,
-        environment: device_token.environment,
-        aps: aps,
-        custom: custom
-      )
-
-      if !result.ok? && INVALID_TOKEN_REASONS.include?(result.reason)
-        device_token.destroy
-      end
-    end
+    Push::Fanout.call(
+      device_tokens: snapshot[:recipient].device_tokens.active,
+      alert: alert,
+      custom: custom
+    )
   end
 
   private
 
-  def build_aps(category:, cookbook:, actor:, events:)
+  def build_alert(category:, cookbook:, actor:, events:)
     title = build_title(actor, cookbook)
     body = build_body(category, events)
-    { alert: { title: title, body: body } }
+    { title: title, body: body }
   end
 
   def build_title(actor, cookbook)

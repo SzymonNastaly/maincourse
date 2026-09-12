@@ -68,7 +68,19 @@ struct MainTabView: View {
     /// reload before pushing the detail screen.
     private func navigate(to route: NotificationRoute?) async {
         switch route {
-        case .shoppingList:
+        case let .shoppingList(cookbookId):
+            if let cookbookId, cookbookId != self.session.cookbookViewModel.activeCookbook?.id {
+                var cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == cookbookId })
+                if cookbook == nil {
+                    await self.session.cookbookViewModel.refresh()
+                    cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == cookbookId })
+                }
+                guard let cookbook else {
+                    logger.error("Notification pointed at unknown cookbook \(cookbookId); dropping shopping-list push")
+                    return
+                }
+                await self.session.switchCookbook(cookbook)
+            }
             self.selectedTab = .shoppingList
 
         case let .recipe(id, cookbookId):

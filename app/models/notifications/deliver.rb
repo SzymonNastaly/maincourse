@@ -14,13 +14,10 @@ module Notifications
   # (permanently, for ImportFollowUpCampaign) or the user's frequency-cap slot on a
   # notification that never arrived. The push needs the delivery's real id for its
   # custom payload before we know whether it will succeed, so the row is created up
-  # front and destroyed again — via `ensure`, not a rescue around the push itself — if
-  # nothing went out, including when Apns::Client.push raises (e.g. missing
-  # credentials): the exception still propagates to the job's per-user rescue, but
-  # leaves no row behind.
+  # front and destroyed again via `ensure` if nothing went out. Provider failures are
+  # isolated per installation by Push::Fanout, so one unavailable transport does not
+  # prevent another device from receiving the notification.
   class Deliver
-    INVALID_TOKEN_REASONS = %w[BadDeviceToken Unregistered DeviceTokenNotForTopic TopicDisallowed].freeze
-
     def initialize(user:, candidate:)
       @user = user
       @candidate = candidate
@@ -68,7 +65,7 @@ module Notifications
 
     # Returns true if at least one push actually went out.
     def push(delivery)
-      aps = { alert: { title: @candidate.title, body: @candidate.body } }
+      alert = { title: @candidate.title, body: @candidate.body }
       custom = {
         campaign: @candidate.campaign,
         delivery_id: delivery.id,
@@ -76,21 +73,7 @@ module Notifications
         cookbook_id: @candidate.cookbook&.id
       }.compact
 
-      delivered = false
-
-      @user.device_tokens.active.find_each do |device_token|
-        result = Apns::Client.push(
-          token: device_token.token,
-          environment: device_token.environment,
-          aps: aps,
-          custom: custom
-        )
-
-        delivered ||= result.ok?
-        device_token.destroy if !result.ok? && INVALID_TOKEN_REASONS.include?(result.reason)
-      end
-
-      delivered
+      Push::Fanout.call(device_tokens: @user.device_tokens.active, alert: alert, custom: custom)
     end
   end
 end

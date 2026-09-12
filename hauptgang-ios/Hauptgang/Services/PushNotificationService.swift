@@ -30,6 +30,8 @@ actor PushNotificationService {
     private static let lastUploadedTokenKey = "push.lastUploadedDeviceToken"
     private static let lastUploadedEnvironmentKey = "push.lastUploadedEnvironment"
     private static let lastUploadedTimeZoneKey = "push.lastUploadedTimeZone"
+    private static let lastUploadedAtKey = "push.lastUploadedAt"
+    private static let registrationHeartbeat: TimeInterval = 30 * 24 * 60 * 60
 
     private static var environment: String {
         #if DEBUG
@@ -123,6 +125,7 @@ actor PushNotificationService {
             self.defaults.removeObject(forKey: Self.lastUploadedTokenKey)
             self.defaults.removeObject(forKey: Self.lastUploadedEnvironmentKey)
             self.defaults.removeObject(forKey: Self.lastUploadedTimeZoneKey)
+            self.defaults.removeObject(forKey: Self.lastUploadedAtKey)
         }
 
         guard let token = self.defaults.string(forKey: Self.lastUploadedTokenKey) else { return }
@@ -149,11 +152,18 @@ actor PushNotificationService {
         let cachedToken = self.defaults.string(forKey: Self.lastUploadedTokenKey)
         let cachedEnvironment = self.defaults.string(forKey: Self.lastUploadedEnvironmentKey)
         let cachedTimeZone = self.defaults.string(forKey: Self.lastUploadedTimeZoneKey)
-        if cachedToken == token, cachedEnvironment == environment, cachedTimeZone == timeZone {
+        let lastUploadedAt = self.defaults.object(forKey: Self.lastUploadedAtKey) as? Date
+        let registrationIsFresh = lastUploadedAt.map {
+            Date().timeIntervalSince($0) < Self.registrationHeartbeat
+        } ?? false
+        if cachedToken == token,
+           cachedEnvironment == environment,
+           cachedTimeZone == timeZone,
+           registrationIsFresh {
             return
         }
 
-        let body = RegisterRequest(token: token, environment: environment, timeZone: timeZone)
+        let body = RegisterRequest(token: token, provider: "apns", environment: environment, timeZone: timeZone)
 
         do {
             let _: RegisterResponse = try await self.api.request(
@@ -166,6 +176,7 @@ actor PushNotificationService {
             self.defaults.set(token, forKey: Self.lastUploadedTokenKey)
             self.defaults.set(environment, forKey: Self.lastUploadedEnvironmentKey)
             self.defaults.set(timeZone, forKey: Self.lastUploadedTimeZoneKey)
+            self.defaults.set(Date(), forKey: Self.lastUploadedAtKey)
             logger.info("Registered device token (environment: \(environment))")
         } catch {
             logger.error("Failed to register device token: \(error.localizedDescription)")
@@ -177,6 +188,7 @@ actor PushNotificationService {
 
 private struct RegisterRequest: Encodable {
     let token: String
+    let provider: String
     let environment: String
     let timeZone: String
 }

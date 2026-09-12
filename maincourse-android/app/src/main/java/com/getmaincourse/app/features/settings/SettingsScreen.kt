@@ -48,6 +48,9 @@ fun SettingsScreen(
     onSignOut: () -> Unit,
     onClearError: () -> Unit,
     onManageCookbooks: () -> Unit,
+    notificationsEnabled: Boolean,
+    onRequestNotificationPermission: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
 ) {
     val user = state.user ?: return
     var name by rememberSaveable(user.id) { mutableStateOf(user.name.orEmpty()) }
@@ -128,6 +131,7 @@ fun SettingsScreen(
                                 onValueChange = {
                                     remindersEnabled = it
                                     onClearError()
+                                    if (it) onRequestNotificationPermission()
                                 },
                             )
                             .semantics(mergeDescendants = true) {}
@@ -144,6 +148,21 @@ fun SettingsScreen(
                             )
                         }
                         Switch(checked = remindersEnabled, onCheckedChange = null, enabled = !busy)
+                    }
+                    if (user.lifecycleNotificationsEnabled && !notificationsEnabled) {
+                        Text(
+                            stringResource(R.string.notifications_disabled_device),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MainCourseColors.Body,
+                        )
+                        OutlinedButton(
+                            onClick = onOpenNotificationSettings,
+                            modifier = Modifier.fillMaxWidth().testTag("notification_settings"),
+                            enabled = !busy,
+                            shape = MainCourseShapes.Control,
+                        ) {
+                            Text(stringResource(R.string.open_notification_settings))
+                        }
                     }
                     state.error?.let {
                         Text(

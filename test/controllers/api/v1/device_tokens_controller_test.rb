@@ -15,6 +15,26 @@ class Api::V1::DeviceTokensControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
     assert_equal 1, @user.device_tokens.count
     assert_equal "sandbox", @user.device_tokens.first.environment
+    assert_equal "apns", @user.device_tokens.first.provider
+  end
+
+  test "create registers an FCM token" do
+    post api_v1_device_tokens_url,
+         params: { token: "fcm-token", provider: "fcm", time_zone: "Europe/Berlin" },
+         headers: @auth_headers, as: :json
+
+    assert_response :created
+    registration = @user.device_tokens.find_by!(token: "fcm-token")
+    assert_equal "fcm", registration.provider
+    assert_equal "fcm", response.parsed_body["provider"]
+  end
+
+  test "create rejects invalid provider" do
+    post api_v1_device_tokens_url,
+         params: { token: "abc", provider: "webpush" },
+         headers: @auth_headers, as: :json
+
+    assert_response :unprocessable_entity
   end
 
   test "create rejects invalid environment" do
@@ -52,6 +72,18 @@ class Api::V1::DeviceTokensControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :no_content
     assert_nil DeviceToken.find_by(token: "to-delete")
+  end
+
+  test "destroy can target one provider when opaque token values match" do
+    DeviceToken.register!(user: @user, token: "same", provider: "apns", environment: "production")
+    DeviceToken.register!(user: @user, token: "same", provider: "fcm", environment: "production")
+
+    delete api_v1_device_token_url(token: "same"),
+           params: { provider: "fcm" }, headers: @auth_headers, as: :json
+
+    assert_response :no_content
+    assert DeviceToken.exists?(token: "same", provider: "apns")
+    assert_not DeviceToken.exists?(token: "same", provider: "fcm")
   end
 
   test "create requires auth" do

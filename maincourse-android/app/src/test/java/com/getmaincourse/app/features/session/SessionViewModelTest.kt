@@ -7,7 +7,10 @@ import com.getmaincourse.app.data.model.CookbookInvitation
 import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
 import com.getmaincourse.app.data.model.CookbookInvitationPreview
 import com.getmaincourse.app.data.model.CreateCookbookRequest
+import com.getmaincourse.app.data.model.DeviceTokenRequest
+import com.getmaincourse.app.data.model.DeviceTokenResponse
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.NotificationOpenedRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -326,6 +329,33 @@ class SessionViewModelTest {
     }
 
     @Test
+    fun pushRegistrationFollowsTheAuthenticatedSessionLifecycle() = runTest(dispatcher) {
+        val pushEvents = mutableListOf<String>()
+        store.value = StoredSession(BASE_URL, session())
+        val viewModel = buildViewModel(
+            synchronizePush = { pushEvents += "synchronize" },
+            unregisterPush = { pushEvents += "unregister" },
+        )
+
+        viewModel.restore().join()
+        viewModel.signOut().join()
+
+        assertEquals(listOf("synchronize", "unregister"), pushEvents)
+    }
+
+    @Test
+    fun confirmedAccountDeletionInvalidatesTheLocalPushRegistration() = runTest(dispatcher) {
+        var invalidations = 0
+        store.value = StoredSession(BASE_URL, session())
+        val viewModel = buildViewModel(invalidatePush = { invalidations += 1 })
+        viewModel.restore().join()
+
+        viewModel.deleteAccount().join()
+
+        assertEquals(1, invalidations)
+    }
+
+    @Test
     fun storeClearFailureRequiresCleanupRetryAndNeverRestoresCredential() = runTest(dispatcher) {
         store.value = StoredSession(BASE_URL, session(expiresAt = "2026-09-08T12:00:00Z"))
         store.clearFailure = IOException("disk failed")
@@ -356,6 +386,9 @@ class SessionViewModelTest {
         },
         onboardingDeviceId: () -> String? = { null },
         clearOnboardingDeviceId: () -> Unit = {},
+        synchronizePush: suspend () -> Unit = {},
+        unregisterPush: suspend () -> Unit = {},
+        invalidatePush: suspend () -> Unit = {},
     ) = SessionViewModel(
         service = service,
         sessionStore = store,
@@ -368,6 +401,9 @@ class SessionViewModelTest {
         clearImages = { cleared += "images" },
         onboardingDeviceId = onboardingDeviceId,
         clearOnboardingDeviceId = clearOnboardingDeviceId,
+        synchronizePush = synchronizePush,
+        unregisterPush = unregisterPush,
+        invalidatePush = invalidatePush,
     )
 
     private class FakeSessionStore : SessionStore {
@@ -401,6 +437,10 @@ class SessionViewModelTest {
         var signUpRequest: SignUpRequest? = null
         var signOutCalls = 0
         var deleteAccountCalls = 0
+
+        override suspend fun registerDeviceToken(request: DeviceTokenRequest): DeviceTokenResponse = error("Not used")
+        override suspend fun deleteDeviceToken(token: String, provider: String) = error("Not used")
+        override suspend fun markNotificationOpened(id: Long, request: NotificationOpenedRequest) = error("Not used")
 
         override suspend fun signIn(request: SignInRequest): SessionResponse {
             signInRequest = request

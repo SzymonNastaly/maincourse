@@ -5,7 +5,12 @@ module Api
 
       def create
         token = params[:token].to_s
+        provider = params[:provider].to_s.presence || "apns"
         environment = params[:environment].to_s.presence || "production"
+
+        unless DeviceToken::PROVIDERS.include?(provider)
+          return render json: { error: "Invalid provider" }, status: :unprocessable_entity
+        end
 
         unless DeviceToken::ENVIRONMENTS.include?(environment)
           return render json: { error: "Invalid environment" }, status: :unprocessable_entity
@@ -17,12 +22,24 @@ module Api
 
         store_time_zone(params[:time_zone])
 
-        record = DeviceToken.register!(user: current_user, token: token, environment: environment)
-        render json: { id: record.id, token: record.token, environment: record.environment }, status: :created
+        record = DeviceToken.register!(
+          user: current_user,
+          token: token,
+          provider: provider,
+          environment: environment
+        )
+        render json: {
+          id: record.id,
+          token: record.token,
+          provider: record.provider,
+          environment: record.environment
+        }, status: :created
       end
 
       def destroy
-        DeviceToken.where(user_id: current_user.id, token: params[:token]).destroy_all
+        registrations = DeviceToken.where(user_id: current_user.id, token: params[:token])
+        registrations = registrations.where(provider: params[:provider]) if params[:provider].present?
+        registrations.destroy_all
         head :no_content
       end
 

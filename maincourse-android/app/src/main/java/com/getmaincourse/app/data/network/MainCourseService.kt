@@ -7,7 +7,10 @@ import com.getmaincourse.app.data.model.CookbookInvitation
 import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
 import com.getmaincourse.app.data.model.CookbookInvitationPreview
 import com.getmaincourse.app.data.model.CreateCookbookRequest
+import com.getmaincourse.app.data.model.DeviceTokenRequest
+import com.getmaincourse.app.data.model.DeviceTokenResponse
 import com.getmaincourse.app.data.model.MoveRecipeRequest
+import com.getmaincourse.app.data.model.NotificationOpenedRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -24,6 +27,7 @@ import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -35,9 +39,23 @@ import retrofit2.http.Part
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
-import okhttp3.MultipartBody
 
 interface MainCourseService {
+    @POST("api/v1/device_tokens")
+    suspend fun registerDeviceToken(@Body request: DeviceTokenRequest): DeviceTokenResponse
+
+    @DELETE("api/v1/device_tokens/{token}")
+    suspend fun deleteDeviceToken(
+        @Path("token") token: String,
+        @Query("provider") provider: String,
+    )
+
+    @POST("api/v1/notification_deliveries/{id}/opened")
+    suspend fun markNotificationOpened(
+        @Path("id") id: Long,
+        @Body request: NotificationOpenedRequest = NotificationOpenedRequest(),
+    )
+
     @Headers("$ANONYMOUS_HEADER: true")
     @POST("api/v1/session")
     suspend fun signIn(@Body request: SignInRequest): SessionResponse

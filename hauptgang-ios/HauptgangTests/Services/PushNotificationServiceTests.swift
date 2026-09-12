@@ -143,4 +143,19 @@ final class PushNotificationServiceTests: XCTestCase {
         let afterMove = await api.recorded.filter { $0.endpoint == "device_tokens" }.count
         XCTAssertEqual(afterMove, 2, "a changed time zone must re-register")
     }
+
+    func testRegistrationRefreshesAfterHeartbeatExpires() async throws {
+        let api = MockAPIClient()
+        await api.setResponse(#"{"id":1,"token":"abcd","environment":"sandbox"}"#)
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
+        let service = PushNotificationService(api: api, defaults: defaults)
+
+        await service.setAuthenticated(true)
+        await service.handleDeviceToken(Data([0xAB, 0xCD]))
+        self.defaults.set(Date(timeIntervalSinceNow: -(31 * 24 * 60 * 60)), forKey: "push.lastUploadedAt")
+        await service.handleDeviceToken(Data([0xAB, 0xCD]))
+
+        let uploads = await api.recorded.filter { $0.endpoint == "device_tokens" }.count
+        XCTAssertEqual(uploads, 2, "active installations must refresh before the server's 90-day cutoff")
+    }
 }

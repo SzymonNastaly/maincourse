@@ -8,6 +8,14 @@ plugins {
     alias(libs.plugins.androidx.room)
 }
 
+// Firebase configuration is intentionally not committed. Local and CI builds without
+// google-services.json still compile and test; configured release/debug builds apply
+// the plugin and get a working FirebaseApp at runtime.
+val hasGoogleServicesConfig = file("google-services.json").exists() ||
+    file("src/debug/google-services.json").exists() ||
+    file("src/release/google-services.json").exists()
+if (hasGoogleServicesConfig) apply(plugin = "com.google.gms.google-services")
+
 val debugApiBaseUrl = providers.gradleProperty("maincourse.apiBaseUrl")
     .orElse("http://10.0.2.2:3000/").get()
 val debugApiUri = URI(debugApiBaseUrl)
@@ -94,6 +102,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.androidx.fragment)
     ksp(libs.androidx.room.compiler)
 
     debugImplementation(libs.androidx.compose.ui.tooling)

@@ -73,6 +73,7 @@ import com.getmaincourse.app.features.recipes.CookbookTitleMenu
 import com.getmaincourse.app.features.recipes.IngredientReviewScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailScreen
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
+import com.getmaincourse.app.features.recipes.RecipeActionUiState
 import com.getmaincourse.app.features.recipes.RecipeEditScreen
 import com.getmaincourse.app.features.recipes.RecipeEditViewModel
 import com.getmaincourse.app.features.recipes.RecipeImportScreen
@@ -88,6 +89,7 @@ import com.getmaincourse.app.features.shopping.ShoppingListScreen
 import com.getmaincourse.app.features.shopping.ShoppingListViewModel
 import com.getmaincourse.app.features.settings.SettingsScreen
 import com.getmaincourse.app.features.settings.SettingsViewModel
+import com.getmaincourse.app.notifications.NotificationDestination
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -151,11 +153,18 @@ fun MainCourseApp(
     onSharedRecipeInputConsumed: () -> Unit,
     invitationToken: StateFlow<String?>,
     onInvitationConsumed: () -> Unit,
+    notificationDestination: StateFlow<NotificationDestination?>,
+    onNotificationConsumed: (Long?) -> Unit,
+    notificationsEnabled: StateFlow<Boolean>,
+    onRequestNotificationPermission: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
     val preAuthState by preAuthViewModel.state.collectAsStateWithLifecycle()
     val pendingShare by sharedRecipeInput.collectAsStateWithLifecycle()
     val pendingInvitation by invitationToken.collectAsStateWithLifecycle()
+    val pendingNotification by notificationDestination.collectAsStateWithLifecycle()
+    val deviceNotificationsEnabled by notificationsEnabled.collectAsStateWithLifecycle()
     LaunchedEffect(sessionState) {
         if (sessionState is SessionUiState.SignedIn) preAuthViewModel.authenticated()
     }
@@ -235,6 +244,11 @@ fun MainCourseApp(
         onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
         invitationToken = pendingInvitation,
         onInvitationConsumed = onInvitationConsumed,
+        notificationDestination = pendingNotification,
+        onNotificationConsumed = onNotificationConsumed,
+        notificationsEnabled = deviceNotificationsEnabled,
+        onRequestNotificationPermission = onRequestNotificationPermission,
+        onOpenNotificationSettings = onOpenNotificationSettings,
     )
 }
 
@@ -260,6 +274,11 @@ internal fun MainCourseAppContent(
     onSharedRecipeInputConsumed: () -> Unit = {},
     invitationToken: String? = null,
     onInvitationConsumed: () -> Unit = {},
+    notificationDestination: NotificationDestination? = null,
+    onNotificationConsumed: (Long?) -> Unit = {},
+    notificationsEnabled: Boolean = false,
+    onRequestNotificationPermission: () -> Unit = {},
+    onOpenNotificationSettings: () -> Unit = {},
 ) {
     val currentImageLoader by imageLoader.collectAsStateWithLifecycle()
     when (state) {
@@ -296,6 +315,11 @@ internal fun MainCourseAppContent(
                         onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
                         invitationToken = invitationToken,
                         onInvitationConsumed = onInvitationConsumed,
+                        notificationDestination = notificationDestination,
+                        onNotificationConsumed = onNotificationConsumed,
+                        notificationsEnabled = notificationsEnabled,
+                        onRequestNotificationPermission = onRequestNotificationPermission,
+                        onOpenNotificationSettings = onOpenNotificationSettings,
                     )
                 }
             }
@@ -314,6 +338,11 @@ private fun ProtectedShell(
     onSharedRecipeInputConsumed: () -> Unit,
     invitationToken: String?,
     onInvitationConsumed: () -> Unit,
+    notificationDestination: NotificationDestination?,
+    onNotificationConsumed: (Long?) -> Unit,
+    notificationsEnabled: Boolean,
+    onRequestNotificationPermission: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
 ) {
     val backStack = rememberNavBackStack(RecipesRoute)
     val latestImageLoader by rememberUpdatedState(imageLoader)
@@ -343,6 +372,46 @@ private fun ProtectedShell(
             }
             onInvitationConsumed()
         }
+    }
+    LaunchedEffect(recipesState.initialLoading, recipesState.recipes.isNotEmpty()) {
+        if (!recipesState.initialLoading && recipesState.recipes.isNotEmpty()) {
+            onRequestNotificationPermission()
+        }
+    }
+    LaunchedEffect(notificationDestination) {
+        val destination = notificationDestination ?: return@LaunchedEffect
+
+        suspend fun selectCookbook(cookbookId: Long?): Boolean {
+            if (cookbookId == null || recipesViewModel.state.value.selectedCookbookId == cookbookId) return true
+            if (recipesViewModel.state.value.cookbooks.none { it.id == cookbookId }) {
+                recipesViewModel.refresh().join()
+            }
+            if (recipesViewModel.state.value.cookbooks.none { it.id == cookbookId }) return false
+            recipesViewModel.selectCookbook(cookbookId).join()
+            return recipesViewModel.state.value.selectedCookbookId == cookbookId
+        }
+
+        when (destination) {
+            is NotificationDestination.Recipe -> {
+                if (selectCookbook(destination.cookbookId)) {
+                    backStack.clear()
+                    backStack.add(RecipesRoute)
+                    val cookbookId = destination.cookbookId ?: recipesViewModel.state.value.selectedCookbookId
+                    cookbookId?.let { backStack.add(RecipeDetailRoute(destination.recipeId, it)) }
+                }
+            }
+            is NotificationDestination.ShoppingList -> {
+                if (selectCookbook(destination.cookbookId)) {
+                    backStack.clear()
+                    backStack.add(ShoppingRoute)
+                }
+            }
+            NotificationDestination.Home -> {
+                backStack.clear()
+                backStack.add(RecipesRoute)
+            }
+        }
+        onNotificationConsumed(destination.deliveryId)
     }
     val selected = backStack.filter { it.isTopLevel() }.lastOrNull() ?: RecipesRoute
     val destinations = listOf(
@@ -565,6 +634,11 @@ private fun ProtectedShell(
                     )
                     val detailState by detailViewModel.state.collectAsStateWithLifecycle()
                     val actionState by detailViewModel.action.collectAsStateWithLifecycle()
+                    LaunchedEffect(actionState) {
+                        if (actionState is RecipeActionUiState.Succeeded) {
+                            onRequestNotificationPermission()
+                        }
+                    }
                     val recipe = detailState.recipe
                     if (recipe == null) {
                         LoadingScreen()
@@ -584,6 +658,11 @@ private fun ProtectedShell(
                         factory = factories.shopping(userId),
                     )
                     val shoppingState by shoppingViewModel.state.collectAsStateWithLifecycle()
+                    LaunchedEffect(shoppingState.initialLoading, shoppingState.uncheckedItems.size) {
+                        if (!shoppingState.initialLoading && shoppingState.uncheckedItems.size >= 3) {
+                            onRequestNotificationPermission()
+                        }
+                    }
                     ShoppingListScreen(
                         state = shoppingState,
                         onRefresh = shoppingViewModel::refresh,
@@ -627,6 +706,9 @@ private fun ProtectedShell(
                         onSignOut = { settingsViewModel.signOut() },
                         onClearError = settingsViewModel::clearError,
                         onManageCookbooks = { backStack.add(CookbookSettingsRoute) },
+                        notificationsEnabled = notificationsEnabled,
+                        onRequestNotificationPermission = onRequestNotificationPermission,
+                        onOpenNotificationSettings = onOpenNotificationSettings,
                     )
                 }
                 entry<CookbookSettingsRoute> {
@@ -635,6 +717,9 @@ private fun ProtectedShell(
                         factory = factories.cookbooks(userId),
                     )
                     val cookbookState by cookbookViewModel.state.collectAsStateWithLifecycle()
+                    LaunchedEffect(cookbookState.invitation?.inviteUrl) {
+                        if (cookbookState.invitation != null) onRequestNotificationPermission()
+                    }
                     CookbookManagementScreen(
                         userId = userId,
                         state = cookbookState,
@@ -652,6 +737,9 @@ private fun ProtectedShell(
                         factory = factories.invitation(userId, route.token),
                     )
                     val invitationState by invitationViewModel.state.collectAsStateWithLifecycle()
+                    LaunchedEffect(invitationState.acceptance?.cookbookId) {
+                        if (invitationState.acceptance != null) onRequestNotificationPermission()
+                    }
                     LaunchedEffect(invitationState.declined) {
                         if (invitationState.declined) backStack.removeLastOrNull()
                     }

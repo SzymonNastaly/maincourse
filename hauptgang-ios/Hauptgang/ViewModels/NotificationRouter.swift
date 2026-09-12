@@ -4,7 +4,7 @@ import os
 /// Where a tapped lifecycle notification should take the user.
 enum NotificationRoute: Equatable, Sendable {
     case recipe(id: Int, cookbookId: Int?)
-    case shoppingList
+    case shoppingList(cookbookId: Int?)
 }
 
 /// Holds the destination of a tapped notification until the view layer is ready to
@@ -44,7 +44,7 @@ final class NotificationRouter {
         if let recipeId = payload.recipeId {
             self.pendingRoute = .recipe(id: recipeId, cookbookId: payload.cookbookId)
         } else {
-            self.pendingRoute = .shoppingList
+            self.pendingRoute = .shoppingList(cookbookId: payload.cookbookId)
         }
 
         let service = self.deliveryService

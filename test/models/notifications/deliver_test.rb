@@ -33,6 +33,55 @@ class Notifications::DeliverTest < ActiveSupport::TestCase
     end
   end
 
+  test "fans out across APNs and FCM registrations" do
+    @user.device_tokens.create!(token: "android-token", provider: "fcm", environment: "production")
+    apns_pushes = []
+    fcm_pushes = []
+    apns_stub = lambda do |**kwargs|
+      apns_pushes << kwargs
+      Apns::Client::Result.new(ok?: true, status: 200, reason: nil)
+    end
+    fcm_stub = lambda do |**kwargs|
+      fcm_pushes << kwargs
+      Fcm::Client::Result.new(ok?: true, status: 200, reason: nil)
+    end
+
+    Apns::Client.stub(:push, apns_stub) do
+      Fcm::Client.stub(:push, fcm_stub) do
+        assert_not_nil Notifications::Deliver.new(user: @user, candidate: @candidate).call
+      end
+    end
+
+    assert_equal [ "deliver-token" ], apns_pushes.pluck(:token)
+    assert_equal [ "android-token" ], fcm_pushes.pluck(:token)
+  end
+
+  test "an invalid FCM token is pruned without removing another device" do
+    fcm = @user.device_tokens.create!(token: "invalid-android", provider: "fcm", environment: "production")
+    rejected = Fcm::Client::Result.new(ok?: false, status: 404, reason: "UNREGISTERED")
+
+    stub_push(ok_result) do
+      Fcm::Client.stub(:push, rejected) do
+        assert_not_nil Notifications::Deliver.new(user: @user, candidate: @candidate).call
+      end
+    end
+
+    assert_not DeviceToken.exists?(fcm.id)
+    assert DeviceToken.exists?(token: "deliver-token", provider: "apns")
+  end
+
+  test "one provider outage does not prevent another device from receiving the notification" do
+    @user.device_tokens.create!(token: "android-token", provider: "fcm", environment: "production")
+
+    stub_push(ok_result) do
+      Fcm::Client.stub(:push, ->(**) { raise Fcm::Client::MissingCredentialsError, "not configured" }) do
+        assert_not_nil Notifications::Deliver.new(user: @user, candidate: @candidate).call
+      end
+    end
+
+    assert_equal 2, @user.device_tokens.count
+  end
+
   test "sends the delivery id and target in the custom payload" do
     stub_push(ok_result) do |pushes|
       delivery = Notifications::Deliver.new(user: @user, candidate: @candidate).call

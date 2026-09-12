@@ -20,7 +20,7 @@ final class NotificationRouterTests: XCTestCase {
 
         router.handle(["campaign": "stale_shopping_list", "delivery_id": 43, "cookbook_id": 3])
 
-        XCTAssertEqual(router.pendingRoute, .shoppingList)
+        XCTAssertEqual(router.pendingRoute, .shoppingList(cookbookId: 3))
     }
 
     func testHandlingReportsTheDeliveryAsOpened() async throws {

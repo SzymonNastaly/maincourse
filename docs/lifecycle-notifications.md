@@ -15,8 +15,8 @@ A user gets nothing unless all four are true:
 
 1. **Local hour is 17:00** (`SEND_HOUR`). The hour is read in the user's own
    time zone. A user with no valid time zone never passes.
-2. **The user has an active device token.** Active means `last_used_at` is
-   inside 90 days.
+2. **The user has an active push registration.** Active means `last_used_at` is
+   inside 90 days. A user may have APNs and FCM registrations simultaneously.
 3. **The user was not active in the last 24 hours** (`ACTIVE_SUPPRESSION`,
    read from `last_active_at`). Someone already using the app does not need
    to be told to use the app.
@@ -95,8 +95,10 @@ push reaches a device, it destroys the row again and returns `nil`. It also
 returns `nil` for a candidate whose cookbook the user has left. The job treats
 both cases the same and falls through to the next campaign.
 
-A tapped notification routes to its recipe or to the shopping list, and
-reports the delivery as opened.
+A notification fans out to every active installation belonging to the user. A
+tapped notification selects its cookbook, routes to its recipe or shopping list,
+and reports the shared delivery as opened. Provider and registration details are
+in `docs/push-notifications.md`.
 
 ## When the iOS app asks for permission
 
@@ -118,6 +120,10 @@ the app asks only at moments where the payoff is visible:
 
 Login itself never asks. It only refreshes the token and time zone for a user
 who already said yes.
+
+Android uses the same contextual moments and additionally keeps the account-wide
+preference distinct from device permission. Turning notifications off in Android
+system settings does not turn reminders off on an iPad signed into the same account.
 
 ## Sending one by hand
 
