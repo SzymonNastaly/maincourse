@@ -104,6 +104,7 @@ struct RecipeDetailView: View {
         self.viewModel.configure(modelContext: self.modelContext)
         self.shoppingListViewModel.configure(modelContext: self.modelContext)
         await self.viewModel.loadRecipe(id: self.recipeId)
+        await self.shoppingListViewModel.refresh()
     }
 
     private func retryLoad() {

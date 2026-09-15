@@ -13,7 +13,12 @@ module Api
 
       def create
         payload_items = ShoppingList::Payload.normalize(params)
-        result = ShoppingList::UpsertItems.new(user: current_user, cookbook: current_cookbook, items: payload_items).call
+        result = ShoppingList::UpsertItems.new(
+          user: current_user,
+          cookbook: current_cookbook,
+          items: payload_items,
+          clear_existing: ActiveModel::Type::Boolean.new.cast(params[:clear_existing])
+        ).call
 
         unless result.success?
           first_error = result.errors.first

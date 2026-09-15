@@ -8,6 +8,9 @@ struct ShoppingListReviewSheet: View {
 
     @State private var items: [ShoppingListDraftItem]
     @State private var checkedSectionExpanded = true
+    @State private var showsOldListConfirmation = false
+    @State private var isReplacing = false
+    @State private var replacementError: String?
 
     init(
         recipeId: Int,
@@ -60,12 +63,22 @@ struct ShoppingListReviewSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                ShoppingListSectionsContent(
-                    uncheckedItems: self.displayUncheckedItems,
-                    checkedItems: self.displayCheckedItems,
-                    checkedSectionExpanded: self.$checkedSectionExpanded
-                ) {
-                    EmptyView()
+                VStack(spacing: Theme.Spacing.md) {
+                    if let replacementError {
+                        Text(replacementError)
+                            .font(.subheadline)
+                            .foregroundStyle(Color.mcDanger)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("shopping-list-replacement-error")
+                    }
+
+                    ShoppingListSectionsContent(
+                        uncheckedItems: self.displayUncheckedItems,
+                        checkedItems: self.displayCheckedItems,
+                        checkedSectionExpanded: self.$checkedSectionExpanded
+                    ) {
+                        EmptyView()
+                    }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
                 .padding(.vertical, Theme.Spacing.lg)
@@ -78,17 +91,41 @@ struct ShoppingListReviewSheet: View {
                     Button("Cancel") {
                         self.dismiss()
                     }
+                    .disabled(self.isReplacing)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(self.addButtonTitle) {
                         self.confirmAdd()
                     }
-                    .disabled(self.uncheckedItems.isEmpty)
+                    .disabled(
+                        self.uncheckedItems.isEmpty ||
+                            self.isReplacing ||
+                            !self.shoppingListViewModel.hasCompletedShoppingListRefresh
+                    )
                 }
             }
         }
         .presentationDragIndicator(.visible)
+        .interactiveDismissDisabled(self.isReplacing)
+        .confirmationDialog(
+            "Start a fresh shopping list?",
+            isPresented: self.$showsOldListConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Clear and add", role: .destructive) {
+                Task { await self.clearAndAdd() }
+            }
+            Button("Keep and add") {
+                self.keepAndAdd()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(
+                "Some items have been here for more than 36 hours. " +
+                    "Clear the whole list before adding these ingredients?"
+            )
+        }
     }
 
     private func toggleItem(_ item: ShoppingListDraftItem) {
@@ -102,10 +139,39 @@ struct ShoppingListReviewSheet: View {
     }
 
     private func confirmAdd() {
+        self.replacementError = nil
+        if self.shoppingListViewModel.needsReviewBeforeAddingRecipeIngredients() {
+            self.showsOldListConfirmation = true
+            return
+        }
+
+        self.keepAndAdd()
+    }
+
+    private func keepAndAdd() {
         self.shoppingListViewModel.addIngredientsFromRecipe(
             self.uncheckedItems,
             sourceRecipeId: self.recipeId
         )
+        self.finishAddition()
+    }
+
+    private func clearAndAdd() async {
+        self.isReplacing = true
+        let succeeded = await self.shoppingListViewModel.replaceListWithIngredientsFromRecipe(
+            self.uncheckedItems,
+            sourceRecipeId: self.recipeId
+        )
+        self.isReplacing = false
+
+        if succeeded {
+            self.finishAddition()
+        } else {
+            self.replacementError = "Could not replace the shopping list. Your existing items were kept."
+        }
+    }
+
+    private func finishAddition() {
         let listIsWorthReminding =
             self.shoppingListViewModel.uncheckedItems.count >= ShoppingListView.notificationPromptThreshold
         self.dismiss()

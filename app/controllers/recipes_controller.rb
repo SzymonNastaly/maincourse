@@ -30,6 +30,7 @@ class RecipesController < ApplicationController
   def show
     @ingredients = @recipe.ingredients.to_a
     @other_cookbooks = available_cookbooks.reject { |cookbook| cookbook.id == current_cookbook.id }
+    @shopping_list_oldest_created_at = current_cookbook.shopping_list_items.minimum(:created_at)
   end
 
   def new

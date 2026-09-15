@@ -127,6 +127,23 @@ class ShoppingListItemTest < ActiveSupport::TestCase
     assert_not_includes cookbook_items, shopping_list_items(:unchecked_milk)
   end
 
+  test "old_for_recipe_addition includes only items created more than 36 hours ago" do
+    travel_to Time.zone.local(2026, 9, 15, 10) do
+      cookbook = cookbooks(:one_personal)
+      old = cookbook.shopping_list_items.create!(
+        user: users(:one), client_id: "old-for-recipe", name: "Old", created_at: 36.hours.ago - 1.second
+      )
+      boundary = cookbook.shopping_list_items.create!(
+        user: users(:one), client_id: "boundary-for-recipe", name: "Boundary", created_at: 36.hours.ago
+      )
+
+      matching = cookbook.shopping_list_items.old_for_recipe_addition
+
+      assert_includes matching, old
+      assert_not_includes matching, boundary
+    end
+  end
+
   test "cleanup_stale_checked_for destroys stale checked items" do
     cookbook = cookbooks(:one_personal)
     stale = shopping_list_items(:stale_checked_butter)

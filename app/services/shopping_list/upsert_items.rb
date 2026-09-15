@@ -2,10 +2,11 @@ module ShoppingList
   class UpsertItems
     Result = Data.define(:success?, :items, :errors)
 
-    def initialize(user:, cookbook:, items:)
+    def initialize(user:, cookbook:, items:, clear_existing: false)
       @user = user
       @cookbook = cookbook
       @items = items
+      @clear_existing = clear_existing
     end
 
     def call
@@ -17,6 +18,8 @@ module ShoppingList
       newly_checked = []
 
       ActiveRecord::Base.transaction do
+        @cookbook.shopping_list_items.destroy_all if @clear_existing
+
         @items.each do |item_params|
           client_id = item_params[:client_id]
           name = item_params[:name]

@@ -4,6 +4,7 @@ import Foundation
 final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sendable {
     var fetchResult: [ShoppingListItemResponse] = []
     var createResult: [ShoppingListItemResponse] = []
+    var createHandler: (([ShoppingListItemCreate], Bool) async throws -> [ShoppingListItemResponse])?
     var updateResult: ShoppingListItemResponse?
     var deleteError: Error?
 
@@ -13,6 +14,7 @@ final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sen
     var deleteCallCount = 0
 
     var lastCreatedPayload: [ShoppingListItemCreate] = []
+    var lastCreateClearedExisting = false
     var lastUpdatedId: Int?
     var lastDeletedId: Int?
 
@@ -27,9 +29,16 @@ final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sen
         return self.fetchResult
     }
 
-    func createItems(_ items: [ShoppingListItemCreate]) async throws -> [ShoppingListItemResponse] {
+    func createItems(
+        _ items: [ShoppingListItemCreate],
+        clearExisting: Bool
+    ) async throws -> [ShoppingListItemResponse] {
         self.createCallCount += 1
         self.lastCreatedPayload = items
+        self.lastCreateClearedExisting = clearExisting
+        if let createHandler {
+            return try await createHandler(items, clearExisting)
+        }
         if self.shouldThrow {
             throw self.errorToThrow
         }

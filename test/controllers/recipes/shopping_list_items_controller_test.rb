@@ -34,6 +34,18 @@ module Recipes
       end
     end
 
+    test "clear existing removes the whole current list before adding ingredients" do
+      post recipe_shopping_list_items_path(@recipe), params: {
+        clear_existing: true,
+        items: [ { name: "Eggs", details: "3" } ]
+      }
+
+      items = @recipe.cookbook.shopping_list_items.reload
+      assert_equal [ "Eggs" ], items.pluck(:name)
+      assert_equal @recipe, items.first.source_recipe
+      assert_redirected_to shopping_list_items_path
+    end
+
     test "refuses when nothing was selected" do
       assert_no_difference "ShoppingListItem.count" do
         post recipe_shopping_list_items_path(@recipe), params: { items: [] }

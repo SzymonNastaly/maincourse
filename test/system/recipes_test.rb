@@ -58,6 +58,64 @@ class RecipesTest < ApplicationSystemTestCase
     assert_selector "[data-testid=shopping-item]", minimum: 3
   end
 
+  test "adding recipe ingredients offers to replace a list older than 36 hours" do
+    shopping_list_items(:unchecked_milk).update!(created_at: 37.hours.ago)
+    existing_ids = @recipe.cookbook.shopping_list_items.ids
+
+    visit recipe_path(@recipe)
+    wait_for_stimulus("[data-testid=add-all-to-list]")
+    find("[data-testid=add-all-to-list]").click
+    wait_for_stimulus("#add-to-list [data-controller~=list-review]")
+
+    find("[data-testid=confirm-add-to-list]").click
+
+    assert_text "Start a fresh shopping list?"
+    assert_button "Clear and add"
+    assert_button "Keep and add"
+    assert_equal existing_ids.sort, @recipe.cookbook.shopping_list_items.reload.ids.sort
+
+    click_button "Clear and add"
+
+    assert_text "Added 4 items"
+    assert_equal 4, @recipe.cookbook.shopping_list_items.reload.count
+    assert_empty @recipe.cookbook.shopping_list_items.where(id: existing_ids)
+  end
+
+  test "old list cutoff is evaluated when Add is pressed" do
+    oldest = shopping_list_items(:unchecked_milk)
+    oldest.update!(created_at: 35.hours.ago)
+
+    visit recipe_path(@recipe)
+    wait_for_stimulus("[data-testid=add-all-to-list]")
+    find("[data-testid=add-all-to-list]").click
+    wait_for_stimulus("#add-to-list [data-controller~=list-review]")
+
+    add_time = oldest.created_at.to_f * 1000 + 36.hours.in_milliseconds + 1
+    page.execute_script("Date.now = () => #{add_time}")
+    find("[data-testid=confirm-add-to-list]").click
+
+    assert_text "Start a fresh shopping list?"
+  end
+
+  test "old list prompt can be cancelled or kept" do
+    oldest = shopping_list_items(:unchecked_milk)
+    oldest.update!(created_at: 37.hours.ago)
+
+    visit recipe_path(@recipe)
+    wait_for_stimulus("[data-testid=add-all-to-list]")
+    find("[data-testid=add-all-to-list]").click
+    wait_for_stimulus("#add-to-list [data-controller~=list-review]")
+    find("[data-testid=confirm-add-to-list]").click
+
+    click_button "Cancel"
+    assert_button "Add 4"
+    click_button "Add 4"
+    click_button "Keep and add"
+
+    assert_text "Added 4 items"
+    assert @recipe.cookbook.shopping_list_items.reload.exists?(id: oldest.id)
+  end
+
   test "ticking a shopping list item moves it to Already got" do
     visit shopping_list_items_path
     assert_selector "[data-testid=shopping-item]", count: 3

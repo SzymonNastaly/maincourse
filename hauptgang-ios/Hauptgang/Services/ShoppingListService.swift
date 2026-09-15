@@ -3,7 +3,10 @@ import os
 
 protocol ShoppingListServiceProtocol: Sendable {
     func fetchItems() async throws -> [ShoppingListItemResponse]
-    func createItems(_ items: [ShoppingListItemCreate]) async throws -> [ShoppingListItemResponse]
+    func createItems(
+        _ items: [ShoppingListItemCreate],
+        clearExisting: Bool
+    ) async throws -> [ShoppingListItemResponse]
     func updateItem(id: Int, checked: Bool, checkedAt: Date?, createdAt: Date?) async throws -> ShoppingListItemResponse
     func deleteItem(id: Int) async throws
     func deleteAllItems() async throws
@@ -30,10 +33,13 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
         return items
     }
 
-    func createItems(_ items: [ShoppingListItemCreate]) async throws -> [ShoppingListItemResponse] {
+    func createItems(
+        _ items: [ShoppingListItemCreate],
+        clearExisting: Bool = false
+    ) async throws -> [ShoppingListItemResponse] {
         self.logger.info("Creating \(items.count) shopping list items")
 
-        let request = BulkCreateShoppingListItemsRequest(items: items)
+        let request = BulkCreateShoppingListItemsRequest(items: items, clearExisting: clearExisting)
         let created: [ShoppingListItemResponse] = try await api.request(
             endpoint: "shopping_list_items",
             method: .post,

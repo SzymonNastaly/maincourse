@@ -11,6 +11,7 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     var deletedClientIds: [String] = []
     var deleteStaleItemsCalled = false
     var clearAllCalled = false
+    var replaceAllCalled = false
 
     var shouldThrowOnSave = false
     var shouldThrowOnGet = false
@@ -125,6 +126,14 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
             throw MockShoppingListRepoError.testError
         }
         return self.items.filter { $0.syncState == .pendingUpdate }
+    }
+
+    func replaceAll(with serverItems: [ShoppingListItemResponse]) throws {
+        self.replaceAllCalled = true
+        if self.shouldThrowOnSave {
+            throw MockShoppingListRepoError.testError
+        }
+        self.items = serverItems.map { PersistedShoppingListItem(from: $0) }
     }
 
     func clearAll() throws {

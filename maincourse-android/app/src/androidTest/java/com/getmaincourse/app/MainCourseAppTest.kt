@@ -7,11 +7,13 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,6 +25,9 @@ import com.getmaincourse.app.data.model.CookbookInvitation
 import com.getmaincourse.app.data.model.CookbookInvitationAcceptance
 import com.getmaincourse.app.data.model.CookbookInvitationPreview
 import com.getmaincourse.app.data.model.CreateCookbookRequest
+import com.getmaincourse.app.data.model.DeviceTokenRequest
+import com.getmaincourse.app.data.model.DeviceTokenResponse
+import com.getmaincourse.app.data.model.NotificationOpenedRequest
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeImportResponse
@@ -365,6 +370,7 @@ class MainCourseAppTest {
         compose.onNodeWithTag("settings_name").assertIsDisplayed()
         compose.onNodeWithTag("settings_email").assertIsDisplayed()
         compose.onNodeWithTag("settings_save").assertIsDisplayed()
+        compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("settings_delete"))
         compose.onNodeWithTag("settings_delete").assertIsDisplayed()
         compose.onNodeWithTag("settings_sign_out").assertIsDisplayed()
         compose.onNodeWithTag("navigation_bar").assertIsDisplayed()
@@ -437,6 +443,7 @@ class MainCourseAppTest {
             factories = factories(onDeleteAccount = deletionCalls::incrementAndGet),
         )
         compose.onNodeWithTag("nav_Settings").performClick()
+        compose.onNodeWithTag("screen_Settings").performScrollToNode(hasTestTag("settings_delete"))
         compose.onNodeWithTag("settings_delete").performClick()
         compose.onNodeWithTag("delete_confirmation").performTextInput("DELETE")
 
@@ -786,6 +793,9 @@ class MainCourseAppTest {
     }
 
     private object UnusedService : MainCourseService {
+        override suspend fun registerDeviceToken(request: DeviceTokenRequest): DeviceTokenResponse = error("Not used")
+        override suspend fun deleteDeviceToken(token: String, provider: String) = error("Not used")
+        override suspend fun markNotificationOpened(id: Long, request: NotificationOpenedRequest) = error("Not used")
         override suspend fun signIn(request: SignInRequest): SessionResponse = error("Not used")
         override suspend fun signUp(request: SignUpRequest): SessionResponse = error("Not used")
         override suspend fun submitOnboarding(request: OnboardingRequest): OnboardingResponse = error("Not used")

@@ -84,6 +84,36 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     end
   end
 
+  test "clear existing replaces the whole cookbook list" do
+    result = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "fresh-list-1", name: "Fresh milk" } ],
+      clear_existing: true
+    ).call
+
+    assert result.success?
+    assert_equal [ "Fresh milk" ], @cookbook.shopping_list_items.reload.pluck(:name)
+  end
+
+  test "clear existing keeps the old list when a new item is invalid" do
+    existing_ids = @cookbook.shopping_list_items.ids
+
+    result = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [
+        { client_id: "fresh-list-1", name: "Fresh milk" },
+        { client_id: "", name: "" }
+      ],
+      clear_existing: true
+    ).call
+
+    assert_not result.success?
+    assert_equal existing_ids.sort, @cookbook.shopping_list_items.reload.ids.sort
+    assert_not @cookbook.shopping_list_items.exists?(client_id: "fresh-list-1")
+  end
+
   test "upserts by client_id and updates checked_at" do
     existing = ShoppingListItem.create!(
       cookbook: @cookbook,

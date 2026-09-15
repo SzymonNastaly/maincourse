@@ -35,15 +35,25 @@ class ShoppingListRepository(
             cookbookId,
             response.map { it.toEntity(userId, cookbookId, json) },
         )
+        response
     }
 
     suspend fun create(
         userId: Long,
         cookbookId: Long,
         items: List<ShoppingItemRequest>,
+        clearExisting: Boolean = false,
     ) = writes.withLock {
-        val response = service.createShoppingItems(cookbookId, ShoppingItemsRequest(items))
-        dao.upsertShoppingItems(response.map { it.toEntity(userId, cookbookId, json) })
+        val response = service.createShoppingItems(
+            cookbookId,
+            ShoppingItemsRequest(items, clearExisting = clearExisting),
+        )
+        val entities = response.map { it.toEntity(userId, cookbookId, json) }
+        if (clearExisting) {
+            dao.replaceShoppingItems(userId, cookbookId, entities)
+        } else {
+            dao.upsertShoppingItems(entities)
+        }
     }
 
     suspend fun setChecked(

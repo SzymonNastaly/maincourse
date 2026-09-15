@@ -14,6 +14,8 @@ module Recipes
       end
 
       ShoppingListItem.transaction do
+        current_cookbook.shopping_list_items.destroy_all if clear_existing?
+
         entries.each do |entry|
           current_cookbook.shopping_list_items.create!(
             name: entry[:name],
@@ -32,6 +34,10 @@ module Recipes
     end
 
     private
+
+    def clear_existing?
+      ActiveModel::Type::Boolean.new.cast(params[:clear_existing])
+    end
 
     def normalize(item)
       return nil unless item.respond_to?(:permit)

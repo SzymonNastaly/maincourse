@@ -188,6 +188,10 @@
     <string name="recipe_source_open_failed">No app is available to open this source.</string>
     <string name="recipe_review_help">Choose the ingredients to add to Shopping.</string>
     <string name="recipe_add_to_shopping">Add ingredients to Shopping</string>
+    <string name="shopping_fresh_start_title">Start a fresh shopping list?</string>
+    <string name="shopping_fresh_start_body">Some items have been here for more than 36 hours. Clear the whole list before adding these ingredients?</string>
+    <string name="shopping_clear_and_add">Clear and add</string>
+    <string name="shopping_keep_and_add">Keep and add</string>
     <string name="recipe_portions">Portions</string>
     <string name="recipe_move_title">Move “%1$s”?</string>
     <string name="recipe_move_unsaved_body">Unsaved edits will be discarded when this recipe is moved.</string>

@@ -25,6 +25,7 @@ protocol ShoppingListRepositoryProtocol {
     func deleteStaleItems() throws
     func getPendingCreates() throws -> [PersistedShoppingListItem]
     func getPendingUpdates() throws -> [PersistedShoppingListItem]
+    func replaceAll(with items: [ShoppingListItemResponse]) throws
     func clearAll() throws
 }
 
@@ -209,6 +210,23 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
             predicate: #Predicate { $0.syncStateRaw == "pending_update" }
         )
         return try modelContext.fetch(descriptor)
+    }
+
+    func replaceAll(with items: [ShoppingListItemResponse]) throws {
+        guard let modelContext else {
+            throw ShoppingListRepositoryError.notConfigured
+        }
+
+        try modelContext.transaction {
+            let descriptor = FetchDescriptor<PersistedShoppingListItem>()
+            for item in try modelContext.fetch(descriptor) {
+                modelContext.delete(item)
+            }
+            for response in items {
+                modelContext.insert(PersistedShoppingListItem(from: response))
+            }
+            try modelContext.save()
+        }
     }
 
     func clearAll() throws {

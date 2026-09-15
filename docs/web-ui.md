@@ -114,7 +114,7 @@ Small and single-purpose. `app/javascript/controllers/`:
 | `dialog` / `dialog_opener` | `<dialog>` close/backdrop, and opening one by id from elsewhere |
 | `menu` | popovers — the per-recipe dots menu, the sort picker |
 | `portion_scaler` | scales ingredient quantities from the servings stepper; also rewrites the hidden fields in the add-to-list dialog so the list gets the scaled amounts |
-| `list_review` | the add-to-shopping-list tick/untick step |
+| `list_review` | the add-to-shopping-list tick/untick step and old-list replacement confirmation |
 | `recipe_form` | dynamic ingredient/step rows, cover preview, unsaved-changes guard |
 | `auto_submit` | file pickers and toggles that submit on change |
 | `search_shortcut` | ⌘K / Ctrl-K |

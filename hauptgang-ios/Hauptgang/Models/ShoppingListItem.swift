@@ -21,6 +21,7 @@ struct ShoppingListItemCreate: Codable {
 
 struct BulkCreateShoppingListItemsRequest: Codable {
     let items: [ShoppingListItemCreate]
+    let clearExisting: Bool
 }
 
 struct UpdateShoppingListItemRequest: Codable {

@@ -168,6 +168,21 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "create can clear the current cookbook before adding" do
+    cookbook = cookbooks(:one_personal)
+
+    post api_v1_shopping_list_items_url,
+      params: {
+        items: [ { client_id: "fresh-list-api", name: "Fresh milk" } ],
+        clear_existing: true
+      },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :created
+    assert_equal [ "Fresh milk" ], cookbook.shopping_list_items.reload.pluck(:name)
+  end
+
   test "create requires authentication" do
     post api_v1_shopping_list_items_url,
       params: { item: { client_id: "unauth-1", name: "Test" } },

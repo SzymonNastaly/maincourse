@@ -1,12 +1,16 @@
 package com.getmaincourse.app.features.recipes
 
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.ShoppingItem
 import java.io.IOException
+import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -15,7 +19,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -61,12 +67,71 @@ class RecipeActionsViewModelTest {
     fun shoppingSubmissionSendsReviewedRowsOnceAndConfirms() = runTest(dispatcher) {
         val submitted = mutableListOf<List<ShoppingItemInput>>()
         val rows = listOf(ShoppingItemInput("stable", "Salt", null, null, RECIPE_ID))
-        val viewModel = viewModel(addIngredients = submitted::add)
+        val viewModel = viewModel(addIngredients = { items, _ -> submitted += items })
 
         viewModel.addIngredients(rows).join()
 
         assertEquals(listOf(rows), submitted)
         assertEquals(RecipeActionUiState.Succeeded("Ingredients added"), viewModel.action.value)
+    }
+
+    @Test
+    fun shoppingSubmissionCanClearExistingItems() = runTest(dispatcher) {
+        var submission: Pair<List<ShoppingItemInput>, Boolean>? = null
+        val rows = listOf(ShoppingItemInput("stable", "Salt", null, null, RECIPE_ID))
+        val viewModel = viewModel(addIngredients = { items, clearExisting ->
+            submission = items to clearExisting
+        })
+
+        viewModel.addIngredients(rows, clearExisting = true).join()
+
+        assertEquals(rows to true, submission)
+        assertEquals(RecipeActionUiState.Succeeded("Ingredients added"), viewModel.action.value)
+    }
+
+    @Test
+    fun recipeAdditionNeedsReviewOnlyAfterAnItemIsOlderThan36Hours() = runTest(dispatcher) {
+        var now = Instant.parse("2026-09-15T10:00:00Z")
+        val shoppingItems = MutableStateFlow(
+            listOf(shoppingItem("2026-09-13T22:00:00Z")),
+        )
+        val viewModel = viewModel(
+            shoppingItems = shoppingItems,
+            refreshShoppingItems = { shoppingItems.value },
+            now = { now },
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.shoppingListNeedsReview)
+
+        now = now.plusSeconds(1)
+
+        assertTrue(viewModel.shoppingListNeedsReview())
+        collection.cancel()
+    }
+
+    @Test
+    fun shoppingListReviewWaitsForTheRefreshAttemptToFinish() = runTest(dispatcher) {
+        val refreshStarted = CompletableDeferred<Unit>()
+        val finishRefresh = CompletableDeferred<Unit>()
+        val viewModel = viewModel(
+            refreshShoppingItems = {
+                refreshStarted.complete(Unit)
+                finishRefresh.await()
+                emptyList()
+            },
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+        runCurrent()
+        refreshStarted.await()
+
+        assertFalse(viewModel.state.value.shoppingListReviewReady)
+
+        finishRefresh.complete(Unit)
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.shoppingListReviewReady)
+        collection.cancel()
     }
 
     @Test
@@ -127,13 +192,30 @@ class RecipeActionsViewModelTest {
     private fun viewModel(
         moveRecipe: suspend (Long) -> Unit = {},
         deleteRecipe: suspend () -> Unit = {},
-        addIngredients: suspend (List<ShoppingItemInput>) -> Unit = {},
+        addIngredients: suspend (List<ShoppingItemInput>, Boolean) -> Unit = { _, _ -> },
+        shoppingItems: MutableStateFlow<List<ShoppingItem>> = MutableStateFlow(emptyList()),
+        refreshShoppingItems: suspend () -> List<ShoppingItem> = { emptyList() },
+        now: () -> Instant = Instant::now,
     ) = RecipeDetailViewModel(
         observeDetail = { MutableStateFlow<RecipeDetail?>(null) },
         refreshDetail = {},
         moveRecipe = moveRecipe,
         deleteRecipe = deleteRecipe,
         addReviewedIngredients = addIngredients,
+        observeShoppingItems = { shoppingItems },
+        refreshShoppingItems = refreshShoppingItems,
+        now = now,
+    )
+
+    private fun shoppingItem(createdAt: String) = ShoppingItem(
+        id = 1,
+        clientId = "shopping-item",
+        name = "Milk",
+        details = null,
+        checkedAt = null,
+        sourceRecipeId = null,
+        createdAt = createdAt,
+        updatedAt = createdAt,
     )
 
     private companion object {

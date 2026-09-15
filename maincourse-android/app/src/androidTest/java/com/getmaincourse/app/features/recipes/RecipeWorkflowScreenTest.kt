@@ -47,7 +47,7 @@ class RecipeWorkflowScreenTest {
                         portions = 4,
                         actionState = RecipeActionUiState.Idle,
                         onBack = {},
-                        onSubmit = { submitted = it },
+                        onSubmit = { items, _ -> submitted = items },
                     )
                 }
             }
@@ -70,7 +70,7 @@ class RecipeWorkflowScreenTest {
                         portions = 4,
                         actionState = state.value,
                         onBack = {},
-                        onSubmit = { submissions++ },
+                        onSubmit = { _, _ -> submissions++ },
                     )
                 }
             }
@@ -79,6 +79,34 @@ class RecipeWorkflowScreenTest {
         compose.onNodeWithTag("review_error").assertTextContains("You're offline")
         compose.onNodeWithTag("review_submit").performClick()
         assertEquals(1, submissions)
+    }
+
+    @Test
+    fun oldShoppingListRequiresAChoiceBeforeIngredientsAreSubmitted() {
+        var submission: Pair<List<ShoppingItemInput>, Boolean>? = null
+        compose.runOnIdle {
+            MainCourseTestContent.content = {
+                MainCourseTheme {
+                    IngredientReviewScreen(
+                        recipe = DETAIL,
+                        portions = 4,
+                        actionState = RecipeActionUiState.Idle,
+                        shoppingListNeedsReview = { true },
+                        onBack = {},
+                        onSubmit = { items, clearExisting -> submission = items to clearExisting },
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("review_submit").performClick()
+
+        compose.onNodeWithText("Start a fresh shopping list?").assertIsDisplayed()
+        assertEquals(null, submission)
+
+        compose.onNodeWithTag("review_clear_and_add").performClick()
+        compose.waitUntil(5_000) { submission != null }
+        assertEquals(true, submission?.second)
     }
 
     @Test
@@ -94,7 +122,7 @@ class RecipeWorkflowScreenTest {
                         portions = 4,
                         actionState = action.value,
                         onBack = { backs++ },
-                        onSubmit = {
+                        onSubmit = { _, _ ->
                             submissions++
                             action.value = RecipeActionUiState.Succeeded("Ingredients added")
                         },
@@ -123,8 +151,8 @@ class RecipeWorkflowScreenTest {
                         portions = 4,
                         actionState = action.value,
                         onBack = {},
-                        onSubmit = {
-                            submissions += it
+                        onSubmit = { items, _ ->
+                            submissions += items
                             action.value = RecipeActionUiState.Failed("You're offline")
                         },
                     )

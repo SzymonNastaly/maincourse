@@ -11,7 +11,8 @@ struct ShoppingListViewModelTests {
         name: String = "Milk",
         details: String? = nil,
         checkedAt: Date? = nil,
-        sourceRecipeId: Int? = nil
+        sourceRecipeId: Int? = nil,
+        createdAt: Date = Date()
     ) -> ShoppingListItemResponse {
         ShoppingListItemResponse(
             id: id,
@@ -20,7 +21,7 @@ struct ShoppingListViewModelTests {
             details: details,
             checkedAt: checkedAt,
             sourceRecipeId: sourceRecipeId,
-            createdAt: Date(),
+            createdAt: createdAt,
             updatedAt: Date()
         )
     }
@@ -30,12 +31,14 @@ struct ShoppingListViewModelTests {
         name: String = "Eggs",
         checkedAt: Date? = nil,
         serverId: Int? = 1,
-        syncState: ShoppingListSyncState = .synced
+        syncState: ShoppingListSyncState = .synced,
+        createdAt: Date = Date()
     ) -> PersistedShoppingListItem {
         PersistedShoppingListItem(
             clientId: clientId,
             name: name,
             checkedAt: checkedAt,
+            createdAt: createdAt,
             serverId: serverId,
             syncState: syncState
         )
@@ -64,6 +67,7 @@ struct ShoppingListViewModelTests {
         #expect(repo.items.first?.name == "Butter")
         #expect(repo.deleteStaleItemsCalled == true)
         #expect(vm.isSyncing == false)
+        #expect(vm.hasCompletedShoppingListRefresh)
     }
 
     @Test func refresh_prunesOrphanedSyncedItems() async {
@@ -93,6 +97,7 @@ struct ShoppingListViewModelTests {
         await vm.refresh()
 
         #expect(vm.isSyncing == false)
+        #expect(vm.hasCompletedShoppingListRefresh)
     }
 
     @Test func refresh_setsForbiddenOnForbiddenError() async {
@@ -304,6 +309,111 @@ struct ShoppingListViewModelTests {
         #expect(eggs?.details == nil)
     }
 
+    @Test func recipeAdditionNeedsReviewOnlyForItemsOlderThan36Hours() async {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let repo = MockShoppingListRepository()
+        let service = MockShoppingListService()
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+
+        service.fetchResult = [
+            self.makeResponse(clientId: "boundary", createdAt: now.addingTimeInterval(-36 * 60 * 60))
+        ]
+        await vm.refresh()
+        #expect(!vm.needsReviewBeforeAddingRecipeIngredients(now: now))
+
+        service.fetchResult = [
+            self.makeResponse(clientId: "old", createdAt: now.addingTimeInterval(-(36 * 60 * 60) - 1))
+        ]
+        await vm.refresh()
+        #expect(vm.needsReviewBeforeAddingRecipeIngredients(now: now))
+    }
+
+    @Test func replaceListWithIngredientsClearsOnlyAfterServerAcknowledgement() async {
+        let repo = MockShoppingListRepository()
+        repo.items = [self.makePersisted(clientId: "old", name: "Old milk")]
+        let service = MockShoppingListService()
+        service.createResult = [self.makeResponse(id: 9, clientId: "new", name: "Flour")]
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+
+        let succeeded = await vm.replaceListWithIngredientsFromRecipe(
+            [ShoppingListDraftItem(name: "Flour")],
+            sourceRecipeId: 42
+        )
+
+        #expect(succeeded)
+        #expect(service.lastCreateClearedExisting)
+        #expect(repo.replaceAllCalled)
+        #expect(repo.items.map(\.name) == ["Flour"])
+    }
+
+    @Test func replaceListWithIngredientsPreservesOldListWhenServerFails() async {
+        let repo = MockShoppingListRepository()
+        repo.items = [self.makePersisted(clientId: "old", name: "Old milk")]
+        let service = MockShoppingListService()
+        service.shouldThrow = true
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+
+        let succeeded = await vm.replaceListWithIngredientsFromRecipe(
+            [ShoppingListDraftItem(name: "Flour")],
+            sourceRecipeId: 42
+        )
+
+        #expect(!succeeded)
+        #expect(!repo.replaceAllCalled)
+        #expect(repo.items.map(\.name) == ["Old milk"])
+    }
+
+    @Test func replacementCacheFailureDoesNotReportTheAcknowledgedServerActionAsFailed() async {
+        let repo = MockShoppingListRepository()
+        repo.items = [self.makePersisted(clientId: "old", name: "Old milk")]
+        repo.shouldThrowOnSave = true
+        let service = MockShoppingListService()
+        service.createResult = [self.makeResponse(id: 9, clientId: "new", name: "Flour")]
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+
+        let succeeded = await vm.replaceListWithIngredientsFromRecipe(
+            [ShoppingListDraftItem(name: "Flour")],
+            sourceRecipeId: 42
+        )
+
+        #expect(succeeded)
+        #expect(repo.replaceAllCalled)
+        #expect(repo.items.map(\.name) == ["Old milk"])
+    }
+
+    @Test func replacementWaitsForAnInFlightPendingCreateSync() async {
+        let repo = MockShoppingListRepository()
+        repo.items = [
+            self.makePersisted(clientId: "pending", name: "Old milk", serverId: nil, syncState: .pendingCreate)
+        ]
+        let service = MockShoppingListService()
+        let gate = ShoppingListCreateCallGate()
+        let synced = self.makeResponse(id: 1, clientId: "pending", name: "Old milk")
+        let replacement = self.makeResponse(id: 2, clientId: "new", name: "Flour")
+        service.createHandler = { _, clearExisting in
+            await gate.handle(clearExisting: clearExisting, response: clearExisting ? [replacement] : [synced])
+        }
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+
+        let refresh = Task { await vm.refresh() }
+        await gate.waitForFirstCall()
+        #expect(!vm.hasCompletedShoppingListRefresh)
+        let replace = Task {
+            await vm.replaceListWithIngredientsFromRecipe(
+                [ShoppingListDraftItem(name: "Flour")],
+                sourceRecipeId: 42
+            )
+        }
+        await Task.yield()
+
+        #expect(await gate.recordedClearFlags() == [false])
+        await gate.releaseFirstCall()
+        await refresh.value
+        #expect(vm.hasCompletedShoppingListRefresh)
+        #expect(await replace.value)
+        #expect(await gate.recordedClearFlags() == [false, true])
+    }
+
     // MARK: - Toggle item
 
     @Test func toggleItem_checksUncheckedItem() {
@@ -407,5 +517,43 @@ struct ShoppingListViewModelTests {
         #expect(vm.uncheckedItems.first?.name == "Apples")
         #expect(vm.checkedItems.count == 1)
         #expect(vm.checkedItems.first?.name == "Bananas")
+    }
+}
+
+private actor ShoppingListCreateCallGate {
+    private var clearFlags: [Bool] = []
+    private var firstCallContinuation: CheckedContinuation<Void, Never>?
+    private var firstCallWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func handle(
+        clearExisting: Bool,
+        response: [ShoppingListItemResponse]
+    ) async -> [ShoppingListItemResponse] {
+        self.clearFlags.append(clearExisting)
+        self.firstCallWaiters.forEach { $0.resume() }
+        self.firstCallWaiters = []
+
+        if self.clearFlags.count == 1 {
+            await withCheckedContinuation { continuation in
+                self.firstCallContinuation = continuation
+            }
+        }
+        return response
+    }
+
+    func waitForFirstCall() async {
+        guard self.clearFlags.isEmpty else { return }
+        await withCheckedContinuation { continuation in
+            self.firstCallWaiters.append(continuation)
+        }
+    }
+
+    func releaseFirstCall() {
+        self.firstCallContinuation?.resume()
+        self.firstCallContinuation = nil
+    }
+
+    func recordedClearFlags() -> [Bool] {
+        self.clearFlags
     }
 }

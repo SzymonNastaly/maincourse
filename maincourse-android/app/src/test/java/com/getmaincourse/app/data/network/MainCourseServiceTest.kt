@@ -401,6 +401,29 @@ class MainCourseServiceTest {
     }
 
     @Test
+    fun shoppingItemReplacementRequestsClearingTheExistingList() = runTest {
+        server.enqueue(
+            jsonResponse(
+                201,
+                """[{"id":9,"client_id":"row-1","name":"Onion","details":null,"checked_at":null,"source_recipe_id":7,"created_at":"now","updated_at":"now"}]""",
+            ),
+        )
+        val payload = ShoppingItemsRequest(
+            items = listOf(ShoppingItemRequest("row-1", "Onion", null, null, 7)),
+            clearExisting = true,
+        )
+
+        service.createShoppingItems(42, payload)
+
+        assertEquals(
+            json(
+                """{"items":[{"client_id":"row-1","name":"Onion","details":null,"checked_at":null,"source_recipe_id":7}],"clear_existing":true}""",
+            ),
+            json(server.takeRequest().body.readUtf8()),
+        )
+    }
+
+    @Test
     fun shoppingListOperationsUseExplicitCookbookScope() = runTest {
         val itemJson =
             """{"id":9,"client_id":"row-1","name":"Onion","details":null,"checked_at":"2026-09-11T10:00:00Z","source_recipe_id":null,"created_at":"2026-09-11T09:00:00Z","updated_at":"2026-09-11T10:00:00Z"}"""

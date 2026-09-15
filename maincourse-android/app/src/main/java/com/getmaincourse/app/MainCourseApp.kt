@@ -647,8 +647,12 @@ private fun ProtectedShell(
                             recipe = recipe,
                             portions = route.portions,
                             actionState = actionState,
+                            shoppingListReviewReady = detailState.shoppingListReviewReady,
+                            shoppingListNeedsReview = detailViewModel::shoppingListNeedsReview,
                             onBack = { backStack.removeLastOrNull() },
-                            onSubmit = { detailViewModel.addIngredients(it) },
+                            onSubmit = { items, clearExisting ->
+                                detailViewModel.addIngredients(items, clearExisting)
+                            },
                         )
                     }
                 }

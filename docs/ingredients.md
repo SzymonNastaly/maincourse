@@ -44,3 +44,21 @@ The `_recipe.json.jbuilder` partial preserves backwards compatibility:
 - `structured_ingredients` — array of objects with `raw`, `name`, `amount`, `amount_max`, `unit`, `note`. New clients can use this for richer rendering (e.g. shopping list aggregation).
 
 `PATCH /api/v1/recipes/:id` accepts `ingredients: [string, string, ...]`. The controller calls `replace_ingredients_from_strings` and enqueues a parse job, so structured fields fill in over the next seconds.
+
+## Adding ingredients to the shopping list
+
+Web, iOS, and Android review the selected recipe ingredients before adding them.
+If any item in the active cookbook was created more than 36 hours ago, the
+review flow asks whether to keep the current list or start fresh. Age is based
+on `ShoppingListItem#created_at`, not its last update or check-off time, and is
+evaluated when the user presses Add so an open review can cross the cutoff.
+
+`POST /api/v1/shopping_list_items` accepts `clear_existing: true` alongside the
+normal `items` payload. `ShoppingList::UpsertItems` clears the active cookbook
+and creates the submitted rows in one transaction, so invalid replacement rows
+leave the previous list intact. Native clients refresh their local shopping-list
+cache while loading a recipe and use the cached `created_at` values as an
+offline fallback for deciding whether to show the prompt. Add remains disabled
+until that refresh attempt has either succeeded or failed. iOS serializes list
+network work and replaces its SwiftData cache transactionally after the server
+acknowledges a destructive replacement.

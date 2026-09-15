@@ -720,6 +720,23 @@ class SimpleRepositoriesTest {
     }
 
     @Test
+    fun replacingShoppingListWaitsForServerThenRemovesEveryCachedItem() = runBlocking {
+        seedCookbook(USER_ID, 10)
+        server.enqueue(jsonResponse("[${shoppingItemJson(1, "old", "Old milk", null)}]"))
+        shopping.refresh(USER_ID, 10)
+        server.enqueue(jsonResponse("[${shoppingItemJson(9, "fresh", "Fresh flour", null)}]", 201))
+
+        shopping.create(
+            USER_ID,
+            10,
+            listOf(ShoppingItemRequest("fresh", "Fresh flour", null, null, 7)),
+            clearExisting = true,
+        )
+
+        assertEquals(listOf("Fresh flour"), shopping.observeItems(USER_ID, 10).first().map { it.name })
+    }
+
+    @Test
     fun shoppingRefreshIsScopedAndOrdersUncheckedBeforeChecked() = runBlocking {
         seedCookbook(USER_ID, 10)
         seedCookbook(USER_ID, 20)

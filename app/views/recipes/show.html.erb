@@ -131,6 +131,9 @@
   </div>
 
   <% if @recipe.ingredients.any? %>
-    <%= render "recipes/add_to_list_dialog", recipe: @recipe, ingredients: @ingredients %>
+    <%= render "recipes/add_to_list_dialog",
+               recipe: @recipe,
+               ingredients: @ingredients,
+               oldest_shopping_list_item_created_at: @shopping_list_oldest_created_at %>
   <% end %>
 </div>

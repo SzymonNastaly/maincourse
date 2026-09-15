@@ -3,10 +3,39 @@ import { Controller } from "@hotwired/stimulus"
 // The add-to-shopping-list review step: everything starts ticked, unticking an
 // ingredient excludes it, and the button says how many will actually be added.
 export default class extends Controller {
-  static targets = ["row", "count", "submit"]
+  static targets = ["row", "count", "submit", "review", "confirmation", "confirmationHeading"]
+  static values = { oldestCreatedAt: String }
 
   connect() {
+    this.confirmed = false
     this.update()
+  }
+
+  submit(event) {
+    if (!this.needsReview() || this.confirmed) return
+
+    event.preventDefault()
+    this.reviewTarget.classList.add("hidden")
+    this.confirmationTarget.classList.remove("hidden")
+    this.confirmationHeadingTarget.focus()
+  }
+
+  confirm() {
+    this.confirmed = true
+  }
+
+  returnToReview() {
+    this.confirmationTarget.classList.add("hidden")
+    this.reviewTarget.classList.remove("hidden")
+    this.submitTarget.focus()
+  }
+
+  needsReview() {
+    if (!this.hasOldestCreatedAtValue) return false
+
+    const oldestCreatedAt = Date.parse(this.oldestCreatedAtValue)
+    const reviewAge = 36 * 60 * 60 * 1000
+    return oldestCreatedAt < Date.now() - reviewAge
   }
 
   update() {

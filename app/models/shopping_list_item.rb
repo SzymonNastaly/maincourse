@@ -1,4 +1,6 @@
 class ShoppingListItem < ApplicationRecord
+  RECIPE_ADDITION_REVIEW_AGE = 36.hours
+
   belongs_to :cookbook
   belongs_to :user, optional: true
   belongs_to :source_recipe, class_name: "Recipe", optional: true
@@ -12,6 +14,7 @@ class ShoppingListItem < ApplicationRecord
   scope :unchecked, -> { where(checked_at: nil) }
   scope :checked, -> { where.not(checked_at: nil) }
   scope :stale_checked, -> { where("checked_at < ?", 1.hour.ago) }
+  scope :old_for_recipe_addition, -> { where("created_at < ?", RECIPE_ADDITION_REVIEW_AGE.ago) }
 
   def self.cleanup_stale_checked_for(cookbook)
     cookbook.shopping_list_items.checked.stale_checked.destroy_all

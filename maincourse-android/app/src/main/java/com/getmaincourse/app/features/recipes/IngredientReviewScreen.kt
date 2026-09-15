@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,14 +38,50 @@ fun IngredientReviewScreen(
     recipe: RecipeDetail,
     portions: Int,
     actionState: RecipeActionUiState,
+    shoppingListReviewReady: Boolean = true,
+    shoppingListNeedsReview: () -> Boolean = { false },
     onBack: () -> Unit,
-    onSubmit: (List<ShoppingItemInput>) -> Unit,
+    onSubmit: (List<ShoppingItemInput>, Boolean) -> Unit,
 ) {
     var review by rememberSaveable(recipe.id, portions, stateSaver = IngredientReviewSaver) {
         mutableStateOf(IngredientReview.create(recipe.id, recipe.structuredForReview(), portions, recipe.servings))
     }
     val selected = review.includedPayload()
     val running = actionState is RecipeActionUiState.Running
+    var showFreshListConfirmation by rememberSaveable { mutableStateOf(false) }
+
+    if (showFreshListConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showFreshListConfirmation = false },
+            title = { Text(stringResource(R.string.shopping_fresh_start_title)) },
+            text = { Text(stringResource(R.string.shopping_fresh_start_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showFreshListConfirmation = false
+                        onSubmit(selected, true)
+                    },
+                    modifier = Modifier.testTag("review_clear_and_add"),
+                ) {
+                    Text(stringResource(R.string.shopping_clear_and_add), color = MainCourseColors.Danger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFreshListConfirmation = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+                TextButton(
+                    onClick = {
+                        showFreshListConfirmation = false
+                        onSubmit(selected, false)
+                    },
+                    modifier = Modifier.testTag("review_keep_and_add"),
+                ) {
+                    Text(stringResource(R.string.shopping_keep_and_add))
+                }
+            },
+        )
+    }
 
     if (actionState is RecipeActionUiState.Succeeded) {
         AlertDialog(
@@ -92,8 +129,14 @@ fun IngredientReviewScreen(
         }
         item {
             Button(
-                enabled = !running && selected.isNotEmpty(),
-                onClick = { onSubmit(selected) },
+                enabled = !running && selected.isNotEmpty() && shoppingListReviewReady,
+                onClick = {
+                    if (shoppingListNeedsReview()) {
+                        showFreshListConfirmation = true
+                    } else {
+                        onSubmit(selected, false)
+                    }
+                },
                 modifier = Modifier.testTag("review_submit"),
             ) {
                 if (running) {

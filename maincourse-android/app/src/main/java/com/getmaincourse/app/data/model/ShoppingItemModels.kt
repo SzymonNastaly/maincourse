@@ -6,6 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ShoppingItemsRequest(
     val items: List<ShoppingItemRequest>,
+    @SerialName("clear_existing")
+    val clearExisting: Boolean = false,
 )
 
 @Serializable
