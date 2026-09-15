@@ -1,0 +1,57 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+ANDROID_ROOT="$REPO_ROOT/maincourse-android"
+KEYSTORE_FILE="$ANDROID_ROOT/upload-keystore.jks"
+PROPERTIES_FILE="$ANDROID_ROOT/keystore.properties"
+KEY_ALIAS="maincourse-upload"
+
+if [[ -e "$KEYSTORE_FILE" || -e "$PROPERTIES_FILE" ]]; then
+  echo "Error: refusing to overwrite existing Android signing material." >&2
+  echo "Expected files: $KEYSTORE_FILE and $PROPERTIES_FILE" >&2
+  exit 1
+fi
+
+if [[ ${JAVA_HOME+x} && -x "$JAVA_HOME/bin/keytool" ]]; then
+  KEYTOOL="$JAVA_HOME/bin/keytool"
+else
+  STUDIO_KEYTOOL="/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/keytool"
+  if [[ ! -x "$STUDIO_KEYTOOL" ]]; then
+    echo "Error: keytool was not found. Set JAVA_HOME to a JDK installation." >&2
+    exit 1
+  fi
+  KEYTOOL="$STUDIO_KEYTOOL"
+fi
+
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "Error: openssl is required to generate a signing password." >&2
+  exit 1
+fi
+
+SIGNING_PASSWORD="$(openssl rand -hex 32)"
+export MAINCOURSE_KEYSTORE_PASSWORD="$SIGNING_PASSWORD"
+
+umask 077
+"$KEYTOOL" -genkeypair \
+  -keystore "$KEYSTORE_FILE" \
+  -storetype PKCS12 \
+  -storepass:env MAINCOURSE_KEYSTORE_PASSWORD \
+  -keypass:env MAINCOURSE_KEYSTORE_PASSWORD \
+  -alias "$KEY_ALIAS" \
+  -keyalg RSA \
+  -keysize 4096 \
+  -validity 10000 \
+  -dname "CN=MainCourse Upload, O=MainCourse, C=DE"
+
+printf '%s\n' \
+  "storeFile=upload-keystore.jks" \
+  "storePassword=$SIGNING_PASSWORD" \
+  "keyAlias=$KEY_ALIAS" \
+  "keyPassword=$SIGNING_PASSWORD" > "$PROPERTIES_FILE"
+
+echo "Created ignored Android upload signing files:"
+echo "  $KEYSTORE_FILE"
+echo "  $PROPERTIES_FILE"
+echo "Back up both files in a password manager before uploading the first bundle."

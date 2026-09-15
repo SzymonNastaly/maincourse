@@ -1,4 +1,5 @@
 import java.net.URI
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -28,6 +29,13 @@ require(debugApiUri.scheme == "https" || debugApiUri.host in listOf("10.0.2.2", 
     "Debug HTTP is limited to emulator/loopback hosts; use an HTTPS tunnel or adb reverse for a physical device"
 }
 
+val releaseSigningPropertiesFile = rootProject.file("keystore.properties")
+val releaseSigningProperties = Properties().apply {
+    if (releaseSigningPropertiesFile.exists()) {
+        releaseSigningPropertiesFile.inputStream().use(::load)
+    }
+}
+
 android {
     namespace = "com.getmaincourse.app"
     compileSdk = 37
@@ -41,6 +49,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val releaseSigning = if (releaseSigningPropertiesFile.exists()) {
+        signingConfigs.create("release") {
+            storeFile = rootProject.file(releaseSigningProperties.getProperty("storeFile"))
+            storePassword = releaseSigningProperties.getProperty("storePassword")
+            keyAlias = releaseSigningProperties.getProperty("keyAlias")
+            keyPassword = releaseSigningProperties.getProperty("keyPassword")
+        }
+    } else {
+        null
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -52,6 +71,7 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
             buildConfigField("String", "API_BASE_URL", "\"https://app.getmaincourse.com/\"")
+            releaseSigning?.let { signingConfig = it }
         }
     }
 
