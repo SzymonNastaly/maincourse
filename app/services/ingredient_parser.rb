@@ -48,13 +48,7 @@ class IngredientParser
     <<~PROMPT
       Parse the following ingredient lines into structured fields.
 
-      For each line, return:
-      - `raw`: the original line, echoed verbatim. This is required and is used to align output to input.
-      - `name`: the food name only (no amount or unit). Do not translate.
-      - `amount`: numeric quantity. Convert fractions (1/2 -> 0.5). Unicode fractions accepted.
-      - `amount_max`: upper bound for ranges (e.g. "2-3 cloves" -> amount=2, amount_max=3). Accept en-dash, em-dash, '-', '~', 'to', 'bis'.
-      - `unit`: unit lowercased best-effort. Open vocabulary.
-      - `note`: qualifier ("chopped", "to taste", "optional").
+      #{Llm::IngredientInstructions.prompt}
 
       Return one entry per input line, in the same order.#{lang_hint}
 
@@ -82,12 +76,17 @@ class IngredientParser
 
   def coerce(entry, raw)
     name = entry["name"].to_s.strip.presence || raw
+    canonical_name = entry["canonical_name"].to_s.strip.downcase.presence
     {
       name: name,
       amount: entry["amount"],
       amount_max: entry["amount_max"],
       unit: entry["unit"].to_s.strip.presence,
       note: entry["note"].to_s.strip.presence,
+      canonical_name: canonical_name,
+      canonical_unit: Llm::IngredientInstructions.normalize_unit(entry["canonical_unit"]),
+      category: Llm::IngredientInstructions.normalize_category(entry["category"]),
+      enrichment_version: canonical_name.present? ? Llm::IngredientInstructions::VERSION : nil,
       raw: raw
     }
   end

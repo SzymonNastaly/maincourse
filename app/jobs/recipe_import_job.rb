@@ -45,7 +45,7 @@ class RecipeImportJob < ApplicationJob
   private
 
   def enqueue_ingredient_parse(recipe)
-    return unless recipe.ingredients.any? { |i| !i.parsed? }
+    return unless recipe.ingredients.any?(&:needs_enrichment?)
     ParseRecipeIngredientsJob.perform_later(recipe.id)
   end
 

@@ -14,6 +14,10 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
     let unit: String?
     let name: String?
     let note: String?
+    let canonicalName: String?
+    let canonicalUnit: String?
+    let category: String?
+    let enrichmentVersion: Int?
     let raw: String
 
     /// True if this row has been parsed by `ParseRecipeIngredientsJob`
@@ -30,6 +34,10 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         unit: String? = nil,
         name: String? = nil,
         note: String? = nil,
+        canonicalName: String? = nil,
+        canonicalUnit: String? = nil,
+        category: String? = nil,
+        enrichmentVersion: Int? = nil,
         raw: String
     ) {
         self.id = id
@@ -39,6 +47,10 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         self.unit = unit
         self.name = name
         self.note = note
+        self.canonicalName = canonicalName
+        self.canonicalUnit = canonicalUnit
+        self.category = category
+        self.enrichmentVersion = enrichmentVersion
         self.raw = raw
     }
 
@@ -48,7 +60,8 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
     /// `JSONEncoder`/`JSONDecoder` *without* snake_case conversion, so the
     /// round-trip uses camelCase keys end-to-end.
     private enum CodingKeys: String, CodingKey {
-        case id, position, amount, amountMax, unit, name, note, raw
+        case id, position, amount, amountMax, unit, name, note
+        case canonicalName, canonicalUnit, category, enrichmentVersion, raw
     }
 
     init(from decoder: Decoder) throws {
@@ -58,6 +71,10 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         self.unit = try container.decodeIfPresent(String.self, forKey: .unit)
         self.name = try container.decodeIfPresent(String.self, forKey: .name)
         self.note = try container.decodeIfPresent(String.self, forKey: .note)
+        self.canonicalName = try container.decodeIfPresent(String.self, forKey: .canonicalName)
+        self.canonicalUnit = try container.decodeIfPresent(String.self, forKey: .canonicalUnit)
+        self.category = try container.decodeIfPresent(String.self, forKey: .category)
+        self.enrichmentVersion = try container.decodeIfPresent(Int.self, forKey: .enrichmentVersion)
         self.raw = try container.decode(String.self, forKey: .raw)
         self.amount = try Self.decodeDecimal(container, key: .amount)
         self.amountMax = try Self.decodeDecimal(container, key: .amountMax)
@@ -70,6 +87,10 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         try container.encodeIfPresent(self.unit, forKey: .unit)
         try container.encodeIfPresent(self.name, forKey: .name)
         try container.encodeIfPresent(self.note, forKey: .note)
+        try container.encodeIfPresent(self.canonicalName, forKey: .canonicalName)
+        try container.encodeIfPresent(self.canonicalUnit, forKey: .canonicalUnit)
+        try container.encodeIfPresent(self.category, forKey: .category)
+        try container.encodeIfPresent(self.enrichmentVersion, forKey: .enrichmentVersion)
         try container.encode(self.raw, forKey: .raw)
         // Preserve the wire format (decimal-as-string) for round-trip safety.
         try container.encodeIfPresent(self.amount.map { "\($0)" }, forKey: .amount)

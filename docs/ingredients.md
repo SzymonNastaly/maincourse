@@ -13,8 +13,12 @@ Recipe ingredients are stored as their own ActiveRecord model rather than a JSON
 - `amount`, `amount_max` — numeric quantity; `amount_max` is the upper bound for ranges ("2-3 cloves").
 - `unit` — best-effort lowercased unit string (open vocabulary)
 - `note` — qualifier ("chopped", "to taste", "optional")
+- `canonical_name` — concise lowercase English food identity used for matching across languages; never used in place of the original-language display name
+- `canonical_unit` — language-independent unit from `Llm::IngredientInstructions::UNITS`, or `nil` when no supported equivalent exists
+- `category` — stable shopping category from `Llm::IngredientInstructions::CATEGORIES`
+- `enrichment_version` — version of the normalization instructions that successfully enriched the row
 
-`Ingredient#parsed?` returns true when `amount` or `unit` is present — the parser's signal that it touched the row.
+`Ingredient#parsed?` remains a legacy display-oriented check for an amount or unit. Pipeline completion uses `Ingredient#needs_enrichment?`, which compares `enrichment_version` with `Llm::IngredientInstructions::VERSION`. This allows quantity-less ingredients such as "salt to taste" to be complete and makes old rows eligible for reprocessing when the enrichment contract changes.
 
 ## Replacing ingredients
 
@@ -30,18 +34,24 @@ After replacing strings, enqueue `ParseRecipeIngredientsJob.perform_later(recipe
 
 Free-form strings → structured fields runs through `IngredientParser`:
 
-1. `IngredientParser.call(strings)` makes a single batched LLM call (`Llm::IngredientSchema` × N) and returns an array of hashes aligned to the input order via the echoed `raw` field.
+1. `IngredientParser.call(strings)` makes a single batched LLM call (`Llm::IngredientSchema` × N) and returns an array of hashes aligned to the input order via the echoed `raw` field. `Llm::IngredientInstructions` supplies the same parsing, normalization, and category instructions used by full-recipe LLM extraction.
 2. The parser is resilient: timeouts, RubyLLM errors, and unexpected exceptions all fall back to `{ name: raw, raw: raw }` so callers always get one entry per input.
-3. `ParseRecipeIngredientsJob` calls the parser for any rows where `parsed?` is false, then `update!`s `name`, `amount`, `amount_max`, `unit`, `note` on the existing `Ingredient` rows. It does not change `raw` or `position`.
+3. `ParseRecipeIngredientsJob` calls the parser for rows where `needs_enrichment?` is true, then updates parsed and canonical fields on the existing rows. It does not change `raw` or `position`. A failed/fallback parse remains unversioned and retryable.
 
 Extractors (`JsonLdExtractor`, `LlmExtractor`, `RecipeImageLlmService`, `YoutubeVideoExtractor`) populate ingredient hashes during extraction. Import jobs call `apply_extracted_attributes!` and then enqueue `ParseRecipeIngredientsJob` so structured fields land even when the upstream source only has raw lines.
+
+Full-recipe LLM extraction can satisfy the enrichment contract in its initial call. JSON-LD and other raw-only extraction paths are enriched by the follow-up job. To queue old or incomplete production rows after deploying a new enrichment version, run:
+
+```bash
+bin/rails ingredients:enqueue_enrichment
+```
 
 ## API contract (iOS)
 
 The `_recipe.json.jbuilder` partial preserves backwards compatibility:
 
 - `ingredients` — array of strings (the `raw` lines, in `position` order). iOS clients depend on this.
-- `structured_ingredients` — array of objects with `raw`, `name`, `amount`, `amount_max`, `unit`, `note`. New clients can use this for richer rendering (e.g. shopping list aggregation).
+- `structured_ingredients` — array of objects with `raw`, `name`, `amount`, `amount_max`, `unit`, `note`, `canonical_name`, `canonical_unit`, `category`, and `enrichment_version`. The enrichment fields are optional for backward compatibility and future shopping-list behavior.
 
 `PATCH /api/v1/recipes/:id` accepts `ingredients: [string, string, ...]`. The controller calls `replace_ingredients_from_strings` and enqueues a parse job, so structured fields fill in over the next seconds.
 

@@ -8,5 +8,8 @@ module Llm
     number :amount_max, required: false, description: "Upper bound for ranges (e.g. '2-3 cloves' -> amount=2, amount_max=3). Accept en-dash, em-dash, '-', '~', 'to', 'bis'."
     string :unit, required: false, description: "Unit of measurement, lowercased best-effort (e.g. 'g', 'ml', 'tbsp', 'el', 'prise'). Open vocabulary."
     string :note, required: false, description: "Qualifier (e.g. 'chopped', 'to taste', 'optional')."
+    string :canonical_name, description: "Concise lowercase English food identity used for matching (e.g. 'olive oil')."
+    string :canonical_unit, required: false, description: "Language-independent unit from the application's supported unit vocabulary."
+    string :category, description: "Shopping category from the application's supported category vocabulary."
   end
 end

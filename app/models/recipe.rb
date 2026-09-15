@@ -53,7 +53,11 @@ class Recipe < ApplicationRecord
           amount: hash[:amount],
           amount_max: hash[:amount_max],
           unit: hash[:unit].to_s.strip.presence,
-          note: hash[:note].to_s.strip.presence
+          note: hash[:note].to_s.strip.presence,
+          canonical_name: hash[:canonical_name].to_s.strip.presence,
+          canonical_unit: hash[:canonical_unit].to_s.strip.presence,
+          category: hash[:category].to_s.strip.presence,
+          enrichment_version: hash[:enrichment_version]
         )
       end
     end

@@ -93,6 +93,39 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
     end
   end
 
+  test "uses the shared ingredient enrichment instructions" do
+    stub_llm_response(name: "Test Recipe", ingredients: [], instructions: [])
+
+    RecipeLlmService.new("Some text").extract
+
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) do |req|
+      JSON.parse(req.body).dig("messages", -1, "content").include?(Llm::IngredientInstructions.prompt)
+    end
+  end
+
+  test "returns versioned canonical ingredient metadata" do
+    stub_llm_response(
+      name: "Pasta",
+      ingredients: [ {
+        raw: "2 EL Olivenöl",
+        name: "Olivenöl",
+        amount: 2,
+        unit: "el",
+        canonical_name: "olive oil",
+        canonical_unit: "tablespoon",
+        category: "oils_spices_condiments"
+      } ],
+      instructions: [ "Cook" ]
+    )
+
+    ingredient = RecipeLlmService.new("Pasta recipe").extract.recipe_attributes[:ingredients].sole
+
+    assert_equal "olive oil", ingredient[:canonical_name]
+    assert_equal "tablespoon", ingredient[:canonical_unit]
+    assert_equal "oils_spices_condiments", ingredient[:category]
+    assert_equal Llm::IngredientInstructions::VERSION, ingredient[:enrichment_version]
+  end
+
   test "handles minimal recipe data" do
     stub_llm_response(
       name: "Simple Dish",
