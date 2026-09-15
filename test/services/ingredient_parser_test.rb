@@ -11,8 +11,14 @@ class IngredientParserTest < ActiveSupport::TestCase
 
   test "parses ingredients aligning by raw" do
     stub_ingredient_parse_response([
-      { "raw" => "2 cups flour", "name" => "flour", "amount" => 2, "unit" => "cup" },
-      { "raw" => "1 tsp salt", "name" => "salt", "amount" => 1, "unit" => "tsp" }
+      {
+        "raw" => "2 cups flour", "name" => "flour", "amount" => 2, "unit" => "cup",
+        "canonical_name" => "flour", "canonical_unit" => "cup", "category" => "pantry"
+      },
+      {
+        "raw" => "1 tsp salt", "name" => "salt", "amount" => 1, "unit" => "tsp",
+        "canonical_name" => "salt", "canonical_unit" => "teaspoon", "category" => "oils_spices_condiments"
+      }
     ])
 
     result = IngredientParser.call([ "2 cups flour", "1 tsp salt" ])
@@ -22,7 +28,39 @@ class IngredientParserTest < ActiveSupport::TestCase
     assert_equal 2, result[0][:amount]
     assert_equal "cup", result[0][:unit]
     assert_equal "2 cups flour", result[0][:raw]
+    assert_equal "flour", result[0][:canonical_name]
+    assert_equal "cup", result[0][:canonical_unit]
+    assert_equal "pantry", result[0][:category]
+    assert_equal Llm::IngredientInstructions::VERSION, result[0][:enrichment_version]
     assert_equal "salt", result[1][:name]
+  end
+
+  test "keeps parsed fields but does not complete enrichment without a canonical name" do
+    stub_ingredient_parse_response([
+      {
+        "raw" => "2 splashes oil", "name" => "oil", "amount" => 2, "unit" => "splashes",
+        "canonical_unit" => "splash", "category" => "unknown aisle"
+      }
+    ])
+
+    result = IngredientParser.call([ "2 splashes oil" ]).sole
+
+    assert_equal 2, result[:amount]
+    assert_nil result[:canonical_unit]
+    assert_equal "other", result[:category]
+    assert_nil result[:enrichment_version]
+  end
+
+  test "uses the shared ingredient instructions" do
+    stub_ingredient_parse_response([
+      { "raw" => "salt", "name" => "salt", "canonical_name" => "salt", "category" => "oils_spices_condiments" }
+    ])
+
+    IngredientParser.call([ "salt" ])
+
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) do |req|
+      JSON.parse(req.body).dig("messages", -1, "content").include?(Llm::IngredientInstructions.prompt)
+    end
   end
 
   test "preserves input order even when LLM reorders" do

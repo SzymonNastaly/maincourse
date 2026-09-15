@@ -95,14 +95,6 @@ class RecipeLlmService
   end
 
   def ingredient_field_instructions
-    <<~INGR.strip
-      For each ingredient, return structured fields:
-      - `raw`: the original ingredient line, echoed verbatim. Required.
-      - `name`: the food name only (no amount or unit). Do not translate.
-      - `amount`: numeric quantity. Convert fractions to decimals (1/2 -> 0.5; unicode fractions accepted).
-      - `amount_max`: upper bound for ranges (e.g. "2-3 cloves" -> amount=2, amount_max=3). Accept en-dash, em-dash, '-', '~', 'to', 'bis'.
-      - `unit`: unit of measurement, lowercased best-effort (g, ml, tbsp, el, prise...). Open vocabulary.
-      - `note`: qualifier ("chopped", "to taste", "optional"). Optional.
-    INGR
+    Llm::IngredientInstructions.prompt
   end
 end

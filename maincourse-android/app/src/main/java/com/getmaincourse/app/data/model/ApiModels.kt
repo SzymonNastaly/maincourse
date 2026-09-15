@@ -141,6 +141,13 @@ data class StructuredIngredient(
     val name: String?,
     val note: String?,
     val raw: String,
+    @SerialName("canonical_name")
+    val canonicalName: String? = null,
+    @SerialName("canonical_unit")
+    val canonicalUnit: String? = null,
+    val category: String? = null,
+    @SerialName("enrichment_version")
+    val enrichmentVersion: Int? = null,
 )
 
 @Serializable

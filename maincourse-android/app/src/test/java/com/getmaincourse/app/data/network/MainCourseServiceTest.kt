@@ -289,6 +289,11 @@ class MainCourseServiceTest {
         val recipe = service.recipe(cookbookId = 42, recipeId = 7)
 
         assertEquals(7L, recipe.id)
+        val ingredient = recipe.structuredIngredients.single()
+        assertEquals("olive oil", ingredient.canonicalName)
+        assertEquals("tablespoon", ingredient.canonicalUnit)
+        assertEquals("oils_spices_condiments", ingredient.category)
+        assertEquals(1, ingredient.enrichmentVersion)
         val request = server.takeRequest()
         assertEquals("GET", request.method)
         assertEquals("/api/v1/recipes/7", request.path)
@@ -604,7 +609,7 @@ class MainCourseServiceTest {
           "servings":2,
           "favorite":false,
           "ingredients":[],
-          "structured_ingredients":[],
+          "structured_ingredients":[{"id":70,"position":0,"amount":"2.0","amount_max":null,"unit":"EL","name":"Olivenöl","note":null,"raw":"2 EL Olivenöl","canonical_name":"olive oil","canonical_unit":"tablespoon","category":"oils_spices_condiments","enrichment_version":1}],
           "instructions":[],
           "notes":null,
           "source_url":null,

@@ -37,13 +37,7 @@ class RecipeImageLlmService
       Extract recipe information from the image.
       Identify the recipe name, ingredients list, and cooking instructions.
 
-      For each ingredient, return structured fields:
-      - `raw`: the original ingredient line, echoed verbatim. Required.
-      - `name`: the food name only (no amount or unit). Do not translate.
-      - `amount`: numeric quantity. Convert fractions to decimals (1/2 -> 0.5; unicode fractions accepted).
-      - `amount_max`: upper bound for ranges (e.g. "2-3 cloves" -> amount=2, amount_max=3). Accept en-dash, em-dash, '-', '~', 'to', 'bis'.
-      - `unit`: unit of measurement, lowercased best-effort. Open vocabulary.
-      - `note`: qualifier ("chopped", "to taste", "optional"). Optional.
+      #{Llm::IngredientInstructions.prompt}
 
       If the image does not contain a valid recipe, return an empty name field.
     PROMPT

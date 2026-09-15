@@ -244,6 +244,10 @@ module Api
               unit: i.unit,
               name: i.name.presence || i.raw,
               note: i.note,
+              canonical_name: i.canonical_name,
+              canonical_unit: i.canonical_unit,
+              category: i.category,
+              enrichment_version: i.enrichment_version,
               raw: i.raw
             }
           },

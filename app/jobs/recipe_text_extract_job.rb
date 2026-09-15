@@ -13,7 +13,7 @@ class RecipeTextExtractJob < ApplicationJob
 
     if result.success?
       recipe.apply_extracted_attributes!(result.recipe_attributes.merge(import_status: :completed))
-      ParseRecipeIngredientsJob.perform_later(recipe.id) if recipe.ingredients.any? { |i| !i.parsed? }
+      ParseRecipeIngredientsJob.perform_later(recipe.id) if recipe.ingredients.any?(&:needs_enrichment?)
     else
       recipe.update!(
         import_status: :failed,

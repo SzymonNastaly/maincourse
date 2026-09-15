@@ -148,6 +148,26 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert json.key?("updated_at")
   end
 
+  test "show exposes optional ingredient enrichment metadata" do
+    recipe = recipes(:one)
+    ingredient = recipe.ingredients.first
+    ingredient.update!(
+      canonical_name: "olive oil",
+      canonical_unit: "tablespoon",
+      category: "oils_spices_condiments",
+      enrichment_version: Llm::IngredientInstructions::VERSION
+    )
+
+    get api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
+
+    assert_response :success
+    payload = response.parsed_body["structured_ingredients"].find { |entry| entry["id"] == ingredient.id }
+    assert_equal "olive oil", payload["canonical_name"]
+    assert_equal "tablespoon", payload["canonical_unit"]
+    assert_equal "oils_spices_condiments", payload["category"]
+    assert_equal Llm::IngredientInstructions::VERSION, payload["enrichment_version"]
+  end
+
   test "show requires authentication" do
     recipe = recipes(:one)
 

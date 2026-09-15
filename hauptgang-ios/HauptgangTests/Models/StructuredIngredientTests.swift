@@ -21,6 +21,10 @@ final class StructuredIngredientTests: XCTestCase {
           "unit": "g",
           "name": "Flour",
           "note": null,
+          "canonical_name": "flour",
+          "canonical_unit": "gram",
+          "category": "pantry",
+          "enrichment_version": 1,
           "raw": "0.5–200 g flour"
         }
         """.data(using: .utf8)!
@@ -32,6 +36,10 @@ final class StructuredIngredientTests: XCTestCase {
         XCTAssertEqual(ingredient.amountMax, Decimal(string: "200.0"))
         XCTAssertEqual(ingredient.unit, "g")
         XCTAssertEqual(ingredient.name, "Flour")
+        XCTAssertEqual(ingredient.canonicalName, "flour")
+        XCTAssertEqual(ingredient.canonicalUnit, "gram")
+        XCTAssertEqual(ingredient.category, "pantry")
+        XCTAssertEqual(ingredient.enrichmentVersion, 1)
         XCTAssertEqual(ingredient.raw, "0.5–200 g flour")
         XCTAssertTrue(ingredient.hasStructuredFields)
     }
@@ -87,6 +95,10 @@ final class StructuredIngredientTests: XCTestCase {
             unit: "g",
             name: "Sugar",
             note: "fine",
+            canonicalName: "sugar",
+            canonicalUnit: "gram",
+            category: "pantry",
+            enrichmentVersion: 1,
             raw: "0.5–200 g sugar, fine"
         )
 

@@ -40,6 +40,17 @@ class RecipeImageLlmServiceTest < ActiveSupport::TestCase
     end
   end
 
+  test "uses the shared ingredient enrichment instructions" do
+    stub_llm_response(name: "Photo Recipe", ingredients: [], instructions: [])
+
+    RecipeImageLlmService.new(@image_path).extract
+
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) do |req|
+      content = JSON.parse(req.body).dig("messages", -1, "content")
+      content.any? { |part| part["type"] == "text" && part["text"].include?(Llm::IngredientInstructions.prompt) }
+    end
+  end
+
   test "returns failure when image path is blank" do
     result = RecipeImageLlmService.new("").extract
 

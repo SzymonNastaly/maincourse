@@ -2,7 +2,10 @@ module Llm
   module RecipeExtraction
     Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
 
-    INGREDIENT_KEYS = %w[name amount amount_max unit note raw].freeze
+    INGREDIENT_KEYS = %w[
+      name amount amount_max unit note raw
+      canonical_name canonical_unit category
+    ].freeze
 
     private
 
@@ -40,6 +43,7 @@ module Llm
         raw = hash["raw"].to_s.strip.presence || synthesize_raw(hash)
         name = hash["name"].to_s.strip.presence || raw
         next nil if raw.blank? && name.blank?
+        canonical_name = hash["canonical_name"].to_s.strip.downcase.presence
 
         {
           name: name,
@@ -47,6 +51,10 @@ module Llm
           amount_max: hash["amount_max"],
           unit: hash["unit"].to_s.strip.presence,
           note: hash["note"].to_s.strip.presence,
+          canonical_name: canonical_name,
+          canonical_unit: IngredientInstructions.normalize_unit(hash["canonical_unit"]),
+          category: IngredientInstructions.normalize_category(hash["category"]),
+          enrichment_version: canonical_name.present? ? IngredientInstructions::VERSION : nil,
           raw: raw.presence || name
         }
       end
