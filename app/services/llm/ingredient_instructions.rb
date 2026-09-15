@@ -1,6 +1,8 @@
 module Llm
   module IngredientInstructions
-    VERSION = 1
+    VERSION = 2
+
+    CANONICAL_NAME_FORMAT = /\A[a-z0-9]+(?: [a-z0-9]+)*\z/
 
     CATEGORIES = %w[
       produce
@@ -35,7 +37,7 @@ module Llm
         - `amount_max`: upper bound for ranges (for example, 2-3 cloves -> amount=2, amount_max=3).
         - `unit`: the original unit, lowercased best-effort. Open vocabulary.
         - `note`: a qualifier such as "chopped", "to taste", or "optional".
-        - `canonical_name`: a concise lowercase English identity for the food, without amount, unit, preparation, or brand. For example, Olivenöl and huile d'olive both become "olive oil". This is matching metadata only.
+        - `canonical_name`: a concise lowercase English identity for the food, without amount, unit, preparation, or brand. Use only lowercase ASCII letters, digits, and single spaces. Do not use underscores or punctuation. For example, Olivenöl and huile d'olive both become "olive oil", and 2% milk becomes "2 percent milk". This is matching metadata only.
         - `canonical_unit`: normalize the unit to one of: #{UNITS.join(", ")}. Omit it when there is no unit or no listed unit is equivalent.
         - `category`: choose exactly one of: #{CATEGORIES.join(", ")}.
 
@@ -46,6 +48,11 @@ module Llm
     def normalize_category(value)
       candidate = value.to_s.strip.downcase
       CATEGORIES.include?(candidate) ? candidate : "other"
+    end
+
+    def normalize_name(value)
+      candidate = value.to_s.strip.downcase
+      CANONICAL_NAME_FORMAT.match?(candidate) ? candidate : nil
     end
 
     def normalize_unit(value)

@@ -43,7 +43,7 @@ module Llm
         raw = hash["raw"].to_s.strip.presence || synthesize_raw(hash)
         name = hash["name"].to_s.strip.presence || raw
         next nil if raw.blank? && name.blank?
-        canonical_name = hash["canonical_name"].to_s.strip.downcase.presence
+        canonical_name = IngredientInstructions.normalize_name(hash["canonical_name"])
 
         {
           name: name,

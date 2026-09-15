@@ -51,6 +51,20 @@ class IngredientParserTest < ActiveSupport::TestCase
     assert_nil result[:enrichment_version]
   end
 
+  test "keeps invalid canonical names eligible for retry" do
+    stub_ingredient_parse_response([
+      {
+        "raw" => "2 EL Olivenöl", "name" => "Olivenöl", "amount" => 2, "unit" => "EL",
+        "canonical_name" => "olive_oil", "canonical_unit" => "tablespoon", "category" => "oils_spices_condiments"
+      }
+    ])
+
+    result = IngredientParser.call([ "2 EL Olivenöl" ]).sole
+
+    assert_nil result[:canonical_name]
+    assert_nil result[:enrichment_version]
+  end
+
   test "uses the shared ingredient instructions" do
     stub_ingredient_parse_response([
       { "raw" => "salt", "name" => "salt", "canonical_name" => "salt", "category" => "oils_spices_condiments" }

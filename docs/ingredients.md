@@ -13,7 +13,7 @@ Recipe ingredients are stored as their own ActiveRecord model rather than a JSON
 - `amount`, `amount_max` — numeric quantity; `amount_max` is the upper bound for ranges ("2-3 cloves").
 - `unit` — best-effort lowercased unit string (open vocabulary)
 - `note` — qualifier ("chopped", "to taste", "optional")
-- `canonical_name` — concise lowercase English food identity used for matching across languages; never used in place of the original-language display name
+- `canonical_name` — concise lowercase English food identity used for matching across languages; limited to ASCII letters, digits, and single spaces, and never used in place of the original-language display name
 - `canonical_unit` — language-independent unit from `Llm::IngredientInstructions::UNITS`, or `nil` when no supported equivalent exists
 - `category` — stable shopping category from `Llm::IngredientInstructions::CATEGORIES`
 - `enrichment_version` — version of the normalization instructions that successfully enriched the row

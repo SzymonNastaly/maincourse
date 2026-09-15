@@ -126,6 +126,24 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
     assert_equal Llm::IngredientInstructions::VERSION, ingredient[:enrichment_version]
   end
 
+  test "leaves invalid canonical ingredient metadata unversioned" do
+    stub_llm_response(
+      name: "Pasta",
+      ingredients: [ {
+        raw: "2 EL Olivenöl",
+        name: "Olivenöl",
+        canonical_name: "olive_oil",
+        category: "oils_spices_condiments"
+      } ],
+      instructions: [ "Cook" ]
+    )
+
+    ingredient = RecipeLlmService.new("Pasta recipe").extract.recipe_attributes[:ingredients].sole
+
+    assert_nil ingredient[:canonical_name]
+    assert_nil ingredient[:enrichment_version]
+  end
+
   test "handles minimal recipe data" do
     stub_llm_response(
       name: "Simple Dish",

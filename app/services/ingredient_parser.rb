@@ -76,7 +76,7 @@ class IngredientParser
 
   def coerce(entry, raw)
     name = entry["name"].to_s.strip.presence || raw
-    canonical_name = entry["canonical_name"].to_s.strip.downcase.presence
+    canonical_name = Llm::IngredientInstructions.normalize_name(entry["canonical_name"])
     {
       name: name,
       amount: entry["amount"],

@@ -81,4 +81,15 @@ class IngredientTest < ActiveSupport::TestCase
     assert_includes ingredient.errors[:canonical_unit], "is not included in the list"
     assert_includes ingredient.errors[:category], "is not included in the list"
   end
+
+  test "validates canonical names contain lowercase ASCII letters digits and spaces only" do
+    ingredient = Ingredient.new(recipe: @recipe, raw: "Olivenöl", canonical_name: "olive_oil")
+
+    assert_not ingredient.valid?
+    assert_includes ingredient.errors[:canonical_name], "is invalid"
+
+    ingredient.canonical_name = "2 percent milk"
+
+    assert ingredient.valid?
+  end
 end
