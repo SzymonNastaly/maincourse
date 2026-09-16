@@ -46,18 +46,23 @@ Full-recipe LLM extraction can satisfy the enrichment contract in its initial ca
 bin/rails ingredients:enqueue_enrichment
 ```
 
-## API contract (iOS)
+## API contract
 
-The `_recipe.json.jbuilder` partial preserves backwards compatibility:
+`Api::V1::RecipesController#recipe_detail_json` preserves backwards compatibility
+for both recipe detail and batch responses:
 
 - `ingredients` — array of strings (the `raw` lines, in `position` order). iOS clients depend on this.
-- `structured_ingredients` — array of objects with `raw`, `name`, `amount`, `amount_max`, `unit`, `note`, `canonical_name`, `canonical_unit`, `category`, and `enrichment_version`. The enrichment fields are optional for backward compatibility and future shopping-list behavior.
+- `structured_ingredients` — array of objects with `raw`, `name`, `amount`, `amount_max`, `unit`, `note`, `canonical_name`, `canonical_unit`, `category`, `enrichment_version`, and `shopping_default_included`. The enrichment fields are optional for backward compatibility. Clients treat an absent or null `shopping_default_included` as true.
 
 `PATCH /api/v1/recipes/:id` accepts `ingredients: [string, string, ...]`. The controller calls `replace_ingredients_from_strings` and enqueues a parse job, so structured fields fill in over the next seconds.
 
 ## Adding ingredients to the shopping list
 
 Web, iOS, and Android review the selected recipe ingredients before adding them.
+`ShoppingList::Policy` excludes only exact canonical identities for water, common
+salt varieties, black pepper, and ground black pepper by default. These rows stay
+visible and can be selected explicitly. The policy never filters manual shopping
+list entries or submitted recipe selections.
 If any item in the active cookbook was created more than 36 hours ago, the
 review flow asks whether to keep the current list or start fresh. Age is based
 on `ShoppingListItem#created_at`, not its last update or check-off time, and is

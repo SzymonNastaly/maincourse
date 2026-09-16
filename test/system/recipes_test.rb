@@ -58,6 +58,42 @@ class RecipesTest < ApplicationSystemTestCase
     assert_selector "[data-testid=shopping-item]", minimum: 3
   end
 
+  test "the add-to-list dialog excludes an enriched staple until explicitly included" do
+    salt = @recipe.ingredients.first
+    salt.update!(name: "Salz", raw: "Salz nach Geschmack", canonical_name: "salt")
+
+    visit recipe_path(@recipe)
+    wait_for_stimulus("[data-testid=add-all-to-list]")
+    find("[data-testid=add-all-to-list]").click
+
+    assert_selector "#add-to-list[open]"
+    assert_text "Common staples are excluded by default. Include anything you need."
+    salt_checkbox = find("input[type=checkbox][aria-label='Add Salz']")
+    assert_not salt_checkbox.checked?
+    assert_button "Add 3"
+
+    salt_checkbox.click
+    assert_button "Add 4"
+    find("[data-testid=confirm-add-to-list]").click
+
+    assert_text "Added 4 items"
+    assert @recipe.cookbook.shopping_list_items.exists?(name: "Salz")
+  end
+
+  test "the add-to-list dialog disables Add when every ingredient is a staple" do
+    canonical_names = [ "water", "salt", "black pepper", "tap water" ]
+    @recipe.ingredients.each_with_index do |ingredient, index|
+      ingredient.update!(canonical_name: canonical_names.fetch(index))
+    end
+
+    visit recipe_path(@recipe)
+    wait_for_stimulus("[data-testid=add-all-to-list]")
+    find("[data-testid=add-all-to-list]").click
+
+    assert_selector "#add-to-list[open] input[type=checkbox]:not(:checked)", count: 4
+    assert_button "Add 0", disabled: true
+  end
+
   test "adding recipe ingredients offers to replace a list older than 36 hours" do
     shopping_list_items(:unchecked_milk).update!(created_at: 37.hours.ago)
     existing_ids = @recipe.cookbook.shopping_list_items.ids
