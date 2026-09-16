@@ -62,4 +62,28 @@ class IngredientReviewTest {
 
         assertEquals(ShoppingItemInput("stable", "berries as needed", null, null, 10), review.includedPayload().single())
     }
+
+    @Test
+    fun stapleDefaultCanBeOverridden() {
+        val ingredient = StructuredIngredient(
+            id = 1,
+            position = 0,
+            amount = null,
+            amountMax = null,
+            unit = null,
+            name = "sól",
+            note = null,
+            raw = "sól do smaku",
+            canonicalName = "salt",
+            shoppingDefaultIncluded = false,
+        )
+
+        val review = IngredientReview.create(9, listOf(ingredient), 1, null) { "salt-id" }
+
+        assertTrue(review.includedPayload().isEmpty())
+        assertEquals(
+            listOf("salt-id"),
+            review.withIncluded("salt-id", true).includedPayload().map(ShoppingItemInput::clientId),
+        )
+    }
 }

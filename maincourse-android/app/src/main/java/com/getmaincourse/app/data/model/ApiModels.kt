@@ -148,6 +148,8 @@ data class StructuredIngredient(
     val category: String? = null,
     @SerialName("enrichment_version")
     val enrichmentVersion: Int? = null,
+    @SerialName("shopping_default_included")
+    val shoppingDefaultIncluded: Boolean? = null,
 )
 
 @Serializable
