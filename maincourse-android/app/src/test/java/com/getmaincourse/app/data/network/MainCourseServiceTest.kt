@@ -17,6 +17,7 @@ import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
+import com.getmaincourse.app.data.model.StructuredIngredient
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -30,6 +31,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -294,10 +296,43 @@ class MainCourseServiceTest {
         assertEquals("tablespoon", ingredient.canonicalUnit)
         assertEquals("oils_spices_condiments", ingredient.category)
         assertEquals(1, ingredient.enrichmentVersion)
+        assertNull(ingredient.shoppingDefaultIncluded)
         val request = server.takeRequest()
         assertEquals("GET", request.method)
         assertEquals("/api/v1/recipes/7", request.path)
         assertEquals("42", request.getHeader("X-Cookbook-Id"))
+    }
+
+    @Test
+    fun recipeDetailDecodesFalseAndNullShoppingDefaults() = runTest {
+        server.enqueue(jsonResponse(200, recipeJson("\"shopping_default_included\":false,")))
+        server.enqueue(jsonResponse(200, recipeJson("\"shopping_default_included\":null,")))
+
+        val excluded = service.recipe(cookbookId = 42, recipeId = 7)
+        val legacyNull = service.recipe(cookbookId = 42, recipeId = 7)
+
+        assertFalse(excluded.structuredIngredients.single().shoppingDefaultIncluded!!)
+        assertNull(legacyNull.structuredIngredients.single().shoppingDefaultIncluded)
+    }
+
+    @Test
+    fun structuredIngredientCacheRoundTripPreservesFalseShoppingDefault() {
+        val ingredient = StructuredIngredient(
+            id = 70,
+            position = 0,
+            amount = null,
+            amountMax = null,
+            unit = null,
+            name = "Salz",
+            note = null,
+            raw = "Salz nach Geschmack",
+            shoppingDefaultIncluded = false,
+        )
+
+        val encoded = Json.encodeToString(ingredient)
+        val decoded = Json.decodeFromString<StructuredIngredient>(encoded)
+
+        assertFalse(decoded.shoppingDefaultIncluded!!)
     }
 
     @Test
@@ -599,7 +634,7 @@ class MainCourseServiceTest {
     private fun sessionJson() =
         """{"token":"token","expires_at":"2026-12-06T10:15:30Z","user":{"id":7,"name":"Cook","email":"cook@example.com","lifecycle_notifications_enabled":true}}"""
 
-    private fun recipeJson() =
+    private fun recipeJson(shoppingDefaultField: String = "") =
         """
         {
           "id":7,
@@ -609,7 +644,7 @@ class MainCourseServiceTest {
           "servings":2,
           "favorite":false,
           "ingredients":[],
-          "structured_ingredients":[{"id":70,"position":0,"amount":"2.0","amount_max":null,"unit":"EL","name":"Olivenöl","note":null,"raw":"2 EL Olivenöl","canonical_name":"olive oil","canonical_unit":"tablespoon","category":"oils_spices_condiments","enrichment_version":1}],
+          "structured_ingredients":[{"id":70,"position":0,$shoppingDefaultField"amount":"2.0","amount_max":null,"unit":"EL","name":"Olivenöl","note":null,"raw":"2 EL Olivenöl","canonical_name":"olive oil","canonical_unit":"tablespoon","category":"oils_spices_condiments","enrichment_version":1}],
           "instructions":[],
           "notes":null,
           "source_url":null,

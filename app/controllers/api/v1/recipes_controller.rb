@@ -246,9 +246,10 @@ module Api
               note: i.note,
               canonical_name: i.canonical_name,
               canonical_unit: i.canonical_unit,
-              category: i.category,
-              enrichment_version: i.enrichment_version,
-              raw: i.raw
+               category: i.category,
+               enrichment_version: i.enrichment_version,
+               shopping_default_included: ShoppingList::Policy.default_included?(i.canonical_name),
+               raw: i.raw
             }
           },
           instructions: recipe.instructions,

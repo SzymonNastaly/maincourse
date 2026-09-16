@@ -64,6 +64,11 @@ struct ShoppingListReviewSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Theme.Spacing.md) {
+                    Text("Common staples are excluded by default. Include anything you need.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.mcBody)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                     if let replacementError {
                         Text(replacementError)
                             .font(.subheadline)

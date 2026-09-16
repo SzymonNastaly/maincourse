@@ -187,6 +187,7 @@
     <string name="search_try_another">Try a different search term</string>
     <string name="recipe_source_open_failed">No app is available to open this source.</string>
     <string name="recipe_review_help">Choose the ingredients to add to Shopping.</string>
+    <string name="recipe_review_staples_help">Common staples are excluded by default. Include anything you need.</string>
     <string name="recipe_add_to_shopping">Add ingredients to Shopping</string>
     <string name="shopping_fresh_start_title">Start a fresh shopping list?</string>
     <string name="shopping_fresh_start_body">Some items have been here for more than 36 hours. Clear the whole list before adding these ingredients?</string>

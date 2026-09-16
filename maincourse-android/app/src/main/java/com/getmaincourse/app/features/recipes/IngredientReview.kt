@@ -53,7 +53,13 @@ data class IngredientReview(
                 } else {
                     ingredient.raw to null
                 }
-                IngredientReviewItem(newId(), name, details, recipeId)
+                IngredientReviewItem(
+                    newId(),
+                    name,
+                    details,
+                    recipeId,
+                    included = ingredient.shoppingDefaultIncluded != false,
+                )
             },
         )
     }

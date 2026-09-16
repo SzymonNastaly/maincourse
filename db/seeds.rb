@@ -170,6 +170,49 @@ if Rails.env.development?
         "Season with salt and pepper. Serve immediately."
       ],
       tags: [ "Lunch", "Quick & Easy", "Vegetarian" ]
+    },
+    {
+      name: "Simple Tomato Salad",
+      prep_time: 10,
+      cook_time: 0,
+      servings: 2,
+      favorite: false,
+      ingredients: [
+        {
+          raw: "2 ripe tomatoes, sliced",
+          name: "ripe tomatoes",
+          amount: 2,
+          note: "sliced",
+          canonical_name: "tomato",
+          category: "produce",
+          enrichment_version: Llm::IngredientInstructions::VERSION
+        },
+        {
+          raw: "1 tbsp olive oil",
+          name: "olive oil",
+          amount: 1,
+          unit: "tbsp",
+          canonical_name: "olive oil",
+          canonical_unit: "tablespoon",
+          category: "oils_spices_condiments",
+          enrichment_version: Llm::IngredientInstructions::VERSION
+        },
+        {
+          raw: "1/2 tsp salt",
+          name: "salt",
+          amount: 0.5,
+          unit: "tsp",
+          canonical_name: "salt",
+          canonical_unit: "teaspoon",
+          category: "oils_spices_condiments",
+          enrichment_version: Llm::IngredientInstructions::VERSION
+        }
+      ],
+      instructions: [
+        "Arrange the tomatoes on a plate.",
+        "Drizzle with olive oil and season with salt."
+      ],
+      tags: [ "Lunch", "Quick & Easy", "Vegetarian" ]
     }
   ]
 

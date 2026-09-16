@@ -168,6 +168,28 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal Llm::IngredientInstructions::VERSION, payload["enrichment_version"]
   end
 
+  test "show and batch expose backward-compatible shopping inclusion defaults" do
+    recipe = recipes(:one)
+    salt = recipe.ingredients.first
+    salt.update!(canonical_name: "salt")
+    quantityless = recipe.ingredients.second
+
+    get api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
+
+    assert_response :success
+    show_ingredients = response.parsed_body["structured_ingredients"]
+    assert_equal false, show_ingredients.find { |entry| entry["id"] == salt.id }["shopping_default_included"]
+    assert_equal true, show_ingredients.find { |entry| entry["id"] == quantityless.id }["shopping_default_included"]
+
+    get batch_api_v1_recipes_url, headers: @auth_headers, as: :json
+
+    assert_response :success
+    batch_recipe = response.parsed_body["recipes"].find { |entry| entry["id"] == recipe.id }
+    batch_ingredients = batch_recipe["structured_ingredients"]
+    assert_equal false, batch_ingredients.find { |entry| entry["id"] == salt.id }["shopping_default_included"]
+    assert_equal true, batch_ingredients.find { |entry| entry["id"] == quantityless.id }["shopping_default_included"]
+  end
+
   test "show requires authentication" do
     recipe = recipes(:one)
 

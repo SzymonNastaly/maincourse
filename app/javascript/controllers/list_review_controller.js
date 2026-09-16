@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// The add-to-shopping-list review step: everything starts ticked, unticking an
-// ingredient excludes it, and the button says how many will actually be added.
+// The add-to-shopping-list review step: server-rendered policy picks the initial
+// selection, and the button says how many will actually be added.
 export default class extends Controller {
   static targets = ["row", "count", "submit", "review", "confirmation", "confirmationHeading"]
   static values = { oldestCreatedAt: String }

@@ -17,16 +17,17 @@
                 } do %>
     <div data-list-review-target="review">
       <p class="px-5 pt-4 text-[11.5px] font-light text-muted">
-        Untick anything you already have.
+        Common staples are excluded by default. Include anything you need.
       </p>
 
       <div class="max-h-[46vh] overflow-y-auto px-5 py-3">
-        <% ingredients.each do |ingredient| %>
-          <% name = ingredient.name.presence || ingredient.raw %>
-          <% details = [ format_quantity(ingredient).presence, ingredient.note.presence ].compact.join(", ") %>
-          <label class="flex cursor-pointer items-start gap-3 border-b border-line py-2.5 last:border-0"
-                 data-list-review-target="row">
-            <input type="checkbox" checked
+         <% ingredients.each do |ingredient| %>
+           <% name = ingredient.name.presence || ingredient.raw %>
+           <% details = [ format_quantity(ingredient).presence, ingredient.note.presence ].compact.join(", ") %>
+           <% included = ShoppingList::Policy.default_included?(ingredient.canonical_name) %>
+           <label class="flex cursor-pointer items-start gap-3 border-b border-line py-2.5 last:border-0"
+                  data-list-review-target="row">
+             <input type="checkbox" <%= "checked" if included %>
                    class="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
                    data-action="change->list-review#update"
                    aria-label="Add <%= name %>">
@@ -36,9 +37,10 @@
               <span class="block text-[11px] font-light text-muted italic" data-detail-preview><%= details %></span>
             </span>
 
-            <%= hidden_field_tag "items[][name]", name, id: nil %>
-            <%= hidden_field_tag "items[][details]", details, id: nil,
-                                 data: {
+             <%= hidden_field_tag "items[][name]", name, id: nil, disabled: !included %>
+             <%= hidden_field_tag "items[][details]", details, id: nil,
+                                  disabled: !included,
+                                  data: {
                                    portion_scaler_target: "detail",
                                    base_amount: ingredient.amount,
                                    base_amount_max: ingredient.amount_max,
@@ -52,10 +54,12 @@
       <div class="flex items-center gap-2.5 border-t border-line px-5 py-4">
         <button type="button" class="mc-btn mc-btn-quiet" data-action="dialog#close">Cancel</button>
         <div class="grow"></div>
+        <% included_count = ingredients.count { |ingredient| ShoppingList::Policy.default_included?(ingredient.canonical_name) } %>
         <button type="submit" class="mc-btn mc-btn-primary disabled:opacity-50"
+                <%= "disabled" if included_count.zero? %>
                 data-list-review-target="submit"
                 data-testid="confirm-add-to-list">
-          Add <span data-list-review-target="count"><%= ingredients.size %></span>
+          Add <span data-list-review-target="count"><%= included_count %></span>
         </button>
       </div>
     </div>

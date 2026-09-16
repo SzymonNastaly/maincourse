@@ -106,6 +106,7 @@ fun IngredientReviewScreen(
             }
         }
         item { Text(stringResource(R.string.recipe_review_help), color = MainCourseColors.Body) }
+        item { Text(stringResource(R.string.recipe_review_staples_help), color = MainCourseColors.Body) }
         itemsIndexed(review.items, key = { _, item -> item.clientId }) { index, item ->
             Row(
                 modifier = Modifier.fillMaxWidth().clickable(enabled = !running) {
