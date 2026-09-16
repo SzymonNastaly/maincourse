@@ -18,6 +18,7 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
     let canonicalUnit: String?
     let category: String?
     let enrichmentVersion: Int?
+    let shoppingDefaultIncluded: Bool
     let raw: String
 
     /// True if this row has been parsed by `ParseRecipeIngredientsJob`
@@ -38,6 +39,7 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         canonicalUnit: String? = nil,
         category: String? = nil,
         enrichmentVersion: Int? = nil,
+        shoppingDefaultIncluded: Bool = true,
         raw: String
     ) {
         self.id = id
@@ -51,6 +53,7 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         self.canonicalUnit = canonicalUnit
         self.category = category
         self.enrichmentVersion = enrichmentVersion
+        self.shoppingDefaultIncluded = shoppingDefaultIncluded
         self.raw = raw
     }
 
@@ -61,7 +64,7 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
     /// round-trip uses camelCase keys end-to-end.
     private enum CodingKeys: String, CodingKey {
         case id, position, amount, amountMax, unit, name, note
-        case canonicalName, canonicalUnit, category, enrichmentVersion, raw
+        case canonicalName, canonicalUnit, category, enrichmentVersion, shoppingDefaultIncluded, raw
     }
 
     init(from decoder: Decoder) throws {
@@ -75,6 +78,10 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         self.canonicalUnit = try container.decodeIfPresent(String.self, forKey: .canonicalUnit)
         self.category = try container.decodeIfPresent(String.self, forKey: .category)
         self.enrichmentVersion = try container.decodeIfPresent(Int.self, forKey: .enrichmentVersion)
+        self.shoppingDefaultIncluded = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .shoppingDefaultIncluded
+        ) ?? true
         self.raw = try container.decode(String.self, forKey: .raw)
         self.amount = try Self.decodeDecimal(container, key: .amount)
         self.amountMax = try Self.decodeDecimal(container, key: .amountMax)
@@ -91,6 +98,7 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
         try container.encodeIfPresent(self.canonicalUnit, forKey: .canonicalUnit)
         try container.encodeIfPresent(self.category, forKey: .category)
         try container.encodeIfPresent(self.enrichmentVersion, forKey: .enrichmentVersion)
+        try container.encode(self.shoppingDefaultIncluded, forKey: .shoppingDefaultIncluded)
         try container.encode(self.raw, forKey: .raw)
         // Preserve the wire format (decimal-as-string) for round-trip safety.
         try container.encodeIfPresent(self.amount.map { "\($0)" }, forKey: .amount)

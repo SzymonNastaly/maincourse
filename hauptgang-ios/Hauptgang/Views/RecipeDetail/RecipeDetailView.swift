@@ -147,10 +147,8 @@ struct RecipeDetailView: View {
 
     private func presentShoppingListReview(for ingredients: [StructuredIngredient], scale: Decimal) {
         let draftItems: [ShoppingListDraftItem] = ingredients.compactMap { ingredient in
-            let split = self.shoppingListSplit(for: ingredient, scale: scale)
-            let name = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !name.isEmpty else { return nil }
-            return ShoppingListDraftItem(name: name, details: split.details)
+            let draft = ShoppingListDraftItem(ingredient: ingredient, scale: scale)
+            return draft.name.isEmpty ? nil : draft
         }
 
         guard !draftItems.isEmpty else {
@@ -158,37 +156,6 @@ struct RecipeDetailView: View {
         }
 
         self.shoppingListReviewDraft = ShoppingListReviewDraft(recipeId: self.recipeId, items: draftItems)
-    }
-
-    /// Split a structured ingredient into a (name, details) pair for the
-    /// shopping list. Parsed rows put `ingredient.name` on the first line and
-    /// the formatted quantity (+ optional note) on the second. Unparsed rows
-    /// fall back to the raw string with no details.
-    private func shoppingListSplit(
-        for ingredient: StructuredIngredient,
-        scale: Decimal
-    ) -> (name: String, details: String?) {
-        guard ingredient.hasStructuredFields else {
-            return (ingredient.raw, nil)
-        }
-
-        let rawQuantity = IngredientFormatter.formatQuantity(
-            amount: ingredient.amount,
-            amountMax: ingredient.amountMax,
-            unit: ingredient.unit,
-            scale: scale
-        )
-        let quantity = rawQuantity.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = (ingredient.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let note = ingredient.note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-        let detailParts = [quantity, note].filter { !$0.isEmpty }
-        let details = detailParts.isEmpty ? nil : detailParts.joined(separator: ", ")
-
-        if name.isEmpty {
-            return (ingredient.raw, details)
-        }
-        return (name, details)
     }
 }
 

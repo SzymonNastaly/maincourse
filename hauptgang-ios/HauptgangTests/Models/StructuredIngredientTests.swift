@@ -84,6 +84,34 @@ final class StructuredIngredientTests: XCTestCase {
         XCTAssertTrue(ingredient.hasStructuredFields)
     }
 
+    func testDecode_falseShoppingDefaultFromAPI() throws {
+        let json = """
+        {
+          "id": 1,
+          "position": 0,
+          "name": "Salz",
+          "shopping_default_included": false,
+          "raw": "Salz nach Geschmack"
+        }
+        """.data(using: .utf8)!
+
+        let ingredient = try self.makeDecoder().decode(StructuredIngredient.self, from: json)
+
+        XCTAssertFalse(ingredient.shoppingDefaultIncluded)
+    }
+
+    func testDecode_missingOrNullShoppingDefaultIsIncluded() throws {
+        let missing = """
+        { "id": 1, "position": 0, "raw": "salt" }
+        """.data(using: .utf8)!
+        let null = """
+        { "id": 2, "position": 1, "shopping_default_included": null, "raw": "water" }
+        """.data(using: .utf8)!
+
+        XCTAssertTrue(try self.makeDecoder().decode(StructuredIngredient.self, from: missing).shoppingDefaultIncluded)
+        XCTAssertTrue(try self.makeDecoder().decode(StructuredIngredient.self, from: null).shoppingDefaultIncluded)
+    }
+
     // MARK: - Round trip
 
     func testEncodeDecodeRoundTrip_preservesDecimals() throws {
@@ -107,6 +135,24 @@ final class StructuredIngredientTests: XCTestCase {
         let roundTripped = try JSONDecoder().decode(StructuredIngredient.self, from: data)
 
         XCTAssertEqual(roundTripped, ingredient)
+    }
+
+    func testCachedRoundTrip_preservesExcludedShoppingDefault() throws {
+        let ingredient = StructuredIngredient(
+            id: 1,
+            position: 0,
+            name: "Salz",
+            canonicalName: "salt",
+            shoppingDefaultIncluded: false,
+            raw: "Salz nach Geschmack"
+        )
+
+        let data = try JSONEncoder().encode(ingredient)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let roundTripped = try JSONDecoder().decode(StructuredIngredient.self, from: data)
+
+        XCTAssertEqual(json["shoppingDefaultIncluded"] as? Bool, false)
+        XCTAssertFalse(roundTripped.shoppingDefaultIncluded)
     }
 
     // MARK: - resolvedIngredients fallback
