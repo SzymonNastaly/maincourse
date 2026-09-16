@@ -23,7 +23,8 @@ struct ShoppingListDraftItem: Identifiable, Hashable {
                 amountMax: ingredient.amountMax,
                 unit: ingredient.unit,
                 scale: scale
-            ).trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+            .trimmingCharacters(in: .whitespacesAndNewlines)
             let parsedName = (ingredient.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let note = ingredient.note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let detailParts = [quantity, note].filter { !$0.isEmpty }
