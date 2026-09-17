@@ -1,0 +1,152 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+ANDROID_ROOT="$REPO_ROOT/maincourse-android"
+VERSION_FILE="$ANDROID_ROOT/version.properties"
+RELEASE_FILE="$ANDROID_ROOT/release.properties"
+SIGNING_FILE="$ANDROID_ROOT/keystore.properties"
+PLAY_CREDENTIALS="$ANDROID_ROOT/play-service-account.json"
+SOURCE_AAB="$ANDROID_ROOT/app/build/outputs/bundle/release/app-release.aab"
+
+usage() {
+  cat <<'EOF'
+Usage: bin/android-release VERSION
+
+Build, verify, sign, and upload an Android App Bundle to the configured Google
+Play closed-testing track. VERSION must use X.Y.Z format. Every successful run
+uploads; there is no build-only mode.
+EOF
+}
+
+fail() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+property() {
+  local file="$1"
+  local key="$2"
+  awk -F= -v key="$key" '$1 == key { print substr($0, index($0, "=") + 1); exit }' "$file"
+}
+
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+  usage
+  exit 0
+fi
+[[ $# -eq 1 ]] || fail "expected one VERSION argument; see --help"
+VERSION="$1"
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "VERSION must use X.Y.Z format"
+
+[[ -f "$VERSION_FILE" ]] || fail "missing $VERSION_FILE"
+[[ -f "$RELEASE_FILE" ]] || fail "missing $RELEASE_FILE"
+[[ -f "$SIGNING_FILE" ]] || fail "missing $SIGNING_FILE"
+[[ -f "$PLAY_CREDENTIALS" ]] || fail "missing $PLAY_CREDENTIALS"
+[[ -f "$ANDROID_ROOT/Gemfile" && -f "$ANDROID_ROOT/Gemfile.lock" ]] || fail "Android Fastlane bundle is not installed"
+
+CURRENT_VERSION="$(property "$VERSION_FILE" versionName)"
+CURRENT_CODE="$(property "$VERSION_FILE" versionCode)"
+[[ "$CURRENT_CODE" =~ ^[1-9][0-9]*$ ]] || fail "versionCode must be a positive integer"
+
+PLAY_TRACK="$(property "$RELEASE_FILE" playTrack)"
+EXPECTED_FINGERPRINT="$(property "$RELEASE_FILE" uploadCertificateSha256)"
+[[ -n "$PLAY_TRACK" ]] || fail "playTrack is missing from $RELEASE_FILE"
+[[ -n "$EXPECTED_FINGERPRINT" ]] || fail "uploadCertificateSha256 is missing from $RELEASE_FILE"
+
+STORE_FILE="$(property "$SIGNING_FILE" storeFile)"
+STORE_PASSWORD="$(property "$SIGNING_FILE" storePassword)"
+KEY_ALIAS="$(property "$SIGNING_FILE" keyAlias)"
+[[ -n "$STORE_FILE" && -n "$STORE_PASSWORD" && -n "$KEY_ALIAS" ]] || fail "Android signing properties are incomplete"
+KEYSTORE="$ANDROID_ROOT/$STORE_FILE"
+[[ -f "$KEYSTORE" ]] || fail "missing Android upload keystore: $KEYSTORE"
+
+if [[ -n ${JAVA_HOME:-} && -x "$JAVA_HOME/bin/keytool" ]]; then
+  KEYTOOL="$JAVA_HOME/bin/keytool"
+elif command -v keytool >/dev/null 2>&1; then
+  KEYTOOL="$(command -v keytool)"
+else
+  fail "keytool was not found; set JAVA_HOME"
+fi
+
+export MAINCOURSE_KEYSTORE_PASSWORD="$STORE_PASSWORD"
+ACTUAL_FINGERPRINT="$($KEYTOOL -list -v -keystore "$KEYSTORE" -storepass:env MAINCOURSE_KEYSTORE_PASSWORD -alias "$KEY_ALIAS" | awk '/SHA256:/ { sub(/^.*SHA256:[[:space:]]*/, ""); print; exit }')"
+unset MAINCOURSE_KEYSTORE_PASSWORD
+[[ "$ACTUAL_FINGERPRINT" == "$EXPECTED_FINGERPRINT" ]] || fail "upload certificate fingerprint does not match release.properties"
+
+cd "$REPO_ROOT"
+STATUS="$(git status --porcelain --untracked-files=all)"
+RETRY=false
+ARTIFACT=""
+CHECKSUM_FILE=""
+
+if [[ -z "$STATUS" ]]; then
+  [[ "$VERSION" != "$CURRENT_VERSION" ]] || fail "VERSION is already the committed Android version"
+  VERSION_CODE=$((CURRENT_CODE + 1))
+elif [[ "$(printf '%s\n' "$STATUS" | wc -l | tr -d ' ')" == "1" && "$STATUS" == *"maincourse-android/version.properties" && "$VERSION" == "$CURRENT_VERSION" ]]; then
+  VERSION_CODE="$CURRENT_CODE"
+  ARTIFACT="$ANDROID_ROOT/releases/maincourse-$VERSION-$VERSION_CODE.aab"
+  CHECKSUM_FILE="$ARTIFACT.sha256"
+  [[ -f "$ARTIFACT" && -f "$CHECKSUM_FILE" ]] || fail "working tree resembles a retry, but its verified release artifact is missing"
+  shasum -a 256 -c "$CHECKSUM_FILE" >/dev/null || fail "retry artifact checksum does not match"
+  RETRY=true
+else
+  fail "working tree must be clean (or contain only a recognized release retry)"
+fi
+
+ORIGINAL_VERSION_FILE="$(mktemp "${TMPDIR:-/tmp}/maincourse-version.XXXXXX")"
+cp "$VERSION_FILE" "$ORIGINAL_VERSION_FILE"
+KEEP_VERSION=false
+cleanup() {
+  if [[ "$KEEP_VERSION" != true ]]; then
+    cp "$ORIGINAL_VERSION_FILE" "$VERSION_FILE"
+  fi
+  rm -f "$ORIGINAL_VERSION_FILE"
+}
+trap cleanup EXIT
+
+if [[ "$RETRY" == true ]]; then
+  echo "Retrying verified MainCourse $VERSION ($VERSION_CODE)"
+else
+  printf 'versionName=%s\nversionCode=%s\n' "$VERSION" "$VERSION_CODE" > "$VERSION_FILE"
+
+  if ! "$REPO_ROOT/bin/android-test"; then
+    fail "Android qualification failed"
+  fi
+  if ! "$REPO_ROOT/bin/android-gradle" :app:testReleaseUnitTest :app:verifyReleaseConfiguration :app:bundleRelease; then
+    fail "Android release build or configuration verification failed"
+  fi
+  [[ -f "$SOURCE_AAB" ]] || fail "release bundle was not produced: $SOURCE_AAB"
+
+  mkdir -p "$ANDROID_ROOT/releases"
+  ARTIFACT="$ANDROID_ROOT/releases/maincourse-$VERSION-$VERSION_CODE.aab"
+  CHECKSUM_FILE="$ARTIFACT.sha256"
+  cp "$SOURCE_AAB" "$ARTIFACT"
+  shasum -a 256 "$ARTIFACT" > "$CHECKSUM_FILE"
+fi
+
+command -v jarsigner >/dev/null 2>&1 || fail "jarsigner was not found"
+jarsigner -verify "$ARTIFACT" >/dev/null || fail "release bundle signature verification failed"
+BUNDLE_FINGERPRINT="$($KEYTOOL -printcert -jarfile "$ARTIFACT" | awk '/SHA256:/ { sub(/^.*SHA256:[[:space:]]*/, ""); print; exit }')"
+[[ "$BUNDLE_FINGERPRINT" == "$EXPECTED_FINGERPRINT" ]] || fail "bundle signing certificate does not match release.properties"
+
+KEEP_VERSION=true
+GIT_SHA="$(git rev-parse --short HEAD)"
+export MAINCOURSE_AAB="$ARTIFACT"
+export MAINCOURSE_VERSION_NAME="$VERSION"
+export MAINCOURSE_VERSION_CODE="$VERSION_CODE"
+export MAINCOURSE_GIT_SHA="$GIT_SHA"
+export MAINCOURSE_PLAY_TRACK="$PLAY_TRACK"
+export SUPPLY_JSON_KEY="$PLAY_CREDENTIALS"
+export BUNDLE_GEMFILE="$ANDROID_ROOT/Gemfile"
+
+if ! (cd "$ANDROID_ROOT" && bundle exec fastlane android closed_test); then
+  fail "Google Play upload failed; rerun this exact version to retry the verified artifact"
+fi
+
+CHECKSUM="$(awk '{ print $1; exit }' "$CHECKSUM_FILE")"
+echo "Uploaded MainCourse $VERSION ($VERSION_CODE) to $PLAY_TRACK"
+echo "Git commit: $GIT_SHA"
+echo "Artifact: $ARTIFACT"
+echo "SHA-256: $CHECKSUM"
+echo "Commit the version.properties change after confirming Play processing."
