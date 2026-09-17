@@ -108,8 +108,10 @@ release.
 
 ## Diagnosing an installed test build
 
-The app currently maps every network `IOException` to the generic message
-“You're offline.” That message alone does not identify the failing host.
+The app reports connection, DNS, timeout and TLS failures separately. Older
+builds show “You're offline” for every `IOException`, so that message alone does
+not establish that the phone lacks internet access. Connection policy and
+credential-free diagnostics are described in `docs/android-networking.md`.
 
 Confirm the installed package and version from a USB-connected phone:
 
@@ -123,16 +125,15 @@ The Play app is `com.getmaincourse.app`. A locally installed debug build is
 `http://10.0.2.2:3000/` endpoint.
 
 Compare the installed version code with **Play Console → Latest releases and
-bundles**. To gather connection evidence, clear logs, reproduce the failure, and
-save relevant networking/process messages:
+bundles**. To gather connection evidence, start the API diagnostic log and
+reproduce the failure:
 
 ```bash
-adb logcat -c
-# Reproduce the failure on the phone, then:
-adb logcat -d | grep -E 'com.getmaincourse.app|UnknownHost|ConnectException|SSLHandshake|SSLPeer'
+adb logcat -v time -s MainCourseNetwork:W
 ```
 
-Review logs before sharing them and remove email addresses, tokens, or other
-personal data. Also test `https://app.getmaincourse.com/` in the phone's browser
-and compare Wi-Fi with mobile data to distinguish server, DNS/TLS, and
-device-network failures.
+API diagnostics exclude request secrets. For older builds, OS-level network logs
+may help, but the app did not log the caught exception. Also test
+`https://app.getmaincourse.com/` in the phone's browser and compare Wi-Fi with
+mobile data when available; browsers can recover from failed routes differently
+from native clients.

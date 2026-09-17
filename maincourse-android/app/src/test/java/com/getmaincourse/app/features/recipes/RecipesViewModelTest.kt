@@ -89,7 +89,7 @@ class RecipesViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(7L), viewModel.state.value.recipes.map { it.id })
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not refresh recipes", viewModel.state.value.error)
         collection.cancel()
     }
 
@@ -131,7 +131,7 @@ class RecipesViewModelTest {
 
         assertEquals(20L, viewModel.state.value.selectedCookbookId)
         assertEquals(listOf(9L), viewModel.state.value.recipes.map { it.id })
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not refresh recipes", viewModel.state.value.error)
         assertEquals(listOf(10L), fixture.detailSyncs)
         collection.cancel()
     }
@@ -152,7 +152,7 @@ class RecipesViewModelTest {
 
         assertEquals(10L, viewModel.state.value.selectedCookbookId)
         assertEquals(listOf(7L), viewModel.state.value.recipes.map { it.id })
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not select cookbook", viewModel.state.value.error)
         collection.cancel()
     }
 
@@ -285,7 +285,7 @@ class RecipesViewModelTest {
         )
         val collection = backgroundScope.launch { viewModel.state.collect() }
         advanceUntilIdle()
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not refresh recipes", viewModel.state.value.error)
 
         recipes.value = listOf(recipeSummary(8, "pending"))
         viewModel.importAccepted(10)
@@ -323,7 +323,7 @@ class RecipesViewModelTest {
         runCurrent()
 
         assertEquals(1, refreshCalls)
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not refresh recipes", viewModel.state.value.error)
         advanceTimeBy(3_000)
         runCurrent()
 
@@ -371,6 +371,53 @@ class RecipesViewModelTest {
 
         assertEquals(2, refreshes)
         assertEquals(7L, viewModel.state.value.recipe?.id)
+        collection.cancel()
+    }
+
+    @Test
+    fun recipeSpinnerStopsWhileShoppingRefreshIsStillPending() = runTest(dispatcher) {
+        val detail = recipeDetail(7)
+        val shoppingFinished = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val viewModel = RecipeDetailViewModel(
+            observeDetail = { MutableStateFlow<RecipeDetail?>(detail) },
+            refreshDetail = {},
+            refreshShoppingItems = {
+                shoppingFinished.await()
+                emptyList()
+            },
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+
+        runCurrent()
+
+        assertEquals(detail, viewModel.state.value.recipe)
+        assertFalse(viewModel.state.value.refreshing)
+        assertFalse(viewModel.state.value.shoppingListReviewReady)
+        shoppingFinished.complete(Unit)
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.shoppingListReviewReady)
+        collection.cancel()
+    }
+
+    @Test
+    fun recipeErrorIsShownBeforeShoppingRefreshFinishes() = runTest(dispatcher) {
+        val shoppingFinished = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val viewModel = RecipeDetailViewModel(
+            observeDetail = { MutableStateFlow<RecipeDetail?>(null) },
+            refreshDetail = { throw IllegalStateException("failed") },
+            refreshShoppingItems = {
+                shoppingFinished.await()
+                emptyList()
+            },
+        )
+        val collection = backgroundScope.launch { viewModel.state.collect() }
+
+        runCurrent()
+
+        assertFalse(viewModel.state.value.loading)
+        assertEquals("Could not load recipe", viewModel.state.value.error)
+        shoppingFinished.complete(Unit)
+        advanceUntilIdle()
         collection.cancel()
     }
 

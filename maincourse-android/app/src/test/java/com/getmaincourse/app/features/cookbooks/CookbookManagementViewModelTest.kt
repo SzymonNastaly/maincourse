@@ -75,7 +75,7 @@ class CookbookManagementViewModelTest {
     }
 
     @Test
-    fun mutationFailureKeepsCachedCookbooksAndShowsOfflineState() = runTest(dispatcher) {
+    fun mutationFailureKeepsCachedCookbooksAndShowsError() = runTest(dispatcher) {
         val selection = MutableStateFlow(CookbookSelection(listOf(PERSONAL, SHARED), SHARED.id))
         val viewModel = viewModel(
             selection = selection,
@@ -87,7 +87,7 @@ class CookbookManagementViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(PERSONAL, SHARED), viewModel.state.value.cookbooks)
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not delete cookbook", viewModel.state.value.error)
     }
 
     private fun viewModel(

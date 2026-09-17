@@ -104,7 +104,7 @@ class RecipeImportViewModelTest {
         viewModel.submit().join()
         advanceUntilIdle()
 
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not import recipe", viewModel.state.value.error)
         assertEquals("Soup\n1 onion", viewModel.state.value.text)
         assertNull(viewModel.state.value.importedRecipeId)
         collection.cancel()
@@ -148,7 +148,7 @@ class RecipeImportViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.state.value.canSubmit)
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not load cookbooks", viewModel.state.value.error)
         collection.cancel()
     }
 

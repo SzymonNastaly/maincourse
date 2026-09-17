@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
-import okhttp3.OkHttpClient
+import okhttp3.Call
 import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -102,11 +102,9 @@ class AuthInterceptorTest {
     }
 
     private fun client(provider: SessionProvider, events: SessionEvents) =
-        OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor(provider, events))
-            .build()
+        ApiCallFactory(provider, events)
 
-    private fun OkHttpClient.execute(
+    private fun Call.Factory.execute(
         path: String,
         anonymous: Boolean = false,
         cookbookId: Long? = null,

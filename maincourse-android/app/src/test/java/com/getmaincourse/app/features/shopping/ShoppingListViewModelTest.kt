@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -64,7 +65,7 @@ class ShoppingListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf("Cached"), viewModel.state.value.items.map { it.name })
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not refresh shopping list", viewModel.state.value.error)
     }
 
     @Test
@@ -78,6 +79,58 @@ class ShoppingListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(COOKBOOK.id, SHARED_COOKBOOK.id), refreshedCookbooks)
+    }
+
+    @Test
+    fun cookbookConnectionFailureStillRefreshesTheCachedSelectedShoppingList() = runTest(dispatcher) {
+        val viewModel = viewModel(
+            refreshCookbooks = { throw IOException("connection reset") },
+            refreshItems = {
+                assertEquals(COOKBOOK.id, it)
+                items.value = listOf(item(2, "Fresh"))
+            },
+        )
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+
+        advanceUntilIdle()
+
+        assertEquals(listOf("Fresh"), viewModel.state.value.items.map { it.name })
+        assertEquals(null, viewModel.state.value.error)
+        assertFalse(viewModel.state.value.refreshing)
+    }
+
+    @Test
+    fun cookbookConnectionFailureWithoutCachedSelectionIsReported() = runTest(dispatcher) {
+        selection.value = CookbookSelection(emptyList(), null)
+        val viewModel = viewModel(
+            refreshCookbooks = { throw java.net.SocketTimeoutException() },
+            refreshItems = { error("Must not request an unknown cookbook") },
+        )
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+
+        advanceUntilIdle()
+
+        assertEquals("Connection timed out. Please try again.", viewModel.state.value.error)
+        assertFalse(viewModel.state.value.initialLoading)
+    }
+
+    @Test
+    fun cookbookAuthFailureDoesNotContinueWithCachedSelection() = runTest(dispatcher) {
+        val viewModel = viewModel(
+            refreshCookbooks = {
+                throw retrofit2.HttpException(retrofit2.Response.error<Unit>(
+                    401,
+                    "{}".toResponseBody(),
+                ))
+            },
+            refreshItems = { error("Must not continue after an authentication failure") },
+        )
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+
+        advanceUntilIdle()
+
+        assertEquals("Could not refresh shopping list", viewModel.state.value.error)
+        assertFalse(viewModel.state.value.refreshing)
     }
 
     @Test
@@ -141,6 +194,7 @@ class ShoppingListViewModelTest {
     }
 
     private fun viewModel(
+        refreshCookbooks: suspend () -> Unit = {},
         refreshItems: suspend (Long) -> Unit = {},
         createItem: suspend (ShoppingItemRequest) -> Unit = {},
         setChecked: suspend (Long, Boolean) -> Unit = { _, _ -> },
@@ -149,7 +203,7 @@ class ShoppingListViewModelTest {
     ) = ShoppingListViewModel(
         observeCookbooks = { selection },
         observeItems = { items },
-        refreshCookbooks = {},
+        refreshCookbooks = refreshCookbooks,
         refreshItems = refreshItems,
         createItem = { _, item -> createItem(item) },
         setItemChecked = { _, id, checked -> setChecked(id, checked) },

@@ -111,7 +111,7 @@ class SearchViewModelTest {
         val collection = backgroundScope.launch { viewModel.state.collect() }
         advanceUntilIdle()
 
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not prepare recipe search", viewModel.state.value.error)
         failure = null
         viewModel.retry()
         advanceUntilIdle()

@@ -1,6 +1,11 @@
 package com.getmaincourse.app.data.network
 
 import java.io.IOException
+import java.io.InterruptedIOException
+import java.net.ConnectException
+import java.net.SocketException
+import java.net.UnknownHostException
+import javax.net.ssl.SSLException
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -13,7 +18,11 @@ import retrofit2.HttpException
 
 fun Throwable.userMessage(fallback: String): String = when (this) {
     is CancellationException -> throw this
-    is IOException -> "You're offline"
+    is InterruptedIOException -> "Connection timed out. Please try again."
+    is UnknownHostException -> "Could not find the server. Check your connection."
+    is ConnectException -> "Could not connect to the server. Check your connection."
+    is SSLException -> "Could not establish a secure connection."
+    is SocketException -> "Connection interrupted. Please try again."
     is HttpException -> apiMessage() ?: fallback
     is ApiFailure -> message?.takeIf(String::isNotBlank) ?: fallback
     else -> fallback

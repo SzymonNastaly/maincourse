@@ -1,12 +1,13 @@
 package com.getmaincourse.app
 
 import android.app.Application
+import android.util.Log
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.RecipeRepository
 import com.getmaincourse.app.data.ShoppingListRepository
 import com.getmaincourse.app.data.cache.MainCourseDatabase
 import com.getmaincourse.app.data.images.SessionImages
-import com.getmaincourse.app.data.network.AuthInterceptor
+import com.getmaincourse.app.data.network.ApiCallFactory
 import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.network.SessionEvents
 import com.getmaincourse.app.data.onboarding.OnboardingPreferences
@@ -22,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
@@ -44,14 +44,15 @@ class AppContainer(application: Application) {
     val onboardingPreferences = OnboardingPreferences(application)
     val sessionProvider = SessionProvider()
     val sessionEvents = SessionEvents()
-    private val authenticatedClient = OkHttpClient.Builder()
-        .retryOnConnectionFailure(false)
-        .addInterceptor(AuthInterceptor(sessionProvider, sessionEvents))
-        .build()
+    private val authenticatedClient = ApiCallFactory(
+        sessionProvider,
+        sessionEvents,
+        logFailure = { Log.w("MainCourseNetwork", it) },
+    )
     private val json = Json { ignoreUnknownKeys = true }
     val service: MainCourseService = Retrofit.Builder()
         .baseUrl(BuildConfig.API_BASE_URL)
-        .client(authenticatedClient)
+        .callFactory(authenticatedClient)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(MainCourseService::class.java)

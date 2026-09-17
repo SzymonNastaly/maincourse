@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class RecipeDetailUiState(
@@ -166,29 +167,29 @@ class RecipeDetailViewModel internal constructor(
         refreshJob?.cancel()
         return viewModelScope.launch {
             refreshState.value = RefreshState(running = true, shoppingListRefreshCompleted = false)
-            var recipeError: String? = null
-            try {
-                refreshDetail()
-            } catch (failure: CancellationException) {
-                throw failure
-            } catch (failure: Throwable) {
-                recipeError = failure.userMessage("Could not load recipe")
+            launch {
+                val recipeError = try {
+                    refreshDetail()
+                    null
+                } catch (failure: CancellationException) {
+                    throw failure
+                } catch (failure: Throwable) {
+                    failure.userMessage("Could not load recipe")
+                }
+                refreshState.update { it.copy(running = false, error = recipeError) }
             }
 
-            try {
-                latestShoppingItems = refreshShoppingItems()
-            } catch (failure: CancellationException) {
-                throw failure
-            } catch (_: Throwable) {
-                // The cached list still gives the review flow an offline fallback.
+            launch {
+                try {
+                    latestShoppingItems = refreshShoppingItems()
+                } catch (failure: CancellationException) {
+                    throw failure
+                } catch (_: Throwable) {
+                    // The cached list still gives the review flow an offline fallback.
+                }
+                shoppingItemsCacheReady.await()
+                refreshState.update { it.copy(shoppingListRefreshCompleted = true) }
             }
-            shoppingItemsCacheReady.await()
-
-            refreshState.value = RefreshState(
-                running = false,
-                error = recipeError,
-                shoppingListRefreshCompleted = true,
-            )
         }.also { refreshJob = it }
     }
 

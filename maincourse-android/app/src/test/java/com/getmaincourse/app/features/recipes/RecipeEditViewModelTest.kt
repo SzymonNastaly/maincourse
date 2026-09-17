@@ -87,7 +87,7 @@ class RecipeEditViewModelTest {
         viewModel.selectImage(image)
 
         viewModel.save().join()
-        assertEquals("You're offline", viewModel.state.value.error)
+        assertEquals("Could not save recipe", viewModel.state.value.error)
         assertFalse(viewModel.state.value.saved)
 
         viewModel.save().join()

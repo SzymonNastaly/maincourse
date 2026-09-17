@@ -9,6 +9,7 @@ import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.network.userMessage
+import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -134,7 +135,12 @@ class ShoppingListViewModel internal constructor(
         return viewModelScope.launch {
             refreshState.value = OperationState(running = true)
             try {
-                refreshCookbooks()
+                try {
+                    refreshCookbooks()
+                } catch (failure: IOException) {
+                    // A transient cookbook request failure needn't block an already selected list.
+                    if (cookbookFlow.first().selectedId == null) throw failure
+                }
                 cookbookFlow.first().selectedId?.let { refreshItems(it) }
                 refreshState.value = OperationState(running = false)
             } catch (failure: CancellationException) {

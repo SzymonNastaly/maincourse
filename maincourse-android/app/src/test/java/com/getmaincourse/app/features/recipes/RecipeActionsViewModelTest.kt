@@ -173,7 +173,7 @@ class RecipeActionsViewModelTest {
         )
 
         viewModel.delete().join()
-        assertEquals(RecipeActionUiState.Failed("You're offline"), viewModel.action.value)
+        assertEquals(RecipeActionUiState.Failed("Could not delete recipe"), viewModel.action.value)
 
         viewModel.delete().join()
         assertEquals(2, attempts)

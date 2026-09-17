@@ -18,6 +18,7 @@ import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
 import com.getmaincourse.app.data.model.SignInRequest
 import com.getmaincourse.app.data.model.SignUpRequest
 import com.getmaincourse.app.data.model.StructuredIngredient
+import com.getmaincourse.app.data.session.SessionProvider
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -51,6 +52,7 @@ class MainCourseServiceTest {
         server.start()
         service = Retrofit.Builder()
             .baseUrl(server.url("/"))
+            .callFactory(ApiCallFactory(SessionProvider(), SessionEvents()))
             .addConverterFactory(
                 Json {
                     ignoreUnknownKeys = true
@@ -76,7 +78,8 @@ class MainCourseServiceTest {
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api/v1/session", request.path)
-        assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
+        assertNull(request.getHeader("X-MainCourse-Anonymous"))
+        assertNull(request.getHeader("Authorization"))
         assertEquals(
             json(
                 """{"email":"cook@example.com","password":"secret","device_name":"Android","onboarding_device_id":"android-device"}""",
@@ -96,7 +99,8 @@ class MainCourseServiceTest {
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api/v1/registration", request.path)
-        assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
+        assertNull(request.getHeader("X-MainCourse-Anonymous"))
+        assertNull(request.getHeader("Authorization"))
         assertEquals(
             json(
                 """{"name":"Cook","email":"cook@example.com","password":"password","password_confirmation":"password","device_name":"Android","onboarding_device_id":"android-device"}""",
@@ -128,7 +132,8 @@ class MainCourseServiceTest {
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api/v1/onboarding_response", request.path)
-        assertEquals("true", request.getHeader("X-MainCourse-Anonymous"))
+        assertNull(request.getHeader("X-MainCourse-Anonymous"))
+        assertNull(request.getHeader("Authorization"))
         assertEquals(
             json("""{"device_id":"android-device","answers":{"household_size":2,"diet":[]}}"""),
             json(request.body.readUtf8()),
@@ -605,7 +610,7 @@ class MainCourseServiceTest {
 
     @Test
     fun userMessageMapsIoAndRethrowsCancellation() {
-        assertEquals("You're offline", IOException("socket closed").userMessage("Could not refresh"))
+        assertEquals("Could not refresh", IOException("socket closed").userMessage("Could not refresh"))
 
         val cancellation = CancellationException("cancelled")
         try {
