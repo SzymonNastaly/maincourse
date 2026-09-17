@@ -14,12 +14,12 @@ class AndroidPlayUploaderTest < ActiveSupport::TestCase
   end
 
   test "uploads the requested bundle as a completed closed-test release" do
-    harness = FastfileHarness.new(version_codes: [1])
+    harness = FastfileHarness.new(version_codes: [ 1 ])
 
     with_environment(@environment) { harness.load_and_run(@fastlane_directory) }
 
     assert_equal "com.getmaincourse.app", harness.configured_package_name
-    assert_equal [{
+    assert_equal [ {
       package_name: "com.getmaincourse.app",
       aab: "/tmp/maincourse-0.2.0-2.aab",
       json_key: "/tmp/play-service-account.json",
@@ -31,11 +31,11 @@ class AndroidPlayUploaderTest < ActiveSupport::TestCase
       skip_upload_images: true,
       skip_upload_screenshots: true,
       skip_upload_changelogs: true
-    }], harness.uploads
+    } ], harness.uploads
   end
 
   test "does not upload a version code already present on the track" do
-    harness = FastfileHarness.new(version_codes: [1, 2])
+    harness = FastfileHarness.new(version_codes: [ 1, 2 ])
 
     with_environment(@environment) { harness.load_and_run(@fastlane_directory) }
 
@@ -43,7 +43,7 @@ class AndroidPlayUploaderTest < ActiveSupport::TestCase
   end
 
   test "requires release environment before contacting Google Play" do
-    harness = FastfileHarness.new(version_codes: [1])
+    harness = FastfileHarness.new(version_codes: [ 1 ])
 
     error = assert_raises(KeyError) do
       with_environment(@environment.except("MAINCOURSE_AAB")) do
@@ -59,10 +59,10 @@ class AndroidPlayUploaderTest < ActiveSupport::TestCase
   private
 
   def with_environment(values)
-    previous = values.keys.to_h { |key| [key, ENV[key]] }
+    previous = values.keys.to_h { |key| [ key, ENV[key] ] }
     values.each { |key, value| ENV[key] = value }
     missing_keys = @environment.keys - values.keys
-    missing_previous = missing_keys.to_h { |key| [key, ENV.delete(key)] }
+    missing_previous = missing_keys.to_h { |key| [ key, ENV.delete(key) ] }
     yield
   ensure
     previous&.each { |key, value| value.nil? ? ENV.delete(key) : ENV[key] = value }
