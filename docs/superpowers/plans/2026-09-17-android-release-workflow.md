@@ -36,23 +36,28 @@
 
 - [ ] **Step 1: Add a failing configuration test**
 
-Create `ReleaseConfigurationTest.kt` that locates the Android root in the same manner as `SimpleArchitectureTest`, loads `version.properties`, and asserts:
+Create `ReleaseConfigurationTest.kt` that locates the Android root in the same manner as `SimpleArchitectureTest`, loads `version.properties`, and compares it with the generated variant's real `BuildConfig`:
 
 ```kotlin
-assertTrue(properties.getProperty("versionName").matches(Regex("\\d+\\.\\d+\\.\\d+")))
-assertTrue(properties.getProperty("versionCode").toInt() > 0)
-assertTrue(buildScript.contains("https://app.getmaincourse.com/"))
-assertTrue(buildScript.contains("com.getmaincourse.app"))
+assertEquals(properties.getProperty("versionCode").toInt(), BuildConfig.VERSION_CODE)
+if (BuildConfig.DEBUG) {
+    assertEquals("com.getmaincourse.app.debug", BuildConfig.APPLICATION_ID)
+    assertEquals("http://10.0.2.2:3000/", BuildConfig.API_BASE_URL)
+} else {
+    assertEquals(properties.getProperty("versionName"), BuildConfig.VERSION_NAME)
+    assertEquals("com.getmaincourse.app", BuildConfig.APPLICATION_ID)
+    assertEquals("https://app.getmaincourse.com/", BuildConfig.API_BASE_URL)
+}
 ```
 
-It must also reject a missing trailing slash and assert the debug localhost URL remains present.
+The test independently validates that the properties contain a semantic version and positive integer code.
 
 - [ ] **Step 2: Run the focused test and confirm the missing version file fails**
 
 Run:
 
 ```bash
-bin/android-gradle :app:testDebugUnitTest --tests com.getmaincourse.app.ReleaseConfigurationTest
+bin/android-gradle :app:testDebugUnitTest :app:testReleaseUnitTest --tests com.getmaincourse.app.ReleaseConfigurationTest
 ```
 
 Expected: FAIL because `maincourse-android/version.properties` does not exist.
@@ -82,7 +87,7 @@ Register a Gradle task that fails unless the application ID and endpoint equal t
 Run:
 
 ```bash
-bin/android-gradle :app:testDebugUnitTest --tests com.getmaincourse.app.ReleaseConfigurationTest :app:verifyReleaseConfiguration
+bin/android-gradle :app:testDebugUnitTest :app:testReleaseUnitTest --tests com.getmaincourse.app.ReleaseConfigurationTest :app:verifyReleaseConfiguration
 ```
 
 Expected: PASS and output identifying `com.getmaincourse.app`, production HTTPS, version `0.1.0 (1)`, and configured signing.
@@ -110,7 +115,7 @@ git commit -m "Guard Android release configuration"
 
 - [ ] **Step 1: Write a failing Fastlane configuration test**
 
-Create a standalone Minitest that reads the Fastlane files and asserts the package is fixed to `com.getmaincourse.app`, all six environment variables are required, existing track version codes are queried before upload, `upload_to_play_store` receives `aab`, `track`, `release_status: "completed"`, and all listing/media/changelog upload skip flags.
+Create a standalone Minitest harness that evaluates the real `Fastfile`, captures the `closed_test` lane, and executes it with fake `google_play_track_version_codes` and `upload_to_play_store` API boundaries. Assert the observable upload request uses package `com.getmaincourse.app`, the supplied AAB and track, `release_status: "completed"`, and all listing/media/changelog skip flags. Add a second case where the version code already exists and assert the lane returns without an upload request. Add one missing-environment case and assert it fails before either API boundary.
 
 - [ ] **Step 2: Run the focused test and verify failure**
 
@@ -245,21 +250,7 @@ git commit -m "Add verified Android release command"
 - Consumes the completed `bin/android-release VERSION` workflow.
 - Produces operator instructions for Play API setup, signing-key confirmation and backup, release execution, retry handling, Play verification, closed-test installation, and `adb logcat` diagnosis.
 
-- [ ] **Step 1: Add documentation assertions**
-
-Extend `android_release_script_test.rb` to assert the guide includes the exact command, closed-testing requirement, service-account least privilege, ignored credential path, upload-key fingerprint comparison, backup/recovery check, version commit step, Play processing check, device smoke test, and `adb logcat` instructions.
-
-- [ ] **Step 2: Run the documentation test and verify failure**
-
-Run:
-
-```bash
-bin/rails test test/lib/android_release_script_test.rb
-```
-
-Expected: FAIL because `docs/android-release.md` is absent.
-
-- [ ] **Step 3: Write the operator guide and link it**
+- [ ] **Step 1: Write the operator guide and link it**
 
 Document:
 
@@ -274,9 +265,9 @@ Document:
 - confirming processing, installing from the closed-test link, and smoke-testing sign-in/data
 - capturing filtered `adb logcat` output for the current generic network failure without including credentials
 
-Link the guide from README and Android guidance. Add the release files and guide to the Android workflow path filters so later CI changes are not skipped.
+Link the guide from README and Android guidance. Add the release files and guide to the Android workflow path filters so later CI changes are not skipped. Review the rendered Markdown manually; human-facing prose has no automated source-text test.
 
-- [ ] **Step 4: Run all Android and release-workflow checks**
+- [ ] **Step 2: Run all Android and release-workflow checks**
 
 Run:
 
@@ -291,17 +282,17 @@ git diff --check
 
 Expected: all commands PASS. Do not invoke the live release command during verification because it always uploads.
 
-- [ ] **Step 5: Inspect the release artifact without uploading**
+- [ ] **Step 3: Inspect the release artifact without uploading**
 
 Run `jarsigner -verify -verbose -certs maincourse-android/app/build/outputs/bundle/release/app-release.aab` and calculate its SHA-256. Confirm the certificate fingerprint, package/URL output from `verifyReleaseConfiguration`, and version match the committed configuration. Do not expose passwords or service-account JSON.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add docs/android-release.md README.md maincourse-android/AGENTS.md .github/workflows/android.yml test/lib/android_release_script_test.rb
 git commit -m "Document Android release operations"
 ```
 
-- [ ] **Step 7: Prepare the one-time live setup handoff**
+- [ ] **Step 5: Prepare the one-time live setup handoff**
 
 Report the exact Play Console steps still requiring the account owner: compare the upload certificate fingerprint, create/restrict/download the service account, confirm the closed-track API ID, and back up the signing files. Do not execute `bin/android-release` until those checks are complete and the user supplies the ignored credential locally.
