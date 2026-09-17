@@ -163,10 +163,14 @@ class AndroidReleaseScriptTest < ActiveSupport::TestCase
         printf 'Alias name: maincourse-upload\n\t SHA256: %s\n' "$FAKE_CERT_FINGERPRINT"
       fi
     SH
-    write_executable("fake-bin/jarsigner", <<~SH)
+    write_executable("maincourse-android/fake-jdk/bin/jarsigner", <<~SH)
       #!/bin/bash
       echo "jarsigner $*" >> "$COMMAND_LOG"
       exit "${FAKE_JARSIGNER_EXIT:-0}"
+    SH
+    write_executable("fake-bin/jarsigner", <<~SH)
+      #!/bin/bash
+      exit 99
     SH
     write_executable("fake-bin/bundle", <<~SH)
       #!/bin/bash

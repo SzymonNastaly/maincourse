@@ -61,12 +61,17 @@ KEY_ALIAS="$(property "$SIGNING_FILE" keyAlias)"
 KEYSTORE="$ANDROID_ROOT/$STORE_FILE"
 [[ -f "$KEYSTORE" ]] || fail "missing Android upload keystore: $KEYSTORE"
 
-if [[ -n ${JAVA_HOME:-} && -x "$JAVA_HOME/bin/keytool" ]]; then
+if [[ -n ${JAVA_HOME:-} && -x "$JAVA_HOME/bin/keytool" && -x "$JAVA_HOME/bin/jarsigner" ]]; then
   KEYTOOL="$JAVA_HOME/bin/keytool"
-elif command -v keytool >/dev/null 2>&1; then
+  JARSIGNER="$JAVA_HOME/bin/jarsigner"
+elif [[ -x "/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/keytool" && -x "/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/jarsigner" ]]; then
+  KEYTOOL="/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/keytool"
+  JARSIGNER="/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/jarsigner"
+elif command -v keytool >/dev/null 2>&1 && command -v jarsigner >/dev/null 2>&1; then
   KEYTOOL="$(command -v keytool)"
+  JARSIGNER="$(command -v jarsigner)"
 else
-  fail "keytool was not found; set JAVA_HOME"
+  fail "keytool and jarsigner were not found; set JAVA_HOME"
 fi
 
 export MAINCOURSE_KEYSTORE_PASSWORD="$STORE_PASSWORD"
@@ -125,8 +130,7 @@ else
   shasum -a 256 "$ARTIFACT" > "$CHECKSUM_FILE"
 fi
 
-command -v jarsigner >/dev/null 2>&1 || fail "jarsigner was not found"
-jarsigner -verify "$ARTIFACT" >/dev/null || fail "release bundle signature verification failed"
+"$JARSIGNER" -verify "$ARTIFACT" >/dev/null || fail "release bundle signature verification failed"
 BUNDLE_FINGERPRINT="$($KEYTOOL -printcert -jarfile "$ARTIFACT" | awk '/SHA256:/ { sub(/^.*SHA256:[[:space:]]*/, ""); print; exit }')"
 [[ "$BUNDLE_FINGERPRINT" == "$EXPECTED_FINGERPRINT" ]] || fail "bundle signing certificate does not match release.properties"
 
