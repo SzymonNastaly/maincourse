@@ -1,5 +1,41 @@
 import java.net.URI
 import java.util.Properties
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.TaskAction
+
+abstract class VerifyReleaseConfiguration : DefaultTask() {
+    @get:Input abstract val applicationId: Property<String>
+    @get:Input abstract val apiBaseUrl: Property<String>
+    @get:Input abstract val versionName: Property<String>
+    @get:Input abstract val versionCode: Property<Int>
+    @get:Input abstract val debuggable: Property<Boolean>
+    @get:Input abstract val minified: Property<Boolean>
+    @get:Input abstract val shrinksResources: Property<Boolean>
+    @get:InputFile @get:Optional abstract val signingProperties: RegularFileProperty
+
+    @TaskAction
+    fun verify() {
+        check(applicationId.get() == "com.getmaincourse.app") { "Unexpected release application ID" }
+        check(apiBaseUrl.get() == "https://app.getmaincourse.com/") { "Unexpected release API base URL" }
+        check(URI(apiBaseUrl.get()).scheme == "https" && apiBaseUrl.get().endsWith("/")) {
+            "Release API base URL must use HTTPS and end with /"
+        }
+        check(!debuggable.get()) { "Release build must not be debuggable" }
+        check(minified.get()) { "Release build must enable minification" }
+        check(shrinksResources.get()) { "Release build must shrink resources" }
+        check(signingProperties.asFile.get().isFile) { "Release signing is not configured" }
+
+        println("Release package: ${applicationId.get()}")
+        println("Release API: ${apiBaseUrl.get()}")
+        println("Release version: ${versionName.get()} (${versionCode.get()})")
+        println("Release signing: configured")
+    }
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -19,6 +55,8 @@ if (hasGoogleServicesConfig) apply(plugin = "com.google.gms.google-services")
 
 val debugApiBaseUrl = providers.gradleProperty("maincourse.apiBaseUrl")
     .orElse("http://10.0.2.2:3000/").get()
+val releaseApplicationId = "com.getmaincourse.app"
+val releaseApiBaseUrl = "https://app.getmaincourse.com/"
 val debugApiUri = URI(debugApiBaseUrl)
 require(debugApiUri.scheme in listOf("http", "https") && debugApiUri.host != null &&
     debugApiUri.userInfo == null && debugApiUri.query == null && debugApiUri.fragment == null &&
@@ -35,17 +73,28 @@ val releaseSigningProperties = Properties().apply {
         releaseSigningPropertiesFile.inputStream().use(::load)
     }
 }
+val versionPropertiesFile = rootProject.file("version.properties")
+require(versionPropertiesFile.isFile) { "Missing Android version file: $versionPropertiesFile" }
+val versionProperties = Properties().apply {
+    versionPropertiesFile.inputStream().use(::load)
+}
+val appVersionName = versionProperties.getProperty("versionName")
+    ?.takeIf { it.matches(Regex("\\d+\\.\\d+\\.\\d+")) }
+    ?: error("versionName must use X.Y.Z format")
+val appVersionCode = versionProperties.getProperty("versionCode")?.toIntOrNull()
+    ?.takeIf { it > 0 }
+    ?: error("versionCode must be a positive integer")
 
 android {
     namespace = "com.getmaincourse.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.getmaincourse.app"
+        applicationId = releaseApplicationId
         minSdk = 29
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -70,7 +119,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            buildConfigField("String", "API_BASE_URL", "\"https://app.getmaincourse.com/\"")
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
             releaseSigning?.let { signingConfig = it }
         }
     }
@@ -89,6 +138,24 @@ android {
         // Dependency upgrades are deliberate; online freshness checks make CI time-dependent.
         disable += setOf("NewerVersionAvailable", "AndroidGradlePluginVersion", "GradleDependency")
     }
+}
+
+val releaseBuildType = android.buildTypes.getByName("release")
+val releaseIsDebuggable = releaseBuildType.isDebuggable
+val releaseIsMinified = releaseBuildType.isMinifyEnabled
+val releaseShrinksResources = releaseBuildType.isShrinkResources
+
+tasks.register<VerifyReleaseConfiguration>("verifyReleaseConfiguration") {
+    group = "verification"
+    description = "Verifies the production Android release configuration."
+    applicationId.set(releaseApplicationId)
+    apiBaseUrl.set(releaseApiBaseUrl)
+    versionName.set(appVersionName)
+    versionCode.set(appVersionCode)
+    debuggable.set(releaseIsDebuggable)
+    minified.set(releaseIsMinified)
+    shrinksResources.set(releaseShrinksResources)
+    signingProperties.set(releaseSigningPropertiesFile)
 }
 
 kotlin {
