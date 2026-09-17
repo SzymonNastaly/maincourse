@@ -69,7 +69,8 @@ Open `maincourse-android/` in Android Studio for Android development. See
 [`maincourse-android/AGENTS.md`](maincourse-android/AGENTS.md) for build and
 design guidance. Android builds and automated tests do not require Rails or
 provider credentials; live email/recipe integration uses a local or public Rails
-API.
+API. Android closed-test releases use the guarded workflow in
+[`docs/android-release.md`](docs/android-release.md).
 
 ### Quality checks
 

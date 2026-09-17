@@ -39,6 +39,8 @@ Run `bin/android-build`, `bin/android-test`, and `bin/android-test --device`
 (with an emulator or device); use `bin/android-gradle :app:assembleRelease` for
 release compilation. Device tests use debug-only `MainCourseTestActivity`; live
 checks use `MainActivity`, a dedicated account, and disposable data for deletion.
+Use `bin/android-release VERSION` only for an intentional live upload to Google
+Play closed testing, after completing the setup in `docs/android-release.md`.
 
 For local Rails, the emulator uses `http://10.0.2.2:3000/`. Preserve the
 debug-only local-network permission and its denial path; public HTTPS debug builds

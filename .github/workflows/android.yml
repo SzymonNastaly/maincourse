@@ -5,12 +5,14 @@ on:
     paths:
       - maincourse-android/**
       - bin/android-*
+      - docs/android-release.md
       - .github/workflows/android.yml
   push:
     branches: [ main ]
     paths:
       - maincourse-android/**
       - bin/android-*
+      - docs/android-release.md
       - .github/workflows/android.yml
 
 permissions:
