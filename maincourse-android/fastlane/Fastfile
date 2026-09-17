@@ -1,0 +1,35 @@
+default_platform(:android)
+
+platform :android do
+  desc "Upload a verified MainCourse bundle to closed testing"
+  lane :closed_test do
+    aab = ENV.fetch("MAINCOURSE_AAB")
+    version_name = ENV.fetch("MAINCOURSE_VERSION_NAME")
+    version_code = Integer(ENV.fetch("MAINCOURSE_VERSION_CODE"), 10)
+    git_sha = ENV.fetch("MAINCOURSE_GIT_SHA")
+    track = ENV.fetch("MAINCOURSE_PLAY_TRACK")
+    json_key = ENV.fetch("SUPPLY_JSON_KEY")
+
+    existing_codes = google_play_track_version_codes(
+      package_name: "com.getmaincourse.app",
+      json_key: json_key,
+      track: track
+    )
+
+    unless existing_codes.include?(version_code)
+      upload_to_play_store(
+        package_name: "com.getmaincourse.app",
+        aab: aab,
+        json_key: json_key,
+        track: track,
+        release_status: "completed",
+        release_name: "#{version_name} (#{git_sha})",
+        skip_upload_apk: true,
+        skip_upload_metadata: true,
+        skip_upload_images: true,
+        skip_upload_screenshots: true,
+        skip_upload_changelogs: true
+      )
+    end
+  end
+end

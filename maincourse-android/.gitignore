@@ -9,3 +9,5 @@
 /keystore.properties
 **/google-services.json
 /.env*
+/play-service-account.json
+/releases/

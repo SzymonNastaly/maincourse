@@ -58,8 +58,8 @@ established client for the Google Play Developer Publishing API.
 Fastlane is preferred over Gradle Play Publisher because the latter is in
 maintenance mode and the project uses a recent Android Gradle Plugin. A custom
 Publishing API client would create unnecessary authentication, edit-transaction,
-and track-management code. Fastlane will be pinned through Bundler for
-reproducibility.
+and track-management code. Fastlane will be pinned through an Android-specific
+Bundler definition for reproducibility without constraining the Rails bundle.
 
 ## Version Management
 
@@ -182,7 +182,8 @@ The workflow does not generate or rotate a key automatically.
 - `maincourse-android/app/build.gradle.kts`: loads version properties, retains the
   production-only release endpoint, and exposes focused verification tasks or
   metadata needed by the script.
-- `Gemfile` and `Gemfile.lock`: pin the Fastlane dependency.
+- `maincourse-android/Gemfile` and `maincourse-android/Gemfile.lock`: pin the
+  Fastlane dependency independently from the Rails deployment dependencies.
 - `maincourse-android/fastlane/`: minimal Fastlane configuration for binary-only
   upload to the configured closed-testing track.
 - `docs/android-release.md`: one-time Play API/signing setup, normal release

@@ -105,8 +105,8 @@ git commit -m "Guard Android release configuration"
 - Create: `maincourse-android/fastlane/Appfile`
 - Create: `maincourse-android/fastlane/Fastfile`
 - Create: `test/lib/android_play_uploader_test.rb`
-- Modify: `Gemfile`
-- Modify: `Gemfile.lock`
+- Create: `maincourse-android/Gemfile`
+- Create: `maincourse-android/Gemfile.lock`
 - Modify: `maincourse-android/.gitignore`
 
 **Interfaces:**
@@ -129,10 +129,10 @@ Expected: FAIL because the Fastlane files are absent.
 
 - [ ] **Step 3: Pin Fastlane and create minimal configuration**
 
-Add `gem "fastlane", "~> 2.240", require: false` to the development group and run:
+Create an Android-specific bundle containing `gem "fastlane", "2.240.1", require: false` and run:
 
 ```bash
-bundle install
+BUNDLE_GEMFILE=maincourse-android/Gemfile bundle install
 ```
 
 Set the package in `Appfile`. In `Fastfile`, validate all required environment variables, call `google_play_track_version_codes`, return success when the requested integer code already exists, and otherwise call `upload_to_play_store` with the release name `VERSION (GIT_SHA)`. Skip APK, metadata, images, screenshots, and changelogs.
@@ -160,7 +160,7 @@ Expected: both commands PASS without contacting Google Play.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Gemfile Gemfile.lock maincourse-android/.gitignore maincourse-android/fastlane test/lib/android_play_uploader_test.rb
+git add maincourse-android/Gemfile maincourse-android/Gemfile.lock maincourse-android/.gitignore maincourse-android/fastlane test/lib/android_play_uploader_test.rb docs/superpowers/specs/2026-09-17-android-release-workflow-design.md docs/superpowers/plans/2026-09-17-android-release-workflow.md
 git commit -m "Configure Android closed-test uploads"
 ```
 
