@@ -30,6 +30,28 @@ final class RecipeViewModelTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWelcomeEligibilityRequiresSuccessfullyLoadedEmptyCookbook() async {
+        XCTAssertFalse(self.sut.hasLoadedEmptyCookbook)
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 1)
+        self.mockRecipeService.fetchRecipesResult = .failure(MockRecipeError.networkError)
+        await self.sut.refreshRecipes()
+        XCTAssertFalse(self.sut.hasLoadedEmptyCookbook)
+        self.mockRecipeService.fetchRecipesResult = .success([])
+        await self.sut.refreshRecipes()
+        XCTAssertTrue(self.sut.hasLoadedEmptyCookbook)
+    }
+
+    func testSampleAloneDoesNotQualifyForLibraryNotificationPrompt() {
+        let sample = self.createMockPersistedRecipe(id: 1, name: "Example")
+        sample.starterRecipeKey = "tomato-orzo-v1"
+        self.mockRepository.allRecipes = [sample]
+        self.loadCachedRecipesIntoViewModel()
+        XCTAssertFalse(self.sut.hasPersonalContent)
+        self.mockRepository.allRecipes.append(self.createMockPersistedRecipe(id: 2, name: "My own recipe"))
+        self.loadCachedRecipesIntoViewModel()
+        XCTAssertTrue(self.sut.hasPersonalContent)
+    }
+
     // MARK: - hasPendingImports Tests
 
     func testHasPendingImports_withPendingRecipe_returnsTrue() {

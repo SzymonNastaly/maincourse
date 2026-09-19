@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_15_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_19_170000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -238,6 +238,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_120000) do
     t.index ["user_id"], name: "index_recipe_engagements_on_user_id"
   end
 
+  create_table "recipe_saves", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "original_destination_cookbook_id", null: false
+    t.string "request_id", null: false
+    t.integer "saved_recipe_id"
+    t.string "source_key", null: false
+    t.string "source_type", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["original_destination_cookbook_id"], name: "index_recipe_saves_on_original_destination_cookbook_id"
+    t.index ["saved_recipe_id"], name: "index_recipe_saves_on_saved_recipe_id"
+    t.index ["user_id", "request_id"], name: "index_recipe_saves_on_user_id_and_request_id", unique: true
+    t.index ["user_id"], name: "index_recipe_saves_on_user_id"
+  end
+
   create_table "recipe_tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "recipe_id", null: false
@@ -262,6 +277,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_120000) do
     t.integer "prep_time"
     t.integer "servings"
     t.string "source_url"
+    t.string "starter_recipe_key"
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.index ["cookbook_id", "updated_at", "id"], name: "index_recipes_on_cookbook_id_and_updated_at_and_id"
@@ -346,6 +362,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_120000) do
   add_foreign_key "pending_notifications", "users", column: "recipient_id", on_delete: :cascade
   add_foreign_key "recipe_engagements", "recipes"
   add_foreign_key "recipe_engagements", "users"
+  add_foreign_key "recipe_saves", "recipes", column: "saved_recipe_id", on_delete: :nullify
+  add_foreign_key "recipe_saves", "users", on_delete: :cascade
   add_foreign_key "recipe_tags", "recipes", on_delete: :cascade
   add_foreign_key "recipe_tags", "tags"
   add_foreign_key "recipes", "cookbooks", on_delete: :cascade

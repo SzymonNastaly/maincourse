@@ -67,6 +67,14 @@ class Notifications::ResurfaceCampaignTest < ActiveSupport::TestCase
     end
   end
 
+  test "ignores a starter recipe" do
+    with_tracking_since(1.year.ago) do
+      forgotten_recipe.update!(starter_recipe_key: "tomato-orzo-v1")
+
+      assert_nil Notifications::ResurfaceCampaign.eligible_for(@user)
+    end
+  end
+
   test "ignores a recipe that was opened" do
     with_tracking_since(1.year.ago) do
       recipe = forgotten_recipe

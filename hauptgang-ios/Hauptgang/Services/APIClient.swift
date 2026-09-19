@@ -234,8 +234,8 @@ actor APIClient: APIClientProtocol {
             throw self.unauthorizedError(from: json)
         case 403:
             throw self.forbiddenError(from: json)
-        case 404:
-            throw APIError.notFound
+        case 404, 410:
+            throw response.statusCode == 410 ? APIError.resourceGone : APIError.notFound
         case 409:
             throw self.conflictError(from: json)
         case 413:
@@ -279,6 +279,8 @@ actor APIClient: APIClientProtocol {
             .accountLinkRequired
         case "apple_account_creation_confirmation_required":
             .appleAccountCreationConfirmationRequired
+        case "recipe_save_conflict":
+            .requestConflict
         default:
             .unknown
         }

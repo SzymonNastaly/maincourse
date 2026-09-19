@@ -44,6 +44,19 @@ struct AuthenticatedSessionViewModelTests {
         )
     }
 
+    @Test func failedCookbookStartupCanRecoverWithoutAnUnconfiguredRepository() async {
+        let cookbooks = MockCookbookService()
+        cookbooks.shouldThrowError = true
+        let repository = MockRecipeRepository()
+        let session = self.makeSession(cookbookService: cookbooks, recipeRepository: repository)
+        await session.start(user: self.makeUser(id: 8941), modelContext: self.makeModelContext())
+        #expect(repository.configuredCalled)
+        cookbooks.shouldThrowError = false
+        cookbooks.cookbooksToReturn = [self.makePersonalCookbook()]
+        await session.refreshActiveCookbook()
+        #expect(session.recipeViewModel.hasLoadedEmptyCookbook)
+    }
+
     // MARK: - Startup
 
     @Test func start_freshSignup_resolvesActiveCookbookAndReachesReady() async {

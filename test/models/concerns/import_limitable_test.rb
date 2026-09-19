@@ -18,6 +18,19 @@ class ImportLimitableTest < ActiveSupport::TestCase
     assert_equal count_before + 1, @user.monthly_import_count
   end
 
+  test "monthly_import_count excludes starter recipes" do
+    count_before = @user.monthly_import_count
+    @cookbook.recipes.create!(
+      name: "Starter",
+      import_status: :completed,
+      starter_recipe_key: "tomato-orzo-v1",
+      user: @user
+    )
+
+    assert_equal count_before, @user.monthly_import_count
+    assert_equal User::FREE_MONTHLY_IMPORT_LIMIT - count_before, @user.remaining_imports
+  end
+
   test "import_limit_reached? returns false when under limit" do
     assert_not @user.import_limit_reached?
   end

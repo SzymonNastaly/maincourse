@@ -9,12 +9,20 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
             HauptgangSchemaV3.self,
             HauptgangSchemaV4.self,
             HauptgangSchemaV5.self,
-            HauptgangSchemaV6.self
+            HauptgangSchemaV6.self,
+            HauptgangSchemaV7.self
         ]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6]
+        [
+            migrateV1toV2,
+            migrateV2toV3,
+            migrateV3toV4,
+            migrateV4toV5,
+            migrateV5toV6,
+            migrateV6toV7
+        ]
     }
 
     /// V1 → V2: Wipe local cache — data re-syncs from the server.
@@ -58,5 +66,12 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
     static let migrateV5toV6 = MigrationStage.lightweight(
         fromVersion: HauptgangSchemaV5.self,
         toVersion: HauptgangSchemaV6.self
+    )
+
+    /// V6 → V7: Lightweight — adds an optional starter-recipe marker.
+    /// Existing cached recipes keep their detail data and receive `nil`.
+    static let migrateV6toV7 = MigrationStage.lightweight(
+        fromVersion: HauptgangSchemaV6.self,
+        toVersion: HauptgangSchemaV7.self
     )
 }

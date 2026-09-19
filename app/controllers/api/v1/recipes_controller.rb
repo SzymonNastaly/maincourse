@@ -221,6 +221,7 @@ module Api
           cover_image_url: recipe.cover_image_variant_url(:card),
           cover_images: recipe.cover_image_urls,
           import_status: recipe.import_status,
+          starter_recipe_key: recipe.starter_recipe_key,
           error_message: recipe.error_message,
           updated_at: recipe.updated_at
         }
@@ -255,6 +256,7 @@ module Api
           instructions: recipe.instructions,
           notes: recipe.notes,
           source_url: recipe.source_url,
+          starter_recipe_key: recipe.starter_recipe_key,
           tags: recipe.tags.map { |tag| { id: tag.id, name: tag.name } },
           # TODO: Remove legacy cover_image_url once older iOS builds have migrated
           # to the structured cover_images payload.

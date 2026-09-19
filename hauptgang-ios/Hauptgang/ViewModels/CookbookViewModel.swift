@@ -71,8 +71,10 @@ final class CookbookViewModel {
 
     /// Refresh cookbooks list without changing active selection
     func refresh() async {
+        let requestedUserId = self.currentUserId
         do {
             let cookbooks = try await service.fetchCookbooks()
+            guard !Task.isCancelled, self.currentUserId == requestedUserId else { return }
             self.cookbooks = cookbooks
 
             if let activeId = self.activeCookbook?.id {

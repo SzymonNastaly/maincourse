@@ -107,7 +107,7 @@ leaves `.notDetermined` there is no second chance except the Settings app. So
 the app asks only at moments where the payoff is visible:
 
 - **Recipes are on screen** — after the splash lifts and the library is not
-  empty. This covers a reinstall by a user who already has recipes.
+  empty and contains a recipe without `starter_recipe_key`. The interactive example alone never spends the system prompt. This covers a reinstall by a user who already has their own recipes.
 - **The shopping list holds 3 or more unchecked items** — on opening the
   list, on returning to the tab, and after a cookbook switch. The threshold
   mirrors `StaleShoppingListCampaign::MIN_ITEMS`.
@@ -145,3 +145,5 @@ Notifications::Deliver.new(user: u, candidate: c).call
 Run it with `bin/kamal app exec -i --reuse "bin/rails runner -" < script.rb`.
 This bypasses the job, so it ignores the send hour, the active-user
 suppression, and the frequency cap.
+
+Trusted interactive-example copies carry `starter_recipe_key`. Both recipe-based campaigns exclude these rows; shopping-list reminders remain based on actual shopping activity. Saving a sample also leaves the free import allowance unchanged.

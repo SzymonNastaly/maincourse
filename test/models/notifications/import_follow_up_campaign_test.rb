@@ -85,6 +85,12 @@ class Notifications::ImportFollowUpCampaignTest < ActiveSupport::TestCase
     assert_nil Notifications::ImportFollowUpCampaign.eligible_for(@user)
   end
 
+  test "ignores a starter recipe" do
+    saved_recipe.update!(starter_recipe_key: "tomato-orzo-v1")
+
+    assert_nil Notifications::ImportFollowUpCampaign.eligible_for(@user)
+  end
+
   test "ignores a recipe in a cookbook the user is no longer a member of" do
     other_cookbook = cookbooks(:two_personal)
     recipe = other_cookbook.recipes.create!(name: "Ramen", user: @user, import_status: :completed)

@@ -4,7 +4,11 @@ module ImportLimitable
   FREE_MONTHLY_IMPORT_LIMIT = 15
 
   def monthly_import_count
-    recipes.where(created_at: Time.current.beginning_of_month..).where.not(import_status: :failed).count
+    recipes
+      .where(created_at: Time.current.beginning_of_month..)
+      .where.not(import_status: :failed)
+      .where(starter_recipe_key: nil)
+      .count
   end
 
   def import_limit_reached?

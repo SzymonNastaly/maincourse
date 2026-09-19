@@ -1,0 +1,8 @@
+Use case: photorealistic-natural
+Asset type: original food photograph for an interactive recipe-saving example in MainCourse
+Primary request: a delicious home-cooked one-pan tomato and chickpea orzo, freshly finished in a shallow green ceramic serving bowl
+Subject: small rice-shaped orzo pasta in glossy tomato sauce, chickpeas, softened cherry tomato halves, wilted spinach and a few fresh basil leaves; no cheese
+Scene/backdrop: pale neutral stone kitchen table, a subtle folded linen napkin and one everyday fork at the edge
+Composition/framing: close overhead three-quarter food photograph, bowl fills most of square frame, entire dish visually legible and centered for both square and wide crops
+Lighting/mood: natural window light, inviting everyday dinner, realistic texture and imperfect food styling
+Constraints: no people, no text, no logos, no watermarks, no additional dishes, no garnish unrelated to the recipe

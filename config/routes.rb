@@ -33,6 +33,7 @@ Rails.application.routes.draw do
 
       resources :cookbooks, only: [ :index, :create, :destroy ] do
         post :leave, on: :member
+        resources :recipe_saves, only: [ :create ]
         resources :invitations, controller: "cookbook_invitations", only: [ :create ]
         resources :meal_plans, only: [ :index ] do
           collection do

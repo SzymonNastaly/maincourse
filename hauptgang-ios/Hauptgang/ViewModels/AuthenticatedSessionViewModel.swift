@@ -85,6 +85,9 @@ final class AuthenticatedSessionViewModel {
         await self.cookbookViewModel.loadCookbooks()
         guard !Task.isCancelled else { return }
 
+        // Retry must be able to persist recipes even when the first cookbook request fails.
+        self.recipeViewModel.configure(modelContext: modelContext)
+
         guard let cookbookId = self.cookbookViewModel.activeCookbook?.id else {
             self.logger.warning("No active cookbook resolved after loadCookbooks; failing startup")
             self.startupState = .failed(
@@ -94,7 +97,6 @@ final class AuthenticatedSessionViewModel {
             return
         }
 
-        self.recipeViewModel.configure(modelContext: modelContext)
         await self.recipeViewModel.configureSearchIndex(userId: user.id, cookbookId: cookbookId)
         guard !Task.isCancelled else { return }
 

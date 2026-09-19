@@ -92,4 +92,41 @@ final class RecipeRepositoryTests: XCTestCase {
         XCTAssertEqual(cookbook2.count, 1, "Pruning cookbook 1 should not affect cookbook 2")
         XCTAssertEqual(cookbook2.first?.id, 2)
     }
+
+    // MARK: - Starter Recipe Marker
+
+    func testSaveRecipes_preservesStarterMarkerFromListResponse() throws {
+        let recipe = RecipeListItem(
+            id: 91,
+            name: "Starter orzo",
+            favorite: false,
+            starterRecipeKey: "tomato-orzo-v1",
+            updatedAt: Date()
+        )
+
+        _ = try self.sut.saveRecipes([recipe], cookbookId: 4)
+
+        let cached = try XCTUnwrap(self.sut.getRecipe(id: 91))
+        XCTAssertEqual(cached.starterRecipeKey, "tomato-orzo-v1")
+    }
+
+    func testSaveRecipeDetailRoundTripsStarterMarkerThroughCacheProjection() throws {
+        let detail = RecipeDetail(
+            id: 92,
+            name: "Starter orzo",
+            favorite: false,
+            servings: 2,
+            ingredients: ["160 g orzo"],
+            instructions: ["Simmer"],
+            starterRecipeKey: "tomato-orzo-v1",
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_100)
+        )
+
+        try self.sut.saveRecipeDetail(detail, cookbookId: 4)
+
+        let cached = try XCTUnwrap(self.sut.getRecipe(id: 92))
+        XCTAssertEqual(cached.starterRecipeKey, "tomato-orzo-v1")
+        XCTAssertEqual(cached.toRecipeDetail().starterRecipeKey, "tomato-orzo-v1")
+    }
 }

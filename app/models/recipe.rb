@@ -12,6 +12,11 @@ class Recipe < ApplicationRecord
   has_many :ingredients, -> { order(:position) }, dependent: :destroy, inverse_of: :recipe
   has_many :recipe_engagements, dependent: :delete_all
   has_many :notification_deliveries, dependent: :nullify
+  has_many :recipe_saves,
+    class_name: "RecipeSave",
+    foreign_key: :saved_recipe_id,
+    dependent: :nullify,
+    inverse_of: :saved_recipe
 
   # Keeps the web UI live: other members of a shared cookbook see new recipes,
   # and an import that finishes in the background replaces its own spinner card.
