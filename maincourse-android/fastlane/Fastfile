@@ -6,7 +6,6 @@ platform :android do
     aab = ENV.fetch("MAINCOURSE_AAB")
     version_name = ENV.fetch("MAINCOURSE_VERSION_NAME")
     version_code = Integer(ENV.fetch("MAINCOURSE_VERSION_CODE"), 10)
-    git_sha = ENV.fetch("MAINCOURSE_GIT_SHA")
     track = ENV.fetch("MAINCOURSE_PLAY_TRACK")
     json_key = ENV.fetch("SUPPLY_JSON_KEY")
 
@@ -23,7 +22,7 @@ platform :android do
         json_key: json_key,
         track: track,
         release_status: "completed",
-        release_name: "#{version_name} (#{git_sha})",
+        version_name: version_name,
         skip_upload_apk: true,
         skip_upload_metadata: true,
         skip_upload_images: true,

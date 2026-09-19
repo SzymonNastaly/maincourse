@@ -25,7 +25,7 @@ class AndroidPlayUploaderTest < ActiveSupport::TestCase
       json_key: "/tmp/play-service-account.json",
       track: "alpha",
       release_status: "completed",
-      release_name: "0.2.0 (abc1234)",
+      version_name: "0.2.0",
       skip_upload_apk: true,
       skip_upload_metadata: true,
       skip_upload_images: true,
