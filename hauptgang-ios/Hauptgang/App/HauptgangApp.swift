@@ -44,7 +44,7 @@ struct HauptgangApp: App {
     }
 
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema(versionedSchema: HauptgangSchemaV6.self)
+        let schema = Schema(versionedSchema: HauptgangSchemaV7.self)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         // Happy path: versioned store opens with migration plan
@@ -106,10 +106,12 @@ struct HauptgangApp: App {
     ///
     /// Supported:
     /// - `-resetOnboarding YES` — clears the onboarding completion flag (and the stored
-    ///   device id) so the welcome + question flow shows on next launch.
+    ///   device id) so the interactive example shows on next launch.
     private static func applyDebugLaunchArguments() {
         let defaults = UserDefaults.standard
         if defaults.bool(forKey: "resetOnboarding") {
+            defaults.removeObject(forKey: OnboardingCoordinator.pendingDefaultsKey)
+            defaults.removeObject(forKey: OnboardingCoordinator.dismissedUsersDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.completedAtDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.deviceIdDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.authStepReachedAtDefaultsKey)

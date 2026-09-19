@@ -30,3 +30,9 @@ Recipe failures do not block the authenticated UI forever. They are represented 
 ## Logout/account switching
 
 `RecipeViewModel.clearData()` is async and awaits search-index reset. `AuthenticatedSessionViewModel.reset()` awaits cookbook and recipe cleanup so a logout or account switch cannot race a later login's search-index configuration.
+
+## Interactive onboarding continuation
+
+`RootView` also owns the durable explicit Keep intent for the interactive recipe example. Authentication binds that intent to the user; `AuthenticatedAppShell` attempts saving only after session startup has resolved. The preview can cover the tabs during saving or failure, but saving never extends the global startup splash. Retry/cancel follows the intent and account lifetime. The recipe repository is configured even when the initial cookbook request fails, so a later connection can recover without relaunching.
+
+Successful example saves refresh/switch through the session owner and use the existing recipe navigation path. Invitations and notification destinations take priority. A successful empty cookbook shows the welcoming import/example invitation; failed loading shows retry instead.

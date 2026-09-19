@@ -22,6 +22,23 @@ struct CookbookViewModelTests {
         ])
     }
 
+    @Test func delayedCancelledRefreshCannotApplyToAnotherAccount() async {
+        let gate = HeldCookbookResponse()
+        let service = MockCookbookService()
+        service.fetchHandler = { await gate.fetch() }
+        let viewModel = CookbookViewModel(service: service)
+        viewModel.configure(userId: 1)
+        let task = Task { await viewModel.refresh() }
+        await gate.waitForRequest()
+        task.cancel()
+        await viewModel.reset()
+        viewModel.configure(userId: 2)
+        await gate.release([self.makePersonalCookbook(id: 10)])
+        await task.value
+        #expect(viewModel.cookbooks.isEmpty)
+        #expect(viewModel.activeCookbook == nil)
+    }
+
     // MARK: - isSharedCookbookOwner
 
     @Test func isSharedCookbookOwner_trueWhenCurrentUserIsOwner() async {
@@ -177,5 +194,30 @@ struct CookbookViewModelTests {
         #expect(vm.cookbooks.isEmpty)
         #expect(vm.activeCookbook == nil)
         #expect(vm.isSharedCookbookOwner == false)
+    }
+}
+
+private actor HeldCookbookResponse {
+    private var response: CheckedContinuation<[Cookbook], Never>?
+    private var waiter: CheckedContinuation<Void, Never>?
+
+    func fetch() async -> [Cookbook] {
+        await withCheckedContinuation { continuation in
+            self.response = continuation
+            self.waiter?.resume()
+            self.waiter = nil
+        }
+    }
+
+    func waitForRequest() async {
+        if self.response != nil {
+            return
+        }
+        await withCheckedContinuation { self.waiter = $0 }
+    }
+
+    func release(_ cookbooks: [Cookbook]) {
+        self.response?.resume(returning: cookbooks)
+        self.response = nil
     }
 }

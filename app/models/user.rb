@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_many :cookbook_memberships, dependent: :delete_all
   has_many :cookbooks, through: :cookbook_memberships
   has_many :recipes, dependent: :nullify
+  has_many :recipe_saves, class_name: "RecipeSave", dependent: :destroy
   has_many :shopping_list_items, dependent: :nullify
   has_many :recipe_engagements, dependent: :delete_all
   has_many :notification_deliveries, dependent: :delete_all

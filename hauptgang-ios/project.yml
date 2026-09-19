@@ -33,6 +33,10 @@ targets:
     type: application
     platform: iOS
     sources:
+      - path: ../config/starter_recipes
+        buildPhase: resources
+        excludes:
+          - "*.txt"
       - path: Hauptgang
         excludes:
           - "**/.DS_Store"

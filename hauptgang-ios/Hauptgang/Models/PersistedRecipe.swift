@@ -23,6 +23,7 @@ final class PersistedRecipe {
     var coverImageHeroUrl: String?
     var importStatus: String?
     var errorMessage: String?
+    var starterRecipeKey: String?
     var updatedAt: Date
 
     /// Tracks when this record was last synced from the API
@@ -128,6 +129,7 @@ final class PersistedRecipe {
         coverImageHeroUrl: String? = nil,
         importStatus: String? = nil,
         errorMessage: String? = nil,
+        starterRecipeKey: String? = nil,
         updatedAt: Date,
         lastFetchedAt: Date = Date()
     ) {
@@ -143,6 +145,7 @@ final class PersistedRecipe {
         self.coverImageHeroUrl = coverImageHeroUrl
         self.importStatus = importStatus
         self.errorMessage = errorMessage
+        self.starterRecipeKey = starterRecipeKey
         self.updatedAt = updatedAt
         self.lastFetchedAt = lastFetchedAt
     }
@@ -162,6 +165,7 @@ final class PersistedRecipe {
             coverImageHeroUrl: listItem.heroCoverImageUrl,
             importStatus: listItem.importStatus,
             errorMessage: listItem.errorMessage,
+            starterRecipeKey: listItem.starterRecipeKey,
             updatedAt: listItem.updatedAt
         )
     }
@@ -179,6 +183,7 @@ final class PersistedRecipe {
             coverImageThumbUrl: detail.thumbnailCoverImageUrl,
             coverImageCardUrl: detail.cardCoverImageUrl,
             coverImageHeroUrl: detail.heroCoverImageUrl,
+            starterRecipeKey: detail.starterRecipeKey,
             updatedAt: detail.updatedAt
         )
         self.updateDetails(from: detail)
@@ -201,6 +206,7 @@ final class PersistedRecipe {
         self.coverImageHeroUrl = listItem.heroCoverImageUrl
         self.importStatus = listItem.importStatus
         self.errorMessage = listItem.errorMessage
+        self.starterRecipeKey = listItem.starterRecipeKey
         self.updatedAt = listItem.updatedAt
         self.lastFetchedAt = Date()
     }
@@ -218,6 +224,7 @@ final class PersistedRecipe {
         self.coverImageThumbUrl = detail.thumbnailCoverImageUrl
         self.coverImageCardUrl = detail.cardCoverImageUrl
         self.coverImageHeroUrl = detail.heroCoverImageUrl
+        self.starterRecipeKey = detail.starterRecipeKey
         self.updatedAt = detail.updatedAt
         self.lastFetchedAt = Date()
         self.updateDetails(from: detail)
@@ -263,6 +270,7 @@ final class PersistedRecipe {
             instructions: self.instructions,
             notes: self.notes,
             sourceUrl: self.sourceUrl,
+            starterRecipeKey: self.starterRecipeKey,
             tags: self.tags,
             createdAt: self.createdAt ?? self.updatedAt,
             updatedAt: self.updatedAt

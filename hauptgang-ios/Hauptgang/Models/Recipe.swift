@@ -16,6 +16,7 @@ struct RecipeListItem: Codable, Identifiable {
     let coverImages: RecipeCoverImages?
     let importStatus: String?
     let errorMessage: String?
+    let starterRecipeKey: String?
     let updatedAt: Date
 
     init(
@@ -28,6 +29,7 @@ struct RecipeListItem: Codable, Identifiable {
         coverImages: RecipeCoverImages? = nil,
         importStatus: String? = nil,
         errorMessage: String? = nil,
+        starterRecipeKey: String? = nil,
         updatedAt: Date
     ) {
         self.id = id
@@ -39,6 +41,7 @@ struct RecipeListItem: Codable, Identifiable {
         self.coverImages = coverImages
         self.importStatus = importStatus
         self.errorMessage = errorMessage
+        self.starterRecipeKey = starterRecipeKey
         self.updatedAt = updatedAt
     }
 
@@ -77,6 +80,7 @@ struct RecipeDetail: Codable, Identifiable {
     let instructions: [String]
     let notes: String?
     let sourceUrl: String?
+    let starterRecipeKey: String?
     let tags: [RecipeTag]
     let createdAt: Date
     let updatedAt: Date
@@ -95,6 +99,7 @@ struct RecipeDetail: Codable, Identifiable {
         instructions: [String],
         notes: String? = nil,
         sourceUrl: String? = nil,
+        starterRecipeKey: String? = nil,
         tags: [RecipeTag] = [],
         createdAt: Date,
         updatedAt: Date
@@ -112,6 +117,7 @@ struct RecipeDetail: Codable, Identifiable {
         self.instructions = instructions
         self.notes = notes
         self.sourceUrl = sourceUrl
+        self.starterRecipeKey = starterRecipeKey
         self.tags = tags
         self.createdAt = createdAt
         self.updatedAt = updatedAt

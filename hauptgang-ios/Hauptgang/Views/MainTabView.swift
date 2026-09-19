@@ -12,6 +12,7 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "MainTabVi
 /// only the tab entry point was removed, so it can be restored by adding the
 /// `SwiftUI.Tab` and enum case back.
 struct MainTabView: View {
+    @Environment(OnboardingCoordinator.self) private var onboarding
     @Environment(AuthenticatedSessionViewModel.self) private var session
     @State private var selectedTab: Tab = .recipes
     @State private var searchQuery = ""
@@ -30,7 +31,8 @@ struct MainTabView: View {
             SwiftUI.Tab("Recipes", systemImage: "fork.knife", value: Tab.recipes) {
                 RecipesView(
                     recipeViewModel: self.session.recipeViewModel,
-                    suppressTransientUI: !self.session.canDismissStartupSplash,
+                    suppressTransientUI: !self.session.canDismissStartupSplash || self.onboarding
+                        .showsContinuation || self.onboarding.isDemoPresented,
                     pendingRecipeId: self.$pendingRecipeId
                 )
             }
@@ -50,6 +52,21 @@ struct MainTabView: View {
                 )
             }
         }
+        .safeAreaInset(edge: .top) {
+            if self.onboarding.savedRecipe != nil, self.onboarding.externalNavigationHasPriority {
+                HStack {
+                    Label("Example saved in My Recipes", systemImage: "checkmark.circle")
+                        .font(.subheadline)
+                    Spacer()
+                    Button("Open") { Task { await self.openSavedRecipe(userInitiated: true) } }
+                }
+                .padding(12).background(Color.mcSurface)
+            }
+        }
+        .onChange(of: self.onboarding.savedRecipe, initial: true) { _, saved in
+            guard saved != nil, !self.onboarding.externalNavigationHasPriority else { return }
+            Task { await self.openSavedRecipe() }
+        }
         .tint(Color.mcAccent)
         .modifier(TabBarBackgroundModifier())
         .modifier(TabBarMinimizeModifier())
@@ -59,8 +76,31 @@ struct MainTabView: View {
         }
         .onChange(of: self.notificationRouter.pendingRoute, initial: true) { _, route in
             guard route != nil else { return }
+            self.onboarding.externalNavigationHasPriority = true
             Task { await self.navigate(to: self.notificationRouter.consumeRoute()) }
         }
+    }
+
+    private func openSavedRecipe(userInitiated: Bool = false) async {
+        guard userInitiated || !self.onboarding.externalNavigationHasPriority else { return }
+        guard let saved = self.onboarding.savedRecipe else { return }
+        let userId = self.session.currentUser?.id
+        guard let cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == saved.cookbookId }) else {
+            self.onboarding.externalNavigationHasPriority = true
+            return
+        }
+        if cookbook.id != self.session.cookbookViewModel.activeCookbook?.id {
+            await self.session.switchCookbook(cookbook)
+        } else {
+            await self.session.refreshActiveCookbook()
+        }
+        guard userInitiated || !self.onboarding.externalNavigationHasPriority,
+              self.session.currentUser?.id == userId,
+              self.session.cookbookViewModel.activeCookbook?.id == saved.cookbookId,
+              self.onboarding.savedRecipe == saved else { return }
+        _ = self.onboarding.takeSavedRecipe()
+        self.selectedTab = .recipes
+        self.pendingRecipeId = saved.recipeId
     }
 
     /// Send the user where a tapped notification pointed. A recipe may live in a

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RecipeDetailContentView: View {
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let recipe: RecipeDetail
     let heroImageHeight: CGFloat
@@ -12,9 +13,10 @@ struct RecipeDetailContentView: View {
     /// Portion-scaling state owned by the parent so the toolbar's "add to
     /// shopping list" action can read the current scale.
     @Binding var currentServings: Int?
+    var localHero: AnyView?
 
     private var hasHeroImage: Bool {
-        self.recipe.heroCoverImageUrl != nil
+        self.localHero != nil || self.recipe.heroCoverImageUrl != nil
     }
 
     private var baseServings: Int? {
@@ -41,7 +43,7 @@ struct RecipeDetailContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    if !self.hasHeroImage {
+                    if !self.hasHeroImage || self.dynamicTypeSize.isAccessibilitySize {
                         HStack {
                             Spacer()
                             self.cookingModeButton
@@ -74,7 +76,7 @@ struct RecipeDetailContentView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Spacing.lg)
                 .overlay(alignment: .topTrailing) {
-                    if self.hasHeroImage {
+                    if self.hasHeroImage && !self.dynamicTypeSize.isAccessibilitySize {
                         self.cookingModeButton
                             .padding(.trailing, Theme.Spacing.lg)
                             .offset(y: -18)
@@ -89,7 +91,9 @@ struct RecipeDetailContentView: View {
 
     @ViewBuilder
     private var heroImage: some View {
-        if let url = Constants.API.resolveURL(self.recipe.heroCoverImageUrl) {
+        if let localHero = self.localHero {
+            localHero
+        } else if let url = Constants.API.resolveURL(self.recipe.heroCoverImageUrl) {
             Color.clear
                 .frame(height: self.heroImageHeight)
                 .frame(maxWidth: .infinity)

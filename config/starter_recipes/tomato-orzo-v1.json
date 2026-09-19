@@ -1,0 +1,27 @@
+{
+  "key": "tomato-orzo-v1",
+  "name": "One-pan tomato & chickpea orzo",
+  "creator": "maincourse.kitchen",
+  "caption": "The 25-minute dinner I keep coming back to. Soften garlic in olive oil, add cherry tomatoes, orzo, chickpeas and stock, then simmer until creamy. Fold in spinach and finish with basil. One pan, two happy people. Full recipe below the noise? Just share it to MainCourse.",
+  "prep_time": 5,
+  "cook_time": 20,
+  "servings": 2,
+  "image_name": "tomato-orzo-v1.jpg",
+  "ingredients": [
+    {"raw": "1 tbsp olive oil", "amount": 1, "unit": "tbsp", "name": "olive oil", "note": null},
+    {"raw": "2 cloves garlic, finely chopped", "amount": 2, "unit": "cloves", "name": "garlic", "note": "finely chopped"},
+    {"raw": "250 g cherry tomatoes, halved", "amount": 250, "unit": "g", "name": "cherry tomatoes", "note": "halved"},
+    {"raw": "160 g orzo", "amount": 160, "unit": "g", "name": "orzo", "note": null},
+    {"raw": "240 g cooked chickpeas, drained and rinsed", "amount": 240, "unit": "g", "name": "cooked chickpeas", "note": "drained and rinsed"},
+    {"raw": "500 ml vegetable stock", "amount": 500, "unit": "ml", "name": "vegetable stock", "note": "plus a splash more if needed"},
+    {"raw": "60 g baby spinach", "amount": 60, "unit": "g", "name": "baby spinach", "note": null},
+    {"raw": "5 g fresh basil, torn", "amount": 5, "unit": "g", "name": "fresh basil", "note": "torn"},
+    {"raw": "Salt and black pepper, to taste", "amount": null, "unit": null, "name": "salt and black pepper", "note": "to taste"}
+  ],
+  "instructions": [
+    "Heat the olive oil in a wide, deep frying pan over medium heat. Add the garlic and stir for 30 seconds, until fragrant but not browned.",
+    "Add the cherry tomatoes and a pinch of salt. Cook for 5 minutes, stirring occasionally and pressing a few tomatoes with the back of a spoon to release their juices.",
+    "Stir in the orzo, chickpeas and vegetable stock. Bring to a gentle simmer and cook uncovered for 10–12 minutes, stirring frequently, until the orzo is tender. Add a splash of water if the pan gets dry before the pasta is cooked.",
+    "Fold in the spinach and cook for 1–2 minutes until wilted. Take off the heat, stir in the basil and season with salt and black pepper. Divide between two bowls and serve."
+  ]
+}

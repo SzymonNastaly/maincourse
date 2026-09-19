@@ -29,6 +29,16 @@ final class RecipeViewModel {
     var didReceiveForbidden = false
     private var reportedFailedRecipeIds: Set<Int> = []
 
+    var hasLoadedEmptyCookbook: Bool {
+        guard self.recipes.isEmpty, !self.isLoading,
+              case let .resolved(cookbookId) = self.contentState else { return false }
+        return cookbookId == self.currentCookbookId
+    }
+
+    var hasPersonalContent: Bool {
+        self.recipes.contains { $0.starterRecipeKey == nil }
+    }
+
     /// Whether any recipes are currently being imported
     var hasPendingImports: Bool {
         self.recipes.contains { $0.importStatus == "pending" }

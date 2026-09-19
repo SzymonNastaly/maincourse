@@ -6,6 +6,7 @@ struct RootView: View {
     @EnvironmentObject var subscriptionManager: SubscriptionManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @State private var session = AuthenticatedSessionViewModel()
+    @State private var onboarding = OnboardingCoordinator()
     @State private var showingInvitation = false
     @State private var invitationToken: String?
 
@@ -34,12 +35,22 @@ struct RootView: View {
                 AuthenticatedAppShell(user: user, session: self.session)
             }
         }
+        .environment(self.onboarding)
         // Note: animation removed to prevent iOS 26 Liquid Glass tab bar background initialization bug
         // .animation(.easeInOut(duration: 0.3), value: self.authManager.authState)
         .task {
             await self.authManager.checkAuthStatus()
         }
-        .onChange(of: self.authManager.authState) { _, newValue in
+        .onChange(of: self.authManager.authState, initial: true) { _, newValue in
+            if case let .authenticated(user) = newValue {
+                self.onboarding.sessionChanged(userId: user.id)
+                self.onboarding.finishIntroduction()
+                if UserDefaults.standard.string(forKey: "pendingInvitationToken") != nil {
+                    self.onboarding.externalNavigationHasPriority = true
+                }
+            } else if case .unauthenticated = newValue {
+                self.onboarding.sessionChanged(userId: nil)
+            }
             Task {
                 switch newValue {
                 case let .authenticated(user):
@@ -71,6 +82,7 @@ struct RootView: View {
         }
         .onChange(of: self.deepLinkRouter.pendingInvitationToken) { _, token in
             guard let token else { return }
+            self.onboarding.externalNavigationHasPriority = true
             self.deepLinkRouter.clearPendingInvitation()
 
             if self.authManager.authState.isAuthenticated {

@@ -27,6 +27,7 @@ private struct ClipboardContent: Identifiable {
 
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(OnboardingCoordinator.self) private var onboarding
     @Environment(AuthenticatedSessionViewModel.self) private var session
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(NetworkMonitor.self) private var networkMonitor
@@ -159,7 +160,8 @@ struct RecipesView: View {
     /// arrive under the startup splash and the one system prompt iOS grants gets spent
     /// on a logo — worst for exactly the reinstalling user this exists to catch.
     private func promptForNotificationsIfRecipesVisible() {
-        guard !self.suppressTransientUI, !self.recipeViewModel.recipes.isEmpty else { return }
+        guard !self.suppressTransientUI,
+              self.recipeViewModel.hasPersonalContent else { return }
 
         Task {
             await PushNotificationService.shared.promptForAuthorization()
@@ -168,7 +170,9 @@ struct RecipesView: View {
 
     private var recipeLayout: some View {
         Group {
-            if self.shouldShowEmptyState {
+            if self.shouldShowLoadFailure {
+                self.loadFailureView
+            } else if self.shouldShowEmptyState {
                 self.emptyStateView
             } else if self.recipeViewModel.recipes.isEmpty {
                 Color.clear
@@ -192,28 +196,7 @@ struct RecipesView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                        Button {
-                            self.showingCamera = true
-                        } label: {
-                            Label("Take Photo", systemImage: "camera")
-                        }
-                    }
-                    Button {
-                        self.showingPhotoPicker = true
-                    } label: {
-                        Label("Choose from Library", systemImage: "photo.on.rectangle")
-                    }
-                    Button {
-                        if let text = UIPasteboard.general.string, !text.isEmpty {
-                            self.clipboardContent = ClipboardContent(text: text)
-                        } else {
-                            self.recipeViewModel.importError =
-                                "Nothing to paste. Copy a recipe to your clipboard first."
-                        }
-                    } label: {
-                        Label("Paste from Clipboard", systemImage: "doc.on.clipboard")
-                    }
+                    self.importActions
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -227,7 +210,8 @@ struct RecipesView: View {
     }
 
     private var shouldShowEmptyState: Bool {
-        self.recipeViewModel.recipes.isEmpty && !self.recipeViewModel.isLoading && !self.suppressTransientUI
+        !self.suppressTransientUI && self.recipeViewModel.hasLoadedEmptyCookbook
+            && self.recipeViewModel.currentCookbookId == self.cookbookViewModel.activeCookbook?.id
     }
 
     // MARK: - Handlers
@@ -386,36 +370,66 @@ struct RecipesView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: self.recipeViewModel.failedRecipes.count)
     }
 
-    private var emptyStateView: some View {
-        VStack(spacing: Theme.Spacing.lg) {
-            Spacer()
-
-            VStack(spacing: Theme.Spacing.sm) {
-                Text("No recipes yet")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.mcInk)
-
-                Text("Your recipes will appear here")
-                    .font(.subheadline)
-                    .foregroundColor(.mcBody)
-            }
-
+    @ViewBuilder
+    private var importActions: some View {
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
             Button {
-                Task {
-                    await self.networkMonitor.refreshStatus()
-                    await self.session.refreshActiveCookbook()
-                }
+                self.showingCamera = true
             } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
-                    .font(.subheadline)
+                Label("Take Photo", systemImage: "camera")
             }
-            .buttonStyle(.bordered)
-            .tint(.mcAccent)
-
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
+        Button {
+            self.showingPhotoPicker = true
+        } label: {
+            Label("Choose from Library", systemImage: "photo.on.rectangle")
+        }
+        Button {
+            if let text = UIPasteboard.general.string, !text.isEmpty {
+                self.clipboardContent = ClipboardContent(text: text)
+            } else {
+                self.recipeViewModel.importError =
+                    "Nothing to paste. Copy a recipe to your clipboard first."
+            }
+        } label: {
+            Label("Paste from Clipboard", systemImage: "doc.on.clipboard")
+        }
+    }
+
+    private var emptyStateView: some View {
+        RecipeWelcomeView(
+            showsExample: self.authManager.authState.user
+                .map { !self.onboarding.dismissedUsers.contains($0.id) } ?? false,
+            onTryExample: { self.onboarding.isDemoPresented = true },
+            onDismissExample: {
+                if let userId = self.authManager.authState.user?.id {
+                    self.onboarding.dismissExample(for: userId)
+                }
+            },
+            importActions: { self.importActions }
+        )
+    }
+
+    private var shouldShowLoadFailure: Bool {
+        guard !self.suppressTransientUI, self.recipeViewModel.recipes.isEmpty else { return false }
+        if case .failed = self.recipeViewModel.contentState {
+            return true
+        }
+        if case .failed = self.session.startupState {
+            return true
+        }
+        return false
+    }
+
+    private var loadFailureView: some View {
+        ContentUnavailableView {
+            Label("Couldn’t load your recipes", systemImage: "wifi.exclamationmark")
+        } description: {
+            Text("Your cookbook will be here when we can connect again.")
+        } actions: {
+            Button("Try again") { Task { await self.session.refreshActiveCookbook() } }
+                .buttonStyle(.borderedProminent).tint(Color.mcAccent)
+        }
     }
 }
 

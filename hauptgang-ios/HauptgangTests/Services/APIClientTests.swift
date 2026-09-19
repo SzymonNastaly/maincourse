@@ -25,6 +25,53 @@ final class APIClientTests: XCTestCase {
         try await super.tearDown()
     }
 
+    func testRecipeSaveUsesExplicitCookbookAndPersistentRequestId() async throws {
+        let requestId = UUID()
+        await self.mockTokenProvider.setToken("test-token")
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertTrue(request.url!.path.hasSuffix("/cookbooks/42/recipe_saves"))
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token")
+            let data = try XCTUnwrap(request.httpBody ?? request.httpBodyStream?.readAllData())
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            XCTAssertEqual(json["request_id"] as? String, requestId.uuidString)
+            XCTAssertEqual(json["source"] as? [String: String], ["type": "sample", "key": "tomato-orzo-v1"])
+            return (
+                HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                Data(#"{"recipe_id":123,"cookbook_id":42}"#.utf8)
+            )
+        }
+        let result = try await RecipeSaveService(api: self.sut).save(
+            source: RecipeSaveSource(type: "sample", key: "tomato-orzo-v1"),
+            toCookbookId: 42, requestId: requestId
+        )
+        XCTAssertEqual(result, RecipeSaveResult(recipeId: 123, cookbookId: 42))
+    }
+
+    func testGoneAndConflictingSaveResponsesAreTerminal() async throws {
+        for status in [409, 410] {
+            MockURLProtocol.requestHandler = { request in
+                (
+                    HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!,
+                    Data(#"{"error_code":"recipe_save_conflict"}"#.utf8)
+                )
+            }
+            do {
+                _ = try await RecipeSaveService(api: self.sut).save(
+                    source: RecipeSaveSource(type: "sample", key: "tomato-orzo-v1"),
+                    toCookbookId: 42, requestId: UUID()
+                )
+                XCTFail("Expected a terminal save error")
+            } catch APIError.requestConflict where status == 409 {
+                // A new explicit intent is required.
+            } catch APIError.resourceGone where status == 410 {
+                // The deleted copy must never be silently resurrected.
+            } catch {
+                XCTFail("Unexpected error: \(error)")
+            }
+        }
+    }
+
     // MARK: - Auth Header Tests
 
     func testRequest_whenAuthenticatedWithToken_includesAuthHeader() async throws {

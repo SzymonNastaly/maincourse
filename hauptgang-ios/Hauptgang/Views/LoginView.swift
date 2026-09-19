@@ -75,7 +75,6 @@ struct LoginView: View {
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .simultaneousGesture(TapGesture().onEnded { self.focusedField = nil })
         }
     }
 

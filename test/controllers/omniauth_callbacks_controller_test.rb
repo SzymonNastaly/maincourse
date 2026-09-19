@@ -581,12 +581,14 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
         ActionController::Base.allow_forgery_protection = true
         OmniAuth.config.test_mode = false
         https!
-        Rails.application.config.x.oauth.stub(:apple_enabled, true) { get new_session_path }
-        authenticity_token = css_select("form[action='/auth/apple'] input[name='authenticity_token']").sole["value"]
+        with_real_apple_provider do
+          get new_session_path
+          authenticity_token = css_select("form[action='/auth/apple'] input[name='authenticity_token']").sole["value"]
 
-        post "/auth/apple",
-          params: { authenticity_token: },
-          headers: { "HTTP_ORIGIN" => "https://www.example.com" }
+          post "/auth/apple",
+            params: { authenticity_token: },
+            headers: { "HTTP_ORIGIN" => "https://www.example.com" }
+        end
         assert_equal "appleid.apple.com", URI.parse(response.location).host
         apple_state = request.session["omniauth.state"]
         apple_nonce = request.session["omniauth.nonce"]
@@ -624,11 +626,13 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     transaction.with_lock { transaction.mark_confirmation_required! }
 
     https!
-    get "/android/apple/confirm_account_creation", params: {
-      transaction_id: handle,
-      id_token: "must-not-echo",
-      authorization_code: "must-not-echo"
-    }
+    with_apple_enabled do
+      get "/android/apple/confirm_account_creation", params: {
+        transaction_id: handle,
+        id_token: "must-not-echo",
+        authorization_code: "must-not-echo"
+      }
+    end
 
     assert_response :success
     assert_equal "strict-origin", response.headers["Referrer-Policy"]
@@ -665,6 +669,18 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
         OmniAuth.config.mock_auth[provider] = value
       else
         OmniAuth.config.mock_auth.delete(provider)
+      end
+    end
+
+    def with_apple_enabled(&block)
+      Rails.application.config.x.oauth.stub(:apple_enabled, true, &block)
+    end
+
+    def with_real_apple_provider
+      test_private_key = OpenSSL::PKey::EC.generate("prime256v1")
+
+      with_apple_enabled do
+        OpenSSL::PKey::EC.stub(:new, ->(_pem) { test_private_key }) { yield }
       end
     end
 

@@ -7,6 +7,8 @@ enum APIError: LocalizedError {
     case unauthorized
     case forbidden
     case notFound
+    case resourceGone
+    case requestConflict
     case payloadTooLarge
     case unsupportedMediaType
     case unprocessableEntity(String?)
@@ -34,6 +36,10 @@ enum APIError: LocalizedError {
             "You don't have permission to perform this action"
         case .notFound:
             "The requested resource was not found"
+        case .resourceGone:
+            "That saved recipe is no longer available. You can save a new copy from the example."
+        case .requestConflict:
+            "This save request no longer matches. Please start again from the example."
         case .payloadTooLarge:
             "Image is too large. Please try a smaller photo."
         case .unsupportedMediaType:

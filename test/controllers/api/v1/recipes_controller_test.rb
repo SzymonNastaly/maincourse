@@ -55,6 +55,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert recipe.key?("favorite")
     assert recipe.key?("cover_image_url")
     assert recipe.key?("cover_images")
+    assert recipe.key?("starter_recipe_key")
     assert recipe.key?("updated_at")
   end
 
@@ -144,6 +145,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal recipe.instructions, json["instructions"]
     assert json.key?("tags")
     assert json.key?("cover_images")
+    assert json.key?("starter_recipe_key")
     assert json.key?("created_at")
     assert json.key?("updated_at")
   end

@@ -6,8 +6,10 @@ module Android
     transaction, handle = start_transaction
 
     https!
-    assert_no_difference [ "User.count", "Identity.count", "Session.count", "ApiToken.count" ] do
-      get "/android/apple/sign_in", params: { transaction_id: handle }
+    with_apple_enabled do
+      assert_no_difference [ "User.count", "Identity.count", "Session.count", "ApiToken.count" ] do
+        get "/android/apple/sign_in", params: { transaction_id: handle }
+      end
     end
 
     assert_response :success
@@ -223,9 +225,21 @@ module Android
       def with_forgery_protection_and_real_omniauth
         previous_test_mode = OmniAuth.config.test_mode
         OmniAuth.config.test_mode = false
-        with_forgery_protection { yield }
+        with_real_apple_provider { with_forgery_protection { yield } }
       ensure
         OmniAuth.config.test_mode = previous_test_mode
+      end
+
+      def with_apple_enabled(&block)
+        Rails.application.config.x.oauth.stub(:apple_enabled, true, &block)
+      end
+
+      def with_real_apple_provider
+        test_private_key = OpenSSL::PKey::EC.generate("prime256v1")
+
+        with_apple_enabled do
+          OpenSSL::PKey::EC.stub(:new, ->(_pem) { test_private_key }) { yield }
+        end
       end
   end
 end

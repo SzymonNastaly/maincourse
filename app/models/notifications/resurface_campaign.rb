@@ -32,6 +32,7 @@ module Notifications
     def self.candidates(user)
       user.recipes
           .completed
+          .where(starter_recipe_key: nil)
           .where(created_at: VIEW_TRACKING_SINCE..MIN_AGE.ago)
           .where(cookbook_id: user.cookbooks.select(:id))
           .where.missing(:shopping_list_items)
