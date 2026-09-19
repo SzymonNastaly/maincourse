@@ -75,7 +75,7 @@ else
 fi
 
 export MAINCOURSE_KEYSTORE_PASSWORD="$STORE_PASSWORD"
-ACTUAL_FINGERPRINT="$($KEYTOOL -list -v -keystore "$KEYSTORE" -storepass:env MAINCOURSE_KEYSTORE_PASSWORD -alias "$KEY_ALIAS" | awk '/SHA256:/ { sub(/^.*SHA256:[[:space:]]*/, ""); print; exit }')"
+ACTUAL_FINGERPRINT="$("$KEYTOOL" -list -v -keystore "$KEYSTORE" -storepass:env MAINCOURSE_KEYSTORE_PASSWORD -alias "$KEY_ALIAS" | awk '/SHA256:/ { sub(/^.*SHA256:[[:space:]]*/, ""); print; exit }')"
 unset MAINCOURSE_KEYSTORE_PASSWORD
 [[ "$ACTUAL_FINGERPRINT" == "$EXPECTED_FINGERPRINT" ]] || fail "upload certificate fingerprint does not match release.properties"
 
@@ -131,7 +131,7 @@ else
 fi
 
 "$JARSIGNER" -verify "$ARTIFACT" >/dev/null || fail "release bundle signature verification failed"
-BUNDLE_FINGERPRINT="$($KEYTOOL -printcert -jarfile "$ARTIFACT" | awk '/SHA256:/ { sub(/^.*SHA256:[[:space:]]*/, ""); print; exit }')"
+BUNDLE_FINGERPRINT="$("$KEYTOOL" -printcert -jarfile "$ARTIFACT" | awk '/SHA256:/ { sub(/^.*SHA256:[[:space:]]*/, ""); print; exit }')"
 [[ "$BUNDLE_FINGERPRINT" == "$EXPECTED_FINGERPRINT" ]] || fail "bundle signing certificate does not match release.properties"
 
 KEEP_VERSION=true

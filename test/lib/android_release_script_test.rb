@@ -115,6 +115,15 @@ class AndroidReleaseScriptTest < ActiveSupport::TestCase
     assert_includes log, "MAINCOURSE_VERSION_CODE=2"
   end
 
+  test "supports a Java home path containing spaces" do
+    spaced_java_home = File.join(@temporary_directory, "fake jdk")
+    FileUtils.cp_r(File.join(@repository, "maincourse-android", "fake-jdk"), spaced_java_home)
+
+    _output, error, status = run_release("0.2.0", "JAVA_HOME" => spaced_java_home)
+
+    assert status.success?, error
+  end
+
   test "preserves a failed upload and retries the exact same artifact without incrementing" do
     _output, _error, first_status = run_release("0.2.0", "FAKE_UPLOAD_EXIT" => "7")
     assert_not first_status.success?
