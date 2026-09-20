@@ -4,7 +4,6 @@ import UserNotifications
 
 /// Settings screen with user info and sign out
 struct SettingsView: View {
-    @Environment(OnboardingCoordinator.self) private var onboarding
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var subscriptionManager: SubscriptionManager
     @State private var showingLogoutConfirmation = false
@@ -68,11 +67,6 @@ struct SettingsView: View {
             self.userSection
             self.notificationsSection
             self.cookbookSection
-            Section {
-                Button { self.onboarding.isDemoPresented = true } label: {
-                    Label("Try the saving example", systemImage: "play.rectangle")
-                }
-            }
             self.subscriptionSection
             self.accountActionsSection
         }

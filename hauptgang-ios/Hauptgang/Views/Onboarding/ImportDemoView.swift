@@ -33,6 +33,7 @@ struct ImportDemoView: View {
                     .onTapGesture { self.changeStage(.post) }
                     .accessibilityHidden(true)
                 DemoSharePanel(
+                    sample: self.sample,
                     showsDestinations: self.stage == .destinations,
                     onBack: { self.changeStage(self.stage == .destinations ? .sharing : .post) },
                     onShareTo: { self.changeStage(.destinations) },
@@ -58,16 +59,11 @@ struct ImportDemoView: View {
     private var post: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("From your feed.\nTo your table.")
-                        .font(.largeTitle.bold())
-                        .foregroundStyle(Color.mcInk)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Try it: share this post to MainCourse.")
-                        .font(.body)
-                        .foregroundStyle(Color.mcBody)
-                }
-                DemoSocialPostView(sample: self.sample, photo: {
+                Text("Try it: share this post to MainCourse.")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Color.mcInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                DemoSocialPostView(sample: self.sample, isActive: self.stage == .post, photo: {
                     self.photo(height: 260)
                 }, onShare: { self.changeStage(.sharing) })
                 Text("Works with Instagram, websites, and more.")

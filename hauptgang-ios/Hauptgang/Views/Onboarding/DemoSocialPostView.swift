@@ -2,17 +2,19 @@ import SwiftUI
 
 struct DemoSocialPostView<Photo: View>: View {
     let sample: DemoRecipe
+    let isActive: Bool
     @ViewBuilder let photo: () -> Photo
     let onShare: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
-                Image("LaunchLogo")
+                Image("DemoCreator")
                     .resizable()
-                    .scaledToFit()
+                    .scaledToFill()
                     .frame(width: 34, height: 34)
                     .clipShape(Circle())
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(self.sample.creator)
                         .font(.subheadline.weight(.semibold))
@@ -28,18 +30,13 @@ struct DemoSocialPostView<Photo: View>: View {
 
             HStack(spacing: 16) {
                 Image(systemName: "heart")
+                    .accessibilityHidden(true)
                 Image(systemName: "bubble.right")
-                Button(action: self.onShare) {
-                    Label("Share", systemImage: "paperplane")
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 44)
-                        .background(Color.mcAccentTint, in: Capsule())
-                }
-                .tint(Color.mcAccent)
-                .accessibilityIdentifier("demo.share")
+                    .accessibilityHidden(true)
+                DemoShareButton(isActive: self.isActive, onShare: self.onShare)
                 Spacer()
                 Image(systemName: "bookmark")
+                    .accessibilityHidden(true)
             }
             .font(.title3)
             .padding(.horizontal, 14)
@@ -51,6 +48,8 @@ struct DemoSocialPostView<Photo: View>: View {
                 Text(self.sample.caption)
                     .font(.subheadline)
                     .foregroundStyle(Color.mcBody)
+                    .lineLimit(3)
+                    .truncationMode(.tail)
             }
             .padding(14)
         }

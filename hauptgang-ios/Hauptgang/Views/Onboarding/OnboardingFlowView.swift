@@ -25,19 +25,28 @@ struct OnboardingFlowView: View {
                 }
             }
             .background(Color.mcCanvas)
-            .navigationTitle(self.showingAuth ? "Keep it in your cookbook" : "Interactive example")
+            .navigationTitle(self.showingAuth && self.onboarding.pending != nil ? "Keep it in your cookbook" : "")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if self.showingAuth {
                         Button("Back") { self.showingAuth = false }
                     } else {
-                        Button("Sign in", action: self.finish)
+                        Button("Log in", action: self.finish)
+                            .accessibilityIdentifier("onboarding.log-in")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Skip", action: self.finish)
-                        .accessibilityIdentifier("onboarding.skip")
+                    if !self.showingAuth {
+                        Button("Sign up") {
+                            self.onboarding.continueWithoutSaving()
+                            OnboardingService.markAuthStepReached()
+                            self.showingAuth = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.mcAccent)
+                        .accessibilityIdentifier("onboarding.sign-up")
+                    }
                 }
             }
         }

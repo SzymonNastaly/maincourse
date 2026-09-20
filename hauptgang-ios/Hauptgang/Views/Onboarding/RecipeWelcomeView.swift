@@ -10,23 +10,20 @@ struct RecipeWelcomeView<ImportActions: View>: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Image(systemName: "bookmark.square")
-                        .font(.system(size: 36, weight: .light))
-                        .foregroundStyle(Color.mcAccent)
-                        .padding(.bottom, 8)
-                    Text("Make room for\nyour next favorite.")
+                    Text("Let’s start saving recipes")
                         .font(.largeTitle.bold())
                         .foregroundStyle(Color.mcInk)
-                    Text("The recipes you find, all in one place. Ready when you’re hungry.")
-                        .font(.body)
-                        .foregroundStyle(Color.mcBody)
                     Menu(content: self.importActions) {
                         Label("Save your own recipe", systemImage: "plus")
                     }
                     .primaryButton()
-                    Text("In Instagram or your browser, tap Share, then choose MainCourse.")
+                    Text("or")
                         .font(.subheadline)
-                        .foregroundStyle(Color.mcMuted)
+                        .foregroundStyle(Color.mcBody)
+                        .frame(maxWidth: .infinity)
+                    Text("In Instagram or your browser, tap Share, then choose MainCourse.")
+                        .font(.body)
+                        .foregroundStyle(Color.mcInk)
                 }
 
                 if self.showsExample {
