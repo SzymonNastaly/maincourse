@@ -1,4 +1,4 @@
-require "ruby_llm/schema"
+require "schematist"
 
 # Extracts recipe data from an image using a vision-capable LLM.
 class RecipeImageLlmService
@@ -15,7 +15,7 @@ class RecipeImageLlmService
     return extraction_failed("No image provided") if @image_path.blank?
 
     response = call_llm
-    build_result(response.content)
+    build_result(response.parsed)
   rescue Faraday::TimeoutError, Faraday::ConnectionFailed => error
     error_result("LLM request timed out: #{error.message}", :llm_timeout)
   rescue RubyLLM::Error => error
@@ -28,7 +28,7 @@ class RecipeImageLlmService
 
   def call_llm
     chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
-    chat.with_params(provider: { only: [ OPENROUTER_PROVIDER ] })
+    chat.with_provider_options(provider: { only: [ OPENROUTER_PROVIDER ] })
     chat.with_schema(Llm::RecipeSchema).ask(prompt, with: @image_path)
   end
 

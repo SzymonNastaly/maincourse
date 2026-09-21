@@ -1,4 +1,4 @@
-require "ruby_llm/schema"
+require "schematist"
 
 # Parses an array of free-form ingredient strings into structured hashes.
 # Single batched LLM call; aligns output to inputs by the echoed `raw` field.
@@ -6,7 +6,7 @@ class IngredientParser
   MODEL = "google/gemini-3.5-flash-lite"
   OPENROUTER_PROVIDER = "google-vertex/eu"
 
-  class IngredientListSchema < RubyLLM::Schema
+  class IngredientListSchema < Schematist::Schema
     array :ingredients, of: Llm::IngredientSchema, description: "Parsed ingredient list. Echo each input line verbatim into 'raw'."
   end
 
@@ -23,7 +23,7 @@ class IngredientParser
     return [] if @strings.empty?
 
     response = call_llm
-    align(response.content["ingredients"])
+    align(response.parsed["ingredients"])
   rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
     Rails.logger.warn "[IngredientParser] timeout: #{e.message} — falling back"
     fallback
@@ -39,7 +39,7 @@ class IngredientParser
 
   def call_llm
     chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
-    chat.with_params(provider: { only: [ OPENROUTER_PROVIDER ] })
+    chat.with_provider_options(provider: { only: [ OPENROUTER_PROVIDER ] })
     chat.with_schema(IngredientListSchema).ask(prompt)
   end
 

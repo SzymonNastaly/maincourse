@@ -1,4 +1,4 @@
-require "ruby_llm/schema"
+require "schematist"
 
 # Extracts recipe data from text using an LLM.
 # Supports extraction from webpage content or raw recipe text.
@@ -23,7 +23,7 @@ class RecipeLlmService
     return extraction_failed("No text content provided") if truncated_text.blank?
 
     response = call_llm(truncated_text)
-    result = build_result(response.content)
+    result = build_result(response.parsed)
 
     if result.success? && @source_url.present?
       Result.new(**result.to_h, recipe_attributes: result.recipe_attributes.merge(source_url: @source_url))
@@ -42,7 +42,7 @@ class RecipeLlmService
 
   def call_llm(text)
     chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
-    chat.with_params(provider: { only: [ OPENROUTER_PROVIDER ] })
+    chat.with_provider_options(provider: { only: [ OPENROUTER_PROVIDER ] })
     chat.with_schema(Llm::RecipeSchema).ask(prompt_for(text))
   end
 

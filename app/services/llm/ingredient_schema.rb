@@ -1,7 +1,7 @@
-require "ruby_llm/schema"
+require "schematist"
 
 module Llm
-  class IngredientSchema < RubyLLM::Schema
+  class IngredientSchema < Schematist::Schema
     string :raw, description: "The original ingredient line, echoed back verbatim. Used to align parsed output to inputs."
     string :name, description: "The food name only (e.g. 'tomato', 'olive oil'). Do not translate. Do not include amount or unit."
     number :amount, required: false, description: "Numeric quantity. Convert fractions to decimals (1/2 -> 0.5; unicode fractions handled). For ranges, store the lower bound here."

@@ -1,7 +1,7 @@
-require "ruby_llm/schema"
+require "schematist"
 
 module Llm
-  class RecipeSchema < RubyLLM::Schema
+  class RecipeSchema < Schematist::Schema
     string :name, description: "Recipe title"
     array :ingredients, of: Llm::IngredientSchema, description: "List of ingredients with structured fields. Always echo each original line verbatim into 'raw'."
     array :instructions, of: :string, description: "Step-by-step cooking instructions"
