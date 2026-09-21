@@ -10,9 +10,11 @@ struct RecipeWelcomeView<ImportActions: View>: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Let’s start saving recipes")
-                        .font(.largeTitle.bold())
+                    Text("Save recipes")
+                        .font(.title2.bold())
                         .foregroundStyle(Color.mcInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Menu(content: self.importActions) {
                         Label("Save your own recipe", systemImage: "plus")
                     }

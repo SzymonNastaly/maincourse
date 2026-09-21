@@ -52,7 +52,11 @@ struct AuthenticatedImportDemoView: View {
         NavigationStack {
             Group {
                 if let sample = self.sample {
-                    ImportDemoView(sample: sample, keepLabel: "Keep in My Recipes") { key in
+                    ImportDemoView(
+                        sample: sample,
+                        keepLabel: "Keep in My Recipes",
+                        onRecipeReady: self.onboarding.completeExample
+                    ) { key in
                         self.onboarding.keep(sampleKey: key)
                         self.dismiss()
                     }

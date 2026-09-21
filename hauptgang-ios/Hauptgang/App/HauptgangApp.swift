@@ -112,6 +112,7 @@ struct HauptgangApp: App {
         if defaults.bool(forKey: "resetOnboarding") {
             defaults.removeObject(forKey: OnboardingCoordinator.pendingDefaultsKey)
             defaults.removeObject(forKey: OnboardingCoordinator.dismissedUsersDefaultsKey)
+            defaults.removeObject(forKey: OnboardingCoordinator.completedExampleDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.completedAtDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.deviceIdDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.authStepReachedAtDefaultsKey)

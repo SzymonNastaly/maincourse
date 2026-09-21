@@ -1,12 +1,13 @@
 import SwiftUI
 
 struct ImportDemoView: View {
-    enum Stage: Equatable { case post, sharing, destinations, recipe }
+    enum Stage: Equatable { case post, sharing, destinations, processing, recipe }
 
     let sample: DemoRecipe
     var keepLabel = "Keep this recipe"
     var startsWithRecipe = false
     var showsKeepButton = true
+    var onRecipeReady: () -> Void = {}
     let onKeep: (String) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -21,6 +22,8 @@ struct ImportDemoView: View {
             VStack(spacing: 0) {
                 if self.stage == .recipe {
                     self.recipePreview.transition(.opacity)
+                } else if self.stage == .processing {
+                    self.processingView.transition(.opacity)
                 } else {
                     self.post.transition(.opacity)
                 }
@@ -37,7 +40,7 @@ struct ImportDemoView: View {
                     showsDestinations: self.stage == .destinations,
                     onBack: { self.changeStage(self.stage == .destinations ? .sharing : .post) },
                     onShareTo: { self.changeStage(.destinations) },
-                    onMainCourse: self.revealRecipe
+                    onMainCourse: { self.changeStage(.processing) }
                 )
                 .transition(.move(edge: .bottom)
                     .combined(with: .opacity))
@@ -49,11 +52,30 @@ struct ImportDemoView: View {
                 self.stage = .recipe
             }
         }
+        .task(id: self.stage) {
+            guard self.stage == .processing else { return }
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled, self.stage == .processing else { return }
+            self.revealRecipe()
+        }
         .onDisappear {
             if self.cookingMode {
                 UIApplication.shared.isIdleTimerDisabled = false
             }
         }
+    }
+
+    private var processingView: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            ProgressView()
+                .tint(Color.mcAccent)
+                .scaleEffect(1.5)
+            Text("Processing recipe…")
+                .font(.headline)
+                .foregroundStyle(Color.mcBody)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     private var post: some View {
@@ -79,14 +101,6 @@ struct ImportDemoView: View {
 
     private var recipePreview: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.mcAccent)
-                Text("A recipe you can actually cook from.")
-                    .font(.subheadline.weight(.medium))
-                    .accessibilityFocused(self.$recipeFocused)
-            }
-            .padding(16)
             RecipeDetailContentView(
                 recipe: self.sample.recipeDetail, heroImageHeight: 210, isIOS26: false,
                 isCookingMode: self.cookingMode,
@@ -97,22 +111,18 @@ struct ImportDemoView: View {
                 currentServings: self.$currentServings,
                 localHero: AnyView(self.photo(height: 210))
             )
+            .accessibilityFocused(self.$recipeFocused)
             if self.showsKeepButton {
-                VStack(spacing: 8) {
-                    Button {
-                        self.onKeep(self.sample.key)
-                    } label: {
-                        Text(self.keepLabel)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(nil)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .primaryButton()
-                    .accessibilityIdentifier("demo.keep")
-                    Text("Preview · yours to edit once you save it")
-                        .font(.caption)
-                        .foregroundStyle(Color.mcMuted)
+                Button {
+                    self.onKeep(self.sample.key)
+                } label: {
+                    Text(self.keepLabel)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .primaryButton()
+                .accessibilityIdentifier("demo.keep")
                 .padding(16)
                 .background(Color.mcSurface)
             }
@@ -138,12 +148,13 @@ struct ImportDemoView: View {
     }
 
     private func revealRecipe() {
-        guard self.stage == .destinations else { return }
+        guard self.stage == .processing else { return }
         withAnimation(self.reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.8)) {
             self.stage = .recipe
         } completion: {
             self.recipeFocused = true
         }
+        self.onRecipeReady()
     }
 }
 

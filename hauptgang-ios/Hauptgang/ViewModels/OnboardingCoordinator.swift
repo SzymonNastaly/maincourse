@@ -19,6 +19,7 @@ final class OnboardingCoordinator {
 
     static let pendingDefaultsKey = "hauptgang.onboarding.pendingRecipe"
     static let dismissedUsersDefaultsKey = "hauptgang.onboarding.dismissedExampleUsers"
+    static let completedExampleDefaultsKey = "hauptgang.onboarding.completedExampleAwaitingUser"
 
     private(set) var pending: PendingStarterRecipe?
     private(set) var state: SaveState = .idle
@@ -30,6 +31,7 @@ final class OnboardingCoordinator {
     private let service: any RecipeSaving
     private let defaults: UserDefaults
     private var currentUserId: Int?
+    private var completedExampleAwaitingUser: Bool
     private var generation = 0
 
     init(service: any RecipeSaving = RecipeSaveService(), defaults: UserDefaults = .standard) {
@@ -38,6 +40,7 @@ final class OnboardingCoordinator {
         self.pending = defaults.data(forKey: Self.pendingDefaultsKey)
             .flatMap { try? JSONDecoder().decode(PendingStarterRecipe.self, from: $0) }
         self.dismissedUsers = Set(defaults.array(forKey: Self.dismissedUsersDefaultsKey) as? [Int] ?? [])
+        self.completedExampleAwaitingUser = defaults.bool(forKey: Self.completedExampleDefaultsKey)
     }
 
     var canRetry: Bool {
@@ -76,6 +79,15 @@ final class OnboardingCoordinator {
         self.defaults.set(Array(self.dismissedUsers), forKey: Self.dismissedUsersDefaultsKey)
     }
 
+    func completeExample() {
+        if let currentUserId {
+            self.dismissExample(for: currentUserId)
+            return
+        }
+        self.completedExampleAwaitingUser = true
+        self.defaults.set(true, forKey: Self.completedExampleDefaultsKey)
+    }
+
     func sessionChanged(userId: Int?) {
         if let boundUser = self.pending?.userId, boundUser != userId {
             self.continueWithoutSaving()
@@ -90,6 +102,11 @@ final class OnboardingCoordinator {
             }
         }
         self.currentUserId = userId
+        if let userId, self.completedExampleAwaitingUser {
+            self.dismissExample(for: userId)
+            self.completedExampleAwaitingUser = false
+            self.defaults.removeObject(forKey: Self.completedExampleDefaultsKey)
+        }
         if let userId, self.pending?.userId == nil, self.pending != nil {
             self.pending?.userId = userId
             self.persist()

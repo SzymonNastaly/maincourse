@@ -16,7 +16,11 @@ struct OnboardingFlowView: View {
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
                 } else if let sample = self.sample {
-                    ImportDemoView(sample: sample) { key in
+                    ImportDemoView(
+                        sample: sample,
+                        keepLabel: "Sign up",
+                        onRecipeReady: self.onboarding.completeExample
+                    ) { key in
                         self.onboarding.keep(sampleKey: key)
                         self.showingAuth = true
                     }
@@ -34,18 +38,6 @@ struct OnboardingFlowView: View {
                     } else {
                         Button("Log in", action: self.finish)
                             .accessibilityIdentifier("onboarding.log-in")
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if !self.showingAuth {
-                        Button("Sign up") {
-                            self.onboarding.continueWithoutSaving()
-                            OnboardingService.markAuthStepReached()
-                            self.showingAuth = true
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.mcAccent)
-                        .accessibilityIdentifier("onboarding.sign-up")
                     }
                 }
             }
