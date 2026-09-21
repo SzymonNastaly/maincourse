@@ -237,7 +237,7 @@ GEM
       bindata
       faraday (~> 2.0)
       faraday-follow_redirects
-    jwt (3.2.0)
+    jwt (3.3.0)
       base64
     kamal (2.12.0)
       activesupport (>= 7.0)
@@ -612,7 +612,7 @@ DEPENDENCIES
   image_processing (~> 2.1)
   importmap-rails
   jbuilder
-  jwt (~> 3.2)
+  jwt (~> 3.3)
   kamal
   lograge
   lucide-rails
