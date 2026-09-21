@@ -6,7 +6,8 @@
              right: render("recipes/detail_actions", recipe: @recipe) %>
 <% end %>
 
-<div data-controller="portion-scaler"
+<div data-controller="portion-scaler screen-wake-lock"
+     data-action="visibilitychange@document->screen-wake-lock#visibilityChanged turbo:before-cache@document->screen-wake-lock#suspend pagehide@window->screen-wake-lock#suspend pageshow@window->screen-wake-lock#resume"
      data-portion-scaler-base-servings-value="<%= @recipe.servings.to_i %>"
      data-portion-scaler-servings-value="<%= @recipe.servings.to_i %>">
 

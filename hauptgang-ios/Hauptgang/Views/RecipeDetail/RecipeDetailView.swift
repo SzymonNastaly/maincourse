@@ -11,7 +11,6 @@ struct RecipeDetailView: View {
     @State private var viewModel: RecipeDetailViewModel
     @State private var shoppingListViewModel = ShoppingListViewModel()
     @State private var shoppingListReviewDraft: ShoppingListReviewDraft?
-    @State private var isCookingMode = false
     @State private var showEditSheet = false
     @State private var currentServings: Int?
 
@@ -48,8 +47,6 @@ struct RecipeDetailView: View {
                     recipe: recipe,
                     heroImageHeight: self.heroImageHeight,
                     isIOS26: self.isIOS26,
-                    isCookingMode: self.isCookingMode,
-                    onToggleCookingMode: self.toggleCookingMode,
                     currentServings: self.$currentServings
                 )
             }
@@ -94,9 +91,6 @@ struct RecipeDetailView: View {
         .task(id: self.recipeId) {
             await self.loadRecipeTask()
         }
-        .onDisappear {
-            self.resetCookingModeIfNeeded()
-        }
     }
 
     private func loadRecipeTask() async {
@@ -121,22 +115,6 @@ struct RecipeDetailView: View {
 
     private func showEditRecipe() {
         self.showEditSheet = true
-    }
-
-    private func toggleCookingMode() {
-        withAnimation(.smooth(duration: 0.4)) {
-            self.isCookingMode.toggle()
-        }
-        UIApplication.shared.isIdleTimerDisabled = self.isCookingMode
-    }
-
-    private func resetCookingModeIfNeeded() {
-        guard self.isCookingMode else {
-            return
-        }
-
-        self.isCookingMode = false
-        UIApplication.shared.isIdleTimerDisabled = false
     }
 
     private func scale(forBaseServings baseServings: Int?) -> Decimal {

@@ -14,7 +14,6 @@ struct ImportDemoView: View {
     @Namespace private var photoNamespace
     @State private var stage: Stage = .post
     @State private var currentServings: Int?
-    @State private var cookingMode = false
     @AccessibilityFocusState private var recipeFocused: Bool
 
     var body: some View {
@@ -58,11 +57,6 @@ struct ImportDemoView: View {
             guard !Task.isCancelled, self.stage == .processing else { return }
             self.revealRecipe()
         }
-        .onDisappear {
-            if self.cookingMode {
-                UIApplication.shared.isIdleTimerDisabled = false
-            }
-        }
     }
 
     private var processingView: some View {
@@ -103,11 +97,6 @@ struct ImportDemoView: View {
         VStack(spacing: 0) {
             RecipeDetailContentView(
                 recipe: self.sample.recipeDetail, heroImageHeight: 210, isIOS26: false,
-                isCookingMode: self.cookingMode,
-                onToggleCookingMode: {
-                    self.cookingMode.toggle()
-                    UIApplication.shared.isIdleTimerDisabled = self.cookingMode
-                },
                 currentServings: self.$currentServings,
                 localHero: AnyView(self.photo(height: 210))
             )

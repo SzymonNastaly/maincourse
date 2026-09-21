@@ -58,7 +58,8 @@ fun RecipeDetailScreen(
     onAddIngredients: (Int) -> Unit = {},
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize().testTag("recipe_detail"),
+        modifier = Modifier.fillMaxSize().testTag("recipe_detail")
+            .then(if (state.recipe != null) Modifier.recipeScreenAwake() else Modifier),
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {

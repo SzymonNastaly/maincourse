@@ -2,13 +2,10 @@ import SwiftUI
 
 struct RecipeDetailContentView: View {
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let recipe: RecipeDetail
     let heroImageHeight: CGFloat
     let isIOS26: Bool
-    let isCookingMode: Bool
-    let onToggleCookingMode: () -> Void
 
     /// Portion-scaling state owned by the parent so the toolbar's "add to
     /// shopping list" action can read the current scale.
@@ -43,13 +40,6 @@ struct RecipeDetailContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    if !self.hasHeroImage || self.dynamicTypeSize.isAccessibilitySize {
-                        HStack {
-                            Spacer()
-                            self.cookingModeButton
-                        }
-                    }
-
                     Text(self.recipe.name)
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -75,18 +65,12 @@ struct RecipeDetailContentView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Spacing.lg)
-                .overlay(alignment: .topTrailing) {
-                    if self.hasHeroImage && !self.dynamicTypeSize.isAccessibilitySize {
-                        self.cookingModeButton
-                            .padding(.trailing, Theme.Spacing.lg)
-                            .offset(y: -18)
-                    }
-                }
             }
             .frame(maxWidth: .infinity)
         }
         .scrollContentBackground(.hidden)
         .ignoresSafeArea(edges: self.hasHeroImage && self.isIOS26 ? .top : [])
+        .modifier(RecipeScreenAwakeModifier())
     }
 
     @ViewBuilder
@@ -217,70 +201,6 @@ struct RecipeDetailContentView: View {
         }
     }
 
-    @ViewBuilder
-    private var cookingModeButton: some View {
-        if #available(iOS 26, *) {
-            self.cookingModeButtonGlass
-        } else {
-            self.cookingModeButtonLegacy
-        }
-    }
-
-    @available(iOS 26, *)
-    @ViewBuilder
-    private var cookingModeButtonGlass: some View {
-        let button = Button(action: self.onToggleCookingMode) {
-            HStack(spacing: 4) {
-                Text("Keep Screen On")
-
-                if self.isCookingMode {
-                    Text("(active)")
-                        .transition(.push(from: .bottom))
-                }
-            }
-            .font(.subheadline)
-            .fontWeight(.medium)
-        }
-
-        if self.isCookingMode {
-            button
-                .buttonStyle(.glassProminent)
-                .tint(Color.mcAccent)
-        } else {
-            button
-                .buttonStyle(.glass)
-                .tint(Color.mcAccent)
-        }
-    }
-
-    private var cookingModeButtonLegacy: some View {
-        Button(action: self.onToggleCookingMode) {
-            HStack(spacing: 4) {
-                Text("Keep Screen On")
-
-                if self.isCookingMode {
-                    Text("(active)")
-                        .transition(.push(from: .bottom))
-                }
-            }
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .foregroundColor(self.isCookingMode ? Color.mcAccent : Color.mcInk)
-            .padding(.horizontal, Theme.Spacing.md)
-            .padding(.vertical, Theme.Spacing.sm)
-            .background(
-                Capsule()
-                    .fill(self.isCookingMode ? Color.mcAccentTint : Color.mcSurface)
-            )
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .strokeBorder(self.isCookingMode ? Color.mcAccentLine : Color.mcHairline, lineWidth: 1)
-            )
-        }
-        .buttonStyle(PressDownButtonStyle())
-    }
-
     private func durationItem(icon: String, label: String, value: String) -> some View {
         VStack(spacing: Theme.Spacing.xs) {
             Image(systemName: icon)
@@ -316,14 +236,6 @@ struct RecipeDetailContentView: View {
         Text(title)
             .font(.headline)
             .foregroundColor(.mcInk)
-    }
-}
-
-private struct PressDownButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .offset(y: configuration.isPressed ? 2 : 0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
