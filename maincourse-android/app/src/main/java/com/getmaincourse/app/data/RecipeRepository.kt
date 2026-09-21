@@ -333,9 +333,11 @@ class RecipeRepository(
             userId = userId,
             cookbookId = cookbookId,
             recipeId = recipeId,
-            name = summary.name,
-            ingredients = ingredients.joinToString("\n"),
-            instructions = detail?.instructions.orEmpty().joinToString("\n"),
+            name = RecipeSearchQuery.normalizeIndexedText(summary.name),
+            ingredients = RecipeSearchQuery.normalizeIndexedText(ingredients.joinToString("\n")),
+            instructions = RecipeSearchQuery.normalizeIndexedText(
+                detail?.instructions.orEmpty().joinToString("\n"),
+            ),
             updatedAt = summary.updatedAt,
         )
     }

@@ -3,6 +3,7 @@ package com.getmaincourse.app.data.cache
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.IOException
 import org.junit.Assert.assertEquals
@@ -103,7 +104,7 @@ class MainCourseDatabaseMigrationTest {
 
     @Test
     @Throws(IOException::class)
-    fun migrationFromThreeAddsEmptyRebuildableSearchIndexAndPreservesRecipes() {
+    fun migrationFromThreeAddsMinimumSdkCompatibleSearchIndexAndPreservesRecipes() {
         helper.createDatabase(SEARCH_DATABASE_NAME, 3).apply {
             execSQL(
                 "INSERT INTO cookbooks (userId, cookbookId, listPosition, cookbookJson) " +
@@ -119,9 +120,9 @@ class MainCourseDatabaseMigrationTest {
 
         helper.runMigrationsAndValidate(
             SEARCH_DATABASE_NAME,
-            4,
+            5,
             true,
-            MainCourseDatabase.MIGRATION_3_4,
+            MainCourseDatabase.MIGRATION_3_5,
         ).use { db ->
             db.query("SELECT detailJson FROM recipes WHERE recipeId = 7").use { cursor ->
                 assertTrue(cursor.moveToFirst())
@@ -140,9 +141,49 @@ class MainCourseDatabaseMigrationTest {
         }
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = 30)
+    @Throws(IOException::class)
+    fun migrationFromFourDropsTheIncompatibleDerivedSearchProjection() {
+        helper.createDatabase(SEARCH_VERSION_FOUR_DATABASE_NAME, 4).apply {
+            execSQL(
+                "INSERT INTO cookbooks (userId, cookbookId, listPosition, cookbookJson) " +
+                    "VALUES (1, 10, 0, '{}')",
+            )
+            execSQL(
+                "INSERT INTO recipes " +
+                    "(userId, cookbookId, recipeId, listPosition, summaryJson, detailJson) " +
+                    "VALUES (1, 10, 7, 0, '{\"id\":7}', '{\"ingredients\":[\"salt\"]}')",
+            )
+            execSQL(
+                "INSERT INTO recipe_search_documents " +
+                    "(userId, cookbookId, recipeId, name, ingredients, instructions, updatedAt) " +
+                    "VALUES (1, 10, 7, 'Café', 'salt', '', '2026-09-21T00:00:00Z')",
+            )
+            close()
+        }
+
+        helper.runMigrationsAndValidate(
+            SEARCH_VERSION_FOUR_DATABASE_NAME,
+            5,
+            true,
+            MainCourseDatabase.MIGRATION_4_5,
+        ).use { db ->
+            db.query("SELECT COUNT(*) FROM recipes").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(1, cursor.getInt(0))
+            }
+            db.query("SELECT COUNT(*) FROM recipe_search_documents").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(0))
+            }
+        }
+    }
+
     private companion object {
         const val DATABASE_NAME = "shopping-migration-test"
         const val DETAIL_DATABASE_NAME = "detail-sync-migration-test"
         const val SEARCH_DATABASE_NAME = "search-migration-test"
+        const val SEARCH_VERSION_FOUR_DATABASE_NAME = "search-v4-migration-test"
     }
 }

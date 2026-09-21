@@ -260,7 +260,7 @@ class SimpleRepositoriesTest {
             """
             CREATE TRIGGER fail_search_document
             BEFORE INSERT ON recipe_search_documents
-            WHEN NEW.name = 'Fresh'
+            WHEN NEW.name = 'fresh'
             BEGIN
                 SELECT RAISE(FAIL, 'forced search document failure');
             END

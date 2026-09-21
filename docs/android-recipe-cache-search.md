@@ -82,14 +82,21 @@ in-process run resumable.
 
 ## Room search projection
 
-Room database schema 4 adds two derived tables:
+Room database schema 4 added two derived tables:
 
 - `recipe_search_documents` contains scope, recipe identity, name,
   ingredients, instructions, and `updatedAt`. Its composite foreign key points
   at `recipes`, so recipe, cookbook, and user cleanup also removes search data.
 - `recipe_search_documents_fts` is an external-content FTS4 table over the
-  three searchable text fields. It uses Unicode61 with diacritic removal and
-  prefix indexes of length 2, 3, and 4.
+  three searchable text fields, with prefix indexes of length 2, 3, and 4.
+
+Schema 5 uses FTS4's default `simple` tokenizer because Android 10's platform
+SQLite does not provide the Unicode61 tokenizer. Search documents and queries
+are both lowercased and stripped of diacritics before reaching SQLite, so
+accent-insensitive matches such as `cafe` for `Café` remain available without
+shipping a second SQLite runtime. The 3-to-5 migration creates the compatible
+projection directly. The 4-to-5 migration discards only the derived search
+documents; the Search screen rebuilds them from canonical recipe rows.
 
 Room creates the external-content synchronization triggers. Application code
 writes the ordinary document table; it never writes the virtual FTS table.
@@ -116,8 +123,9 @@ change therefore does not require a network fetch.
 
 ## Query and ranking behavior
 
-`RecipeSearchQuery` lowercases input, removes diacritics, splits on
-non-alphanumeric characters, and turns each token into a safe prefix term.
+`RecipeSearchQuery` lowercases and removes diacritics from both indexed text and
+input queries. It splits queries on non-alphanumeric characters and turns each
+token into a safe prefix term.
 Tokens use AND semantics across the whole document, so every query token must
 match the name, ingredients, instructions, or a combination of those fields.
 

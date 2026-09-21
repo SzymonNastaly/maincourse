@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RecipeSearchFtsEntity::class,
         ShoppingItemEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class MainCourseDatabase : RoomDatabase() {
@@ -26,7 +26,13 @@ abstract class MainCourseDatabase : RoomDatabase() {
     companion object {
         fun open(context: Context, name: String = "maincourse.db"): MainCourseDatabase =
             Room.databaseBuilder(context.applicationContext, MainCourseDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_3_5,
+                    MIGRATION_4_5,
+                )
                 .build()
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -111,6 +117,57 @@ abstract class MainCourseDatabase : RoomDatabase() {
                     """.trimIndent(),
                 )
             }
+        }
+
+        val MIGRATION_3_5 = object : Migration(3, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `recipe_search_documents` (
+                        `rowid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `userId` INTEGER NOT NULL,
+                        `cookbookId` INTEGER NOT NULL,
+                        `recipeId` INTEGER NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `ingredients` TEXT NOT NULL,
+                        `instructions` TEXT NOT NULL,
+                        `updatedAt` TEXT NOT NULL,
+                        FOREIGN KEY(`userId`, `cookbookId`, `recipeId`)
+                            REFERENCES `recipes`(`userId`, `cookbookId`, `recipeId`)
+                            ON UPDATE CASCADE ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_recipe_search_documents_userId_cookbookId_recipeId` " +
+                        "ON `recipe_search_documents` (`userId`, `cookbookId`, `recipeId`)",
+                )
+                createCompatibleSearchTable(db)
+            }
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS `recipe_search_documents_fts`")
+                createCompatibleSearchTable(db)
+                db.execSQL("DELETE FROM `recipe_search_documents`")
+            }
+        }
+
+        private fun createCompatibleSearchTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE VIRTUAL TABLE IF NOT EXISTS `recipe_search_documents_fts`
+                USING FTS4(
+                    `name` TEXT NOT NULL,
+                    `ingredients` TEXT NOT NULL,
+                    `instructions` TEXT NOT NULL,
+                    content=`recipe_search_documents`,
+                    prefix=`2,3,4`
+                )
+                """.trimIndent(),
+            )
         }
     }
 }

@@ -108,8 +108,7 @@ data class RecipeSearchDocumentEntity(
 
 @Fts4(
     contentEntity = RecipeSearchDocumentEntity::class,
-    tokenizer = FtsOptions.TOKENIZER_UNICODE61,
-    tokenizerArgs = ["remove_diacritics=2"],
+    tokenizer = FtsOptions.TOKENIZER_SIMPLE,
     prefix = [2, 3, 4],
 )
 @Entity(tableName = "recipe_search_documents_fts")

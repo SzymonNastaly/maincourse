@@ -21,6 +21,11 @@ class RecipeSearchQueryTest {
     }
 
     @Test
+    fun normalizesIndexedTextForThePlatformFtsTokenizer() {
+        assertEquals("creme brulee!", RecipeSearchQuery.normalizeIndexedText("Crème BRÛLÉE!"))
+    }
+
+    @Test
     fun rejectsQueriesWithoutSearchableTokens() {
         assertNull(RecipeSearchQuery.build("  -!?  "))
     }

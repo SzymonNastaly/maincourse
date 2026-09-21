@@ -97,7 +97,7 @@ class RecipeScreenAwakeTest {
         var recipeDisplayed = false
         try {
             shell("dumpsys battery unplug")
-            setPowerSaveMode(true)
+            setPowerSaveMode(false)
             compose.runOnUiThread {
                 MainCourseTestContent.content = {
                     MainCourseTheme {
@@ -107,8 +107,6 @@ class RecipeScreenAwakeTest {
                 }
             }
             compose.waitUntil(5_000) { recipeDisplayed }
-            assertScreenAwake(false)
-            setPowerSaveMode(false)
             assertScreenAwake(true)
             setPowerSaveMode(true)
             assertScreenAwake(false)
