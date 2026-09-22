@@ -67,7 +67,12 @@ struct AuthenticatedImportDemoView: View {
             .navigationTitle("Interactive example")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button("Done") { self.dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        self.onboarding.completeExample()
+                        self.dismiss()
+                    }
+                }
             }
         }
         .tint(Color.mcAccent)

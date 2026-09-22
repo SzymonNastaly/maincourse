@@ -26,6 +26,16 @@ struct OnboardingCoordinatorTests {
         #expect(coordinator.pending == nil)
     }
 
+    @Test func signedInCompletionDismissesExampleWithoutKeep() {
+        let store = self.defaults()
+        let coordinator = OnboardingCoordinator(defaults: store)
+        coordinator.sessionChanged(userId: 7)
+        coordinator.completeExample()
+        #expect(coordinator.dismissedUsers.contains(7))
+        #expect(coordinator.pending == nil)
+        #expect(OnboardingCoordinator(defaults: store).dismissedUsers.contains(7))
+    }
+
     @Test func retryUsesBoundDestinationAndOriginalRequest() async throws {
         let service = SaveStub()
         await service.failNext()
