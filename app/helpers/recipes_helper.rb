@@ -1,4 +1,12 @@
 module RecipesHelper
+  def failed_import_heading(recipe)
+    if recipe.error_message == RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE
+      "No recipe in that photo"
+    else
+      "Couldn’t read that page"
+    end
+  end
+
   # "1h 25m · serves 4" — the mono meta line under a card title.
   def recipe_meta(recipe)
     total = recipe.prep_time.to_i + recipe.cook_time.to_i

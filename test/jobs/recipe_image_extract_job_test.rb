@@ -36,14 +36,14 @@ class RecipeImageExtractJobTest < ActiveSupport::TestCase
     assert_equal "From photo", @recipe.notes
   end
 
-  test "marks recipe as failed when extraction fails" do
+  test "marks a photo with no recipe text as not a recipe" do
     stub_llm_no_recipe_found
 
     RecipeImageExtractJob.perform_now(@user.id, @recipe.id)
 
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
-    assert_equal "Import failed.", @recipe.error_message
+    assert_equal RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE, @recipe.error_message
   end
 
   test "marks recipe as failed when LLM times out" do

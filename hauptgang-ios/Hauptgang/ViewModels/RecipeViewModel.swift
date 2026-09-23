@@ -132,10 +132,19 @@ extension RecipeViewModel {
         }
     }
 
+    /// A photo with no recipe text is a user outcome. Matches
+    /// `RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE`.
+    static let noRecipeInPhotoMessage = "No recipe found in that photo."
+
+    static func shouldReportFailedImport(errorMessage: String?) -> Bool {
+        errorMessage != Self.noRecipeInPhotoMessage
+    }
+
     /// Report any newly-failed recipe imports to Sentry (deduplicated by recipe ID)
     private func reportNewlyFailedRecipes() {
         for recipe in self.failedRecipes where !self.reportedFailedRecipeIds.contains(recipe.id) {
             self.reportedFailedRecipeIds.insert(recipe.id)
+            guard Self.shouldReportFailedImport(errorMessage: recipe.errorMessage) else { continue }
             let event = Event(level: .error)
             event.message = SentryMessage(formatted: "Recipe import failed")
             event.extra = [

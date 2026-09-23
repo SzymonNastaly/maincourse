@@ -64,6 +64,20 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
                     response.body.index(recipes(:one).name)
   end
 
+  test "index describes a photo that contains no recipe" do
+    @cookbook.recipes.create!(
+      name: "Importing…", user: @user, import_status: :failed,
+      error_message: RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE
+    )
+
+    get recipes_path
+
+    assert_response :success
+    assert_select "[data-testid=failed-import]", text: /No recipe in that photo/
+    assert_select "[data-testid=failed-import]", text: /#{Regexp.escape(RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE)}/
+    assert_no_match "Couldn’t read that page", response.body
+  end
+
   test "index shows failed imports as banners, not cards" do
     failed = @cookbook.recipes.create!(
       name: "Importing…", user: @user, import_status: :failed,

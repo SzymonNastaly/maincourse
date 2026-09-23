@@ -65,7 +65,8 @@ class RecipeImageLlmServiceTest < ActiveSupport::TestCase
     result = RecipeImageLlmService.new(@image_path).extract
 
     assert_not result.success?
-    assert_equal :extraction_failed, result.error_code
+    assert_equal :not_a_recipe, result.error_code
+    assert_equal "Could not identify recipe name", result.error
   end
 
   test "handles LLM API timeout" do

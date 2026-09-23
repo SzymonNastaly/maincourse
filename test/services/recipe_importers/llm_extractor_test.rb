@@ -60,8 +60,8 @@ module RecipeImporters
       result = LlmExtractor.new(html, "https://example.com/page").extract
 
       assert_not result.success?
-      assert_equal :extraction_failed, result.error_code
-      assert_match(/could not identify recipe name/i, result.error)
+      assert_equal :not_a_recipe, result.error_code
+      assert_equal "Could not identify recipe name", result.error
     end
 
     test "returns failure when LLM returns nil content" do

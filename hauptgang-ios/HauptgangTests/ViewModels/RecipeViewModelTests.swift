@@ -52,6 +52,14 @@ final class RecipeViewModelTests: XCTestCase {
         XCTAssertTrue(self.sut.hasPersonalContent)
     }
 
+    func testPhotoWithNoRecipeTextIsNotReportedToSentry() {
+        XCTAssertFalse(
+            RecipeViewModel.shouldReportFailedImport(errorMessage: "No recipe found in that photo.")
+        )
+        XCTAssertTrue(RecipeViewModel.shouldReportFailedImport(errorMessage: "Import failed."))
+        XCTAssertTrue(RecipeViewModel.shouldReportFailedImport(errorMessage: nil))
+    }
+
     // MARK: - hasPendingImports Tests
 
     func testHasPendingImports_withPendingRecipe_returnsTrue() {

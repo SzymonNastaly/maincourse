@@ -186,8 +186,8 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
     result = RecipeLlmService.new("Some random content").extract
 
     assert_not result.success?
-    assert_equal :extraction_failed, result.error_code
-    assert_match(/could not identify recipe name/i, result.error)
+    assert_equal :not_a_recipe, result.error_code
+    assert_equal "Could not identify recipe name", result.error
   end
 
   test "returns failure when text is blank" do

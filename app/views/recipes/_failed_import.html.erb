@@ -1,7 +1,7 @@
 <div class="rounded-[7px] border border-danger-line bg-danger-tint px-3 py-3" data-testid="failed-import">
   <div class="mb-1.5 flex items-center gap-2.5">
     <%= icon "triangle-alert", size: 15, stroke: 2, class: "text-danger" %>
-    <span class="grow text-[12.5px] font-medium text-danger">Couldn’t read that page</span>
+    <span class="grow text-[12.5px] font-medium text-danger"><%= failed_import_heading(recipe) %></span>
   </div>
 
   <p class="mb-2.5 text-[11.5px] leading-relaxed font-light text-body">

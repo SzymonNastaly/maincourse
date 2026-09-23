@@ -2,6 +2,10 @@ module Llm
   module RecipeExtraction
     Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
 
+    # The image prompt asks the model to return an empty name when the photo
+    # has no recipe text. That is a user outcome, not an extraction bug.
+    NOT_A_RECIPE_ERROR = "Could not identify recipe name"
+
     INGREDIENT_KEYS = %w[
       name amount amount_max unit note raw
       canonical_name canonical_unit category
@@ -13,7 +17,7 @@ module Llm
       return extraction_failed("No recipe data returned") if content.blank?
 
       name = content["name"].to_s.strip
-      return extraction_failed("Could not identify recipe name") if name.blank?
+      return error_result(NOT_A_RECIPE_ERROR, :not_a_recipe) if name.blank?
 
       attributes = {
         name: name,
