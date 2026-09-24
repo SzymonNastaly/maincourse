@@ -26,8 +26,6 @@ struct ShoppingListDisplayItem: Identifiable {
 }
 
 struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
     let uncheckedItems: [ShoppingListDisplayItem]
     let checkedItems: [ShoppingListDisplayItem]
     @Binding var checkedSectionExpanded: Bool
@@ -45,125 +43,126 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
         self.uncheckedHeaderTrailing = uncheckedHeaderTrailing()
     }
 
-    private var gridColumns: [GridItem] {
-        if self.horizontalSizeClass == .compact {
-            Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3)
-        } else {
-            [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: Theme.Spacing.sm)]
+    private enum Row: Identifiable {
+        case uncheckedHeader
+        case checkedHeader
+        case item(ShoppingListDisplayItem)
+
+        var id: String {
+            switch self {
+            case .uncheckedHeader: "header.unchecked"
+            case .checkedHeader: "header.checked"
+            case let .item(item): item.id
+            }
         }
     }
 
-    private var shouldShowUncheckedSection: Bool {
-        !self.uncheckedItems.isEmpty || !self.checkedItems.isEmpty
+    private var rows: [Row] {
+        var rows: [Row] = []
+        if !self.uncheckedItems.isEmpty || !self.checkedItems.isEmpty {
+            rows.append(.uncheckedHeader)
+        }
+        rows += self.uncheckedItems.map(Row.item)
+        if !self.checkedItems.isEmpty {
+            rows.append(.checkedHeader)
+            if self.checkedSectionExpanded {
+                rows += self.checkedItems.map(Row.item)
+            }
+        }
+        return rows
     }
 
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-            if self.shouldShowUncheckedSection {
-                self.uncheckedSection
+        let rows = self.rows
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs + 2) {
+            ForEach(rows) { row in
+                switch row {
+                case .uncheckedHeader:
+                    self.uncheckedHeader
+                case .checkedHeader:
+                    self.checkedHeader
+                        .padding(.top, Theme.Spacing.md)
+                case let .item(item):
+                    ShoppingListItemRow(item: item)
+                        .transition(.opacity)
+                }
             }
+        }
+        .animation(.snappy(duration: 0.25), value: rows.map(\.id))
+    }
 
-            if !self.checkedItems.isEmpty {
-                self.checkedSection
-            }
+    private var uncheckedHeader: some View {
+        HStack {
+            Text("To Buy")
+                .font(.caption2.weight(.medium))
+                .textCase(.uppercase)
+                .tracking(1.1)
+                .foregroundStyle(Color.mcMuted)
+            Spacer()
+            self.uncheckedHeaderTrailing
         }
     }
 
-    private var uncheckedSection: some View {
-        Section {
-            if !self.uncheckedItems.isEmpty {
-                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
-                    ForEach(self.uncheckedItems) { item in
-                        ShoppingListItemTile(item: item)
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.5).combined(with: .opacity),
-                                removal: .identity
-                            ))
-                    }
-                }
-                .animation(.snappy(duration: 0.25), value: self.uncheckedItems.map(\.id))
+    private var checkedHeader: some View {
+        Button {
+            withAnimation(.snappy(duration: 0.25)) {
+                self.checkedSectionExpanded.toggle()
             }
-        } header: {
-            HStack {
-                Text("To Buy")
+        } label: {
+            HStack(spacing: Theme.Spacing.sm) {
+                Text("Already Got")
                     .font(.caption2.weight(.medium))
                     .textCase(.uppercase)
                     .tracking(1.1)
                     .foregroundStyle(Color.mcMuted)
-                Spacer()
-                self.uncheckedHeaderTrailing
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.mcMuted)
+                    .rotationEffect(.degrees(self.checkedSectionExpanded ? 90 : 0))
             }
         }
-    }
-
-    private var checkedSection: some View {
-        Section {
-            if self.checkedSectionExpanded {
-                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
-                    ForEach(self.checkedItems) { item in
-                        ShoppingListItemTile(item: item)
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.5).combined(with: .opacity),
-                                removal: .identity
-                            ))
-                    }
-                }
-                .animation(.snappy(duration: 0.25), value: self.checkedItems.map(\.id))
-            }
-        } header: {
-            Button {
-                withAnimation(.snappy(duration: 0.25)) {
-                    self.checkedSectionExpanded.toggle()
-                }
-            } label: {
-                HStack(spacing: Theme.Spacing.sm) {
-                    Text("Already Got")
-                        .font(.caption2.weight(.medium))
-                        .textCase(.uppercase)
-                        .tracking(1.1)
-                        .foregroundStyle(Color.mcMuted)
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.mcMuted)
-                        .rotationEffect(.degrees(self.checkedSectionExpanded ? 90 : 0))
-                }
-            }
-            .buttonStyle(.plain)
-        }
+        .buttonStyle(.plain)
     }
 }
 
-private struct ShoppingListItemTile: View {
+private struct ShoppingListItemRow: View {
     let item: ShoppingListDisplayItem
+
+    private var trimmedDetails: String? {
+        guard let trimmed = self.item.details?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+
+    private var label: Text {
+        let name = Text(self.item.name)
+            .font(.body)
+            .foregroundStyle(self.item.isChecked ? Color.mcMuted : Color.mcInk)
+            .strikethrough(self.item.isChecked, color: Color.mcMuted)
+        guard let details = self.trimmedDetails else { return name }
+        let detailsText = Text("  \(details)")
+            .font(.subheadline)
+            .foregroundStyle(Color.mcMuted)
+        return Text("\(name)\(detailsText)")
+    }
 
     var body: some View {
         Button {
             HapticManager.shared.lightTap()
             self.item.onTap()
         } label: {
-            VStack(spacing: 2) {
-                Text(self.item.name)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+            HStack(alignment: .center, spacing: 12) {
+                self.checkbox
 
-                if let trimmed = self.item.details?
-                    .trimmingCharacters(in: .whitespacesAndNewlines),
-                    !trimmed.isEmpty {
-                    Text(trimmed)
-                        .font(.caption.weight(.light))
-                        .italic()
-                        .foregroundStyle(Color.mcBody)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                }
+                self.label
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+
+                Spacer(minLength: 0)
             }
-            .multilineTextAlignment(.center)
-            .foregroundStyle(self.item.isChecked ? Color.mcMuted : Color.mcInk)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(Theme.Spacing.sm)
-            .aspectRatio(1, contentMode: .fit)
+            .padding(.horizontal, Theme.Spacing.md)
+            .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: Theme.Radius.card)
                     .fill(self.item.isChecked ? Color.mcSunken : Color.mcSurface)
@@ -192,5 +191,21 @@ private struct ShoppingListItemTile: View {
         .accessibilityAction(named: "Delete") {
             self.item.onDelete?()
         }
+    }
+
+    private var checkbox: some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(self.item.isChecked ? Color.mcAccent : Color.mcSunken)
+            .frame(width: 22, height: 22)
+            .overlay {
+                if self.item.isChecked {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
+                } else {
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.mcHairline, lineWidth: 1)
+                }
+            }
     }
 }
