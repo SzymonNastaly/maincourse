@@ -1,13 +1,12 @@
-<% page_title @active_tag ? @active_tag.name : "Recipes" %>
+<% page_title @active_tag ? @active_tag.name : t("web.recipes") %>
 <%= turbo_stream_from current_cookbook %>
 
 <%# ---- Desktop header ---------------------------------------------------- %>
 <div class="hidden items-start justify-between gap-5 px-[30px] pt-[26px] md:flex">
   <div>
-    <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]"><%= @active_tag ? @active_tag.name : "All Recipes" %></h1>
+    <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]"><%= @active_tag ? @active_tag.name : t("web.all_recipes") %></h1>
     <div class="text-[12.5px] font-light text-muted">
-      <%= mono @recipes.size, class: "text-[12px]" %>
-      <%= "recipe".pluralize(@recipes.size) %> in <%= current_cookbook.name %>
+      <%= t("web.recipes_in_html", count: @recipes.size, number: mono(@recipes.size, class: "text-[12px]"), name: current_cookbook.name) %>
     </div>
   </div>
 
@@ -20,7 +19,7 @@
 <%# ---- Mobile header ----------------------------------------------------- %>
 <div class="flex items-start justify-between gap-4 px-4 pt-[18px] md:hidden">
   <div class="min-w-0">
-    <h1 class="mb-1 truncate text-[23px] font-semibold tracking-[-0.5px]"><%= @active_tag ? @active_tag.name : "All Recipes" %></h1>
+    <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px]"><%= @active_tag ? @active_tag.name : t("web.all_recipes") %></h1>
     <button type="button" class="flex items-center gap-1.5 text-muted"
             data-controller="dialog-opener"
             data-dialog-opener-target-value="cookbook-switcher"
@@ -36,7 +35,7 @@
           data-controller="dialog-opener"
           data-dialog-opener-target-value="add-recipe"
           data-action="dialog-opener#open"
-          aria-label="Add a recipe">
+          aria-label="<%= t("web.add_a_recipe") %>">
     <%= icon "plus", size: 19, stroke: 2.4 %>
   </button>
 </div>
@@ -68,14 +67,14 @@
   <% elsif @active_tag %>
     <%= render "shared/empty_state",
                icon: "utensils",
-               title: "Nothing in #{@active_tag.name} yet",
-               body: "Tag a recipe with #{@active_tag.name} and it will show up here.",
-               action: link_to("All recipes", recipes_path, class: "mc-btn mc-btn-outline") %>
+               title: t("web.empty_collection", name: @active_tag.name),
+               body: t("web.empty_collection_hint", name: @active_tag.name),
+               action: link_to(t("web.all_recipes"), recipes_path, class: "mc-btn mc-btn-outline") %>
   <% else %>
     <%= render "shared/empty_state",
                icon: "utensils",
-               title: "No recipes yet",
-               body: "Paste a link, upload a photo of a cookbook page, or write one out yourself.",
+               title: t("web.no_recipes"),
+               body: t("web.no_recipes_hint"),
                action: render("recipes/add_button") %>
   <% end %>
 </div>

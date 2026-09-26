@@ -19,7 +19,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "form[action='/auth/apple'][method='post']"
     assert_select "form[action='/auth/google_oauth2'][method='post']"
-    assert_select "[data-turbo='false']", count: 2
+    assert_select "form[action^='/auth/'][data-turbo='false']", count: 2
   end
 
   test "new hides OAuth providers on the legacy production host" do

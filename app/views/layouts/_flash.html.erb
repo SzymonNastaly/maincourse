@@ -9,7 +9,7 @@
            data-controller="dismissable">
         <%= icon styles[:icon], size: 15, stroke: 2, class: "mt-px" %>
         <span class="grow"><%= message %></span>
-        <button type="button" class="opacity-60 hover:opacity-100" data-action="dismissable#dismiss" aria-label="Dismiss">
+        <button type="button" class="opacity-60 hover:opacity-100" data-action="dismissable#dismiss" aria-label="<%= t("web.dismiss") %>">
           <%= icon "x", size: 14, stroke: 2.2 %>
         </button>
       </div>

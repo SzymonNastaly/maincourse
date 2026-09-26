@@ -1,31 +1,318 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  activerecord:
+    attributes:
+      user:
+        name: Name
+        email_address: Email address
+        password: Password
+        password_confirmation: Password confirmation
+      recipe:
+        name: Name
+        servings: Servings
+        notes: Notes
+        prep_time: Prep time
+        cook_time: Cook time
+        meal_plan_entries: Meal plan entries
+  web:
+    apple:
+      return_heading: Return to MainCourse
+      return_hint: Open the MainCourse app to finish signing in. If you keep seeing this page, App Links are not configured for this installation yet.
+      link_unavailable: Apple sign-in link unavailable
+      link_unavailable_hint: This Apple sign-in link is invalid or no longer available. Return to MainCourse and start again.
+      https_required: HTTPS setup required
+      https_hint: Continue from a registered HTTPS MainCourse address to use real Apple sign-in. A local HTTP server cannot complete Apple's web authorization.
+      unavailable: Apple sign-in unavailable
+      unavailable_hint: Apple sign-in is not configured on this address. Return to MainCourse and choose another sign-in method.
+      continue_hint: Continue to Apple's secure website. MainCourse will return you to the Android app after Apple verifies your account.
+      create_account: Create a new MainCourse account?
+      create_account_hint: This Apple sign-in is not connected to a MainCourse account. If you already use MainCourse, cancel and sign in the way you used before to keep your recipes.
+      cancel_creation: Use existing account / Cancel
+    language: Language
+    browser_language: Browser language
+    save: Save
+    settings: Settings
+    recipes: Recipes
+    all_recipes: All Recipes
+    search: Search
+    shopping_list: Shopping List
+    cookbooks: Cookbooks
+    collections: Collections
+    account: Account
+    manage_account: Manage account
+    email: Email
+    password: Password
+    reset_link_hint: We'll email you a reset link.
+    send_reset_link: Send reset link
+    delete_your_account: Delete your account
+    delete_personal_data: Your personal cookbook and every recipe in it are removed.
+    delete_shopping_data: Your shopping list and meal plans are removed.
+    transfer_shared_data: Shared cookbooks you own transfer to another member.
+    delete_subscription_hint: An active subscription is not refunded — cancel it in the App Store.
+    type_delete: Type %{phrase} to confirm
+    delete_account: Delete account
+    confirm_delete_account: This permanently deletes your account. Continue?
+    create_shared_cookbook: Create a shared cookbook
+    close: Close
+    name: Name
+    our_kitchen: Our Kitchen
+    move_personal_recipes: Move all personal recipes
+    move_personal_hint: Your recipes and shopping list move into the shared cookbook. Untick to leave them where they are.
+    create_cookbook: Create cookbook
+    cancel: Cancel
+    share_cookbook_hint: Share recipes and shopping lists with your partner or family.
+    existing_recipes_hint: Your existing recipes can move across when you create it, or stay where they are.
+    active: Active
+    switch: Switch
+    generate_invite: Generate invite link
+    confirm_delete_cookbook: All recipes in this cookbook will be permanently deleted. This cannot be undone.
+    delete_cookbook: Delete cookbook
+    confirm_leave_cookbook: Your recipes will stay in the shared cookbook. You can rejoin later with a new invitation.
+    leave_cookbook: Leave cookbook
+    invite_created: Invite link created
+    copied: Copied
+    copy_manually: Select and copy the link
+    copy_link: Copy link
+    invite_expiry: Anyone with this link can join %{name}. It expires %{time} from now.
+    cookbooks_hint: Keep recipes to yourself, or share a kitchen.
+    personal: Personal
+    shared: Shared
+    cookbook_invitation: Cookbook invitation
+    invitation_missing: This invitation doesn't exist
+    invitation_missing_hint: The link may have been mistyped, or the invitation was replaced by a newer one.
+    go_to_maincourse: Go to MainCourse
+    invitation_expired: This invitation has expired
+    invitation_unavailable: This invitation is no longer available
+    ask_for_invitation: Ask %{email} to send you a new link.
+    invited_by: "%{name} invited you to a shared cookbook"
+    invitation_permissions: You'll be able to see, add and edit everything in it.
+    invitation_sign_in_hint: Sign in or create an account to join. We'll bring you straight back here.
+    sign_in: Sign in
+    create_an_account: Create an account
+    already_member: You're already a member of this cookbook.
+    open_cookbook: Open %{name}
+    leave_before_joining_html: You already have a shared cookbook. Leave %{name} before joining another.
+    manage_cookbooks: Manage cookbooks
+    accept_invitation: Accept invitation
+    not_now: Not now
+    open_menu: Open menu
+    close_menu: Close menu
+    dismiss: Dismiss
+    switch_cookbook: Switch cookbook
+    confirm_apple_account: Confirm Apple account creation
+    separate_account: Create a separate account?
+    separate_account_hint: This Apple sign-in isn't connected to a MainCourse account. If you already use MainCourse, sign in the way you used before to keep your recipes. Creating a new account starts a separate cookbook.
+    use_existing_account: Use existing account
+    create_apple_account: Create new account with Apple
+    set_password: Set a new password
+    password_sign_out_hint: You'll be signed out everywhere else.
+    new_password: New password
+    password_length_hint: At least 12 characters.
+    confirm_password: Confirm password
+    save_password: Save password
+    reset_password: Reset your password
+    reset_password_hint: Enter the email you signed up with and we'll send you a link to set a new password.
+    back_to_sign_in: Back to sign in
+    continue_apple: Continue with Apple
+    continue_google: Continue with Google
+    or: or
+    sign_in_heading: Sign in to your kitchen
+    sign_in_hint: Your recipes and shopping list, on every device.
+    forgot_password: Forgot password?
+    new_to_maincourse_html: New to MainCourse? %{link}
+    create_kitchen: Create your kitchen
+    create_kitchen_hint: Save recipes from anywhere and cook from them on any device.
+    first_name: First name
+    create_account: Create account
+    existing_account_html: Already have an account? %{link}
+    pro_hint: Unlimited imports and a kitchen you can share with the people you cook for.
+    unlimited_imports: Unlimited recipe imports
+    shared_cookbooks_feature: Shared cookbooks for your household
+    shared_lists_feature: Shared shopping lists, synced live
+    recipe_reminders: Recipe reminders
+    on_pro: You're on Pro
+    manage_subscription_hint: Manage or cancel your subscription in the MainCourse iOS app, under Settings → Subscription.
+    upgrade_ios: Upgrade in the iOS app
+    upgrade_ios_hint: Subscriptions are handled by the App Store, so Pro is purchased in the MainCourse iOS app — open Settings → Subscription there. It unlocks on the web straight away.
+    get_ios: Get MainCourse for iOS
+    free_plan_hint_html: On the free plan you get %{limit} imports a month — %{remaining} left this month. Everything else works the same.
+    signed_in_as: Signed in as %{email}
+    no_name: No name yet
+    display_name: Display name
+    notifications: Notifications
+    reminders_hint: Occasional nudges about recipes you saved and shopping lists you left unfinished.
+    personal_and_shared: 1 personal · 1 shared
+    one_personal: 1 personal
+    subscription: Subscription
+    free_plan: Free Plan
+    active_subscription_hint: Active · manage your subscription in the MainCourse iOS app.
+    imports_remaining_html: "%{remaining} of %{limit} imports left this month."
+    upgrade: Upgrade
+    confirm_sign_out: Sign out? You'll need to sign in again to access your account.
+    sign_out: Sign out
+    delete_account_hint: Removes your recipes and cookbooks for good.
+    search_your_recipes: Search your recipes
+    clear_search: Clear search
+    search_hint: Look across every cookbook you belong to — by name, ingredient or step.
+    no_results: No results
+    no_results_hint: Try a different search term.
+    confirm_clear_list: Remove everything from your shopping list, including ticked items?
+    remove_all: Remove all
+    remove_item: Remove %{name}
+    to_buy_in_html: "%{number} to buy in %{name}"
+    add_item: Add an item
+    add: Add
+    to_buy: To buy
+    nothing_to_buy: Nothing left to buy.
+    already_got: Already got
+    checked_items_hint: Ticked items disappear an hour after you tick them.
+    empty_list: Your shopping list is empty
+    empty_list_hint: Add items from a recipe or type your own.
+    add_recipe: Add recipe
+    add_a_recipe: Add a recipe
+    paste_link: Paste a link
+    import_recipe: Import recipe
+    upload_photo: Upload a photo
+    upload_photo_hint: A cookbook page or a screenshot
+    take_photo: Take a photo
+    take_photo_hint: Straight from your camera
+    add_manually: add one manually
+    import_hint_html: We read the page or the photo and pull out the ingredients, steps and timings. You can fix anything afterwards, or %{link}.
+    add_to_list: Add to shopping list
+    staples_hint: Common staples are excluded by default. Include anything you need.
+    add_named_item: Add %{name}
+    add_count_html: Add %{number}
+    fresh_list: Start a fresh shopping list?
+    fresh_list_hint: Some items have been here for more than 36 hours. Clear the whole list before adding these ingredients?
+    keep_and_add: Keep and add
+    clear_and_add: Clear and add
+    importing: Importing…
+    recipe_actions: Recipe actions
+    open_recipe: Open recipe
+    edit: Edit
+    move_to: Move to %{name}
+    confirm_delete_recipe: Delete “%{name}”? This cannot be undone.
+    delete: Delete
+    edit_recipe: Edit recipe
+    import_failed_hint: The import failed. Try another link or a photo instead.
+    try_again: Try again
+    all: All
+    sort_recent: Recently updated
+    sort_oldest: Oldest first
+    unsaved_changes: You have unsaved changes. Leave without saving?
+    cover_photo: Cover photo
+    replace_photo: Replace photo
+    choose_photo: Choose photo
+    prep_minutes: Prep (min)
+    cook_minutes: Cook (min)
+    ingredients: Ingredients
+    ingredients_hint: One per line, e.g. “200 g plain flour”
+    ingredient_example: 200 g plain flour
+    add_ingredient: Add ingredient
+    method: Method
+    describe_step: Describe the step
+    add_step: Add step
+    source_link: Source link
+    save_recipe: Save recipe
+    save_changes: Save changes
+    remove: Remove
+    search_recipes: Search recipes
+    fewer_servings: Fewer servings
+    more_servings: More servings
+    servings:
+      one: serving
+      other: servings
+    scaled_servings: "%{servings} (×%{factor})"
+    edit_named_recipe: Edit %{name}
+    empty_collection: Nothing in %{name} yet
+    empty_collection_hint: Tag a recipe with %{name} and it will show up here.
+    no_recipes: No recipes yet
+    no_recipes_hint: Paste a link, upload a photo of a cookbook page, or write one out yourself.
+    new_recipe: New recipe
+    adding_to: Adding to %{name}.
+    add_all_to_list: Add all to shopping list
+    prep: Prep
+    cook: Cook
+    notes: Notes
+    owner: Owner
+    member: Member
+    no_recipe_in_photo: No recipe in that photo
+    no_recipe_in_photo_hint: No recipe found in that photo.
+    could_not_read_page: Couldn’t read that page
+    serves: serves %{count}
+    duration_minutes: "%{minutes}m"
+    duration_hours: "%{hours}h"
+    duration_hours_minutes: "%{hours}h %{minutes}m"
+    recipe_count:
+      one: "%{count} recipe"
+      other: "%{count} recipes"
+    member_count:
+      one: "%{count} member"
+      other: "%{count} members"
+    personal_recipes:
+      one: Personal · %{count} recipe
+      other: Personal · %{count} recipes
+    shared_people:
+      one: Shared · %{count} person
+      other: Shared · %{count} people
+    recipes_in_html:
+      one: "%{number} recipe in %{name}"
+      other: "%{number} recipes in %{name}"
+    search_results_html:
+      one: "%{number} result across %{names}"
+      other: "%{number} results across %{names}"
+    flash:
+      type_delete: Type %{phrase} to confirm.
+      account_deleted: Your account has been deleted.
+      cookbook_unavailable: That cookbook is not available.
+      showing_cookbook: Now showing %{name}.
+      name_cookbook: Give your cookbook a name.
+      already_shared: You already have a shared cookbook.
+      cookbook_ready: "%{name} is ready."
+      cannot_delete_personal: Your personal cookbook cannot be deleted.
+      only_owner_delete: Only the owner can delete this cookbook.
+      cookbook_deleted: Cookbook deleted.
+      cannot_leave_personal: You cannot leave your personal cookbook.
+      owner_cannot_leave: Owners cannot leave. Delete the cookbook instead.
+      left_cookbook: You left %{name}.
+      cookbook_not_found: Cookbook not found.
+      cannot_invite_personal: You cannot invite anyone to your personal cookbook.
+      only_owner_invite: Only the owner can invite people.
+      invite_created: Invite link created.
+      pick_cookbook: Pick a cookbook first.
+      invitation_unavailable: This invitation is no longer available.
+      already_in_cookbook: You are already in %{name}.
+      leave_before_joining: You already have a shared cookbook. Leave it before joining another.
+      joined_cookbook: You joined %{name}.
+      try_later: Try again later.
+      invalid_credentials: Try another email address or password.
+      password_reset_sent: Password reset instructions sent (if user with that email address exists).
+      password_reset: Password has been reset.
+      passwords_mismatch: Passwords did not match.
+      password_link_invalid: Password reset link is invalid or has expired.
+      settings_updated: Settings updated.
+      type_item: Type something to add.
+      list_cleared: Shopping list cleared.
+      item_unavailable: That item is no longer on the list.
+      nothing_selected: Nothing selected.
+      recipe_not_in_cookbook: That recipe is not in this cookbook.
+      recipe_saved: Recipe saved.
+      recipe_updated: Recipe updated.
+      recipe_deleted: Recipe deleted.
+      cannot_delete_recipe: Could not delete recipe.
+      pick_different_cookbook: Pick a different cookbook.
+      moved_to: Moved to %{name}.
+      paste_link: Paste a link first.
+      invalid_import_url: Enter a valid, publicly accessible http or https recipe link.
+      importing: Importing your recipe…
+      reading_photo: Reading your photo…
+      recipe_unavailable: That recipe is no longer available.
+      import_limit: You've reached your free limit of %{count} imports this month.
+      choose_photo: Choose a photo first.
+      not_image: That file is not an image.
+      image_too_big: That image is too big (max 15MB).
+      account_link_required: An account already exists for this email. Sign in with your password instead.
+      provider_unavailable: That sign-in provider is temporarily unavailable. Please try again later.
+      provider_failed: We couldn't sign you in with that provider. Please try again.
+      items_added:
+        one: Added %{count} item from %{name}.
+        other: Added %{count} items from %{name}.

@@ -7,7 +7,7 @@ class AccountsController < ApplicationController
 
   def destroy
     unless params[:confirmation].to_s.strip == CONFIRMATION_PHRASE
-      return redirect_to account_path, alert: "Type #{CONFIRMATION_PHRASE} to confirm."
+      return redirect_to account_path, alert: t("web.flash.type_delete", phrase: CONFIRMATION_PHRASE)
     end
 
     user = Current.user
@@ -17,6 +17,6 @@ class AccountsController < ApplicationController
     # collaborator; see User#handle_owned_cookbooks!.
     user.destroy!
 
-    redirect_to new_session_path, notice: "Your account has been deleted.", status: :see_other
+    redirect_to new_session_path, notice: t("web.flash.account_deleted"), status: :see_other
   end
 end

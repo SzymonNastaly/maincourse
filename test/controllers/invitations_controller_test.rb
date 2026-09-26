@@ -38,7 +38,7 @@ class InvitationsControllerTest < ActionDispatch::IntegrationTest
     get invite_path("nope")
 
     assert_response :success
-    assert_match "This invitation doesn't exist", response.body
+    assert_select "h1", text: "This invitation doesn't exist"
   end
 
   test "shows an expired invitation" do

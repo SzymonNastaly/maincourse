@@ -1,12 +1,15 @@
-<% page_title @recipe.name %>
+<% page_title @recipe.pending? ? t("web.importing") : @recipe.name %>
 <%= turbo_stream_from current_cookbook %>
 
 <% content_for :mobile_header do %>
-  <%= render "layouts/back_bar", label: "All Recipes", path: recipes_path,
+  <%= render "layouts/back_bar", label: t("web.all_recipes"), path: recipes_path,
              right: render("recipes/detail_actions", recipe: @recipe) %>
 <% end %>
 
 <div data-controller="portion-scaler screen-wake-lock"
+     data-portion-scaler-locale-value="<%= I18n.locale %>"
+     data-portion-scaler-labels-value="<%= t("web.servings").to_json %>"
+     data-portion-scaler-scaled-label-value="<%= t("web.scaled_servings", servings: "%{servings}", factor: "%{factor}") %>"
      data-action="visibilitychange@document->screen-wake-lock#visibilityChanged turbo:before-cache@document->screen-wake-lock#suspend pagehide@window->screen-wake-lock#suspend pageshow@window->screen-wake-lock#resume"
      data-portion-scaler-base-servings-value="<%= @recipe.servings.to_i %>"
      data-portion-scaler-servings-value="<%= @recipe.servings.to_i %>">
@@ -14,7 +17,7 @@
   <%# ---- Desktop toolbar ------------------------------------------------- %>
   <div class="hidden items-center gap-2.5 border-b border-line px-[30px] py-4 md:flex">
     <%= link_to recipes_path, class: "flex items-center gap-[7px] text-[12.5px] text-body hover:text-ink" do %>
-      <%= icon "arrow-left", size: 15, stroke: 2 %><span>All Recipes</span>
+      <%= icon "arrow-left", size: 15, stroke: 2 %><span><%= t("web.all_recipes") %></span>
     <% end %>
     <div class="grow"></div>
     <%= render "recipes/detail_actions", recipe: @recipe %>
@@ -34,7 +37,7 @@
       <div class="mb-3.5 flex items-start justify-between gap-6 md:mb-3.5">
         <div class="min-w-0">
           <h1 class="mb-2 text-[20px] leading-[1.22] font-semibold tracking-[-0.45px] md:text-[25px] md:tracking-[-0.6px]">
-            <%= @recipe.name %>
+            <%= @recipe.pending? ? t("web.importing") : @recipe.name %>
           </h1>
 
           <div class="flex flex-wrap items-center gap-1.5">
@@ -59,7 +62,7 @@
                   data-action="dialog-opener#open"
                   data-testid="add-all-to-list">
             <%= icon "shopping-cart", size: 14, stroke: 2.2 %>
-            <span>Add all to shopping list</span>
+            <span><%= t("web.add_all_to_list") %></span>
           </button>
         <% end %>
       </div>
@@ -68,10 +71,10 @@
       <% if @recipe.prep_time.to_i.positive? || @recipe.cook_time.to_i.positive? %>
         <div class="flex items-center gap-4 border-b border-line pb-3.5 md:gap-[22px] md:pt-3 md:pb-5">
           <% if @recipe.prep_time.to_i.positive? %>
-            <%= render "recipes/meta_stat", icon_name: "clock", label: "Prep", value: format_duration(@recipe.prep_time) %>
+            <%= render "recipes/meta_stat", icon_name: "clock", label: t("web.prep"), value: format_duration(@recipe.prep_time) %>
           <% end %>
           <% if @recipe.cook_time.to_i.positive? %>
-            <%= render "recipes/meta_stat", icon_name: "flame", label: "Cook", value: format_duration(@recipe.cook_time) %>
+            <%= render "recipes/meta_stat", icon_name: "flame", label: t("web.cook"), value: format_duration(@recipe.cook_time) %>
           <% end %>
         </div>
       <% end %>
@@ -83,7 +86,7 @@
                   data-dialog-opener-target-value="add-to-list"
                   data-action="dialog-opener#open">
             <%= icon "shopping-cart", size: 15, stroke: 2.2 %>
-            <span>Add all to shopping list</span>
+            <span><%= t("web.add_all_to_list") %></span>
           </button>
         </div>
       <% end %>
@@ -93,7 +96,7 @@
         <div class="md:w-[248px] md:shrink-0">
           <% if @ingredients.any? %>
             <div class="mb-3 flex items-center gap-2">
-              <span class="mc-section-label">Ingredients</span>
+              <span class="mc-section-label"><%= t("web.ingredients") %></span>
               <div class="grow"></div>
               <%= render "recipes/servings_stepper", recipe: @recipe %>
             </div>
@@ -107,7 +110,7 @@
         <div class="min-w-0 grow">
           <% if @recipe.instructions.present? %>
             <div class="mt-6 mb-3 md:mt-0">
-              <span class="mc-section-label">Method</span>
+              <span class="mc-section-label"><%= t("web.method") %></span>
             </div>
 
             <% @recipe.instructions.each_with_index do |step, index| %>
@@ -122,7 +125,7 @@
 
           <% if @recipe.notes.present? %>
             <div class="mt-6 mb-3">
-              <span class="mc-section-label">Notes</span>
+              <span class="mc-section-label"><%= t("web.notes") %></span>
             </div>
             <p class="text-[12.5px] leading-[1.62] font-light text-body italic md:text-[13px]"><%= simple_format @recipe.notes %></p>
           <% end %>

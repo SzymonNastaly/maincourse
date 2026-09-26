@@ -4,11 +4,11 @@ class ActiveCookbooksController < ApplicationController
     cookbook = available_cookbooks.find { |candidate| candidate.id == params[:cookbook_id].to_i }
 
     if cookbook.nil?
-      return redirect_to cookbooks_path, alert: "That cookbook is not available."
+      return redirect_to cookbooks_path, alert: t("web.flash.cookbook_unavailable")
     end
 
     switch_cookbook(cookbook)
-    redirect_to destination_after_switch, notice: "Now showing #{cookbook.name}."
+    redirect_to destination_after_switch, notice: t("web.flash.showing_cookbook", name: cookbook.name)
   end
 
   private

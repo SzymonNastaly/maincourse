@@ -3,6 +3,9 @@
 How the MainCourse web app (desktop + mobile browser) is put together. The iOS
 app is a separate client on the same API; this doc is only about the HTML side.
 
+The browser UI supports English, German, and Polish. See `web-localization.md`
+for language selection, translation keys, pluralization, and formatting boundaries.
+
 ## Design tokens
 
 Tokens live in the `@theme` block of `app/assets/tailwind/application.css` and

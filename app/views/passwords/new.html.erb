@@ -1,25 +1,25 @@
-<% page_title "Reset your password" %>
+<% page_title t("web.reset_password") %>
 
 <div class="mb-10 flex items-center gap-2.5">
   <%= brand_mark size: 28 %>
   <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
 </div>
 
-<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Reset your password</h1>
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]"><%= t("web.reset_password") %></h1>
 <p class="mb-7 text-[13px] leading-relaxed font-light text-muted">
-  Enter the email you signed up with and we'll send you a link to set a new password.
+  <%= t("web.reset_password_hint") %>
 </p>
 
 <%= form_with url: passwords_path, method: :post do |form| %>
   <div class="mb-5">
-    <%= form.label :email_address, "Email", class: "mc-label" %>
+    <%= form.label :email_address, t("web.email"), class: "mc-label" %>
     <%= form.email_field :email_address, required: true, autofocus: true,
                          autocomplete: "username", placeholder: "you@example.com", class: "mc-field" %>
   </div>
 
-  <%= form.submit "Send reset link", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+  <%= form.submit t("web.send_reset_link"), class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
 <% end %>
 
 <p class="mt-8 text-center text-[12.5px] font-light text-muted">
-  <%= link_to "Back to sign in", new_session_path, class: "font-medium text-accent hover:text-accent-dark" %>
+  <%= link_to t("web.back_to_sign_in"), new_session_path, class: "font-medium text-accent hover:text-accent-dark" %>
 </p>

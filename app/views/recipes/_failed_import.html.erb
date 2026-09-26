@@ -5,7 +5,7 @@
   </div>
 
   <p class="mb-2.5 text-[11.5px] leading-relaxed font-light text-body">
-    <%= recipe.error_message.presence || "The import failed. Paste the text or a photo instead." %>
+    <%= failed_import_message(recipe) %>
   </p>
 
   <div class="flex gap-2">
@@ -13,14 +13,14 @@
       <%= button_to import_recipes_path, params: { url: recipe.source_url },
                     form_class: "inline-block",
                     class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]" do %>
-        Try again
+        <%= t("web.try_again") %>
       <% end %>
     <% end %>
 
     <%= button_to recipe_path(recipe), method: :delete,
                   form_class: "inline-block",
                   class: "mc-btn mc-btn-quiet px-3 py-1.5 text-[12px]" do %>
-      Dismiss
+      <%= t("web.dismiss") %>
     <% end %>
   </div>
 </div>

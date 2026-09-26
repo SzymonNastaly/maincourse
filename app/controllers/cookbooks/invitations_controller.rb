@@ -5,20 +5,20 @@ module Cookbooks
       cookbook = Current.user.cookbooks.find(params[:cookbook_id])
 
       if cookbook.personal?
-        return redirect_to cookbooks_path, alert: "You cannot invite anyone to your personal cookbook."
+        return redirect_to cookbooks_path, alert: t("web.flash.cannot_invite_personal")
       end
 
       unless cookbook.owner?(Current.user)
-        return redirect_to cookbooks_path, alert: "Only the owner can invite people."
+        return redirect_to cookbooks_path, alert: t("web.flash.only_owner_invite")
       end
 
       # One active invite at a time, same as the API.
       cookbook.cookbook_invitations.pending.update_all(status: :expired)
       cookbook.cookbook_invitations.create!(inviter: Current.user)
 
-      redirect_to cookbooks_path, notice: "Invite link created."
+      redirect_to cookbooks_path, notice: t("web.flash.invite_created")
     rescue ActiveRecord::RecordNotFound
-      redirect_to cookbooks_path, alert: "Cookbook not found."
+      redirect_to cookbooks_path, alert: t("web.flash.cookbook_not_found")
     end
   end
 end

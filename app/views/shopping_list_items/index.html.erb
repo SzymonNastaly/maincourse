@@ -1,12 +1,12 @@
-<% page_title "Shopping List" %>
+<% page_title t("web.shopping_list") %>
 <%= turbo_stream_from current_cookbook %>
 
 <%# ---- Header ------------------------------------------------------------ %>
 <div class="hidden items-start justify-between gap-5 px-[30px] pt-[26px] md:flex">
   <div>
-    <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]">Shopping List</h1>
+    <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]"><%= t("web.shopping_list") %></h1>
     <div class="text-[12.5px] font-light text-muted">
-      <%= mono @to_buy.size, class: "text-[12px]" %> to buy in <%= current_cookbook.name %>
+      <%= t("web.to_buy_in_html", number: mono(@to_buy.size, class: "text-[12px]"), name: current_cookbook.name) %>
     </div>
   </div>
 
@@ -17,9 +17,9 @@
 
 <div class="flex items-start justify-between gap-4 px-4 pt-[18px] md:hidden">
   <div class="min-w-0">
-    <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px]">Shopping List</h1>
+    <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px]"><%= t("web.shopping_list") %></h1>
     <div class="truncate text-[11.5px] font-light text-muted">
-      <%= mono @to_buy.size, class: "text-[11px]" %> to buy · <%= current_cookbook.name %>
+      <%= t("web.to_buy_in_html", number: mono(@to_buy.size, class: "text-[11px]"), name: current_cookbook.name) %>
     </div>
   </div>
 
@@ -27,8 +27,8 @@
     <%= button_to destroy_all_shopping_list_items_path, method: :delete,
                   form_class: "shrink-0 pt-1.5",
                   class: "text-[12px] font-medium text-danger",
-                  data: { turbo_confirm: "Remove everything from your shopping list, including ticked items?" } do %>
-      Remove all
+                  data: { turbo_confirm: t("web.confirm_clear_list") } do %>
+      <%= t("web.remove_all") %>
     <% end %>
   <% end %>
 </div>
@@ -39,13 +39,13 @@
     <div class="flex grow items-center gap-2 rounded-card border border-hairline bg-sunken px-3 py-2.5 focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-tint md:bg-surface">
       <%= icon "plus", size: 15, stroke: 2.2, class: "text-muted" %>
       <%= text_field_tag "shopping_list_item[name]", nil,
-                         placeholder: "Add an item",
+                         placeholder: t("web.add_item"),
                          autocomplete: "off",
                          class: "w-full min-w-0 bg-transparent text-[12.5px] text-ink placeholder:font-light placeholder:text-muted focus:outline-none md:text-[13px]",
-                         "aria-label": "Add an item",
+                         "aria-label": t("web.add_item"),
                          data: { testid: "add-item" } %>
     </div>
-    <%= form.submit "Add", class: "mc-btn mc-btn-primary" %>
+    <%= form.submit t("web.add"), class: "mc-btn mc-btn-primary" %>
   <% end %>
 </div>
 
@@ -53,7 +53,7 @@
 <div class="px-4 pb-10 md:px-[30px]">
   <% if @to_buy.any? || @already_got.any? %>
     <div class="mb-3 flex items-center gap-2">
-      <span class="mc-section-label">To buy</span>
+      <span class="mc-section-label"><%= t("web.to_buy") %></span>
       <div class="grow"></div>
       <%= mono @to_buy.size, class: "text-[10.5px] text-muted" %>
     </div>
@@ -63,13 +63,13 @@
         <%= render partial: "shopping_list_items/tile", collection: @to_buy, as: :item %>
       </div>
     <% else %>
-      <p class="pb-2 text-[12.5px] font-light text-muted">Nothing left to buy.</p>
+      <p class="pb-2 text-[12.5px] font-light text-muted"><%= t("web.nothing_to_buy") %></p>
     <% end %>
 
     <% if @already_got.any? %>
       <details class="mt-6" open>
         <summary class="mb-3 flex cursor-pointer list-none items-center gap-2">
-          <span class="mc-section-label">Already got</span>
+          <span class="mc-section-label"><%= t("web.already_got") %></span>
           <div class="grow"></div>
           <%= mono @already_got.size, class: "text-[10.5px] text-muted" %>
           <%= icon "chevron-down", size: 12, stroke: 2.2, class: "text-muted" %>
@@ -79,13 +79,13 @@
           <%= render partial: "shopping_list_items/tile", collection: @already_got, as: :item %>
         </div>
 
-        <p class="pt-3 text-[11px] font-light text-muted">Ticked items disappear an hour after you tick them.</p>
+        <p class="pt-3 text-[11px] font-light text-muted"><%= t("web.checked_items_hint") %></p>
       </details>
     <% end %>
   <% else %>
     <%= render "shared/empty_state",
                icon: "shopping-cart",
-               title: "Your shopping list is empty",
-               body: "Add items from a recipe or type your own." %>
+               title: t("web.empty_list"),
+               body: t("web.empty_list_hint") %>
   <% end %>
 </div>

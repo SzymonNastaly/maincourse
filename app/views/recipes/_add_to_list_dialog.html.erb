@@ -3,8 +3,8 @@
         data-controller="dialog"
         data-action="click->dialog#closeOnBackdrop">
   <div class="flex items-center border-b border-line px-5 py-[17px]">
-    <h2 class="grow text-[16px] font-semibold tracking-[-0.3px]">Add to shopping list</h2>
-    <button type="button" class="text-muted hover:text-ink" data-action="dialog#close" aria-label="Close">
+    <h2 class="grow text-[16px] font-semibold tracking-[-0.3px]"><%= t("web.add_to_list") %></h2>
+    <button type="button" class="text-muted hover:text-ink" data-action="dialog#close" aria-label="<%= t("web.close") %>">
       <%= icon "x", size: 17, stroke: 2.2 %>
     </button>
   </div>
@@ -17,24 +17,24 @@
                 } do %>
     <div data-list-review-target="review">
       <p class="px-5 pt-4 text-[11.5px] font-light text-muted">
-        Common staples are excluded by default. Include anything you need.
+        <%= t("web.staples_hint") %>
       </p>
 
       <div class="max-h-[46vh] overflow-y-auto px-5 py-3">
          <% ingredients.each do |ingredient| %>
            <% name = ingredient.name.presence || ingredient.raw %>
-           <% details = [ format_quantity(ingredient).presence, ingredient.note.presence ].compact.join(", ") %>
+           <% details = [ format_quantity(ingredient, locale: :en).presence, ingredient.note.presence ].compact.join(", ") %>
            <% included = ShoppingList::Policy.default_included?(ingredient.canonical_name) %>
            <label class="flex cursor-pointer items-start gap-3 border-b border-line py-2.5 last:border-0"
                   data-list-review-target="row">
              <input type="checkbox" <%= "checked" if included %>
                    class="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
                    data-action="change->list-review#update"
-                   aria-label="Add <%= name %>">
+                    aria-label="<%= t("web.add_named_item", name: name) %>">
 
             <span class="min-w-0 grow">
               <span class="block text-[13px] text-ink"><%= name %></span>
-              <span class="block text-[11px] font-light text-muted italic" data-detail-preview><%= details %></span>
+              <span class="block text-[11px] font-light text-muted italic" data-detail-preview><%= [format_quantity(ingredient).presence, ingredient.note.presence].compact.join(", ") %></span>
             </span>
 
              <%= hidden_field_tag "items[][name]", name, id: nil, disabled: !included %>
@@ -52,14 +52,14 @@
       </div>
 
       <div class="flex items-center gap-2.5 border-t border-line px-5 py-4">
-        <button type="button" class="mc-btn mc-btn-quiet" data-action="dialog#close">Cancel</button>
+        <button type="button" class="mc-btn mc-btn-quiet" data-action="dialog#close"><%= t("web.cancel") %></button>
         <div class="grow"></div>
         <% included_count = ingredients.count { |ingredient| ShoppingList::Policy.default_included?(ingredient.canonical_name) } %>
         <button type="submit" class="mc-btn mc-btn-primary disabled:opacity-50"
                 <%= "disabled" if included_count.zero? %>
                 data-list-review-target="submit"
                 data-testid="confirm-add-to-list">
-          Add <span data-list-review-target="count"><%= included_count %></span>
+          <%= t("web.add_count_html", number: tag.span(included_count, data: { list_review_target: "count" })) %>
         </button>
       </div>
     </div>
@@ -67,18 +67,18 @@
     <div class="hidden" data-list-review-target="confirmation">
       <div class="px-5 py-6">
         <h3 class="text-[15px] font-semibold tracking-[-0.25px] text-ink"
-            tabindex="-1" data-list-review-target="confirmationHeading">Start a fresh shopping list?</h3>
+            tabindex="-1" data-list-review-target="confirmationHeading"><%= t("web.fresh_list") %></h3>
         <p class="mt-2 text-[12.5px] leading-[1.55] font-light text-body">
-          Some items have been here for more than 36 hours. Clear the whole list before adding these ingredients?
+          <%= t("web.fresh_list_hint") %>
         </p>
       </div>
 
       <div class="flex flex-wrap items-center justify-end gap-2.5 border-t border-line px-5 py-4">
-        <button type="button" class="mc-btn mc-btn-quiet" data-action="list-review#returnToReview">Cancel</button>
+        <button type="button" class="mc-btn mc-btn-quiet" data-action="list-review#returnToReview"><%= t("web.cancel") %></button>
         <button type="submit" name="clear_existing" value="false"
-                class="mc-btn mc-btn-outline" data-action="list-review#confirm">Keep and add</button>
+                class="mc-btn mc-btn-outline" data-action="list-review#confirm"><%= t("web.keep_and_add") %></button>
         <button type="submit" name="clear_existing" value="true"
-                class="mc-btn mc-btn-danger" data-action="list-review#confirm">Clear and add</button>
+                class="mc-btn mc-btn-danger" data-action="list-review#confirm"><%= t("web.clear_and_add") %></button>
       </div>
     </div>
   <% end %>

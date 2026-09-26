@@ -89,7 +89,8 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-testid=failed-import]", 1
-    assert_match failed.error_message, response.body
+    assert_select "[data-testid=failed-import]", text: /The import failed/
+    assert_no_match failed.error_message, response.body
   end
 
   test "index renders pending imports with a spinner" do

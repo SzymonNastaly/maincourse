@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::Base
+  include WebLocale
   include Authentication
   include CookbookScoped
 

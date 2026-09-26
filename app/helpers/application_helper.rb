@@ -1,4 +1,19 @@
 module ApplicationHelper
+  def language_return_path
+    return new_registration_path if controller.controller_path == "registrations"
+    return edit_settings_path if controller.controller_path == "settings"
+
+    # Keep only navigation state, never OAuth credentials or exchange results.
+    keys = case controller.controller_path
+    when "recipes" then %w[tag sort]
+    when "searches" then %w[q]
+    when "android/apple_authentications"
+      %w[transaction_id] if @transaction.present? && %w[sign_in confirm_account_creation].include?(controller.action_name)
+    end
+    query = request.query_parameters.slice(*Array(keys)).select { |_, value| value.is_a?(String) }.to_query
+    query.present? ? "#{request.path}?#{query}" : request.path
+  end
+
   # Inline lucide icon at the design system's 1.9 stroke. `size` is in px.
   def icon(name, size: 16, stroke: 1.9, **options)
     options[:class] = [ "shrink-0", options[:class] ].compact.join(" ")

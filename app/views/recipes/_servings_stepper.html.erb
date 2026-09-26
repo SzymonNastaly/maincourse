@@ -5,20 +5,20 @@
             class="flex size-[21px] items-center justify-center rounded-[4px] bg-sunken text-body disabled:opacity-40"
             data-portion-scaler-target="decrement"
             data-action="portion-scaler#decrement"
-            aria-label="Fewer servings">
+            aria-label="<%= t("web.fewer_servings") %>">
       <%= icon "minus", size: 12, stroke: 2.4 %>
     </button>
 
     <div class="flex items-baseline gap-1">
       <span class="font-mono text-[12px] text-ink" data-portion-scaler-target="servings"><%= recipe.servings %></span>
-      <span class="text-[10.5px] font-light text-muted" data-portion-scaler-target="label">servings</span>
+      <span class="text-[10.5px] font-light text-muted" data-portion-scaler-target="label"><%= t("web.servings", count: recipe.servings.to_i) %></span>
     </div>
 
     <button type="button"
             class="flex size-[21px] items-center justify-center rounded-[4px] bg-sunken text-body disabled:opacity-40"
             data-portion-scaler-target="increment"
             data-action="portion-scaler#increment"
-            aria-label="More servings">
+            aria-label="<%= t("web.more_servings") %>">
       <%= icon "plus", size: 12, stroke: 2.4 %>
     </button>
   </div>

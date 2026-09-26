@@ -1,0 +1,9 @@
+<%= form_with url: locale_path, method: :patch, data: { turbo: false }, class: "flex flex-wrap items-end gap-2.5" do |form| %>
+  <%= form.hidden_field :return_to, value: language_return_path %>
+  <div class="min-w-0 grow">
+    <%= form.label :locale, t("web.language"), class: "mc-label" %>
+    <%= form.select :locale, [[t("web.browser_language"), "auto"], ["English", "en"], ["Deutsch", "de"], ["Polski", "pl"]],
+                    { selected: cookies[:web_locale].presence_in(%w[en de pl]) || "auto" }, class: "mc-field" %>
+  </div>
+  <%= form.submit t("web.save"), class: "mc-btn mc-btn-outline" %>
+<% end %>

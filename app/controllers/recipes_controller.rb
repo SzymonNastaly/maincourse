@@ -3,9 +3,9 @@ class RecipesController < ApplicationController
   before_action :set_recipe, only: %i[show edit update destroy move]
 
   SORTS = {
-    "recent" => { label: "Recently updated", order: { updated_at: :desc } },
-    "name" => { label: "Name", order: { name: :asc } },
-    "oldest" => { label: "Oldest first", order: { created_at: :asc } }
+    "recent" => { label: "web.sort_recent", order: { updated_at: :desc } },
+    "name" => { label: "web.name", order: { name: :asc } },
+    "oldest" => { label: "web.sort_oldest", order: { created_at: :asc } }
   }.freeze
 
   DEFAULT_SORT = "recent".freeze
@@ -43,7 +43,7 @@ class RecipesController < ApplicationController
 
     if @recipe.save
       apply_ingredients(@recipe)
-      redirect_to @recipe, notice: "Recipe saved."
+      redirect_to @recipe, notice: t("web.flash.recipe_saved")
     else
       render :new, status: :unprocessable_entity
     end
@@ -55,7 +55,7 @@ class RecipesController < ApplicationController
   def update
     if @recipe.update(recipe_params.except(:ingredients))
       apply_ingredients(@recipe)
-      redirect_to @recipe, notice: "Recipe updated."
+      redirect_to @recipe, notice: t("web.flash.recipe_updated")
     else
       render :edit, status: :unprocessable_entity
     end
@@ -63,9 +63,9 @@ class RecipesController < ApplicationController
 
   def destroy
     if @recipe.destroy
-      redirect_to recipes_path, notice: "Recipe deleted.", status: :see_other
+      redirect_to recipes_path, notice: t("web.flash.recipe_deleted"), status: :see_other
     else
-      redirect_to @recipe, alert: @recipe.errors.full_messages.to_sentence.presence || "Could not delete recipe."
+      redirect_to @recipe, alert: @recipe.errors.full_messages.to_sentence.presence || t("web.flash.cannot_delete_recipe")
     end
   end
 
@@ -74,27 +74,27 @@ class RecipesController < ApplicationController
     destination = available_cookbooks.find { |cookbook| cookbook.id == params[:cookbook_id].to_i }
 
     if destination.nil? || destination.id == @recipe.cookbook_id
-      return redirect_back fallback_location: recipes_path, alert: "Pick a different cookbook."
+      return redirect_back fallback_location: recipes_path, alert: t("web.flash.pick_different_cookbook")
     end
 
     @recipe.update!(cookbook: destination)
-    redirect_to recipes_path, notice: "Moved to #{destination.name}."
+    redirect_to recipes_path, notice: t("web.flash.moved_to", name: destination.name)
   end
 
   # POST /recipes/import — a link
   def import
     url = params[:url].to_s.strip
-    return redirect_to recipes_path, alert: "Paste a link first." if url.blank?
+    return redirect_to recipes_path, alert: t("web.flash.paste_link") if url.blank?
 
     validation = RecipeImporters::UrlValidator.new(url).validate
-    return redirect_to recipes_path, alert: validation.error unless validation.success?
+    return redirect_to recipes_path, alert: t("web.flash.invalid_import_url") unless validation.success?
 
     started = start_import(source_url: url) do |placeholder|
       RecipeImportJob.perform_later(Current.user.id, placeholder.id, url)
     end
     return unless started
 
-    redirect_to recipes_path, notice: "Importing your recipe…"
+    redirect_to recipes_path, notice: t("web.flash.importing")
   end
 
   # POST /recipes/import_photo — an upload or a camera capture
@@ -110,7 +110,7 @@ class RecipesController < ApplicationController
     end
     return unless started
 
-    redirect_to recipes_path, notice: "Reading your photo…"
+    redirect_to recipes_path, notice: t("web.flash.reading_photo")
   end
 
   private
@@ -125,7 +125,7 @@ class RecipesController < ApplicationController
 
     switch_cookbook(@recipe.cookbook) unless @recipe.cookbook_id == current_cookbook.id
   rescue ActiveRecord::RecordNotFound
-    redirect_to recipes_path, alert: "That recipe is no longer available."
+    redirect_to recipes_path, alert: t("web.flash.recipe_unavailable")
   end
 
   def sort_option
@@ -149,7 +149,7 @@ class RecipesController < ApplicationController
     end
 
     if placeholder.nil?
-      redirect_to pro_path, alert: "You've reached your free limit of #{User::FREE_MONTHLY_IMPORT_LIMIT} imports this month."
+      redirect_to pro_path, alert: t("web.flash.import_limit", count: User::FREE_MONTHLY_IMPORT_LIMIT)
       return nil
     end
 
@@ -158,9 +158,9 @@ class RecipesController < ApplicationController
   end
 
   def validate_import_image(image)
-    return "Choose a photo first." if image.blank?
-    return "That file is not an image." unless image.respond_to?(:content_type) && image.content_type.to_s.start_with?("image/")
-    return "That image is too big (max 15MB)." if image.respond_to?(:size) && image.size > 15.megabytes
+    return t("web.flash.choose_photo") if image.blank?
+    return t("web.flash.not_image") unless image.respond_to?(:content_type) && image.content_type.to_s.start_with?("image/")
+    return t("web.flash.image_too_big") if image.respond_to?(:size) && image.size > 15.megabytes
 
     nil
   end

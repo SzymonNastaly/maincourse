@@ -35,7 +35,7 @@ class ProControllerTest < ActionDispatch::IntegrationTest
 
     get pro_path
 
-    assert_match "You're on Pro", response.body
+    assert_select "span", text: "You're on Pro"
     assert_match "iOS app", response.body
     assert_select "[data-testid=app-store-link]", 0
   end

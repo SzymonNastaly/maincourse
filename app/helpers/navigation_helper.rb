@@ -5,12 +5,12 @@ module NavigationHelper
     return [] if current_cookbook.blank?
 
     [
-      { key: :recipes, label: "Recipes", icon: "utensils", path: recipes_path,
+      { key: :recipes, label: t("web.recipes"), icon: "utensils", path: recipes_path,
         count: current_cookbook.recipes.where.not(import_status: :failed).count },
-      { key: :search, label: "Search", icon: "search", path: search_path },
-      { key: :shopping, label: "Shopping List", icon: "shopping-cart", path: shopping_list_items_path,
+      { key: :search, label: t("web.search"), icon: "search", path: search_path },
+      { key: :shopping, label: t("web.shopping_list"), icon: "shopping-cart", path: shopping_list_items_path,
         badge: current_cookbook.shopping_list_items.unchecked.count },
-      { key: :cookbooks, label: "Cookbooks", icon: "book-open", path: cookbooks_path }
+      { key: :cookbooks, label: t("web.cookbooks"), icon: "book-open", path: cookbooks_path }
     ]
   end
 

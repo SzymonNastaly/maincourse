@@ -1,18 +1,18 @@
-<% page_title "New recipe" %>
+<% page_title t("web.new_recipe") %>
 
 <% content_for :mobile_header do %>
-  <%= render "layouts/back_bar", label: "All Recipes", path: recipes_path %>
+  <%= render "layouts/back_bar", label: t("web.all_recipes"), path: recipes_path %>
 <% end %>
 
 <div class="hidden items-center gap-2.5 border-b border-line px-[30px] py-4 md:flex">
   <%= link_to recipes_path, class: "flex items-center gap-[7px] text-[12.5px] text-body hover:text-ink" do %>
-    <%= icon "arrow-left", size: 15, stroke: 2 %><span>All Recipes</span>
+    <%= icon "arrow-left", size: 15, stroke: 2 %><span><%= t("web.all_recipes") %></span>
   <% end %>
 </div>
 
 <div class="px-4 pt-5 pb-10 md:px-[30px] md:pt-[26px]">
-  <h1 class="mb-1.5 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]">New recipe</h1>
-  <p class="mb-6 text-[12.5px] font-light text-muted">Adding to <%= current_cookbook.name %>.</p>
+  <h1 class="mb-1.5 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]"><%= t("web.new_recipe") %></h1>
+  <p class="mb-6 text-[12.5px] font-light text-muted"><%= t("web.adding_to", name: current_cookbook.name) %></p>
 
   <%= render "recipes/form", recipe: @recipe %>
 </div>

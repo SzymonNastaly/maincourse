@@ -1,4 +1,4 @@
-<% page_title "Cookbook invitation" %>
+<% page_title t("web.cookbook_invitation") %>
 
 <div class="mb-8 flex items-center gap-2.5">
   <%= brand_mark size: 28 %>
@@ -6,20 +6,20 @@
 </div>
 
 <% if @invitation.nil? %>
-  <h1 class="mb-2 text-[20px] leading-[1.3] font-semibold tracking-[-0.45px]">This invitation doesn't exist</h1>
+  <h1 class="mb-2 text-[20px] leading-[1.3] font-semibold tracking-[-0.45px]"><%= t("web.invitation_missing") %></h1>
   <p class="mb-7 text-[12.5px] leading-relaxed font-light text-muted">
-    The link may have been mistyped, or the invitation was replaced by a newer one.
+    <%= t("web.invitation_missing_hint") %>
   </p>
-  <%= link_to "Go to MainCourse", root_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+  <%= link_to t("web.go_to_maincourse"), root_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
 
 <% elsif !@invitation.pending? || @invitation.time_expired? %>
   <h1 class="mb-2 text-[20px] leading-[1.3] font-semibold tracking-[-0.45px]">
-    <%= @invitation.time_expired? ? "This invitation has expired" : "This invitation is no longer available" %>
+    <%= @invitation.time_expired? ? t("web.invitation_expired") : t("web.invitation_unavailable") %>
   </h1>
   <p class="mb-7 text-[12.5px] leading-relaxed font-light text-muted">
-    Ask <%= @invitation.inviter.email_address %> to send you a new link.
+    <%= t("web.ask_for_invitation", email: @invitation.inviter.email_address) %>
   </p>
-  <%= link_to "Go to MainCourse", root_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+  <%= link_to t("web.go_to_maincourse"), root_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
 
 <% else %>
   <div class="mb-6 flex flex-col items-center gap-3.5 text-center">
@@ -28,10 +28,10 @@
     </span>
     <div>
       <h1 class="mb-1.5 text-[20px] leading-[1.3] font-semibold tracking-[-0.45px]">
-        <%= @invitation.inviter.name.presence || @invitation.inviter.email_address %> invited you to a shared cookbook
+        <%= t("web.invited_by", name: @invitation.inviter.name.presence || @invitation.inviter.email_address) %>
       </h1>
       <p class="text-[12.5px] leading-relaxed font-light text-muted">
-        You'll be able to see, add and edit everything in it.
+        <%= t("web.invitation_permissions") %>
       </p>
     </div>
   </div>
@@ -43,43 +43,42 @@
     <span class="min-w-0 grow">
       <span class="block truncate text-[14px] font-medium"><%= @invitation.cookbook.name %></span>
       <span class="mt-0.5 block text-[11.5px] font-light text-muted">
-        <%= mono @invitation.cookbook.recipes.count, class: "text-[11px]" %> recipes ·
-        <%= pluralize(@invitation.cookbook.cookbook_memberships.count, "member") %>
+        <%= t("web.recipe_count", count: @invitation.cookbook.recipes.count) %> ·
+        <%= t("web.member_count", count: @invitation.cookbook.cookbook_memberships.count) %>
       </span>
     </span>
   </div>
 
   <% if Current.user.nil? %>
     <p class="mb-4 rounded-card bg-sunken px-3 py-2.5 text-[11.5px] leading-relaxed font-light text-body">
-      Sign in or create an account to join. We'll bring you straight back here.
+      <%= t("web.invitation_sign_in_hint") %>
     </p>
     <div class="flex flex-col gap-2.5">
-      <%= link_to "Sign in", new_session_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
-      <%= link_to "Create an account", new_registration_path, class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+      <%= link_to t("web.sign_in"), new_session_path, class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+      <%= link_to t("web.create_an_account"), new_registration_path, class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
     </div>
 
   <% elsif @already_member %>
-    <p class="mb-4 text-[12.5px] font-light text-muted">You're already a member of this cookbook.</p>
-    <%= link_to "Open #{@invitation.cookbook.name}", recipes_path,
+    <p class="mb-4 text-[12.5px] font-light text-muted"><%= t("web.already_member") %></p>
+    <%= link_to t("web.open_cookbook", name: @invitation.cookbook.name), recipes_path,
                 class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
 
   <% elsif @blocked_by_existing_shared %>
     <div class="mb-4 flex items-start gap-2.5 rounded-card border border-danger-line bg-danger-tint px-3 py-2.5 text-[11.5px] leading-relaxed text-danger">
       <%= icon "triangle-alert", size: 15, stroke: 2, class: "mt-px" %>
       <span>
-        You already have a shared cookbook. Leave
-        <strong class="font-medium"><%= Current.user.shared_cookbook.name %></strong> before joining another.
+        <%= t("web.leave_before_joining_html", name: tag.strong(Current.user.shared_cookbook.name, class: "font-medium")) %>
       </span>
     </div>
-    <%= link_to "Manage cookbooks", cookbooks_path, class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
+    <%= link_to t("web.manage_cookbooks"), cookbooks_path, class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>
 
   <% else %>
     <div class="flex flex-col gap-2.5">
-      <%= button_to "Accept invitation", accept_invite_path(@token),
+      <%= button_to t("web.accept_invitation"), accept_invite_path(@token),
                     form_class: "block",
                     class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]",
                     data: { testid: "accept-invite" } %>
-      <%= button_to "Not now", reject_invite_path(@token),
+      <%= button_to t("web.not_now"), reject_invite_path(@token),
                     form_class: "block",
                     class: "mc-btn mc-btn-quiet w-full py-3 text-[13.5px]" %>
     </div>

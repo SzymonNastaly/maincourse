@@ -85,7 +85,7 @@
 
 @utility mc-btn {
   @apply inline-flex items-center justify-center gap-1.5 rounded-card px-3.5 py-2.5
-         text-[12.5px] font-medium whitespace-nowrap transition-colors;
+         text-[12.5px] font-medium whitespace-normal transition-colors;
 }
 
 @utility mc-btn-primary {

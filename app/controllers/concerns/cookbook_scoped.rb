@@ -49,6 +49,6 @@ module CookbookScoped
   def require_cookbook
     return if current_cookbook
 
-    redirect_to cookbooks_path, alert: "Pick a cookbook first."
+    redirect_to cookbooks_path, alert: t("web.flash.pick_cookbook")
   end
 end

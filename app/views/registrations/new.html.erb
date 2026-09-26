@@ -1,12 +1,12 @@
-<% page_title "Create an account" %>
+<% page_title t("web.create_an_account") %>
 
 <div class="mb-10 flex items-center gap-2.5">
   <%= brand_mark size: 28 %>
   <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
 </div>
 
-<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Create your kitchen</h1>
-<p class="mb-7 text-[13px] font-light text-muted">Save recipes from anywhere and cook from them on any device.</p>
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]"><%= t("web.create_kitchen") %></h1>
+<p class="mb-7 text-[13px] font-light text-muted"><%= t("web.create_kitchen_hint") %></p>
 
 <%= render "shared/oauth_buttons" %>
 
@@ -19,33 +19,32 @@
   <% end %>
 
   <div class="mb-3.5">
-    <%= form.label :name, "First name", class: "mc-label" %>
+    <%= form.label :name, t("web.first_name"), class: "mc-label" %>
     <%= form.text_field :name, autofocus: true, autocomplete: "given-name", class: "mc-field" %>
   </div>
 
   <div class="mb-3.5">
-    <%= form.label :email_address, "Email", class: "mc-label" %>
+    <%= form.label :email_address, t("web.email"), class: "mc-label" %>
     <%= form.email_field :email_address, required: true, autocomplete: "username",
                          placeholder: "you@example.com", class: "mc-field" %>
   </div>
 
   <div class="mb-3.5">
-    <%= form.label :password, "Password", class: "mc-label" %>
+    <%= form.label :password, t("web.password"), class: "mc-label" %>
     <%= form.password_field :password, required: true, minlength: 12,
                             autocomplete: "new-password", class: "mc-field" %>
-    <p class="mt-1.5 text-[11px] font-light text-muted">At least 12 characters.</p>
+    <p class="mt-1.5 text-[11px] font-light text-muted"><%= t("web.password_length_hint") %></p>
   </div>
 
   <div class="mb-5">
-    <%= form.label :password_confirmation, "Confirm password", class: "mc-label" %>
+    <%= form.label :password_confirmation, t("web.confirm_password"), class: "mc-label" %>
     <%= form.password_field :password_confirmation, required: true,
                             autocomplete: "new-password", class: "mc-field" %>
   </div>
 
-  <%= form.submit "Create account", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+  <%= form.submit t("web.create_account"), class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
 <% end %>
 
 <p class="mt-8 text-center text-[12.5px] font-light text-muted">
-  Already have an account?
-  <%= link_to "Sign in", new_session_path, class: "font-medium text-accent hover:text-accent-dark" %>
+  <%= t("web.existing_account_html", link: link_to(t("web.sign_in"), new_session_path, class: "font-medium text-accent hover:text-accent-dark")) %>
 </p>

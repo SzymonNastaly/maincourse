@@ -63,6 +63,7 @@ Rails.application.routes.draw do
   root to: redirect("/recipes")
 
   resource :session, only: [ :new, :create, :destroy ]
+  resource :locale, only: :update
   resource :registration, only: [ :new, :create ]
   resources :passwords, param: :token
   get "auth/google_oauth2/callback", to: "omniauth_callbacks#create"

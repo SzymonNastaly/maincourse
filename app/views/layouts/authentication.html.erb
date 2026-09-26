@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= I18n.locale %>">
   <head>
     <title><%= content_for(:title) ? "#{content_for(:title)} · MainCourse" : "MainCourse" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -32,6 +32,9 @@
 
         <div class="rounded-panel border border-hairline bg-surface px-6 py-8 shadow-[0_10px_26px_-18px_rgba(20,23,28,0.4)] sm:px-9 sm:py-10">
           <%= yield %>
+          <div class="mt-6 border-t border-line pt-5">
+            <%= render "shared/language_picker" %>
+          </div>
         </div>
       </div>
     </div>

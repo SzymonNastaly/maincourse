@@ -1,39 +1,42 @@
-<% page_title "Settings" %>
+<% page_title t("web.settings") %>
 
 <div class="px-4 pt-[18px] pb-10 md:px-[30px] md:pt-[26px]">
   <div class="mb-5">
-    <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px] md:mb-1.5 md:text-[29px] md:tracking-[-0.7px]">Settings</h1>
-    <p class="text-[11.5px] font-light text-muted md:text-[12.5px]">Signed in as <%= @user.email_address %></p>
+    <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px] md:mb-1.5 md:text-[29px] md:tracking-[-0.7px]"><%= t("web.settings") %></h1>
+    <p class="text-[11.5px] font-light text-muted md:text-[12.5px]"><%= t("web.signed_in_as", email: @user.email_address) %></p>
   </div>
 
   <div class="max-w-[520px]">
+    <div class="mc-panel mb-5 p-[15px]">
+      <%= render "shared/language_picker" %>
+    </div>
     <%# ---- Account ------------------------------------------------------- %>
-    <div class="mb-2.5"><span class="mc-section-label">Account</span></div>
+    <div class="mb-2.5"><span class="mc-section-label"><%= t("web.account") %></span></div>
     <div class="mc-panel mb-[18px] md:mb-5">
       <div class="flex items-center gap-3 p-[15px]">
         <span class="flex size-10 items-center justify-center rounded-panel bg-line text-[14px] font-semibold text-body">
           <%= user_initials(@user) %>
         </span>
         <span class="min-w-0 grow">
-          <span class="block truncate text-[14px] font-medium"><%= @user.name.presence || "No name yet" %></span>
+          <span class="block truncate text-[14px] font-medium"><%= @user.name.presence || t("web.no_name") %></span>
           <span class="mt-0.5 block truncate text-[11.5px] font-light text-muted"><%= @user.email_address %></span>
         </span>
-        <%= link_to "Manage account", account_path, class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]" %>
+        <%= link_to t("web.manage_account"), account_path, class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]" %>
       </div>
 
       <div class="border-t border-line px-[15px] py-3">
         <%= form_with model: @user, url: settings_path, method: :patch, class: "flex items-end gap-2.5" do |form| %>
           <div class="grow">
-            <%= form.label :name, "Display name", class: "mc-label" %>
+            <%= form.label :name, t("web.display_name"), class: "mc-label" %>
             <%= form.text_field :name, class: "mc-field", data: { testid: "display-name" } %>
           </div>
-          <%= form.submit "Save", class: "mc-btn mc-btn-outline" %>
+          <%= form.submit t("web.save"), class: "mc-btn mc-btn-outline" %>
         <% end %>
       </div>
     </div>
 
     <%# ---- Notifications ------------------------------------------------- %>
-    <div class="mb-2.5"><span class="mc-section-label">Notifications</span></div>
+    <div class="mb-2.5"><span class="mc-section-label"><%= t("web.notifications") %></span></div>
     <div class="mc-panel mb-[18px] md:mb-5">
       <%= form_with model: @user, url: settings_path, method: :patch,
                     data: { controller: "auto-submit" } do |form| %>
@@ -42,9 +45,9 @@
             <%= icon "bell", size: 15, class: "text-body" %>
           </span>
           <span class="min-w-0 grow">
-            <span class="block text-[13.5px] font-medium tracking-[-0.15px]">Recipe reminders</span>
+            <span class="block text-[13.5px] font-medium tracking-[-0.15px]"><%= t("web.recipe_reminders") %></span>
             <span class="mt-0.5 block text-[11.5px] leading-relaxed font-light text-muted">
-              Occasional nudges about recipes you saved and shopping lists you left unfinished.
+              <%= t("web.reminders_hint") %>
             </span>
           </span>
           <%= form.check_box :lifecycle_notifications_enabled,
@@ -55,16 +58,16 @@
     </div>
 
     <%# ---- Cookbooks ------------------------------------------------------ %>
-    <div class="mb-2.5"><span class="mc-section-label">Cookbooks</span></div>
+    <div class="mb-2.5"><span class="mc-section-label"><%= t("web.cookbooks") %></span></div>
     <div class="mc-panel mb-[18px] md:mb-5">
       <%= link_to cookbooks_path, class: "flex items-center gap-3 p-[15px] hover:bg-sunken" do %>
         <span class="flex size-[30px] shrink-0 items-center justify-center rounded-card bg-sunken">
           <%= icon "book-open", size: 15, class: "text-body" %>
         </span>
         <span class="min-w-0 grow">
-          <span class="block text-[13.5px] font-medium tracking-[-0.15px]">Manage cookbooks</span>
+          <span class="block text-[13.5px] font-medium tracking-[-0.15px]"><%= t("web.manage_cookbooks") %></span>
           <span class="mt-0.5 block text-[11.5px] font-light text-muted">
-            1 personal<%= " · 1 shared" if @user.shared_cookbook %>
+            <%= @user.shared_cookbook ? t("web.personal_and_shared") : t("web.one_personal") %>
           </span>
         </span>
         <%= icon "chevron-right", size: 14, stroke: 2.2, class: "text-muted" %>
@@ -72,7 +75,7 @@
     </div>
 
     <%# ---- Subscription ---------------------------------------------------- %>
-    <div class="mb-2.5"><span class="mc-section-label">Subscription</span></div>
+    <div class="mb-2.5"><span class="mc-section-label"><%= t("web.subscription") %></span></div>
     <div class="mc-panel mb-[18px] md:mb-5">
       <div class="flex items-center gap-3 p-[15px]">
         <span class="flex size-[30px] shrink-0 items-center justify-center rounded-card bg-amber-tint">
@@ -80,19 +83,18 @@
         </span>
         <span class="min-w-0 grow">
           <span class="block text-[13.5px] font-medium tracking-[-0.15px]">
-            <%= @user.pro? ? "MainCourse Pro" : "Free Plan" %>
+            <%= @user.pro? ? "MainCourse Pro" : t("web.free_plan") %>
           </span>
           <span class="mt-0.5 block text-[11.5px] leading-relaxed font-light text-muted">
             <% if @user.pro? %>
-              Active · manage your subscription in the MainCourse iOS app.
+              <%= t("web.active_subscription_hint") %>
             <% else %>
-              <%= mono @user.remaining_imports.to_i, class: "text-[11px]" %>
-              of <%= mono User::FREE_MONTHLY_IMPORT_LIMIT, class: "text-[11px]" %> imports left this month.
+              <%= t("web.imports_remaining_html", remaining: mono(@user.remaining_imports.to_i, class: "text-[11px]"), limit: mono(User::FREE_MONTHLY_IMPORT_LIMIT, class: "text-[11px]")) %>
             <% end %>
           </span>
         </span>
         <% unless @user.pro? %>
-          <%= link_to "Upgrade", pro_path, class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]",
+          <%= link_to t("web.upgrade"), pro_path, class: "mc-btn mc-btn-outline px-3 py-1.5 text-[12px]",
                       data: { testid: "upgrade-link" } %>
         <% end %>
       </div>
@@ -103,12 +105,12 @@
       <%= button_to session_path, method: :delete,
                     form_class: "block border-b border-line",
                     class: "flex w-full items-center gap-3 px-[15px] py-3 text-left hover:bg-sunken",
-                    data: { turbo_confirm: "Sign out? You'll need to sign in again to access your account.",
+                    data: { turbo_confirm: t("web.confirm_sign_out"),
                             testid: "sign-out" } do %>
         <span class="flex size-[30px] shrink-0 items-center justify-center rounded-card bg-sunken">
           <%= icon "log-out", size: 15, class: "text-body" %>
         </span>
-        <span class="grow text-[13.5px] font-medium tracking-[-0.15px]">Sign out</span>
+        <span class="grow text-[13.5px] font-medium tracking-[-0.15px]"><%= t("web.sign_out") %></span>
         <%= icon "chevron-right", size: 14, stroke: 2.2, class: "text-muted" %>
       <% end %>
 
@@ -117,8 +119,8 @@
           <%= icon "trash-2", size: 15, class: "text-danger" %>
         </span>
         <span class="min-w-0 grow">
-          <span class="block text-[13.5px] font-medium tracking-[-0.15px] text-danger">Delete account</span>
-          <span class="mt-0.5 block text-[11.5px] font-light text-muted">Removes your recipes and cookbooks for good.</span>
+          <span class="block text-[13.5px] font-medium tracking-[-0.15px] text-danger"><%= t("web.delete_account") %></span>
+          <span class="mt-0.5 block text-[11.5px] font-light text-muted"><%= t("web.delete_account_hint") %></span>
         </span>
         <%= icon "chevron-right", size: 14, stroke: 2.2, class: "text-muted" %>
       <% end %>

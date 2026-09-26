@@ -29,7 +29,7 @@
   <%= button_to shopping_list_item_path(item), method: :delete,
                 form_class: "absolute -top-1.5 -right-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
                 class: "flex size-6 items-center justify-center rounded-full border border-hairline bg-surface text-muted shadow-sm hover:text-danger",
-                aria: { label: "Remove #{item.name}" } do %>
+                aria: { label: t("web.remove_item", name: item.name) } do %>
     <%= icon "x", size: 12, stroke: 2.4 %>
   <% end %>
 </div>

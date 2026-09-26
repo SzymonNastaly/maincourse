@@ -1,4 +1,4 @@
-<% page_title "Edit #{@recipe.name}" %>
+<% page_title t("web.edit_named_recipe", name: @recipe.name) %>
 
 <% content_for :mobile_header do %>
   <%= render "layouts/back_bar", label: @recipe.name, path: recipe_path(@recipe) %>
@@ -11,7 +11,7 @@
 </div>
 
 <div class="px-4 pt-5 pb-10 md:px-[30px] md:pt-[26px]">
-  <h1 class="mb-6 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]">Edit recipe</h1>
+  <h1 class="mb-6 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]"><%= t("web.edit_recipe") %></h1>
 
   <%= render "recipes/form", recipe: @recipe %>
 </div>

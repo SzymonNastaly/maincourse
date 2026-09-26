@@ -50,7 +50,7 @@
 <% collections = rail_collections %>
 <% if collections.any? %>
   <div class="px-5 pb-[18px]">
-    <div class="mc-section-label mb-2.5">Collections</div>
+    <div class="mc-section-label mb-2.5"><%= t("web.collections") %></div>
     <div class="flex flex-col gap-[9px]">
       <% collections.each do |tag| %>
         <%= link_to recipes_path(tag: tag.slug), class: "flex items-center justify-between gap-2 hover:text-ink" do %>
@@ -73,7 +73,7 @@
     <span class="flex size-[26px] items-center justify-center rounded-control text-[10.5px] font-semibold <%= on ? "bg-white/20 text-white" : "bg-line text-body" %>">
       <%= user_initials(Current.user) %>
     </span>
-    <span class="min-w-0 grow truncate text-[11.5px] <%= on ? "font-medium text-white" : "text-body" %>">Settings</span>
+    <span class="min-w-0 grow truncate text-[11.5px] <%= on ? "font-medium text-white" : "text-body" %>"><%= t("web.settings") %></span>
     <%= icon "chevron-right", size: 12, stroke: 2.2, class: on ? "text-white/70" : "text-muted" %>
   <% end %>
 </div>

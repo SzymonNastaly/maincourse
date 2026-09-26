@@ -7,7 +7,7 @@ class SettingsController < ApplicationController
     @user = Current.user
 
     if @user.update(settings_params)
-      redirect_to edit_settings_path, notice: "Settings updated."
+      redirect_to edit_settings_path, notice: t("web.flash.settings_updated")
     else
       render :edit, status: :unprocessable_entity
     end

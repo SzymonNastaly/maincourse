@@ -1,26 +1,26 @@
-<% page_title "Set a new password" %>
+<% page_title t("web.set_password") %>
 
 <div class="mb-10 flex items-center gap-2.5">
   <%= brand_mark size: 28 %>
   <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
 </div>
 
-<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Set a new password</h1>
-<p class="mb-7 text-[13px] font-light text-muted">You'll be signed out everywhere else.</p>
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]"><%= t("web.set_password") %></h1>
+<p class="mb-7 text-[13px] font-light text-muted"><%= t("web.password_sign_out_hint") %></p>
 
 <%= form_with url: password_path(params[:token]), method: :patch do |form| %>
   <div class="mb-3.5">
-    <%= form.label :password, "New password", class: "mc-label" %>
+    <%= form.label :password, t("web.new_password"), class: "mc-label" %>
     <%= form.password_field :password, required: true, autofocus: true, minlength: 12,
                             autocomplete: "new-password", class: "mc-field" %>
-    <p class="mt-1.5 text-[11px] font-light text-muted">At least 12 characters.</p>
+    <p class="mt-1.5 text-[11px] font-light text-muted"><%= t("web.password_length_hint") %></p>
   </div>
 
   <div class="mb-5">
-    <%= form.label :password_confirmation, "Confirm password", class: "mc-label" %>
+    <%= form.label :password_confirmation, t("web.confirm_password"), class: "mc-label" %>
     <%= form.password_field :password_confirmation, required: true,
                             autocomplete: "new-password", class: "mc-field" %>
   </div>
 
-  <%= form.submit "Save password", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
+  <%= form.submit t("web.save_password"), class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
 <% end %>

@@ -1,4 +1,4 @@
-<% page_title "Continue with Apple" %>
+<% page_title t("web.continue_apple") %>
 
 <div class="mb-10 flex items-center gap-2.5">
   <%= brand_mark size: 28 %>
@@ -6,30 +6,30 @@
 </div>
 
 <% if @setup_issue == :https %>
-  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">HTTPS setup required</h1>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]"><%= t("web.apple.https_required") %></h1>
   <p class="mb-7 text-[13px] font-light leading-5 text-body">
-    Continue from a registered HTTPS MainCourse address to use real Apple sign-in. A local HTTP server cannot complete Apple's web authorization.
+    <%= t("web.apple.https_hint") %>
   </p>
 <% elsif @setup_issue %>
-  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">Apple sign-in unavailable</h1>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]"><%= t("web.apple.unavailable") %></h1>
   <p class="mb-7 text-[13px] font-light leading-5 text-body">
-    Apple sign-in is not configured on this address. Return to MainCourse and choose another sign-in method.
+    <%= t("web.apple.unavailable_hint") %>
   </p>
 <% else %>
-  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]">Continue with Apple</h1>
+  <h1 class="mb-3 text-[26px] font-semibold tracking-[-0.7px]"><%= t("web.continue_apple") %></h1>
   <p class="mb-7 text-[13px] font-light leading-5 text-body">
-    Continue to Apple's secure website. MainCourse will return you to the Android app after Apple verifies your account.
+    <%= t("web.apple.continue_hint") %>
   </p>
 
   <div class="space-y-2.5">
-    <%= button_to "Continue with Apple", "/auth/apple?#{Rack::Utils.build_query(android_transaction: @transaction_id)}",
+    <%= button_to t("web.continue_apple"), "/auth/apple?#{Rack::Utils.build_query(android_transaction: @transaction_id)}",
                   method: :post,
                   class: "mc-btn mc-btn-apple w-full py-3 text-[13.5px]",
                   form: { data: { turbo: false } } %>
   </div>
 <% end %>
 
-<%= button_to "Cancel", android_apple_cancel_path,
+<%= button_to t("web.cancel"), android_apple_cancel_path,
               method: :post,
               params: { transaction_id: @transaction_id },
               class: "mc-btn mc-btn-outline mt-2.5 w-full py-3 text-[13.5px]",

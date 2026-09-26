@@ -5,7 +5,7 @@
           data-action="click->dialog#closeOnBackdrop">
     <div class="px-[18px] pt-2.5 pb-6">
       <div class="mx-auto mb-4 h-1 w-9 rounded-sm bg-hairline sm:hidden"></div>
-      <h2 class="mb-2 text-[15px] font-semibold tracking-[-0.3px]">Switch cookbook</h2>
+      <h2 class="mb-2 text-[15px] font-semibold tracking-[-0.3px]"><%= t("web.switch_cookbook") %></h2>
 
       <% available_cookbooks.each do |cookbook| %>
         <% on = cookbook.id == current_cookbook.id %>
@@ -34,7 +34,7 @@
 
       <%= link_to cookbooks_path, class: "flex items-center gap-2.5 px-1 pt-[15px] pb-1 text-body hover:text-ink" do %>
         <%= icon "settings", size: 15 %>
-        <span class="grow text-[13px]">Manage cookbooks</span>
+        <span class="grow text-[13px]"><%= t("web.manage_cookbooks") %></span>
         <%= icon "chevron-right", size: 13, stroke: 2.2, class: "text-muted" %>
       <% end %>
     </div>

@@ -1,0 +1,318 @@
+de:
+  activerecord:
+    attributes:
+      user:
+        name: Name
+        email_address: E-Mail-Adresse
+        password: Passwort
+        password_confirmation: Passwortbestätigung
+      recipe:
+        name: Name
+        servings: Portionen
+        notes: Notizen
+        prep_time: Vorbereitungszeit
+        cook_time: Kochzeit
+        meal_plan_entries: Einträge im Speiseplan
+  web:
+    apple:
+      return_heading: Zurück zu MainCourse
+      return_hint: Öffne die MainCourse-App, um die Anmeldung abzuschließen. Wenn diese Seite weiterhin erscheint, sind App Links für diese Installation noch nicht eingerichtet.
+      link_unavailable: Apple-Anmeldelink nicht verfügbar
+      link_unavailable_hint: Dieser Apple-Anmeldelink ist ungültig oder nicht mehr verfügbar. Kehre zu MainCourse zurück und beginne erneut.
+      https_required: HTTPS-Einrichtung erforderlich
+      https_hint: Verwende eine registrierte HTTPS-Adresse von MainCourse für die Anmeldung mit Apple. Ein lokaler HTTP-Server kann Apples Webautorisierung nicht abschließen.
+      unavailable: Anmeldung mit Apple nicht verfügbar
+      unavailable_hint: Die Anmeldung mit Apple ist für diese Adresse nicht eingerichtet. Kehre zu MainCourse zurück und wähle eine andere Anmeldemethode.
+      continue_hint: Weiter zur sicheren Website von Apple. MainCourse bringt dich zur Android-App zurück, sobald Apple dein Konto bestätigt hat.
+      create_account: Neues MainCourse-Konto erstellen?
+      create_account_hint: Diese Apple-Anmeldung ist mit keinem MainCourse-Konto verbunden. Wenn du MainCourse bereits nutzt, brich ab und melde dich wie bisher an, um deine Rezepte zu behalten.
+      cancel_creation: Vorhandenes Konto verwenden / Abbrechen
+    language: Sprache
+    browser_language: Browsersprache
+    save: Speichern
+    settings: Einstellungen
+    recipes: Rezepte
+    all_recipes: Alle Rezepte
+    search: Suche
+    shopping_list: Einkaufsliste
+    cookbooks: Kochbücher
+    collections: Sammlungen
+    account: Konto
+    manage_account: Konto verwalten
+    email: E-Mail
+    password: Passwort
+    reset_link_hint: Wir senden dir einen Link zum Zurücksetzen per E-Mail.
+    send_reset_link: Link senden
+    delete_your_account: Dein Konto löschen
+    delete_personal_data: Dein persönliches Kochbuch und alle darin enthaltenen Rezepte werden gelöscht.
+    delete_shopping_data: Deine Einkaufsliste und Speisepläne werden gelöscht.
+    transfer_shared_data: Geteilte Kochbücher, die dir gehören, werden einem anderen Mitglied übertragen.
+    delete_subscription_hint: Ein aktives Abo wird nicht erstattet — kündige es im App Store.
+    type_delete: Gib %{phrase} zur Bestätigung ein
+    delete_account: Konto löschen
+    confirm_delete_account: Dein Konto wird dauerhaft gelöscht. Fortfahren?
+    create_shared_cookbook: Geteiltes Kochbuch erstellen
+    close: Schließen
+    name: Name
+    our_kitchen: Unsere Küche
+    move_personal_recipes: Alle persönlichen Rezepte verschieben
+    move_personal_hint: Deine Rezepte und Einkaufsliste werden ins geteilte Kochbuch verschoben. Entferne das Häkchen, um sie zu behalten, wo sie sind.
+    create_cookbook: Kochbuch erstellen
+    cancel: Abbrechen
+    share_cookbook_hint: Teile Rezepte und Einkaufslisten mit deinem Partner oder deiner Familie.
+    existing_recipes_hint: Deine vorhandenen Rezepte können beim Erstellen mit umziehen oder bleiben, wo sie sind.
+    active: Aktiv
+    switch: Wechseln
+    generate_invite: Einladungslink erstellen
+    confirm_delete_cookbook: Alle Rezepte in diesem Kochbuch werden dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.
+    delete_cookbook: Kochbuch löschen
+    confirm_leave_cookbook: Deine Rezepte bleiben im geteilten Kochbuch. Mit einer neuen Einladung kannst du später wieder beitreten.
+    leave_cookbook: Kochbuch verlassen
+    invite_created: Einladungslink erstellt
+    copied: Kopiert
+    copy_manually: Link auswählen und kopieren
+    copy_link: Link kopieren
+    invite_expiry: Alle mit diesem Link können %{name} beitreten. Er läuft in %{time} ab.
+    cookbooks_hint: Behalte Rezepte für dich oder teile eine Küche.
+    personal: Persönlich
+    shared: Geteilt
+    cookbook_invitation: Einladung zum Kochbuch
+    invitation_missing: Diese Einladung existiert nicht
+    invitation_missing_hint: Der Link wurde möglicherweise falsch eingegeben oder die Einladung durch eine neuere ersetzt.
+    go_to_maincourse: Zu MainCourse
+    invitation_expired: Diese Einladung ist abgelaufen
+    invitation_unavailable: Diese Einladung ist nicht mehr verfügbar
+    ask_for_invitation: Bitte %{email}, dir einen neuen Link zu senden.
+    invited_by: "%{name} hat dich zu einem geteilten Kochbuch eingeladen"
+    invitation_permissions: Du kannst alles darin ansehen, ergänzen und bearbeiten.
+    invitation_sign_in_hint: Melde dich an oder erstelle ein Konto, um beizutreten. Danach kommst du direkt hierher zurück.
+    sign_in: Anmelden
+    create_an_account: Konto erstellen
+    already_member: Du bist bereits Mitglied dieses Kochbuchs.
+    open_cookbook: "%{name} öffnen"
+    leave_before_joining_html: Du hast bereits ein geteiltes Kochbuch. Verlasse %{name}, bevor du einem anderen beitrittst.
+    manage_cookbooks: Kochbücher verwalten
+    accept_invitation: Einladung annehmen
+    not_now: Nicht jetzt
+    open_menu: Menü öffnen
+    close_menu: Menü schließen
+    dismiss: Schließen
+    switch_cookbook: Kochbuch wechseln
+    confirm_apple_account: Kontoerstellung mit Apple bestätigen
+    separate_account: Separates Konto erstellen?
+    separate_account_hint: Diese Apple-Anmeldung ist mit keinem MainCourse-Konto verbunden. Wenn du MainCourse bereits nutzt, melde dich wie bisher an, um deine Rezepte zu behalten. Mit einem neuen Konto beginnst du ein separates Kochbuch.
+    use_existing_account: Vorhandenes Konto verwenden
+    create_apple_account: Neues Konto mit Apple erstellen
+    set_password: Neues Passwort festlegen
+    password_sign_out_hint: Du wirst auf allen anderen Geräten abgemeldet.
+    new_password: Neues Passwort
+    password_length_hint: Mindestens 12 Zeichen.
+    confirm_password: Passwort bestätigen
+    save_password: Passwort speichern
+    reset_password: Passwort zurücksetzen
+    reset_password_hint: Gib die E-Mail-Adresse deiner Registrierung ein. Wir senden dir einen Link, um ein neues Passwort festzulegen.
+    back_to_sign_in: Zurück zur Anmeldung
+    continue_apple: Mit Apple fortfahren
+    continue_google: Mit Google fortfahren
+    or: oder
+    sign_in_heading: Melde dich in deiner Küche an
+    sign_in_hint: Deine Rezepte und Einkaufsliste auf jedem Gerät.
+    forgot_password: Passwort vergessen?
+    new_to_maincourse_html: Neu bei MainCourse? %{link}
+    create_kitchen: Erstelle deine Küche
+    create_kitchen_hint: Speichere Rezepte von überall und koche auf jedem Gerät danach.
+    first_name: Vorname
+    create_account: Konto erstellen
+    existing_account_html: Schon ein Konto? %{link}
+    pro_hint: Unbegrenzte Importe und eine Küche, die du mit den Menschen teilen kannst, für die du kochst.
+    unlimited_imports: Unbegrenzte Rezeptimporte
+    shared_cookbooks_feature: Geteilte Kochbücher für deinen Haushalt
+    shared_lists_feature: Geteilte Einkaufslisten, live synchronisiert
+    recipe_reminders: Rezepterinnerungen
+    on_pro: Du nutzt Pro
+    manage_subscription_hint: Verwalte oder kündige dein Abo in der MainCourse-App für iOS unter Einstellungen → Abonnement.
+    upgrade_ios: In der iOS-App upgraden
+    upgrade_ios_hint: Abos werden über den App Store abgewickelt. Kaufe Pro deshalb in der MainCourse-App für iOS unter Einstellungen → Abonnement. Es wird sofort auch im Web freigeschaltet.
+    get_ios: MainCourse für iOS laden
+    free_plan_hint_html: Im kostenlosen Tarif erhältst du %{limit} Importe pro Monat — diesen Monat sind noch %{remaining} übrig. Alles andere funktioniert genauso.
+    signed_in_as: Angemeldet als %{email}
+    no_name: Noch kein Name
+    display_name: Anzeigename
+    notifications: Mitteilungen
+    reminders_hint: Gelegentliche Erinnerungen an gespeicherte Rezepte und unerledigte Einkaufslisten.
+    personal_and_shared: 1 persönlich · 1 geteilt
+    one_personal: 1 persönlich
+    subscription: Abonnement
+    free_plan: Kostenloser Tarif
+    active_subscription_hint: Aktiv · verwalte dein Abo in der MainCourse-App für iOS.
+    imports_remaining_html: Diesen Monat noch %{remaining} von %{limit} Importen übrig.
+    upgrade: Upgraden
+    confirm_sign_out: Abmelden? Du musst dich erneut anmelden, um auf dein Konto zuzugreifen.
+    sign_out: Abmelden
+    delete_account_hint: Löscht deine Rezepte und Kochbücher endgültig.
+    search_your_recipes: Deine Rezepte durchsuchen
+    clear_search: Suche löschen
+    search_hint: Durchsuche alle deine Kochbücher — nach Name, Zutat oder Zubereitungsschritt.
+    no_results: Keine Ergebnisse
+    no_results_hint: Versuche einen anderen Suchbegriff.
+    confirm_clear_list: Alles von deiner Einkaufsliste entfernen, auch abgehakte Einträge?
+    remove_all: Alle entfernen
+    remove_item: "%{name} entfernen"
+    to_buy_in_html: "%{number} zu kaufen in %{name}"
+    add_item: Eintrag hinzufügen
+    add: Hinzufügen
+    to_buy: Zu kaufen
+    nothing_to_buy: Nichts mehr zu kaufen.
+    already_got: Schon besorgt
+    checked_items_hint: Abgehakte Einträge verschwinden eine Stunde nach dem Abhaken.
+    empty_list: Deine Einkaufsliste ist leer
+    empty_list_hint: Füge Zutaten aus einem Rezept hinzu oder trage eigene Einträge ein.
+    add_recipe: Rezept hinzufügen
+    add_a_recipe: Rezept hinzufügen
+    paste_link: Link einfügen
+    import_recipe: Rezept importieren
+    upload_photo: Foto hochladen
+    upload_photo_hint: Eine Kochbuchseite oder ein Screenshot
+    take_photo: Foto aufnehmen
+    take_photo_hint: Direkt mit deiner Kamera
+    add_manually: ein Rezept manuell hinzufügen
+    import_hint_html: Wir lesen die Seite oder das Foto und erkennen Zutaten, Schritte und Zeiten. Du kannst danach alles bearbeiten oder %{link}.
+    add_to_list: Zur Einkaufsliste hinzufügen
+    staples_hint: Übliche Grundzutaten sind standardmäßig abgewählt. Wähle alles aus, was du brauchst.
+    add_named_item: "%{name} hinzufügen"
+    add_count_html: "%{number} hinzufügen"
+    fresh_list: Neue Einkaufsliste beginnen?
+    fresh_list_hint: Einige Einträge stehen seit mehr als 36 Stunden auf der Liste. Die gesamte Liste leeren, bevor diese Zutaten hinzugefügt werden?
+    keep_and_add: Behalten und hinzufügen
+    clear_and_add: Leeren und hinzufügen
+    importing: Wird importiert…
+    recipe_actions: Rezeptaktionen
+    open_recipe: Rezept öffnen
+    edit: Bearbeiten
+    move_to: Nach %{name} verschieben
+    confirm_delete_recipe: „%{name}“ löschen? Das kann nicht rückgängig gemacht werden.
+    delete: Löschen
+    edit_recipe: Rezept bearbeiten
+    import_failed_hint: Der Import ist fehlgeschlagen. Versuche einen anderen Link oder ein Foto.
+    try_again: Erneut versuchen
+    all: Alle
+    sort_recent: Zuletzt aktualisiert
+    sort_oldest: Älteste zuerst
+    unsaved_changes: Du hast ungespeicherte Änderungen. Ohne Speichern verlassen?
+    cover_photo: Titelbild
+    replace_photo: Foto ersetzen
+    choose_photo: Foto auswählen
+    prep_minutes: Vorbereitung (Min.)
+    cook_minutes: Kochen (Min.)
+    ingredients: Zutaten
+    ingredients_hint: Eine pro Zeile, z. B. „200 g Mehl“
+    ingredient_example: 200 g Mehl
+    add_ingredient: Zutat hinzufügen
+    method: Zubereitung
+    describe_step: Schritt beschreiben
+    add_step: Schritt hinzufügen
+    source_link: Quellenlink
+    save_recipe: Rezept speichern
+    save_changes: Änderungen speichern
+    remove: Entfernen
+    search_recipes: Rezepte suchen
+    fewer_servings: Weniger Portionen
+    more_servings: Mehr Portionen
+    servings:
+      one: Portion
+      other: Portionen
+    scaled_servings: "%{servings} (×%{factor})"
+    edit_named_recipe: "%{name} bearbeiten"
+    empty_collection: Noch nichts in %{name}
+    empty_collection_hint: Ordne ein Rezept %{name} zu, damit es hier erscheint.
+    no_recipes: Noch keine Rezepte
+    no_recipes_hint: Füge einen Link ein, lade ein Foto einer Kochbuchseite hoch oder schreibe selbst ein Rezept.
+    new_recipe: Neues Rezept
+    adding_to: Wird zu %{name} hinzugefügt.
+    add_all_to_list: Alles zur Einkaufsliste
+    prep: Vorbereitung
+    cook: Kochen
+    notes: Notizen
+    owner: Inhaber
+    member: Mitglied
+    no_recipe_in_photo: Kein Rezept auf diesem Foto
+    no_recipe_in_photo_hint: Auf diesem Foto wurde kein Rezept gefunden.
+    could_not_read_page: Die Seite konnte nicht gelesen werden
+    serves: "Portionen: %{count}"
+    duration_minutes: "%{minutes} Min."
+    duration_hours: "%{hours} Std."
+    duration_hours_minutes: "%{hours} Std. %{minutes} Min."
+    recipe_count:
+      one: "%{count} Rezept"
+      other: "%{count} Rezepte"
+    member_count:
+      one: "%{count} Mitglied"
+      other: "%{count} Mitglieder"
+    personal_recipes:
+      one: Persönlich · %{count} Rezept
+      other: Persönlich · %{count} Rezepte
+    shared_people:
+      one: Geteilt · %{count} Person
+      other: Geteilt · %{count} Personen
+    recipes_in_html:
+      one: "%{number} Rezept in %{name}"
+      other: "%{number} Rezepte in %{name}"
+    search_results_html:
+      one: "%{number} Ergebnis in %{names}"
+      other: "%{number} Ergebnisse in %{names}"
+    flash:
+      type_delete: Gib %{phrase} zur Bestätigung ein.
+      account_deleted: Dein Konto wurde gelöscht.
+      cookbook_unavailable: Dieses Kochbuch ist nicht verfügbar.
+      showing_cookbook: Jetzt wird %{name} angezeigt.
+      name_cookbook: Gib deinem Kochbuch einen Namen.
+      already_shared: Du hast bereits ein geteiltes Kochbuch.
+      cookbook_ready: "%{name} ist bereit."
+      cannot_delete_personal: Dein persönliches Kochbuch kann nicht gelöscht werden.
+      only_owner_delete: Nur der Inhaber kann dieses Kochbuch löschen.
+      cookbook_deleted: Kochbuch gelöscht.
+      cannot_leave_personal: Du kannst dein persönliches Kochbuch nicht verlassen.
+      owner_cannot_leave: Inhaber können nicht austreten. Lösche stattdessen das Kochbuch.
+      left_cookbook: Du hast %{name} verlassen.
+      cookbook_not_found: Kochbuch nicht gefunden.
+      cannot_invite_personal: Du kannst niemanden zu deinem persönlichen Kochbuch einladen.
+      only_owner_invite: Nur der Inhaber kann Personen einladen.
+      invite_created: Einladungslink erstellt.
+      pick_cookbook: Wähle zuerst ein Kochbuch aus.
+      invitation_unavailable: Diese Einladung ist nicht mehr verfügbar.
+      already_in_cookbook: Du bist bereits in %{name}.
+      leave_before_joining: Du hast bereits ein geteiltes Kochbuch. Verlasse es, bevor du einem anderen beitrittst.
+      joined_cookbook: Du bist %{name} beigetreten.
+      try_later: Versuche es später erneut.
+      invalid_credentials: Versuche eine andere E-Mail-Adresse oder ein anderes Passwort.
+      password_reset_sent: Eine Anleitung zum Zurücksetzen wurde gesendet, sofern ein Konto mit dieser E-Mail-Adresse existiert.
+      password_reset: Das Passwort wurde zurückgesetzt.
+      passwords_mismatch: Die Passwörter stimmen nicht überein.
+      password_link_invalid: Der Link zum Zurücksetzen ist ungültig oder abgelaufen.
+      settings_updated: Einstellungen aktualisiert.
+      type_item: Gib etwas zum Hinzufügen ein.
+      list_cleared: Einkaufsliste geleert.
+      item_unavailable: Dieser Eintrag steht nicht mehr auf der Liste.
+      nothing_selected: Nichts ausgewählt.
+      recipe_not_in_cookbook: Dieses Rezept ist nicht in diesem Kochbuch.
+      recipe_saved: Rezept gespeichert.
+      recipe_updated: Rezept aktualisiert.
+      recipe_deleted: Rezept gelöscht.
+      cannot_delete_recipe: Das Rezept konnte nicht gelöscht werden.
+      pick_different_cookbook: Wähle ein anderes Kochbuch.
+      moved_to: Nach %{name} verschoben.
+      paste_link: Füge zuerst einen Link ein.
+      invalid_import_url: Gib einen gültigen, öffentlich zugänglichen http- oder https-Link zu einem Rezept ein.
+      importing: Dein Rezept wird importiert…
+      reading_photo: Dein Foto wird gelesen…
+      recipe_unavailable: Dieses Rezept ist nicht mehr verfügbar.
+      import_limit: Du hast dein kostenloses Limit von %{count} Importen für diesen Monat erreicht.
+      choose_photo: Wähle zuerst ein Foto aus.
+      not_image: Diese Datei ist kein Bild.
+      image_too_big: Dieses Bild ist zu groß (max. 15 MB).
+      account_link_required: Für diese E-Mail-Adresse existiert bereits ein Konto. Melde dich stattdessen mit deinem Passwort an.
+      provider_unavailable: Dieser Anmeldedienst ist vorübergehend nicht verfügbar. Versuche es später erneut.
+      provider_failed: Die Anmeldung über diesen Anbieter ist fehlgeschlagen. Versuche es erneut.
+      items_added:
+        one: "%{count} Eintrag aus %{name} hinzugefügt."
+        other: "%{count} Einträge aus %{name} hinzugefügt."

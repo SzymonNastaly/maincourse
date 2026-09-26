@@ -1,9 +1,13 @@
 module RecipesHelper
+  def failed_import_message(recipe)
+    recipe.import_error_code == "no_recipe_in_photo" ? t("web.no_recipe_in_photo_hint") : t("web.import_failed_hint")
+  end
+
   def failed_import_heading(recipe)
     if recipe.import_error_code == "no_recipe_in_photo"
-      "No recipe in that photo"
+      t("web.no_recipe_in_photo")
     else
-      "Couldn’t read that page"
+      t("web.could_not_read_page")
     end
   end
 
@@ -12,7 +16,7 @@ module RecipesHelper
     total = recipe.prep_time.to_i + recipe.cook_time.to_i
     parts = []
     parts << format_duration(total) if total.positive?
-    parts << "serves #{recipe.servings}" if recipe.servings.to_i.positive?
+    parts << t("web.serves", count: recipe.servings) if recipe.servings.to_i.positive?
     parts.join(" · ")
   end
 
@@ -22,10 +26,10 @@ module RecipesHelper
     return "" unless minutes.positive?
 
     hours, remainder = minutes.divmod(60)
-    return "#{remainder}m" if hours.zero?
-    return "#{hours}h" if remainder.zero?
+    return t("web.duration_minutes", minutes: remainder) if hours.zero?
+    return t("web.duration_hours", hours: hours) if remainder.zero?
 
-    "#{hours}h #{remainder}m"
+    t("web.duration_hours_minutes", hours: hours, minutes: remainder)
   end
 
   # Recipes without a cover image get one of the mockup's food gradients,
@@ -80,16 +84,16 @@ module RecipesHelper
   #   amount=200, amount_max=250, "g" => "200–250 g"
   #   amount=nil,  unit="pinch"       => "pinch"
   #   amount=nil,  unit=nil           => ""
-  def format_quantity(ingredient)
+  def format_quantity(ingredient, locale: I18n.locale)
     amount = ingredient.amount
     amount_max = ingredient.amount_max
     unit = ingredient.unit.presence
 
     quantity =
       if amount.present? && amount_max.present?
-        "#{format_amount(amount)}\u2013#{format_amount(amount_max)}"
+        "#{format_amount(amount, locale: locale)}\u2013#{format_amount(amount_max, locale: locale)}"
       elsif amount.present?
-        format_amount(amount)
+        format_amount(amount, locale: locale)
       else
         nil
       end
@@ -100,7 +104,7 @@ module RecipesHelper
   # Format an amount for scaled display, given a numeric value.
   # Used by the portion scaler controller for the initial render parity check
   # and is the canonical formatter for client-side scaling output.
-  def format_amount(value)
+  def format_amount(value, locale: I18n.locale)
     return "" if value.nil?
 
     decimal = value.is_a?(BigDecimal) ? value : BigDecimal(value.to_s)
@@ -109,9 +113,7 @@ module RecipesHelper
       return fraction
     end
 
-    rounded = decimal.round(2)
-    string = rounded.to_s("F")
-    string.sub(/\.?0+\z/, "")
+    number_with_precision(decimal, precision: 2, strip_insignificant_zeros: true, delimiter: "", locale: locale)
   end
 
   UNICODE_FRACTIONS = {

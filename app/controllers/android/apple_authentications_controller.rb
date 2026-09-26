@@ -29,8 +29,8 @@ module Android
     end
 
     def fallback
-      @heading = "Return to MainCourse"
-      @message = "Open the MainCourse app to finish signing in. If you keep seeing this page, App Links are not configured for this installation yet."
+      @heading = t("web.apple.return_heading")
+      @message = t("web.apple.return_hint")
       render :error
     end
 
@@ -52,8 +52,8 @@ module Android
       end
 
       def render_unavailable
-        @heading = "Apple sign-in link unavailable"
-        @message = "This Apple sign-in link is invalid or no longer available. Return to MainCourse and start again."
+        @heading = t("web.apple.link_unavailable")
+        @message = t("web.apple.link_unavailable_hint")
         render :error, status: :bad_request
       end
 

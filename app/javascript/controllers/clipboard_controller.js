@@ -2,14 +2,14 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["label"]
-  static values = { text: String }
+  static values = { text: String, copied: String, failed: String }
 
   async copy() {
     try {
       await navigator.clipboard.writeText(this.textValue)
-      this.#flash("Copied")
+      this.#flash(this.copiedValue)
     } catch {
-      this.#flash("Press ⌘C")
+      this.#flash(this.failedValue)
     }
   }
 

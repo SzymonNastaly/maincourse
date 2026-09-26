@@ -10,7 +10,7 @@ module Recipes
       entries = Array(params[:items]).filter_map { |item| normalize(item) }
 
       if entries.empty?
-        return redirect_to recipe, alert: "Nothing selected."
+        return redirect_to recipe, alert: t("web.flash.nothing_selected")
       end
 
       ShoppingListItem.transaction do
@@ -28,9 +28,9 @@ module Recipes
       end
 
       redirect_to shopping_list_items_path,
-                  notice: "Added #{helpers.pluralize(entries.size, 'item')} from #{recipe.name}."
+                  notice: t("web.flash.items_added", count: entries.size, name: recipe.name)
     rescue ActiveRecord::RecordNotFound
-      redirect_to recipes_path, alert: "That recipe is not in this cookbook."
+      redirect_to recipes_path, alert: t("web.flash.recipe_not_in_cookbook")
     end
 
     private

@@ -14,14 +14,14 @@
         <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface/85"
              data-testid="importing-overlay">
           <%= render "shared/spinner" %>
-          <span class="text-[11px] font-medium text-body">Importing…</span>
+          <span class="text-[11px] font-medium text-body"><%= t("web.importing") %></span>
         </div>
       <% end %>
     </div>
 
     <div>
       <div class="mb-1.5 text-[13.5px] leading-[1.3] font-medium tracking-[-0.2px] text-ink md:text-[14.5px]">
-        <%= recipe.name %>
+        <%= recipe.pending? ? t("web.importing") : recipe.name %>
       </div>
       <% if (meta = recipe_meta(recipe)).present? %>
         <div class="font-mono text-[10px] text-muted md:text-[10.5px]"><%= meta %></div>

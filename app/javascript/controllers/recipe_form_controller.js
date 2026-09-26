@@ -3,6 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 // Dynamic ingredient/step rows, a cover-image preview, and a guard against
 // losing a half-written recipe.
 export default class extends Controller {
+  static values = { unsavedMessage: String }
   static targets = [
     "ingredientList", "instructionList",
     "ingredientTemplate", "instructionTemplate",
@@ -39,7 +40,7 @@ export default class extends Controller {
 
   confirmLeaving = (event) => {
     if (!this.dirty) return
-    if (!window.confirm("You have unsaved changes. Leave without saving?")) event.preventDefault()
+    if (!window.confirm(this.unsavedMessageValue)) event.preventDefault()
   }
 
   addIngredient() {

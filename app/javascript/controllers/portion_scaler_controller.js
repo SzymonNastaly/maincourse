@@ -7,7 +7,7 @@ import { Controller } from "@hotwired/stimulus"
 // Rows without a `data-base-amount` (e.g. "flaky sea salt") are left alone.
 export default class extends Controller {
   static targets = ["quantity", "detail", "servings", "label", "decrement", "increment"]
-  static values = { baseServings: Number, servings: Number }
+  static values = { baseServings: Number, servings: Number, locale: String, labels: Object, scaledLabel: String }
 
   static MIN = 1
   static MAX = 64
@@ -41,7 +41,10 @@ export default class extends Controller {
     })
 
     this.labelTargets.forEach((element) => {
-      element.textContent = factor === 1 ? "servings" : `servings (×${this.#formatFactor(factor)})`
+      const category = new Intl.PluralRules(this.localeValue || "en").select(this.servingsValue)
+      const label = this.labelsValue[category] || this.labelsValue.other
+      element.textContent = factor === 1 ? label : this.scaledLabelValue
+        .replace("%{servings}", label).replace("%{factor}", this.#formatFactor(factor))
     })
 
     if (this.hasDecrementTarget) this.decrementTarget.disabled = this.servingsValue <= this.constructor.MIN
@@ -54,39 +57,43 @@ export default class extends Controller {
 
     // The add-to-list dialog submits the quantities the user is actually cooking for.
     this.detailTargets.forEach((element) => {
-      const quantity = this.#scaledQuantity(element.dataset, factor)
+      const quantity = this.#scaledQuantity(element.dataset, factor, "en")
       const note = element.dataset.note || ""
       element.value = [quantity, note].filter(Boolean).join(", ")
 
       const preview = element.parentElement?.querySelector("[data-detail-preview]")
-      if (preview) preview.textContent = element.value
+      if (preview) preview.textContent = [this.#scaledQuantity(element.dataset, factor), note].filter(Boolean).join(", ")
     })
   }
 
-  #scaledQuantity(dataset, factor) {
+  #scaledQuantity(dataset, factor, locale = this.localeValue) {
     const base = parseFloat(dataset.baseAmount)
     const unit = dataset.unit || ""
 
     if (!Number.isFinite(base)) return unit || null
 
     const max = parseFloat(dataset.baseAmountMax)
-    let quantity = this.#formatNumber(base * factor)
-    if (Number.isFinite(max)) quantity = `${quantity}\u2013${this.#formatNumber(max * factor)}`
+    let quantity = this.#formatNumber(base * factor, locale)
+    if (Number.isFinite(max)) quantity = `${quantity}\u2013${this.#formatNumber(max * factor, locale)}`
 
     return unit ? `${quantity} ${unit}` : quantity
   }
 
   #formatFactor(factor) {
-    return Number.isInteger(factor) ? String(factor) : factor.toFixed(2).replace(/\.?0+$/, "")
+    return this.#decimal(factor, this.localeValue)
   }
 
   // Mirrors RecipesHelper#format_amount so server and client render alike.
-  #formatNumber(value) {
+  #formatNumber(value, locale) {
     const rounded = Math.round(value * 100) / 100
     const fraction = this.#unicodeFraction(rounded)
     if (fraction !== null) return fraction
 
-    return rounded.toFixed(2).replace(/\.?0+$/, "")
+    return this.#decimal(rounded, locale)
+  }
+
+  #decimal(value, locale) {
+    return new Intl.NumberFormat(locale || "en", { maximumFractionDigits: 2, useGrouping: false }).format(value)
   }
 
   #unicodeFraction(value) {

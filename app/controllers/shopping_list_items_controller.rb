@@ -15,7 +15,7 @@ class ShoppingListItemsController < ApplicationController
     name = params.dig(:shopping_list_item, :name).to_s.strip
 
     if name.blank?
-      return redirect_to shopping_list_items_path, alert: "Type something to add."
+      return redirect_to shopping_list_items_path, alert: t("web.flash.type_item")
     end
 
     current_cookbook.shopping_list_items.create!(
@@ -39,7 +39,7 @@ class ShoppingListItemsController < ApplicationController
 
   def destroy_all
     current_cookbook.shopping_list_items.destroy_all
-    redirect_to shopping_list_items_path, notice: "Shopping list cleared.", status: :see_other
+    redirect_to shopping_list_items_path, notice: t("web.flash.list_cleared"), status: :see_other
   end
 
   private
@@ -47,6 +47,6 @@ class ShoppingListItemsController < ApplicationController
   def set_item
     @item = current_cookbook.shopping_list_items.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    redirect_to shopping_list_items_path, alert: "That item is no longer on the list."
+    redirect_to shopping_list_items_path, alert: t("web.flash.item_unavailable")
   end
 end

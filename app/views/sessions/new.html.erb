@@ -1,18 +1,18 @@
-<% page_title "Sign in" %>
+<% page_title t("web.sign_in") %>
 
 <div class="mb-10 flex items-center gap-2.5">
   <%= brand_mark size: 28 %>
   <span class="text-[17px] font-semibold tracking-[-0.3px]">MainCourse</span>
 </div>
 
-<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]">Sign in to your kitchen</h1>
-<p class="mb-7 text-[13px] font-light text-muted">Your recipes and shopping list, on every device.</p>
+<h1 class="mb-2 text-[26px] font-semibold tracking-[-0.7px]"><%= t("web.sign_in_heading") %></h1>
+<p class="mb-7 text-[13px] font-light text-muted"><%= t("web.sign_in_hint") %></p>
 
 <%= render "shared/oauth_buttons" %>
 
 <%= form_with url: session_path, method: :post do |form| %>
   <div class="mb-3.5">
-    <%= form.label :email_address, "Email", class: "mc-label" %>
+    <%= form.label :email_address, t("web.email"), class: "mc-label" %>
     <%= form.email_field :email_address,
                          required: true, autofocus: true, autocomplete: "username",
                          placeholder: "you@example.com",
@@ -21,7 +21,7 @@
   </div>
 
   <div class="mb-1.5">
-    <%= form.label :password, "Password", class: "mc-label" %>
+    <%= form.label :password, t("web.password"), class: "mc-label" %>
     <%= form.password_field :password,
                             required: true, autocomplete: "current-password",
                             class: "mc-field",
@@ -29,15 +29,14 @@
   </div>
 
   <div class="mb-5 text-right">
-    <%= link_to "Forgot password?", new_password_path,
+    <%= link_to t("web.forgot_password"), new_password_path,
                 class: "text-[11.5px] font-medium text-accent hover:text-accent-dark" %>
   </div>
 
-  <%= form.submit "Sign in", class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]",
+  <%= form.submit t("web.sign_in"), class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]",
                   data: { testid: "submit" } %>
 <% end %>
 
 <p class="mt-8 text-center text-[12.5px] font-light text-muted">
-  New to MainCourse?
-  <%= link_to "Create an account", new_registration_path, class: "font-medium text-accent hover:text-accent-dark" %>
+  <%= t("web.new_to_maincourse_html", link: link_to(t("web.create_an_account"), new_registration_path, class: "font-medium text-accent hover:text-accent-dark")) %>
 </p>

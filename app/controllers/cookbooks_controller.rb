@@ -13,7 +13,7 @@ class CookbooksController < ApplicationController
     name = params.dig(:cookbook, :name).to_s.strip
     move_recipes = ActiveModel::Type::Boolean.new.cast(params.dig(:cookbook, :move_personal_recipes))
 
-    return redirect_to cookbooks_path, alert: "Give your cookbook a name." if name.blank?
+    return redirect_to cookbooks_path, alert: t("web.flash.name_cookbook") if name.blank?
 
     shared = Current.user.with_lock do
       next nil if Current.user.shared_cookbook.present?
@@ -33,39 +33,39 @@ class CookbooksController < ApplicationController
     end
 
     if shared.nil?
-      return redirect_to cookbooks_path, alert: "You already have a shared cookbook."
+      return redirect_to cookbooks_path, alert: t("web.flash.already_shared")
     end
 
     switch_cookbook(shared)
-    redirect_to cookbooks_path, notice: "#{shared.name} is ready."
+    redirect_to cookbooks_path, notice: t("web.flash.cookbook_ready", name: shared.name)
   end
 
   def destroy
     if @cookbook.personal?
-      return redirect_to cookbooks_path, alert: "Your personal cookbook cannot be deleted."
+      return redirect_to cookbooks_path, alert: t("web.flash.cannot_delete_personal")
     end
 
     unless @cookbook.owner?(Current.user)
-      return redirect_to cookbooks_path, alert: "Only the owner can delete this cookbook."
+      return redirect_to cookbooks_path, alert: t("web.flash.only_owner_delete")
     end
 
     @cookbook.destroy!
     reset_to_personal_cookbook
-    redirect_to cookbooks_path, notice: "Cookbook deleted.", status: :see_other
+    redirect_to cookbooks_path, notice: t("web.flash.cookbook_deleted"), status: :see_other
   end
 
   def leave
     if @cookbook.personal?
-      return redirect_to cookbooks_path, alert: "You cannot leave your personal cookbook."
+      return redirect_to cookbooks_path, alert: t("web.flash.cannot_leave_personal")
     end
 
     if @cookbook.owner?(Current.user)
-      return redirect_to cookbooks_path, alert: "Owners cannot leave. Delete the cookbook instead."
+      return redirect_to cookbooks_path, alert: t("web.flash.owner_cannot_leave")
     end
 
     @cookbook.cookbook_memberships.find_by!(user: Current.user).destroy!
     reset_to_personal_cookbook
-    redirect_to cookbooks_path, notice: "You left #{@cookbook.name}."
+    redirect_to cookbooks_path, notice: t("web.flash.left_cookbook", name: @cookbook.name)
   end
 
   private
@@ -73,7 +73,7 @@ class CookbooksController < ApplicationController
   def set_cookbook
     @cookbook = Current.user.cookbooks.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    redirect_to cookbooks_path, alert: "Cookbook not found."
+    redirect_to cookbooks_path, alert: t("web.flash.cookbook_not_found")
   end
 
   def reset_to_personal_cookbook

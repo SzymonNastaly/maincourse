@@ -20,11 +20,11 @@ class InvitationsController < ApplicationController
   end
 
   def accept
-    return redirect_to invite_path(params[:token]), alert: "This invitation is no longer available." unless @invitation&.pending? && !@invitation.time_expired?
+    return redirect_to invite_path(params[:token]), alert: t("web.flash.invitation_unavailable") unless @invitation&.pending? && !@invitation.time_expired?
 
     if signed_in_member?
       switch_cookbook(@invitation.cookbook)
-      return redirect_to recipes_path, notice: "You are already in #{@invitation.cookbook.name}."
+      return redirect_to recipes_path, notice: t("web.flash.already_in_cookbook", name: @invitation.cookbook.name)
     end
 
     joined = Current.user.with_lock do
@@ -40,11 +40,11 @@ class InvitationsController < ApplicationController
 
     if joined.nil?
       return redirect_to invite_path(params[:token]),
-                         alert: "You already have a shared cookbook. Leave it before joining another."
+                         alert: t("web.flash.leave_before_joining")
     end
 
     switch_cookbook(joined)
-    redirect_to recipes_path, notice: "You joined #{joined.name}."
+    redirect_to recipes_path, notice: t("web.flash.joined_cookbook", name: joined.name)
   end
 
   def reject

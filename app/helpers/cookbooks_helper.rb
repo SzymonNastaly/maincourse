@@ -5,9 +5,9 @@ module CookbooksHelper
     return "" if cookbook.blank?
 
     if cookbook.personal?
-      "Personal · #{pluralize(cookbook.recipes.count, 'recipe')}"
+      t("web.personal_recipes", count: cookbook.recipes.count)
     else
-      "Shared · #{pluralize(cookbook.cookbook_memberships.count, 'person', plural: 'people')}"
+      t("web.shared_people", count: cookbook.cookbook_memberships.count)
     end
   end
 
@@ -16,6 +16,6 @@ module CookbooksHelper
   end
 
   def membership_role_label(membership)
-    membership.owner? ? "Owner" : "Member"
+    membership.owner? ? t("web.owner") : t("web.member")
   end
 end

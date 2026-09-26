@@ -35,13 +35,13 @@ class OmniauthCallbacksController < ApplicationController
     redirect_to confirm_apple_account_creation_path
   rescue Oauth::LinkRequiredError
     redirect_to new_session_path,
-      alert: "An account already exists for this email. Sign in with your password instead."
+      alert: t("web.flash.account_link_required")
   rescue Oauth::UnavailableError => error
     Rails.error.report(error, handled: true, context: { provider: })
-    redirect_to new_session_path, alert: "That sign-in provider is temporarily unavailable. Please try again later."
+    redirect_to new_session_path, alert: t("web.flash.provider_unavailable")
   rescue KeyError, Oauth::Error, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => error
     Rails.logger.info("OAuth callback failed: #{error.message}")
-    redirect_to new_session_path, alert: "We couldn't sign you in with that provider. Please try again."
+    redirect_to new_session_path, alert: t("web.flash.provider_failed")
   ensure
     if provider == "apple" && refresh_token.present? && apple_client_id.present? && !identity_persisted
       Oauth::AppleTokenRevoker.revoke(refresh_token:, client_id: apple_client_id)
@@ -52,7 +52,7 @@ class OmniauthCallbacksController < ApplicationController
   end
 
   def failure
-    redirect_to new_session_path, alert: "We couldn't sign you in with that provider. Please try again."
+    redirect_to new_session_path, alert: t("web.flash.provider_failed")
   end
 
   private
@@ -142,8 +142,8 @@ class OmniauthCallbacksController < ApplicationController
     end
 
     def render_android_error
-      @heading = "Apple sign-in link unavailable"
-      @message = "This Apple sign-in link is invalid or no longer available. Return to MainCourse and start again."
+      @heading = t("web.apple.link_unavailable")
+      @message = t("web.apple.link_unavailable_hint")
       render "android/apple_authentications/error", status: :bad_request, layout: "authentication"
     end
 
