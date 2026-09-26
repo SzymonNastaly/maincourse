@@ -34,13 +34,13 @@ Icons come from `lucide-rails` through `ApplicationHelper#icon`, which applies
 the design's 1.9 stroke. No emoji.
 
 **Brand mark:** `ApplicationHelper#brand_mark` renders
-`app/assets/images/logo.png` — the leather cookbook that is also the iOS app
+`app/assets/images/logo.png` — the green M cookbook that is also the iOS app
 icon and the getmaincourse.com header mark. It is sized by height with
 `w-auto`, like the landing site, so the book keeps its proportions. The favicon
 set (`favicon.ico`, `icon.png`, `apple-touch-icon.png`, rendered by
-`layouts/_favicons`) is copied from the landing site so all web properties match.
-If the artwork changes, re-export from `maincourse-landing/public/logo.png`:
-`magick logo.png -trim +repage -resize x256 -strip -colors 200 logo.png`.
+`layouts/_favicons`) is generated alongside the landing site's assets from
+`branding/`. Small favicons use a simplified lime M on green; touch icons retain
+the whole book. See `docs/brand-icons.md` for regeneration and platform exports.
 
 ## Layout
 

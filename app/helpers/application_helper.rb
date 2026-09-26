@@ -5,7 +5,7 @@ module ApplicationHelper
     lucide_icon(name.to_s, size: size, "stroke-width" => stroke, **options)
   end
 
-  # The MainCourse mark — the same leather cookbook used as the iOS app icon and
+  # The MainCourse mark — the same green M cookbook used as the iOS app icon and
   # in the getmaincourse.com header. Transparent PNG, sized by height like the
   # landing site does, so the book's own proportions are kept.
   def brand_mark(size: 22)

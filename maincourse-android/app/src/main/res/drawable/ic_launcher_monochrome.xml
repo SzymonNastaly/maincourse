@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A book-and-H stencil for launchers with themed icons enabled. The color icon keeps the original artwork. -->
+<!-- A book-and-M stencil for launchers with themed icons enabled. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="@android:color/black" android:fillType="evenOdd"
-        android:pathData="M32,24H76Q80,24 80,28V80Q80,84 76,84H32Q28,84 28,80V28Q28,24 32,24Z M37,39H49V42H46V51H62V42H59V39H71V42H68V66H71V69H59V66H62V56H46V66H49V69H37V66H40V42H37Z" />
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.85" android:scaleY="0.85">
+        <path android:fillColor="@android:color/black" android:fillType="evenOdd"
+            android:pathData="M34,25H74Q79,25 79,30V78Q79,83 74,83H34Q29,83 29,78V30Q29,25 34,25Z M38,69V39H46L54,55 62,39H70V69H62V53L54,67 46,53V69Z" />
+    </group>
 </vector>

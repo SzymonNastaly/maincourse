@@ -35,10 +35,9 @@ html,body{width:1024px;height:1024px;}
 body{$BG font-family:'IBM Plex Sans',sans-serif;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   -webkit-font-smoothing:antialiased;overflow:hidden;}
-/* Cream ground is the app icon's own, sampled from AppIcon 1024 — keeps the
-   leather mark reading as the mark rather than a brown smudge on green. */
+/* Match the composed app icon's canvas so the green book stays distinct. */
 .tile{width:256px;height:256px;border-radius:58px;
-  background:linear-gradient(160deg,#F1DFA9 0%,#E6D097 100%);
+  background:#EEF0F2;
   display:flex;align-items:center;justify-content:center;margin-bottom:72px;}
 .tile img{height:186px;width:auto;display:block;}
 .name{font-size:92px;font-weight:600;letter-spacing:-3.2px;color:$NAME_COLOR;line-height:1;}

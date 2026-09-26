@@ -20,12 +20,13 @@ skill is the map of it.
   `mono` helper or `font-mono`. Everything else is Plex Sans.
 - **Icons are lucide via `ApplicationHelper#icon`**, which applies the 1.9
   stroke. No emoji, ever.
-- **The brand mark keeps its brown.** The palette dropped the old brown theme,
-  but the logo did not come with it: `logo.png` and the iOS app icon are still
-  the gold-`H` leather cookbook, and they stay that way. It is the one brown
-  thing left and the one place brown is correct — never "fix" it to green, and
-  never treat it as leftover legacy. Its ground, when it needs one, is the app
-  icon's own cream (`#F1DFA9` → `#E6D097`), not `surface` or `accent`.
+- **The brand mark is the green M cookbook.** Deep-green textured cover,
+  debossed lime `M`, cream pages and a lime bookmark. Use the transparent book
+  for in-app and site logos; composed icons sit on `canvas`. Small favicons use
+  the simplified lime M on green. `branding/book-source.png` is the master;
+  `branding/MainCourse.icon` is the editable Apple icon. Regenerate derivatives
+  with `bin/brand-icons`; see `docs/brand-icons.md`. Icon appearance variants
+  do not enable dark-mode UI. The former brown/gold-H mark is retired.
 - **Web patterns, not iOS patterns.** No bottom tab bar; the rail collapses into
   a drawer. Nav-stack pushes become a back bar (`layouts/_back_bar`).
 - **iOS patterns on iOS.** Tab bar, nav stack pushes, Lists and Forms stay
@@ -109,7 +110,7 @@ only tinted by the green `AccentColor` asset.
 ## Helpers
 
 `ApplicationHelper`: `icon(name, size:, stroke:)`, `brand_mark(size:)` (the
-leather-cookbook `logo.png`, sized by height), `mono(value)`, `user_initials`,
+green M cookbook `logo.png`, sized by height), `mono(value)`, `user_initials`,
 `flash_styles`, `page_title`.
 
 ## Patterns

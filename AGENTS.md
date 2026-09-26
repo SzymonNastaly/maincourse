@@ -65,10 +65,10 @@ how the web app is assembled and the `maincourse-design` skill for the tokens
 themselves before touching views or styling. The iOS app shares the same colour
 tokens and radii (`hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift`) while
 keeping native chrome; the skill's iOS section explains the mapping. The old
-brown/Lato/Merriweather theme is gone from both platforms — with one deliberate
-exception: the brand mark itself. `logo.png` and the iOS app icon are still the
-gold-`H` leather cookbook and are meant to be. Brown is correct there and
-nowhere else.
+brown/Lato/Merriweather theme is gone from both platforms. The brand mark is a
+deep-green cookbook with a debossed lime `M`, cream pages and a lime bookmark.
+Source artwork and the editable Icon Composer document live in `branding/`;
+see `docs/brand-icons.md` for generating the native and web assets together.
 
 ## Documentation
 

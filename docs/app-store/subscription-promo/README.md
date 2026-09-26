@@ -32,11 +32,10 @@ Two details in there are deliberate and worth not "cleaning up":
 
 - **Alpha is stripped** (`-alpha remove -alpha off`, `PNG24:`). App Store
   Connect rejects images with an alpha channel.
-- **The leather cookbook, on the app icon's cream.** The palette dropped the
-  old brown theme but the brand mark kept it — see the brand-mark
-  non-negotiable in the `maincourse-design` skill. The cream ground
-  (`#F1DFA9` → `#E6D097`) is sampled from the iOS app icon so the mark reads
-  as the mark instead of a brown smudge on green.
+- **The green M cookbook, on the app icon's grey canvas.** The `#EEF0F2`
+  ground matches the composed app icon and keeps the green cover distinct on
+  the monthly card's accent-green background. See `docs/brand-icons.md` for
+  the shared artwork workflow.
 
 ## Uploading
 

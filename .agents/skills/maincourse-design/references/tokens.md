@@ -167,7 +167,7 @@ otherwise used as a foreground.
 ## Brand
 
 `ApplicationHelper#brand_mark(size: 22)` renders `app/assets/images/logo.png` —
-the leather cookbook shared with the iOS app icon and getmaincourse.com. Sized
+the green M cookbook shared with the iOS app icon and getmaincourse.com. Sized
 by height with `w-auto` so its proportions hold. Favicons come from
 `layouts/_favicons` and are copied from the landing site.
 

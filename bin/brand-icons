@@ -1,0 +1,90 @@
+#!/usr/bin/env ruby
+# Regenerate the shared brand assets. Requires ImageMagick 7 on PATH.
+require "fileutils"
+require "optparse"
+require "pathname"
+require "tmpdir"
+
+root = Pathname.new(__dir__).parent
+landing = nil
+OptionParser.new do |parser|
+  parser.banner = "Usage: bin/brand-icons [--landing PATH]"
+  parser.on("--landing PATH", "Also update the landing site's brand assets") { |path| landing = Pathname.new(path).expand_path }
+end.parse!
+abort "Unexpected arguments: #{ARGV.join(' ')}" unless ARGV.empty?
+abort "Landing site must contain src/assets and public" if landing && !(landing.join("src/assets").directory? && landing.join("public").directory?)
+
+def image(*args)
+  system("magick", *args.map(&:to_s), exception: true)
+end
+
+def copy(source, destination)
+  FileUtils.mkdir_p(destination.dirname)
+  FileUtils.cp(source, destination)
+end
+
+brand = root.join("branding")
+ios = root.join("hauptgang-ios/Hauptgang/Resources/Assets.xcassets")
+android = root.join("maincourse-android/app/src/main/res")
+web = root.join("app/assets/images")
+exports = brand.join("exports")
+FileUtils.mkdir_p(exports)
+FileUtils.mkdir_p(brand.join("MainCourse.icon/Assets"))
+
+FileUtils.mkdir_p(root.join("tmp"))
+Dir.mktmpdir("maincourse-brand-", root.join("tmp")) do |directory|
+  temp = Pathname.new(directory)
+  book = temp.join("book.png")
+  foreground = brand.join("MainCourse.icon/Assets/book.png")
+
+  # Remove sub-1% alpha specks and make the ~99% opaque cover fully opaque.
+  # Keep antialiased edges; never key out a colour from the green cover.
+  image(brand.join("book-source.png"), "-colorspace", "sRGB", "-channel", "A", "-level", "1%,99%", "+channel",
+        "-background", "none", "-alpha", "background", "-trim", "+repage", "-strip", book)
+  image(book, "-resize", "840x840", "-gravity", "center", "-background", "none", "-extent", "1024x1024", foreground)
+
+  { "light" => "#EEF0F2", "dark" => "#14171C" }.each do |appearance, background|
+    image(foreground, "-background", background, "-alpha", "remove", "-alpha", "off", "-depth", "8",
+          "PNG24:#{exports.join("icon-#{appearance}-1024.png")}")
+  end
+  light = exports.join("icon-light-1024.png")
+  image(light, "-resize", "512x512", "PNG24:#{exports.join('play-store-512.png')}")
+
+  app_icon = ios.join("AppIcon.appiconset")
+  copy(light, app_icon.join("hauptgang-icon-composer-iOS-Default-1024x1024@1x.png"))
+  copy(exports.join("icon-dark-1024.png"), app_icon.join("hauptgang-icon-composer-iOS-Dark-1024x1024@1x.png"))
+  copy(foreground, ios.join("LoginLogo.imageset/login-logo.png"))
+  { "" => 96, "@2x" => 192, "@3x" => 288 }.each do |suffix, size|
+    image(foreground, "-resize", "#{size}x#{size}", ios.join("LaunchLogo.imageset/launch-logo#{suffix}.png"))
+  end
+
+  image(book, "-resize", "x256", web.join("logo.png"))
+  image(book, "-resize", "x512", android.join("drawable-nodpi/brand_mark.png"))
+  # Square foreground avoids stretching the portrait book in Android's bitmap drawable.
+  copy(foreground, android.join("drawable-nodpi/launcher_book.png"))
+
+  # Render vectors large before downsampling so 16px strokes stay clean.
+  favicon = temp.join("favicon.png")
+  image("-background", "none", "-density", "768", brand.join("favicon.svg"), "-resize", "256x256", favicon)
+  image(favicon, "-define", "icon:auto-resize=48,32,16", web.join("favicon.ico"))
+  image(favicon, "-resize", "96x96", web.join("icon.png"))
+  image(light, "-resize", "180x180", "PNG24:#{web.join('apple-touch-icon.png')}")
+  image(light, "-resize", "512x512", "PNG24:#{root.join('public/icon.png')}")
+  copy(brand.join("favicon.svg"), root.join("public/icon.svg"))
+  copy(web.join("favicon.ico"), root.join("public/favicon.ico"))
+
+  if landing
+    copy(web.join("logo.png"), landing.join("src/assets/logo.png"))
+    copy(web.join("favicon.ico"), landing.join("public/favicon.ico"))
+    copy(brand.join("favicon.svg"), landing.join("public/favicon.svg"))
+    copy(web.join("apple-touch-icon.png"), landing.join("public/apple-touch-icon.png"))
+    [ 16, 32, 96 ].each do |size|
+      image(favicon, "-resize", "#{size}x#{size}", landing.join("public/favicon-#{size}x#{size}.png"))
+    end
+    [ 192, 512 ].each do |size|
+      image(light, "-resize", "#{size}x#{size}", "PNG24:#{landing.join("public/android-chrome-#{size}x#{size}.png")}")
+    end
+  end
+end
+
+puts "Generated iOS, Android, web, store and Icon Composer assets#{' plus landing assets' if landing}."

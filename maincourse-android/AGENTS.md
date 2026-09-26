@@ -29,8 +29,8 @@ solutions.
 - Use `MainCourseTheme` and semantic `MainCourseColors`: light-only, native
   Material behavior, and Plex Mono only for numeric content. Shared tokens live
   in `app/assets/tailwind/application.css` and
-  `hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift`; the brown cookbook
-  launcher artwork is the intentional palette exception.
+  `hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift`. The launcher uses the
+  green cookbook with a lime M on the grey canvas; see `docs/brand-icons.md`.
 - Never commit credentials, signing keys, private service files, or bearer tokens.
 
 ## Verification
