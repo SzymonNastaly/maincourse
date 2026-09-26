@@ -6,8 +6,20 @@ struct DemoAppSharePanel: View {
     let onMainCourse: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @ScaledMetric(relativeTo: .caption) private var labelHeight = 34.0
     @AccessibilityFocusState private var headerFocused: Bool
+    @State private var showsHint = false
+    @State private var hasTouchedAppRow = false
+    @State private var hasDemonstratedSwipe = false
+    @State private var mainCourseVisible = false
+    @State private var appRowPosition = ScrollPosition(x: 0)
+
+    private var shouldDemonstrateSwipe: Bool {
+        self.showsHint && !self.hasTouchedAppRow && !self.hasDemonstratedSwipe
+            && !self.reduceMotion && !self.voiceOverEnabled
+    }
 
     var body: some View {
         VStack(spacing: 18) {
@@ -16,11 +28,14 @@ struct DemoAppSharePanel: View {
                 .padding(.top, 20)
             Divider().padding(.horizontal, 20)
             self.appRow
-            Label("Swipe to MainCourse, then tap it.", systemImage: "arrow.left")
-                .font(.footnote)
-                .foregroundStyle(Color.mcBody)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 20)
+            Label(
+                self.mainCourseVisible ? "Tap MainCourse to save the recipe." : "Swipe left to find MainCourse.",
+                systemImage: self.mainCourseVisible ? "hand.tap" : "arrow.left"
+            )
+            .font(.footnote.weight(self.showsHint ? .semibold : .regular))
+            .foregroundStyle(self.showsHint ? Color.mcAccent : Color.mcBody)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 20)
             Divider().padding(.horizontal, 20)
             self.actions
                 .padding(.horizontal, 20)
@@ -29,6 +44,7 @@ struct DemoAppSharePanel: View {
         .foregroundStyle(Color.mcInk)
         .background(.regularMaterial, in: .rect(cornerRadius: 30))
         .task { self.headerFocused = true }
+        .modifier(DemoIdleHint(showsHint: self.$showsHint))
     }
 
     private var header: some View {
@@ -84,8 +100,14 @@ struct DemoAppSharePanel: View {
                                 .scaledToFit()
                                 .frame(width: 64, height: 64)
                                 .clipShape(.rect(cornerRadius: 14))
+                                .overlay {
+                                    if self.showsHint {
+                                        DemoHintHalo(shape: RoundedRectangle(cornerRadius: 14))
+                                    }
+                                }
                             Text("MainCourse")
                                 .font(.caption.weight(.semibold))
+                                .foregroundStyle(self.showsHint ? Color.mcAccent : Color.mcInk)
                                 .multilineTextAlignment(.center)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -95,13 +117,44 @@ struct DemoAppSharePanel: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("demo.maincourse")
                     .accessibilityHint("Turns this post into a recipe")
+                    .onScrollVisibilityChange(threshold: 0.95) { visible in
+                        self.mainCourseVisible = visible
+                    }
                 }
                 .padding(.horizontal, 20)
+                .padding(.top, 6)
+            }
+            .scrollPosition(self.$appRowPosition)
+            .onScrollPhaseChange { _, phase in
+                if phase == .tracking || phase == .interacting {
+                    self.hasTouchedAppRow = true
+                }
             }
             .scrollIndicators(.hidden)
             .accessibilityIdentifier("demo.apps")
+            .task(id: self.shouldDemonstrateSwipe) {
+                guard self.shouldDemonstrateSwipe else { return }
+                // Demonstrate the direction, then leave the destination fully in view.
+                // A touch cancels this task so the row never fights a user's swipe.
+                do {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        self.appRowPosition.scrollTo(x: 24)
+                    }
+                    try await Task.sleep(for: .seconds(0.45))
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        self.appRowPosition.scrollTo(x: 0)
+                    }
+                    try await Task.sleep(for: .seconds(0.65))
+                    withAnimation(.easeInOut(duration: 0.8)) {
+                        self.appRowPosition.scrollTo(edge: .trailing)
+                    }
+                    self.hasDemonstratedSwipe = true
+                } catch {
+                    return
+                }
+            }
         }
-        .frame(height: 64 + 8 + self.labelHeight)
+        .frame(height: 6 + 64 + 8 + self.labelHeight)
     }
 
     private func placeholderApp(_ name: String, symbol: String, width: CGFloat) -> some View {

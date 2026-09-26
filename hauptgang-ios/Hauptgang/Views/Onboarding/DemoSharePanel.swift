@@ -39,6 +39,7 @@ private struct DemoSocialSharePanel: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .body) private var avatarSize = 60.0
     @AccessibilityFocusState private var shareFocused: Bool
+    @State private var showsHint = false
 
     private let contacts = [
         (initials: "AM", name: "Alex"), (initials: "JL", name: "Jamie"),
@@ -99,11 +100,13 @@ private struct DemoSocialSharePanel: View {
                 .padding(.horizontal, 20)
             }
             .scrollIndicators(.hidden)
+            .scrollClipDisabled()
             .padding(.bottom, 24)
         }
         .foregroundStyle(Color.mcInk)
         .background(Color.mcSurface, in: .rect(topLeadingRadius: 28, topTrailingRadius: 28))
         .task { self.shareFocused = true }
+        .modifier(DemoIdleHint(showsHint: self.$showsHint))
     }
 
     private var searchRow: some View {
@@ -136,12 +139,21 @@ private struct DemoSocialSharePanel: View {
     }
 
     private func actionLabel(_ title: String, symbol: String, highlighted: Bool = false) -> some View {
-        VStack(spacing: 8) {
+        let isHinted = highlighted && self.showsHint
+        return VStack(spacing: 8) {
             Image(systemName: symbol)
                 .font(.title2)
                 .frame(width: 58, height: 58)
-                .foregroundStyle(highlighted ? Color.mcAccent : Color.mcBody)
-                .background(highlighted ? Color.mcAccentTint : Color.mcSunken, in: Circle())
+                .foregroundStyle(isHinted ? Color.mcSurface : (highlighted ? Color.mcAccent : Color.mcBody))
+                .background(
+                    isHinted ? Color.mcAccent : (highlighted ? Color.mcAccentTint : Color.mcSunken),
+                    in: Circle()
+                )
+                .overlay {
+                    if isHinted {
+                        DemoHintHalo(shape: Circle())
+                    }
+                }
             Text(title)
                 .font(.caption.weight(highlighted ? .semibold : .regular))
                 .foregroundStyle(highlighted ? Color.mcAccent : Color.mcBody)
