@@ -137,7 +137,7 @@ extension RecipeViewModel {
     static let noRecipeInPhotoMessage = "No recipe found in that photo."
 
     static func shouldReportFailedImport(errorMessage: String?) -> Bool {
-        errorMessage != Self.noRecipeInPhotoMessage
+        errorMessage != self.noRecipeInPhotoMessage
     }
 
     /// Report any newly-failed recipe imports to Sentry (deduplicated by recipe ID)

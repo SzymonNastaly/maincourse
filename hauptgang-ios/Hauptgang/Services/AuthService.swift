@@ -14,13 +14,11 @@ final class AuthService: AuthServiceProtocol {
 
     func login(email: String, password: String) async throws -> User {
         let deviceName = await getDeviceName()
-        let onboardingDeviceId = OnboardingService.deviceIdForAuth()
 
         let request = LoginRequest(
             email: email,
             password: password,
-            deviceName: deviceName,
-            onboardingDeviceId: onboardingDeviceId
+            deviceName: deviceName
         )
 
         let response: AuthResponse = try await api.request(
@@ -28,7 +26,6 @@ final class AuthService: AuthServiceProtocol {
             method: .post,
             body: request
         )
-        OnboardingService.clearDeviceIdForAuth()
 
         // Store credentials securely
         try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
@@ -41,15 +38,13 @@ final class AuthService: AuthServiceProtocol {
 
     func signup(name: String, email: String, password: String, passwordConfirmation: String) async throws -> User {
         let deviceName = await getDeviceName()
-        let onboardingDeviceId = OnboardingService.deviceIdForAuth()
 
         let request = SignupRequest(
             name: name,
             email: email,
             password: password,
             passwordConfirmation: passwordConfirmation,
-            deviceName: deviceName,
-            onboardingDeviceId: onboardingDeviceId
+            deviceName: deviceName
         )
 
         let response: AuthResponse = try await api.request(
@@ -57,7 +52,6 @@ final class AuthService: AuthServiceProtocol {
             method: .post,
             body: request
         )
-        OnboardingService.clearDeviceIdForAuth()
 
         try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
         try await self.keychain.saveUser(response.user)
@@ -69,12 +63,10 @@ final class AuthService: AuthServiceProtocol {
 
     func login(with credential: OAuthCredential, allowAccountCreation: Bool) async throws -> User {
         let deviceName = await getDeviceName()
-        let onboardingDeviceId = OnboardingService.deviceIdForAuth()
         let request = OAuthLoginRequest(
             credential: credential,
             allowAccountCreation: allowAccountCreation,
-            deviceName: deviceName,
-            onboardingDeviceId: onboardingDeviceId
+            deviceName: deviceName
         )
 
         let response: AuthResponse = try await api.request(
@@ -82,7 +74,6 @@ final class AuthService: AuthServiceProtocol {
             method: .post,
             body: request
         )
-        OnboardingService.clearDeviceIdForAuth()
 
         try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
         try await self.keychain.saveUser(response.user)
@@ -183,7 +174,6 @@ private struct LoginRequest: Encodable {
     let email: String
     let password: String
     let deviceName: String
-    let onboardingDeviceId: String?
 }
 
 private struct SignupRequest: Encodable {
@@ -192,7 +182,6 @@ private struct SignupRequest: Encodable {
     let password: String
     let passwordConfirmation: String
     let deviceName: String
-    let onboardingDeviceId: String?
 }
 
 struct OAuthLoginRequest: Encodable {
@@ -202,14 +191,12 @@ struct OAuthLoginRequest: Encodable {
     let nonce: String
     let name: String?
     let deviceName: String
-    let onboardingDeviceId: String?
     let allowAccountCreation: Bool?
 
     init(
         credential: OAuthCredential,
         allowAccountCreation: Bool,
-        deviceName: String,
-        onboardingDeviceId: String?
+        deviceName: String
     ) {
         self.provider = credential.provider
         self.idToken = credential.idToken
@@ -217,7 +204,6 @@ struct OAuthLoginRequest: Encodable {
         self.nonce = credential.nonce
         self.name = credential.name
         self.deviceName = deviceName
-        self.onboardingDeviceId = onboardingDeviceId
         self.allowAccountCreation = credential.provider == .apple ? allowAccountCreation : nil
     }
 }

@@ -75,10 +75,16 @@ struct ImportDemoView: View {
     private var post: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Try it: share this post to MainCourse.")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(Color.mcInk)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    Text("Here’s a recipe from someone’s feed.")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Color.mcInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Tap Share and send it to MainCourse, just like you would from Instagram.")
+                        .font(.body)
+                        .foregroundStyle(Color.mcBody)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 DemoSocialPostView(sample: self.sample, isActive: self.stage == .post, photo: {
                     self.photo(height: 260)
                 }, onShare: { self.changeStage(.sharing) })

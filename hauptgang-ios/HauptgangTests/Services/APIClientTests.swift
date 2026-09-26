@@ -522,8 +522,7 @@ final class APIClientTests: XCTestCase {
         let body = OAuthLoginRequest(
             credential: credential,
             allowAccountCreation: allowAccountCreation,
-            deviceName: "Test iPhone",
-            onboardingDeviceId: nil
+            deviceName: "Test iPhone"
         )
 
         let _: EmptyDecodable = try await self.sut.request(

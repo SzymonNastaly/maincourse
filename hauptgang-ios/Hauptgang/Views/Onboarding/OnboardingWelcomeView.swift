@@ -1,73 +1,83 @@
 import SwiftUI
 
-/// First screen of the onboarding flow.
-///
-/// Brand-forward intro with the app logo, the same tagline used on `LoginView`,
-/// and a single "Get started" CTA. Elements stagger in on appear so the screen
-/// feels like it arrives, rather than snapping in.
+/// First screen of the introduction: what MainCourse is for, before the playable example.
 struct OnboardingWelcomeView: View {
-    let onStart: () -> Void
+    let sample: DemoRecipe?
+    let onGetStarted: () -> Void
+    let onLogIn: () -> Void
 
-    @State private var logoVisible = false
-    @State private var taglineVisible = false
-    @State private var ctaVisible = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private static let subtitle = """
+    Saved posts, screenshots, cookbook pages — \
+    MainCourse turns them into recipes you actually cook from.
+    """
 
     var body: some View {
-        VStack(spacing: Theme.Spacing.xl) {
-            Spacer()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    HStack(spacing: Theme.Spacing.sm) {
+                        Image("LoginLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
+                            .accessibilityHidden(true)
+                        Text("MainCourse")
+                            .font(.headline)
+                            .foregroundStyle(Color.mcInk)
+                    }
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    .accessibilityElement(children: .combine)
 
-            VStack(spacing: Theme.Spacing.lg) {
-                Image("LoginLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 96, height: 96)
-                    .opacity(self.logoVisible ? 1 : 0)
-                    .scaleEffect(self.logoVisible ? 1 : 0.92)
-                    .offset(y: self.logoVisible ? 0 : 8)
+                    Spacer(minLength: 0)
 
-                (Text("Cook something ")
-                    .foregroundColor(.mcInk)
-                    + Text("delicious")
-                    .foregroundColor(.mcAccent)
-                    + Text(" today")
-                    .foregroundColor(.mcInk))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .multilineTextAlignment(.center)
-                    .opacity(self.taglineVisible ? 1 : 0)
-                    .offset(y: self.taglineVisible ? 0 : 8)
+                    if let sample = self.sample, !self.dynamicTypeSize.isAccessibilitySize {
+                        RecipeSourcesAnimation(sample: sample)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                        Text("All your recipes, ready to cook.")
+                            .font(.largeTitle.bold())
+                            .foregroundStyle(Color.mcInk)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityAddTraits(.isHeader)
+                        Text(Self.subtitle)
+                            .font(.body)
+                            .foregroundStyle(Color.mcBody)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.lg)
+                .padding(.vertical, Theme.Spacing.md)
+                .frame(maxWidth: 560, minHeight: geometry.size.height)
+                .frame(maxWidth: .infinity)
             }
-
-            Spacer()
-
-            Button(action: self.onStart) {
-                Text("Get started")
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: Theme.Spacing.xs) {
+                Button("Get started", action: self.onGetStarted)
+                    .primaryButton()
+                    .accessibilityIdentifier("onboarding.get-started")
+                Button("I already have an account", action: self.onLogIn)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.mcAccent)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityIdentifier("onboarding.log-in")
             }
-            .primaryButton()
-            .padding(.bottom, Theme.Spacing.md)
-            .opacity(self.ctaVisible ? 1 : 0)
-            .offset(y: self.ctaVisible ? 0 : 8)
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.vertical, Theme.Spacing.sm)
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
+            .background(Color.mcCanvas)
         }
-        .padding(.horizontal, Theme.Spacing.lg)
-        .onAppear(perform: self.animateIn)
-    }
-
-    private func animateIn() {
-        withAnimation(.easeOut(duration: 0.5)) {
-            self.logoVisible = true
-        }
-        withAnimation(.easeOut(duration: 0.5).delay(0.15)) {
-            self.taglineVisible = true
-        }
-        withAnimation(.easeOut(duration: 0.5).delay(0.30)) {
-            self.ctaVisible = true
-        }
+        .background(Color.mcCanvas)
     }
 }
 
 #Preview {
-    ZStack {
-        Color.mcCanvas.ignoresSafeArea()
-        OnboardingWelcomeView(onStart: {})
-    }
+    OnboardingWelcomeView(sample: try? DemoRecipe.load(), onGetStarted: {}, onLogIn: {})
 }

@@ -105,8 +105,8 @@ struct HauptgangApp: App {
     /// On Launch.
     ///
     /// Supported:
-    /// - `-resetOnboarding YES` — clears the onboarding completion flag (and the stored
-    ///   device id) so the interactive example shows on next launch.
+    /// - `-resetOnboarding YES` — clears the onboarding flags so the introduction
+    ///   shows on next launch.
     private static func applyDebugLaunchArguments() {
         let defaults = UserDefaults.standard
         if defaults.bool(forKey: "resetOnboarding") {
@@ -114,7 +114,6 @@ struct HauptgangApp: App {
             defaults.removeObject(forKey: OnboardingCoordinator.dismissedUsersDefaultsKey)
             defaults.removeObject(forKey: OnboardingCoordinator.completedExampleDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.completedAtDefaultsKey)
-            defaults.removeObject(forKey: OnboardingService.deviceIdDefaultsKey)
             defaults.removeObject(forKey: OnboardingService.authStepReachedAtDefaultsKey)
             logger.info("DEBUG: reset onboarding flags from launch argument")
         }
