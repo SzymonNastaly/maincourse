@@ -23,7 +23,7 @@ packages:
 settings:
   SWIFT_VERSION: "5.9"
   MARKETING_VERSION: "1.0.6"
-  CURRENT_PROJECT_VERSION: "71"
+  CURRENT_PROJECT_VERSION: "72"
   # Enable Swift 6 strict concurrency checking for data race safety
   SWIFT_STRICT_CONCURRENCY: complete
   OTHER_SWIFT_FLAGS: "-Xfrontend -enable-upcoming-feature -Xfrontend InferSendableFromCaptures"
@@ -33,6 +33,9 @@ targets:
     type: application
     platform: iOS
     sources:
+      - path: ../branding/MainCourse.icon
+        type: file
+        buildPhase: resources
       - path: ../config/starter_recipes
         buildPhase: resources
         excludes:
@@ -44,7 +47,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios
         INFOPLIST_FILE: Hauptgang/Resources/Info.plist
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: MainCourse
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: R69J54A3P5
