@@ -32,6 +32,9 @@ solutions.
   `hauptgang-ios/Hauptgang/Utilities/MainCourseTheme.swift`. The launcher uses the
   green cookbook with a lime M on the grey canvas; see `docs/brand-icons.md`.
 - Never commit credentials, signing keys, private service files, or bearer tokens.
+- Keep English, Polish, and German native string/plural resources complete. Retain
+  `UiMessage` in view-model state and resolve it at display time; follow the system
+  app language. See `docs/android-localization.md` for formatting and content rules.
 
 ## Verification
 

@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.shopping
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
@@ -44,7 +46,7 @@ data class ShoppingListUiState(
     val refreshing: Boolean = false,
     val action: ShoppingAction? = null,
     val actionItemId: Long? = null,
-    val error: String? = null,
+    val error: UiMessage? = null,
 ) {
     val uncheckedItems: List<ShoppingItem>
         get() = items.filter { it.checkedAt == null }
@@ -148,7 +150,7 @@ class ShoppingListViewModel internal constructor(
             } catch (failure: Throwable) {
                 refreshState.value = OperationState(
                     running = false,
-                    error = failure.userMessage("Could not refresh shopping list"),
+                    error = failure.userMessage(UiMessage.Resource(R.string.error_refresh_shopping)),
                 )
             }
         }.also { refreshJob = it }
@@ -213,7 +215,7 @@ class ShoppingListViewModel internal constructor(
         } catch (failure: Throwable) {
             refreshState.value = OperationState(
                 running = false,
-                error = failure.userMessage("Could not open cookbook"),
+                error = failure.userMessage(UiMessage.Resource(R.string.error_open_cookbook)),
             )
         }
     }
@@ -234,7 +236,7 @@ class ShoppingListViewModel internal constructor(
                 throw failure
             } catch (failure: Throwable) {
                 mutationState.value = MutationState(
-                    error = failure.userMessage("Could not update shopping list"),
+                    error = failure.userMessage(UiMessage.Resource(R.string.error_update_shopping)),
                 )
             }
         }.also { mutationJob = it }
@@ -242,12 +244,12 @@ class ShoppingListViewModel internal constructor(
 
     private data class OperationState(
         val running: Boolean,
-        val error: String? = null,
+        val error: UiMessage? = null,
     )
 
     private data class MutationState(
         val action: ShoppingAction? = null,
         val itemId: Long? = null,
-        val error: String? = null,
+        val error: UiMessage? = null,
     )
 }

@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.appLocale
+import com.getmaincourse.app.ui.displayNumber
 import com.getmaincourse.app.features.recipes.IngredientFormatter
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
@@ -70,12 +72,12 @@ internal fun OnboardingFeaturesScreen(onKeep: () -> Unit, onContinueWithoutRecip
                 Surface(shape = CircleShape, border = BorderStroke(1.dp, MainCourseColors.Hairline)) {
                     Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("−", fontSize = 16.sp)
-                        Text(portions.toString(), fontFamily = MainCourseMono, fontSize = 14.sp)
+                        Text(displayNumber(portions), fontFamily = MainCourseMono, fontSize = 14.sp)
                         Text("+", fontSize = 16.sp)
                     }
                 }
                 sample.ingredients.firstOrNull { it.name == "orzo" }?.let {
-                    Text(IngredientFormatter.formatIngredient(it.structured(), portions, sample.servings), fontSize = 11.sp, color = MainCourseColors.Body)
+                    Text(IngredientFormatter.formatIngredient(it.structured(), portions, sample.servings, appLocale()), fontSize = 11.sp, color = MainCourseColors.Body)
                 }
             }
             FeatureCard(R.string.onboarding_shopping_title, R.string.onboarding_shopping_body) {

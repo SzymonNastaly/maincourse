@@ -1,5 +1,7 @@
 package com.getmaincourse.app.features.auth
 
+import android.text.Annotation
+import android.text.Spanned
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -46,11 +49,24 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
+
+@Composable
+private fun localizedTagline() = LocalResources.current.getText(R.string.onboarding_tagline).let { text ->
+    buildAnnotatedString {
+        append(text.toString())
+        if (text is Spanned) {
+            text.getSpans(0, text.length, Annotation::class.java)
+                .filter { it.key == "emphasis" && it.value == "accent" }
+                .forEach { span ->
+                    addStyle(SpanStyle(color = MainCourseColors.Accent), text.getSpanStart(span), text.getSpanEnd(span))
+                }
+        }
+    }
+}
 
 @Composable
 fun AuthScreen(
@@ -106,15 +122,7 @@ fun AuthScreen(
                 modifier = Modifier.size(80.dp).testTag("auth_logo"),
             )
             Text(
-                text = buildAnnotatedString {
-                    append(stringResource(R.string.onboarding_tagline_start))
-                    append(" ")
-                    withStyle(SpanStyle(color = MainCourseColors.Accent)) {
-                        append(stringResource(R.string.onboarding_tagline_emphasis))
-                    }
-                    append(" ")
-                    append(stringResource(R.string.onboarding_tagline_end))
-                },
+                text = localizedTagline(),
                 modifier = Modifier.padding(top = 16.dp, bottom = 28.dp),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,

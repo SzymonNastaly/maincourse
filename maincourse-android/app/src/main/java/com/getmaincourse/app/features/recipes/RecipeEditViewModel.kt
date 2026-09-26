@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.recipes
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.RecipeRepository
 import com.getmaincourse.app.data.model.RecipeDetail
@@ -33,7 +35,7 @@ data class RecipeEditUiState(
     val dirty: Boolean = false,
     val saving: Boolean = false,
     val saved: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
 ) {
     val nameInvalid: Boolean
         get() = loaded && name.isBlank()
@@ -126,7 +128,7 @@ class RecipeEditViewModel internal constructor(
 
     fun selectImage(image: SharedImage) = edit { copy(selectedImage = image, error = null) }
 
-    fun reportImageError(message: String) {
+    fun reportImageError(message: UiMessage) {
         mutableState.value = mutableState.value.copy(error = message)
     }
 
@@ -151,7 +153,7 @@ class RecipeEditViewModel internal constructor(
             } catch (failure: Throwable) {
                 mutableState.value = mutableState.value.copy(
                     saving = false,
-                    error = failure.userMessage("Could not save recipe"),
+                    error = failure.userMessage(UiMessage.Resource(R.string.error_save_recipe)),
                 )
             }
         }.also { saveJob = it }

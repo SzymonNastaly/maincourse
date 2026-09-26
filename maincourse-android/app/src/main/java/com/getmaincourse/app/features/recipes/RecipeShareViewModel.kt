@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.recipes
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.RecipeImportResponse
@@ -28,7 +30,7 @@ sealed interface RecipeShareStatus {
 
     data object Success : RecipeShareStatus
 
-    data class Failed(val message: String) : RecipeShareStatus
+    data class Failed(val message: UiMessage) : RecipeShareStatus
 }
 
 data class RecipeShareUiState(
@@ -112,7 +114,7 @@ class RecipeShareViewModel(
             } catch (failure: CancellationException) {
                 throw failure
             } catch (failure: Throwable) {
-                if (cookbookSelection.selectedId == null && !importStarted) fail(failure, "Could not load cookbooks")
+                if (cookbookSelection.selectedId == null && !importStarted) fail(failure, UiMessage.Resource(R.string.error_load_cookbooks))
             }
         }
     }
@@ -160,12 +162,8 @@ class RecipeShareViewModel(
         }
     }
 
-    private fun fail(failure: Throwable, fallback: String = "Could not import recipe") {
-        val message = if (failure is SharedImageReadException) {
-            failure.message ?: fallback
-        } else {
-            failure.userMessage(fallback)
-        }
+    private fun fail(failure: Throwable, fallback: UiMessage = UiMessage.Resource(R.string.error_import_recipe)) {
+        val message = failure.userMessage(fallback)
         mutableState.value = mutableState.value.copy(status = RecipeShareStatus.Failed(message))
     }
 

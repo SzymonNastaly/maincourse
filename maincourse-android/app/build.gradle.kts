@@ -135,6 +135,15 @@ android {
         compose = true
         buildConfig = true
     }
+    androidResources {
+        localeFilters += listOf("en", "pl", "de")
+    }
+    bundle {
+        language {
+            // All three small catalogs are available immediately, including offline switches.
+            enableSplit = false
+        }
+    }
     lint {
         abortOnError = true
         warningsAsErrors = true

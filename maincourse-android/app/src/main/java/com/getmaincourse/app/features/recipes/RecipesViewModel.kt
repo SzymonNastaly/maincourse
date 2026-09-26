@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.recipes
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
@@ -33,7 +35,7 @@ data class RecipesUiState(
     val recipes: List<RecipeSummary> = emptyList(),
     val initialLoading: Boolean = true,
     val refreshing: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -115,7 +117,7 @@ class RecipesViewModel internal constructor(
                 currentCoroutineContext().ensureActive()
                 refreshState.value = RefreshState(
                     running = false,
-                    error = failure.userMessage("Could not refresh recipes"),
+                    error = failure.userMessage(UiMessage.Resource(R.string.error_refresh_recipes)),
                 )
             }
         }.also { refreshJob = it }
@@ -131,7 +133,7 @@ class RecipesViewModel internal constructor(
         } catch (failure: Throwable) {
             refreshState.value = RefreshState(
                 running = false,
-                error = failure.userMessage("Could not select cookbook"),
+                error = failure.userMessage(UiMessage.Resource(R.string.error_select_cookbook)),
             )
             return@launch
         }
@@ -145,7 +147,7 @@ class RecipesViewModel internal constructor(
         } catch (failure: Throwable) {
             refreshState.value = RefreshState(
                 running = false,
-                error = failure.userMessage("Could not refresh recipes"),
+                error = failure.userMessage(UiMessage.Resource(R.string.error_refresh_recipes)),
             )
         }
     }
@@ -244,7 +246,7 @@ class RecipesViewModel internal constructor(
 
     private data class RefreshState(
         val running: Boolean,
-        val error: String? = null,
+        val error: UiMessage? = null,
     )
 }
 

@@ -1,4 +1,5 @@
 package com.getmaincourse.app
+import com.getmaincourse.app.ui.localized
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -88,13 +89,13 @@ class RecipeShareActivity : ComponentActivity() {
                         onDismiss = ::finish,
                     )
                     is SessionUiState.RestoreError -> RecipeShareAuthenticationSheet(
-                        message = currentSession.message,
+                        message = currentSession.message.localized(),
                         onOpenApp = ::openMainApp,
                         onRetry = { sessionViewModel.restore() },
                         onDismiss = ::finish,
                     )
                     is SessionUiState.CleanupError -> RecipeShareAuthenticationSheet(
-                        message = currentSession.message,
+                        message = currentSession.message.localized(),
                         onOpenApp = ::openMainApp,
                         onRetry = { sessionViewModel.retryCleanup() },
                         onDismiss = ::finish,

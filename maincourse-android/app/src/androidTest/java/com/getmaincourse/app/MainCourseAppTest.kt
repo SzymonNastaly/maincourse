@@ -1,5 +1,7 @@
 package com.getmaincourse.app
 
+import com.getmaincourse.app.ui.UiMessage
+
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
@@ -200,10 +202,10 @@ class MainCourseAppTest {
         compose.onNodeWithTag("auth_form").assertIsDisplayed()
 
         compose.runOnIdle {
-            state.value = SessionUiState.SignedOut(authError = "Try again", busy = true)
+            state.value = SessionUiState.SignedOut(authError = UiMessage.Resource(R.string.error_sign_in), busy = true)
         }
 
-        compose.onNodeWithText("Try again").assertIsDisplayed()
+        compose.onNodeWithText("Could not sign in").assertIsDisplayed()
         compose.onNodeWithTag("auth_email_progress").assertIsDisplayed()
     }
 

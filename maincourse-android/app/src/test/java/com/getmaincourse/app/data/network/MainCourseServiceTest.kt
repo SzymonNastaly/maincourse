@@ -1,4 +1,6 @@
 package com.getmaincourse.app.data.network
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
@@ -610,7 +612,7 @@ class MainCourseServiceTest {
     }
 
     @Test
-    fun userMessageUsesServerErrorThenFallbackForHttpFailures() = runTest {
+    fun userMessageDiscardsLegacyProseAndUsesLocalizedStatusFallbacks() = runTest {
         server.enqueue(jsonResponse(422, """{"errors":["Email is invalid","Password is too short"]}"""))
         server.enqueue(MockResponse().setResponseCode(503).setBody("unavailable"))
 
@@ -619,17 +621,20 @@ class MainCourseServiceTest {
         }
         val unavailable = captureHttpException { service.cookbooks() }
 
-        assertEquals("Email is invalid\nPassword is too short", validation.userMessage("Could not sign in"))
-        assertEquals("Could not load cookbooks", unavailable.userMessage("Could not load cookbooks"))
+        val strings = ApiStrings { resource, _ -> resource.toString() }
+        val fallback = UiMessage.Resource(R.string.error_sign_in)
+        assertEquals(R.string.api_error_invalid_request.toString(), validation.userMessage(fallback).resolve(strings))
+        assertEquals(R.string.api_error_server_unavailable.toString(), unavailable.userMessage(fallback).resolve(strings))
     }
 
     @Test
     fun userMessageMapsIoAndRethrowsCancellation() {
-        assertEquals("Could not refresh", IOException("socket closed").userMessage("Could not refresh"))
+        val fallback = UiMessage.Resource(R.string.error_refresh_recipes)
+        assertEquals(fallback, IOException("socket closed").userMessage(fallback))
 
         val cancellation = CancellationException("cancelled")
         try {
-            cancellation.userMessage("ignored")
+            cancellation.userMessage(fallback)
             throw AssertionError("Expected cancellation")
         } catch (caught: CancellationException) {
             assertSame(cancellation, caught)

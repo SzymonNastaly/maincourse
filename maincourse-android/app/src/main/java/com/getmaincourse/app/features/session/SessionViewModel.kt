@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.session
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.cache.MainCourseDatabase
 import com.getmaincourse.app.data.images.SessionImages
@@ -108,7 +110,7 @@ class SessionViewModel internal constructor(
                 throw failure
             } catch (failure: Throwable) {
                 mutableState.value = SessionUiState.RestoreError(
-                    failure.userMessage("Could not read the saved session"),
+                    failure.userMessage(UiMessage.Resource(R.string.error_read_session)),
                 )
                 return@launchForeground
             }
@@ -127,7 +129,7 @@ class SessionViewModel internal constructor(
                 sessionProvider.clear()
                 mutableImageLoader.value = null
                 mutableState.value = SessionUiState.RestoreError(
-                    failure.userMessage("Could not restore the saved session"),
+                    failure.userMessage(UiMessage.Resource(R.string.error_restore_session)),
                 )
             }
         }
@@ -138,11 +140,11 @@ class SessionViewModel internal constructor(
         return launchForeground { hideAndClear() }
     }
 
-    fun signIn(email: String, password: String): Job = authenticate("Could not sign in") {
+    fun signIn(email: String, password: String): Job = authenticate(UiMessage.Resource(R.string.error_sign_in)) {
         val normalizedEmail = email.trim()
         when {
-            !normalizedEmail.isValidEmail() -> "Enter a valid email address."
-            password.isEmpty() -> "Enter your password."
+            !normalizedEmail.isValidEmail() -> UiMessage.Resource(R.string.auth_email_required)
+            password.isEmpty() -> UiMessage.Resource(R.string.auth_password_required)
             else -> null
         }?.let {
             mutableState.value = SessionUiState.SignedOut(it)
@@ -156,12 +158,12 @@ class SessionViewModel internal constructor(
         email: String,
         password: String,
         confirmation: String,
-    ): Job = authenticate("Could not create account") {
+    ): Job = authenticate(UiMessage.Resource(R.string.error_create_account)) {
         val normalizedEmail = email.trim()
         when {
-            !normalizedEmail.isValidEmail() -> "Enter a valid email address."
-            password.length < MINIMUM_PASSWORD_LENGTH -> "Use at least 12 characters."
-            password != confirmation -> "Passwords do not match."
+            !normalizedEmail.isValidEmail() -> UiMessage.Resource(R.string.auth_email_required)
+            password.length < MINIMUM_PASSWORD_LENGTH -> UiMessage.Resource(R.string.auth_password_too_short)
+            password != confirmation -> UiMessage.Resource(R.string.auth_passwords_do_not_match)
             else -> null
         }?.let {
             mutableState.value = SessionUiState.SignedOut(it)
@@ -215,7 +217,7 @@ class SessionViewModel internal constructor(
     }
 
     private fun authenticate(
-        fallback: String,
+        fallback: UiMessage,
         request: suspend () -> SessionResponse?,
     ): Job {
         if (mutableState.value !is SessionUiState.SignedOut) return completedJob()
@@ -242,7 +244,7 @@ class SessionViewModel internal constructor(
             } catch (failure: CancellationException) {
                 throw failure
             } catch (failure: Throwable) {
-                hideAndClear(SessionUiState.SignedOut(failure.userMessage("Could not save the session")))
+                hideAndClear(SessionUiState.SignedOut(failure.userMessage(UiMessage.Resource(R.string.error_save_session))))
             }
         }
     }
@@ -275,7 +277,7 @@ class SessionViewModel internal constructor(
         mutableState.value = if (firstFailure == null) {
             success
         } else {
-            SessionUiState.CleanupError("Could not clear local data")
+            SessionUiState.CleanupError(UiMessage.Resource(R.string.error_clear_local_data))
         }
     }
 

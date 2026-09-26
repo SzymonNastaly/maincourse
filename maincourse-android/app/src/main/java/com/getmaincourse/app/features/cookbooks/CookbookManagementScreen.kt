@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -160,7 +161,7 @@ fun CookbookManagementScreen(
         state.error?.let { error ->
             item {
                 Text(
-                    error,
+                    error.localized(),
                     color = MainCourseColors.Danger,
                     modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth().testTag("cookbook_error").semantics {
                         liveRegion = LiveRegionMode.Polite

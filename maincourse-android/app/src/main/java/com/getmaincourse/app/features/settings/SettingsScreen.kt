@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
@@ -166,7 +167,7 @@ fun SettingsScreen(
                     }
                     state.error?.let {
                         Text(
-                            it,
+                            it.localized(),
                             color = MainCourseColors.Danger,
                             modifier = Modifier.testTag("settings_error").semantics {
                                 liveRegion = LiveRegionMode.Polite
@@ -246,7 +247,7 @@ fun SettingsScreen(
     if (confirmingDelete) {
         DeleteAccountDialog(
             deleting = state.deleting,
-            error = state.error,
+            error = state.error?.localized(),
             onConfirm = onDeleteAccount,
             onDismiss = { confirmingDelete = false },
         )

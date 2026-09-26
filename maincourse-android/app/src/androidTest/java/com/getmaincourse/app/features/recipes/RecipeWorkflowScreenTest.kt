@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.recipes
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +62,7 @@ class RecipeWorkflowScreenTest {
 
     @Test
     fun ingredientReviewShowsActionFailureAndAllowsRetry() {
-        val state = mutableStateOf<RecipeActionUiState>(RecipeActionUiState.Failed("You're offline"))
+        val state = mutableStateOf<RecipeActionUiState>(RecipeActionUiState.Failed(UiMessage.Resource(R.string.error_connection_timeout)))
         var submissions = 0
         compose.runOnIdle {
             MainCourseTestContent.content = {
@@ -76,7 +78,7 @@ class RecipeWorkflowScreenTest {
             }
         }
 
-        compose.onNodeWithTag("review_error").assertTextContains("You're offline")
+        compose.onNodeWithTag("review_error").assertTextContains("Connection timed out. Please try again.")
         compose.onNodeWithTag("review_submit").performClick()
         assertEquals(1, submissions)
     }
@@ -124,7 +126,7 @@ class RecipeWorkflowScreenTest {
                         onBack = { backs++ },
                         onSubmit = { _, _ ->
                             submissions++
-                            action.value = RecipeActionUiState.Succeeded("Ingredients added")
+                            action.value = RecipeActionUiState.Succeeded(UiMessage.Resource(R.string.ingredients_added))
                         },
                     )
                 }
@@ -153,7 +155,7 @@ class RecipeWorkflowScreenTest {
                         onBack = {},
                         onSubmit = { items, _ ->
                             submissions += items
-                            action.value = RecipeActionUiState.Failed("You're offline")
+                            action.value = RecipeActionUiState.Failed(UiMessage.Resource(R.string.error_connection_timeout))
                         },
                     )
                 }

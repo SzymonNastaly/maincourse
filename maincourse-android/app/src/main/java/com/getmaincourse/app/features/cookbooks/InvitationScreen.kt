@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
@@ -64,7 +65,7 @@ fun InvitationScreen(
             state.error != null -> {
                 Text(stringResource(R.string.invitation_error_title), style = MaterialTheme.typography.headlineMedium)
                 Text(
-                    state.error,
+                    state.error.localized(),
                     modifier = Modifier.testTag("invitation_error"),
                     color = MainCourseColors.Body,
                     textAlign = TextAlign.Center,

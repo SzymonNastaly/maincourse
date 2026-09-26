@@ -30,6 +30,21 @@ data class ApiProblem(
         return code.message(strings, parameters?.count)
     }
 
+    fun message(strings: ApiStrings, status: Int?): String {
+        if (ApiErrorCode.fromWire(errorCode) != null) return message(strings)
+        val resource = when (status) {
+            401 -> R.string.api_error_unauthorized
+            403 -> R.string.api_error_forbidden
+            404 -> R.string.api_error_not_found
+            400, 422 -> R.string.api_error_invalid_request
+            413 -> R.string.api_error_content_too_large
+            429 -> R.string.api_error_rate_limited
+            in 500..599 -> R.string.api_error_server_unavailable
+            else -> R.string.api_error_request_failed
+        }
+        return strings.text(resource)
+    }
+
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
         fun parse(body: String): ApiProblem = try {

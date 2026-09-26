@@ -42,6 +42,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
+import com.getmaincourse.app.ui.displayNumber
 import com.getmaincourse.app.data.model.ShoppingItem
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
@@ -107,7 +109,7 @@ fun ShoppingListScreen(
             }
             state.error?.let { error ->
                 item {
-                    ErrorPanel(error, onClearError)
+                    ErrorPanel(error.localized(), onClearError)
                 }
             }
             if (state.initialLoading) {
@@ -176,7 +178,7 @@ fun ShoppingListScreen(
                                     color = MainCourseColors.Muted,
                                 )
                                 Text(
-                                    state.checkedItems.size.toString(),
+                                    displayNumber(state.checkedItems.size),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontFamily = MainCourseMono,
                                     color = MainCourseColors.Muted,
@@ -265,7 +267,7 @@ private fun SectionHeader(
                 color = MainCourseColors.Muted,
             )
             Text(
-                count.toString(),
+                displayNumber(count),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = MainCourseMono,
                 color = MainCourseColors.Muted,

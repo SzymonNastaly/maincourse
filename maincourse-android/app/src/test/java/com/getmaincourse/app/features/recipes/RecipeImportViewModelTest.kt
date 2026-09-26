@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.recipes
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.Cookbook
@@ -88,7 +90,7 @@ class RecipeImportViewModelTest {
         advanceUntilIdle()
 
         assertTrue(fixture.textImports.isEmpty())
-        assertEquals("Recipe text must be 50,000 characters or fewer.", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_recipe_text_length), viewModel.state.value.error)
         collection.cancel()
     }
 
@@ -104,7 +106,7 @@ class RecipeImportViewModelTest {
         viewModel.submit().join()
         advanceUntilIdle()
 
-        assertEquals("Could not import recipe", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_import_recipe), viewModel.state.value.error)
         assertEquals("Soup\n1 onion", viewModel.state.value.text)
         assertNull(viewModel.state.value.importedRecipeId)
         collection.cancel()
@@ -148,7 +150,7 @@ class RecipeImportViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.state.value.canSubmit)
-        assertEquals("Could not load cookbooks", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_load_cookbooks), viewModel.state.value.error)
         collection.cancel()
     }
 

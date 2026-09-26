@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MainCourse</string>
+    <string name="app_name" translatable="false">MainCourse</string>
     <string name="recipes">Recipes</string>
     <string name="shopping">Shopping</string>
     <string name="search">Search</string>
@@ -41,9 +41,7 @@
     <string name="auth_submitting">Please wait…</string>
     <string name="auth_show_password">Show</string>
     <string name="auth_hide_password">Hide</string>
-    <string name="onboarding_tagline_start">Cook something</string>
-    <string name="onboarding_tagline_emphasis">delicious</string>
-    <string name="onboarding_tagline_end">today</string>
+    <string name="onboarding_tagline">Cook something <annotation emphasis="accent">delicious</annotation> today</string>
     <string name="onboarding_welcome_body">Saved posts, screenshots, cookbook pages — MainCourse turns them into recipes you actually cook from.</string>
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_continue">Continue</string>
@@ -99,10 +97,10 @@
     <string name="recipe_import_url">Link</string>
     <string name="recipe_import_text">Text</string>
     <string name="recipe_import_url_label">Recipe link</string>
-    <string name="recipe_import_url_placeholder">https://example.com/recipe</string>
+    <string name="recipe_import_url_placeholder" translatable="false">https://example.com/recipe</string>
     <string name="recipe_import_text_label">Recipe text</string>
     <string name="recipe_import_text_placeholder">Paste the recipe name, ingredients, and instructions</string>
-    <string name="recipe_import_character_count">%1$d / %2$d</string>
+    <string name="recipe_import_character_count" translatable="false">%1$d / %2$d</string>
     <string name="recipe_import_action">Start import</string>
     <string name="recipe_import_starting">Starting…</string>
     <string name="recipe_import_accepted">Import started</string>

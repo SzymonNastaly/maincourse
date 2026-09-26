@@ -1,4 +1,5 @@
 package com.getmaincourse.app
+import com.getmaincourse.app.ui.localized
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -308,7 +309,7 @@ internal fun MainCourseAppContent(
         is SessionUiState.SignedOut -> PreAuthScreen(
             state = preAuthState,
             busy = state.busy,
-            error = state.authError,
+            error = state.authError?.localized(),
             onStart = onStartOnboarding,
             onDemoCompleted = onDemoCompleted,
             onAdvance = onAdvanceOnboarding,
@@ -319,8 +320,8 @@ internal fun MainCourseAppContent(
             onSignIn = onSignIn,
             onSignUp = onSignUp,
         )
-        is SessionUiState.RestoreError -> RecoveryScreen(state.message, onRetryRestore)
-        is SessionUiState.CleanupError -> RecoveryScreen(state.message, onRetryCleanup)
+        is SessionUiState.RestoreError -> RecoveryScreen(state.message.localized(), onRetryRestore)
+        is SessionUiState.CleanupError -> RecoveryScreen(state.message.localized(), onRetryCleanup)
         is SessionUiState.SignedIn -> {
             val availableFactories = checkNotNull(factories) {
                 "Browsing factories are required when signed in"

@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.recipes
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
@@ -26,7 +28,7 @@ data class RecipeImportUiState(
     val url: String = "",
     val text: String = "",
     val importing: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
     val importedRecipeId: Long? = null,
 ) {
     val canSubmit: Boolean
@@ -87,7 +89,7 @@ class RecipeImportViewModel internal constructor(
                 throw failure
             } catch (failure: Throwable) {
                 operation.value = operation.value.copy(
-                    error = failure.userMessage("Could not load cookbooks"),
+                    error = failure.userMessage(UiMessage.Resource(R.string.error_load_cookbooks)),
                 )
             }
         }
@@ -122,7 +124,7 @@ class RecipeImportViewModel internal constructor(
             throw failure
         } catch (failure: Throwable) {
             operation.value = operation.value.copy(
-                error = failure.userMessage("Could not select cookbook"),
+                error = failure.userMessage(UiMessage.Resource(R.string.error_select_cookbook)),
             )
         }
     }
@@ -136,16 +138,16 @@ class RecipeImportViewModel internal constructor(
             RecipeImportMode.TEXT -> snapshot.text.trim()
         }
         val validationError = when {
-            cookbookId == null -> "Choose a cookbook first."
+            cookbookId == null -> UiMessage.Resource(R.string.error_choose_cookbook)
             input.isBlank() -> if (snapshot.mode == RecipeImportMode.URL) {
-                "Enter a recipe link."
+                UiMessage.Resource(R.string.error_enter_recipe_link)
             } else {
-                "Paste some recipe text."
+                UiMessage.Resource(R.string.error_paste_recipe)
             }
             snapshot.mode == RecipeImportMode.URL && !input.isHttpUrl() ->
-                "Enter a valid http(s) recipe link."
+                UiMessage.Resource(R.string.error_valid_recipe_link)
             snapshot.mode == RecipeImportMode.TEXT && input.length > MAX_RECIPE_IMPORT_TEXT_LENGTH ->
-                "Recipe text must be 50,000 characters or fewer."
+                UiMessage.Resource(R.string.error_recipe_text_length)
             else -> null
         }
         if (validationError != null) {
@@ -168,7 +170,7 @@ class RecipeImportViewModel internal constructor(
         } catch (failure: Throwable) {
             operation.value = operation.value.copy(
                 importing = false,
-                error = failure.userMessage("Could not import recipe"),
+                error = failure.userMessage(UiMessage.Resource(R.string.error_import_recipe)),
             )
         }
     }
@@ -182,7 +184,7 @@ class RecipeImportViewModel internal constructor(
         val url: String = "",
         val text: String = "",
         val importing: Boolean = false,
-        val error: String? = null,
+        val error: UiMessage? = null,
         val importedRecipeId: Long? = null,
     )
 }

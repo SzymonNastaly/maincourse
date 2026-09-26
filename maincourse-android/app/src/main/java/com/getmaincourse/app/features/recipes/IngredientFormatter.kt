@@ -4,6 +4,8 @@ import com.getmaincourse.app.data.model.StructuredIngredient
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
+import java.text.NumberFormat
+import java.util.Locale
 
 object IngredientFormatter {
     private val fractionTolerance = BigDecimal("0.005")
@@ -25,28 +27,33 @@ object IngredientFormatter {
         return BigDecimal(portions).divide(BigDecimal(baseServings), MathContext.DECIMAL128).stripTrailingZeros()
     }
 
-    fun formatAmount(value: BigDecimal): String = fractionTable.firstOrNull { (fraction, _) ->
+    fun formatAmount(value: BigDecimal, locale: Locale = Locale.getDefault()): String = fractionTable.firstOrNull { (fraction, _) ->
         value.subtract(fraction).abs() < fractionTolerance
-    }?.second ?: value.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+    }?.second ?: NumberFormat.getNumberInstance(locale).apply {
+        isGroupingUsed = false
+        maximumFractionDigits = 2
+        roundingMode = RoundingMode.HALF_UP
+    }.format(value)
 
     fun formatQuantity(
         amount: String?,
         amountMax: String?,
         unit: String?,
         scale: BigDecimal = BigDecimal.ONE,
+        locale: Locale = Locale.getDefault(),
     ): String {
         val minimum = amount.toDecimalOrNull()
         val maximum = amountMax.toDecimalOrNull()
         val quantity = when {
             minimum != null && maximum != null ->
-                "${formatAmount(minimum.multiply(scale))}–${formatAmount(maximum.multiply(scale))}"
-            minimum != null -> formatAmount(minimum.multiply(scale))
+                "${formatAmount(minimum.multiply(scale), locale)}–${formatAmount(maximum.multiply(scale), locale)}"
+            minimum != null -> formatAmount(minimum.multiply(scale), locale)
             else -> null
         }
         return listOfNotNull(quantity, unit?.trim()?.takeIf(String::isNotEmpty)).joinToString(" ")
     }
 
-    fun formatIngredient(ingredient: StructuredIngredient, portions: Int, baseServings: Int): String {
+    fun formatIngredient(ingredient: StructuredIngredient, portions: Int, baseServings: Int, locale: Locale = Locale.getDefault()): String {
         val name = ingredient.name?.trim()?.takeIf(String::isNotEmpty)
         if (!ingredient.hasUsableStructure(name)) return ingredient.raw
         val quantity = formatQuantity(
@@ -54,6 +61,7 @@ object IngredientFormatter {
             ingredient.amountMax,
             ingredient.unit,
             servingRatio(portions, baseServings),
+            locale,
         )
         return buildIngredientText(quantity, checkNotNull(name), ingredient.note)
     }
@@ -70,6 +78,8 @@ object IngredientFormatter {
             ingredient.amountMax,
             ingredient.unit,
             servingRatio(portions, baseServings),
+            // Shopping details are persisted shared text, not per-viewer display strings.
+            Locale.ROOT,
         )
         val details = listOfNotNull(
             quantity.takeIf(String::isNotEmpty),

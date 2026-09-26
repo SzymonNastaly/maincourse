@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.search
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
@@ -31,7 +33,7 @@ data class SearchUiState(
     val results: List<RecipeSummary> = emptyList(),
     val preparing: Boolean = true,
     val searching: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -82,7 +84,7 @@ class SearchViewModel internal constructor(
                                         SearchContent(
                                             cookbookId,
                                             cookbookName,
-                                            error = failure.userMessage("Could not search recipes"),
+                                            error = failure.userMessage(UiMessage.Resource(R.string.error_search_recipes)),
                                         ),
                                     )
                                 }
@@ -95,7 +97,7 @@ class SearchViewModel internal constructor(
                     SearchContent(
                         cookbookId,
                         cookbookName,
-                        error = failure.userMessage("Could not prepare recipe search"),
+                        error = failure.userMessage(UiMessage.Resource(R.string.error_prepare_search)),
                     ),
                 )
             }
@@ -133,7 +135,7 @@ private data class SearchContent(
     val results: List<RecipeSummary> = emptyList(),
     val preparing: Boolean = false,
     val searching: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
 )
 
 private const val MAX_QUERY_LENGTH = 200

@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.settings
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountUpdateRequest
@@ -23,7 +25,7 @@ data class SettingsUiState(
     val user: User? = null,
     val saving: Boolean = false,
     val deleting: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
     val pendingPersistence: Boolean = false,
 )
 
@@ -96,7 +98,7 @@ class SettingsViewModel(
         } catch (failure: CancellationException) {
             throw failure
         } catch (failure: Throwable) {
-            action.value = action.value.copy(error = failure.userMessage("Could not update account"))
+            action.value = action.value.copy(error = failure.userMessage(UiMessage.Resource(R.string.error_update_account)))
             return@launchAction
         }
         if (updatedUser.id != current.user.id || sessionProvider.session.value?.token != current.token) {
@@ -112,7 +114,7 @@ class SettingsViewModel(
     fun deleteAccount(): Job = launchAction(deleting = true) {
         deleteAccount.invoke().join()
         if (sessionProvider.session.value != null) {
-            action.value = action.value.copy(error = "Could not delete account")
+            action.value = action.value.copy(error = UiMessage.Resource(R.string.error_delete_account))
         }
     }
 
@@ -160,10 +162,10 @@ class SettingsViewModel(
     private data class ActionState(
         val saving: Boolean = false,
         val deleting: Boolean = false,
-        val error: String? = null,
+        val error: UiMessage? = null,
     )
 
     private companion object {
-        const val SAVE_FAILURE = "Could not save account changes"
+        val SAVE_FAILURE = UiMessage.Resource(R.string.error_save_account)
     }
 }

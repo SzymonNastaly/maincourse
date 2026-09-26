@@ -12,7 +12,8 @@ When adding an error:
 1. Register its stable code and meaning in the manifest.
 2. Run `bin/api-error-contract --generate`.
 3. Handle the new enum case in **both** clients' `*Code+Message.swift` /
-   `*CodeMessage.kt` files, including each needed English resource.
+   `*CodeMessage.kt` files, including each needed English resource and translations
+   for every shipping Android language (`android-localization.md`).
 4. Build iOS and run `bin/ios-localize` to refresh the app and extension catalogs.
 5. Run `bin/api-error-contract --check`, native builds/tests, and `bin/ci`.
 
@@ -114,8 +115,10 @@ uses the code, not English prose.
 
 Android installs `ApiErrorCallAdapterFactory` on the production Retrofit instance.
 Its `LocalizedApiException` remains an `HttpException` so existing status-based
-recovery and authentication behavior survives. `userMessage` resolves the captured
-problem through native resources when displaying it.
+recovery and authentication behavior survives. `userMessage` captures the problem
+as a `UiMessage`; Compose resolves it through the current native resources when
+displaying it, including after a language change. English, Polish, and German
+resources ship together; see `android-localization.md`.
 Missing, unknown, or malformed codes use localized HTTP-status fallbacks, including
 server-unavailable and rate-limit messages for uncoded proxy responses.
 The callback wrapper delegates cancellation and cloning and adds no retries.

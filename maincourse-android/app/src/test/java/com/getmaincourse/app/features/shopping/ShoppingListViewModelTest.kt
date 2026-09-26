@@ -1,4 +1,7 @@
 package com.getmaincourse.app.features.shopping
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
+import com.getmaincourse.app.data.network.ApiProblem
 
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.Cookbook
@@ -65,7 +68,7 @@ class ShoppingListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf("Cached"), viewModel.state.value.items.map { it.name })
-        assertEquals("Could not refresh shopping list", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_refresh_shopping), viewModel.state.value.error)
     }
 
     @Test
@@ -110,7 +113,7 @@ class ShoppingListViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals("Connection timed out. Please try again.", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_connection_timeout), viewModel.state.value.error)
         assertFalse(viewModel.state.value.initialLoading)
     }
 
@@ -129,7 +132,7 @@ class ShoppingListViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals("Could not refresh shopping list", viewModel.state.value.error)
+        assertEquals(UiMessage.Api(ApiProblem(), 401), viewModel.state.value.error)
         assertFalse(viewModel.state.value.refreshing)
     }
 

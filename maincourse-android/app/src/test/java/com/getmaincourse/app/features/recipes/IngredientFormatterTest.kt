@@ -2,10 +2,29 @@ package com.getmaincourse.app.features.recipes
 
 import com.getmaincourse.app.data.model.StructuredIngredient
 import java.math.BigDecimal
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class IngredientFormatterTest {
+    @Test
+    fun localizedDisplayPreservesUnitsAndSharedShoppingDetailsStayStable() {
+        val ingredient = StructuredIngredient(1, 0, "1.5", "2.5", "cup", "flour", "sifted", "1.5–2.5 cup flour")
+        for (locale in listOf(Locale.GERMAN, Locale.forLanguageTag("pl"))) {
+            assertEquals("1,5–2,5 cup flour, sifted", IngredientFormatter.formatIngredient(ingredient, 4, 4, locale))
+            assertEquals("½", IngredientFormatter.formatAmount(BigDecimal("0.5"), locale))
+            assertEquals("0,26", IngredientFormatter.formatAmount(BigDecimal("0.255"), locale))
+            val original = Locale.getDefault()
+            try {
+                Locale.setDefault(locale)
+                assertEquals("flour" to "1.5–2.5 cup, sifted", IngredientFormatter.reviewParts(ingredient, 4, 4))
+            } finally {
+                Locale.setDefault(original)
+            }
+        }
+        assertEquals("1.5–2.5 cup flour, sifted", IngredientFormatter.formatIngredient(ingredient, 4, 4, Locale.ENGLISH))
+    }
+
     @Test
     fun commonFractionsMatchIosForTheEntireScaledAmount() {
         val cases = listOf(

@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.recipes
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
@@ -32,7 +34,7 @@ data class RecipeDetailUiState(
     val cookbooks: List<Cookbook> = emptyList(),
     val loading: Boolean = true,
     val refreshing: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
     val shoppingListNeedsReview: Boolean = false,
     val shoppingListReviewReady: Boolean = false,
 )
@@ -46,8 +48,8 @@ enum class RecipeAction {
 sealed interface RecipeActionUiState {
     data object Idle : RecipeActionUiState
     data class Running(val action: RecipeAction) : RecipeActionUiState
-    data class Succeeded(val message: String) : RecipeActionUiState
-    data class Failed(val message: String) : RecipeActionUiState
+    data class Succeeded(val message: UiMessage) : RecipeActionUiState
+    data class Failed(val message: UiMessage) : RecipeActionUiState
 }
 
 class RecipeDetailViewModel internal constructor(
@@ -137,16 +139,16 @@ class RecipeDetailViewModel internal constructor(
 
     fun moveTo(targetCookbookId: Long): Job = launchAction(
         action = RecipeAction.MOVE,
-        successMessage = "Recipe moved",
-        fallbackMessage = "Could not move recipe",
+        successMessage = UiMessage.Resource(R.string.recipe_moved),
+        fallbackMessage = UiMessage.Resource(R.string.error_move_recipe),
     ) {
         moveRecipe(targetCookbookId)
     }
 
     fun delete(): Job = launchAction(
         action = RecipeAction.DELETE,
-        successMessage = "Recipe deleted",
-        fallbackMessage = "Could not delete recipe",
+        successMessage = UiMessage.Resource(R.string.recipe_deleted),
+        fallbackMessage = UiMessage.Resource(R.string.error_delete_recipe),
         operation = deleteRecipe,
     )
 
@@ -155,8 +157,8 @@ class RecipeDetailViewModel internal constructor(
         clearExisting: Boolean = false,
     ): Job = launchAction(
         action = RecipeAction.ADD_INGREDIENTS,
-        successMessage = "Ingredients added",
-        fallbackMessage = "Could not add ingredients",
+        successMessage = UiMessage.Resource(R.string.ingredients_added),
+        fallbackMessage = UiMessage.Resource(R.string.error_add_ingredients),
     ) {
         addReviewedIngredients(rows, clearExisting)
     }
@@ -174,7 +176,7 @@ class RecipeDetailViewModel internal constructor(
                 } catch (failure: CancellationException) {
                     throw failure
                 } catch (failure: Throwable) {
-                    failure.userMessage("Could not load recipe")
+                    failure.userMessage(UiMessage.Resource(R.string.error_load_recipe))
                 }
                 refreshState.update { it.copy(running = false, error = recipeError) }
             }
@@ -195,8 +197,8 @@ class RecipeDetailViewModel internal constructor(
 
     private fun launchAction(
         action: RecipeAction,
-        successMessage: String,
-        fallbackMessage: String,
+        successMessage: UiMessage,
+        fallbackMessage: UiMessage,
         operation: suspend () -> Unit,
     ): Job {
         actionJob?.takeIf(Job::isActive)?.let { return it }
@@ -216,7 +218,7 @@ class RecipeDetailViewModel internal constructor(
 
     private data class RefreshState(
         val running: Boolean,
-        val error: String? = null,
+        val error: UiMessage? = null,
         val shoppingListRefreshCompleted: Boolean = false,
     )
 }

@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.recipes
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.ShoppingItem
@@ -49,7 +51,7 @@ class RecipeActionsViewModelTest {
         viewModel.delete().join()
 
         assertEquals(listOf(Triple(USER_ID, COOKBOOK_ID, RECIPE_ID)), deletedRows)
-        assertEquals(RecipeActionUiState.Succeeded("Recipe deleted"), viewModel.action.value)
+        assertEquals(RecipeActionUiState.Succeeded(UiMessage.Resource(R.string.recipe_deleted)), viewModel.action.value)
     }
 
     @Test
@@ -60,7 +62,7 @@ class RecipeActionsViewModelTest {
         viewModel.moveTo(22).join()
 
         assertEquals(listOf(22L), targets)
-        assertEquals(RecipeActionUiState.Succeeded("Recipe moved"), viewModel.action.value)
+        assertEquals(RecipeActionUiState.Succeeded(UiMessage.Resource(R.string.recipe_moved)), viewModel.action.value)
     }
 
     @Test
@@ -72,7 +74,7 @@ class RecipeActionsViewModelTest {
         viewModel.addIngredients(rows).join()
 
         assertEquals(listOf(rows), submitted)
-        assertEquals(RecipeActionUiState.Succeeded("Ingredients added"), viewModel.action.value)
+        assertEquals(RecipeActionUiState.Succeeded(UiMessage.Resource(R.string.ingredients_added)), viewModel.action.value)
     }
 
     @Test
@@ -86,7 +88,7 @@ class RecipeActionsViewModelTest {
         viewModel.addIngredients(rows, clearExisting = true).join()
 
         assertEquals(rows to true, submission)
-        assertEquals(RecipeActionUiState.Succeeded("Ingredients added"), viewModel.action.value)
+        assertEquals(RecipeActionUiState.Succeeded(UiMessage.Resource(R.string.ingredients_added)), viewModel.action.value)
     }
 
     @Test
@@ -173,11 +175,11 @@ class RecipeActionsViewModelTest {
         )
 
         viewModel.delete().join()
-        assertEquals(RecipeActionUiState.Failed("Could not delete recipe"), viewModel.action.value)
+        assertEquals(RecipeActionUiState.Failed(UiMessage.Resource(R.string.error_delete_recipe)), viewModel.action.value)
 
         viewModel.delete().join()
         assertEquals(2, attempts)
-        assertEquals(RecipeActionUiState.Succeeded("Recipe deleted"), viewModel.action.value)
+        assertEquals(RecipeActionUiState.Succeeded(UiMessage.Resource(R.string.recipe_deleted)), viewModel.action.value)
     }
 
     @Test

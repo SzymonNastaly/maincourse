@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.search
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.Cookbook
@@ -111,7 +113,7 @@ class SearchViewModelTest {
         val collection = backgroundScope.launch { viewModel.state.collect() }
         advanceUntilIdle()
 
-        assertEquals("Could not prepare recipe search", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_prepare_search), viewModel.state.value.error)
         failure = null
         viewModel.retry()
         advanceUntilIdle()

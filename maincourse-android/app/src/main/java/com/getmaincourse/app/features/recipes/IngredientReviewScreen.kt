@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import kotlinx.serialization.json.Json
@@ -86,7 +87,7 @@ fun IngredientReviewScreen(
     if (actionState is RecipeActionUiState.Succeeded) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text(actionState.message) },
+            title = { Text(actionState.message.localized()) },
             confirmButton = {
                 Button(onClick = onBack, modifier = Modifier.testTag("review_success_confirm")) {
                     Text(stringResource(R.string.done))
@@ -126,7 +127,7 @@ fun IngredientReviewScreen(
             }
         }
         if (actionState is RecipeActionUiState.Failed) {
-            item { Text(actionState.message, color = MainCourseColors.Danger, modifier = Modifier.testTag("review_error")) }
+            item { Text(actionState.message.localized(), color = MainCourseColors.Danger, modifier = Modifier.testTag("review_error")) }
         }
         item {
             Button(

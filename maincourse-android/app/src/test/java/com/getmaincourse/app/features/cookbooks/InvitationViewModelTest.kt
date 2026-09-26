@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.cookbooks
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.Cookbook
@@ -74,7 +76,7 @@ class InvitationViewModelTest {
         )
         advanceUntilIdle()
 
-        assertEquals("This invitation has expired.", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_invitation_expired), viewModel.state.value.error)
     }
 
     private fun viewModel(

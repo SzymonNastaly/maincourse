@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.recipes
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.Cookbook
@@ -89,7 +91,7 @@ class RecipesViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(7L), viewModel.state.value.recipes.map { it.id })
-        assertEquals("Could not refresh recipes", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_refresh_recipes), viewModel.state.value.error)
         collection.cancel()
     }
 
@@ -131,7 +133,7 @@ class RecipesViewModelTest {
 
         assertEquals(20L, viewModel.state.value.selectedCookbookId)
         assertEquals(listOf(9L), viewModel.state.value.recipes.map { it.id })
-        assertEquals("Could not refresh recipes", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_refresh_recipes), viewModel.state.value.error)
         assertEquals(listOf(10L), fixture.detailSyncs)
         collection.cancel()
     }
@@ -152,7 +154,7 @@ class RecipesViewModelTest {
 
         assertEquals(10L, viewModel.state.value.selectedCookbookId)
         assertEquals(listOf(7L), viewModel.state.value.recipes.map { it.id })
-        assertEquals("Could not select cookbook", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_select_cookbook), viewModel.state.value.error)
         collection.cancel()
     }
 
@@ -285,7 +287,7 @@ class RecipesViewModelTest {
         )
         val collection = backgroundScope.launch { viewModel.state.collect() }
         advanceUntilIdle()
-        assertEquals("Could not refresh recipes", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_refresh_recipes), viewModel.state.value.error)
 
         recipes.value = listOf(recipeSummary(8, "pending"))
         viewModel.importAccepted(10)
@@ -323,7 +325,7 @@ class RecipesViewModelTest {
         runCurrent()
 
         assertEquals(1, refreshCalls)
-        assertEquals("Could not refresh recipes", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_refresh_recipes), viewModel.state.value.error)
         advanceTimeBy(3_000)
         runCurrent()
 
@@ -415,7 +417,7 @@ class RecipesViewModelTest {
         runCurrent()
 
         assertFalse(viewModel.state.value.loading)
-        assertEquals("Could not load recipe", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_load_recipe), viewModel.state.value.error)
         shoppingFinished.complete(Unit)
         advanceUntilIdle()
         collection.cancel()

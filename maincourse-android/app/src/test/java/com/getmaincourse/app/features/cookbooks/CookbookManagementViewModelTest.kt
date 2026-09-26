@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.cookbooks
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.CookbookSelection
 import com.getmaincourse.app.data.model.Cookbook
@@ -87,7 +89,7 @@ class CookbookManagementViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(PERSONAL, SHARED), viewModel.state.value.cookbooks)
-        assertEquals("Could not delete cookbook", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_delete_cookbook), viewModel.state.value.error)
     }
 
     private fun viewModel(

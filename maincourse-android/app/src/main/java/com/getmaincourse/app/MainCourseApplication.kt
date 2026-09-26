@@ -1,6 +1,7 @@
 package com.getmaincourse.app
 
 import android.app.Application
+import android.content.res.Configuration
 import android.util.Log
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.RecipeRepository
@@ -37,6 +38,11 @@ class MainCourseApplication : Application() {
         container = AppContainer(this)
         NotificationPresenter.createChannels(this)
     }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        NotificationPresenter.createChannels(this)
+    }
 }
 
 class AppContainer(application: Application) {
@@ -55,7 +61,7 @@ class AppContainer(application: Application) {
     val service: MainCourseService = Retrofit.Builder()
         .baseUrl(BuildConfig.API_BASE_URL)
         .callFactory(authenticatedClient)
-        .addCallAdapterFactory(ApiErrorCallAdapterFactory { resource, arguments -> application.getString(resource, *arguments) })
+        .addCallAdapterFactory(ApiErrorCallAdapterFactory())
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(MainCourseService::class.java)

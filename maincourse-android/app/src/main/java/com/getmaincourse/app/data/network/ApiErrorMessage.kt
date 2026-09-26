@@ -1,5 +1,8 @@
 package com.getmaincourse.app.data.network
 
+import com.getmaincourse.app.R
+import com.getmaincourse.app.features.recipes.SharedImageReadException
+import com.getmaincourse.app.ui.UiMessage
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.ConnectException
@@ -7,51 +10,24 @@ import java.net.SocketException
 import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 import retrofit2.HttpException
 
-fun Throwable.userMessage(fallback: String): String = when (this) {
+fun Throwable.userMessage(fallback: UiMessage): UiMessage = when (this) {
     is CancellationException -> throw this
-    is LocalizedApiException -> userMessage()
-    is InterruptedIOException -> "Connection timed out. Please try again."
-    is UnknownHostException -> "Could not find the server. Check your connection."
-    is ConnectException -> "Could not connect to the server. Check your connection."
-    is SSLException -> "Could not establish a secure connection."
-    is SocketException -> "Connection interrupted. Please try again."
-    is HttpException -> apiMessage() ?: fallback
-    is ApiFailure -> message?.takeIf(String::isNotBlank) ?: fallback
+    is LocalizedApiException -> UiMessage.Api(problem, code())
+    is SharedImageReadException -> userMessage
+    is InterruptedIOException -> UiMessage.Resource(R.string.error_connection_timeout)
+    is UnknownHostException -> UiMessage.Resource(R.string.error_server_not_found)
+    is ConnectException -> UiMessage.Resource(R.string.error_connection_failed)
+    is SSLException -> UiMessage.Resource(R.string.error_secure_connection)
+    is SocketException -> UiMessage.Resource(R.string.error_connection_interrupted)
+    is HttpException -> UiMessage.Api(readProblem(), code())
+    is ApiFailure -> UiMessage.Api(ApiProblem(errorCode, limit?.let { ApiProblem.Parameters(it.toLong()) }), status)
     else -> fallback
 }
 
-private fun HttpException.apiMessage(): String? {
-    val body = try {
-        response()?.errorBody()?.string().orEmpty()
-    } catch (_: IOException) {
-        return null
-    }
-    val error = try {
-        Json.parseToJsonElement(body) as? JsonObject
-    } catch (_: SerializationException) {
-        null
-    } catch (_: IllegalArgumentException) {
-        null
-    }
-    return error.string("error")
-        ?: error?.get("errors")?.messages()?.takeIf(List<String>::isNotEmpty)?.joinToString("\n")
-}
-
-private fun JsonObject?.string(key: String): String? =
-    this?.get(key)?.let { it as? JsonPrimitive }?.contentOrNull?.takeIf(String::isNotBlank)
-
-private fun JsonElement.messages(): List<String> = when (this) {
-    is JsonPrimitive -> contentOrNull?.takeIf(String::isNotBlank)?.let(::listOf).orEmpty()
-    is JsonArray -> flatMap(JsonElement::messages)
-    is JsonObject -> get("error")?.messages()?.takeIf(List<String>::isNotEmpty)
-        ?: values.flatMap(JsonElement::messages)
+private fun HttpException.readProblem(): ApiProblem = try {
+    ApiProblem.parse(response()?.errorBody()?.string().orEmpty())
+} catch (_: IOException) {
+    ApiProblem()
 }

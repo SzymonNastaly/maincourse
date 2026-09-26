@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.recipes
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -42,7 +44,7 @@ class RecipeShareScreenTest {
             MainCourseTestContent.content = {
                 MainCourseTheme {
                     RecipeShareSheet(
-                        state = RecipeShareUiState("Home", RecipeShareStatus.Failed("You're offline")),
+                        state = RecipeShareUiState("Home", RecipeShareStatus.Failed(UiMessage.Resource(R.string.error_connection_timeout))),
                         onRetry = { retried.set(true) },
                         onDismiss = {},
                     )
@@ -50,7 +52,7 @@ class RecipeShareScreenTest {
             }
         }
 
-        compose.onNodeWithText("You're offline").assertIsDisplayed()
+        compose.onNodeWithText("Connection timed out. Please try again.").assertIsDisplayed()
         compose.onNodeWithTag("share_retry").performClick()
         assertTrue(retried.get())
         compose.onNodeWithTag("share_open_app").assertDoesNotExist()

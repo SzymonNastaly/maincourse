@@ -42,6 +42,9 @@ import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
+import com.getmaincourse.app.ui.appLocale
+import com.getmaincourse.app.ui.displayNumber
 import com.getmaincourse.app.data.images.heroImagePath
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.ui.theme.MainCourseColors
@@ -68,12 +71,12 @@ fun RecipeDetailScreen(
             item {
                 when {
                     state.loading -> LoadingState()
-                    state.error != null -> RetryState(state.error, onRefresh)
+                    state.error != null -> RetryState(state.error.localized(), onRefresh)
                     else -> RetryState(stringResource(R.string.recipe_unavailable), onRefresh)
                 }
             }
         } else {
-            state.error?.let { error -> item { ErrorBanner(error, onRefresh) } }
+            state.error?.let { error -> item { ErrorBanner(error.localized(), onRefresh) } }
             item(key = "detail-${recipe.id}") {
                 DetailContent(
                     recipe = recipe,
@@ -164,7 +167,7 @@ private fun DetailContent(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.recipe_portions))
             OutlinedButton(enabled = baseServings != null && portions > 1, onClick = { portions-- }) { Text("−") }
-            Text(portions.toString(), fontFamily = MainCourseMono, modifier = Modifier.testTag("recipe_portions"))
+            Text(displayNumber(portions), fontFamily = MainCourseMono, modifier = Modifier.testTag("recipe_portions"))
             OutlinedButton(
                 enabled = baseServings != null && portions < 64,
                 onClick = { portions++ },
@@ -173,7 +176,7 @@ private fun DetailContent(
         }
         val ingredientLines = if (recipe.structuredIngredients.isNotEmpty()) {
             recipe.structuredIngredients.sortedBy { it.position }.map {
-                if (baseServings == null) it.raw else IngredientFormatter.formatIngredient(it, portions, baseServings)
+                if (baseServings == null) it.raw else IngredientFormatter.formatIngredient(it, portions, baseServings, appLocale())
             }
         } else {
             recipe.ingredients

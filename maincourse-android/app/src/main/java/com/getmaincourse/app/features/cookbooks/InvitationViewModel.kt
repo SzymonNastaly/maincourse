@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.cookbooks
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
@@ -25,7 +27,7 @@ data class InvitationUiState(
     val accepting: Boolean = false,
     val acceptance: CookbookInvitationAcceptance? = null,
     val declined: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
 )
 
 class InvitationViewModel internal constructor(
@@ -61,11 +63,11 @@ class InvitationViewModel internal constructor(
         load()
     }
 
-    fun load() = launchAction("Could not load invitation", loading = true) {
+    fun load() = launchAction(UiMessage.Resource(R.string.error_load_invitation), loading = true) {
         val preview = loadInvitation(token)
         val unavailable = when {
-            preview.status != "pending" -> "This invitation is no longer available."
-            preview.isExpired(clock) -> "This invitation has expired."
+            preview.status != "pending" -> UiMessage.Resource(R.string.error_invitation_unavailable)
+            preview.isExpired(clock) -> UiMessage.Resource(R.string.error_invitation_expired)
             else -> null
         }
         mutableState.value = mutableState.value.copy(preview = preview, error = unavailable)
@@ -73,14 +75,14 @@ class InvitationViewModel internal constructor(
 
     fun accept() {
         if (mutableState.value.hasSharedCookbook || mutableState.value.error != null) return
-        launchAction("Could not join cookbook", accepting = true) {
+        launchAction(UiMessage.Resource(R.string.error_join_cookbook), accepting = true) {
             val acceptance = acceptInvitation(userId, token)
             mutableState.value = mutableState.value.copy(acceptance = acceptance)
         }
     }
 
     fun decline() {
-        launchAction("Could not decline invitation") {
+        launchAction(UiMessage.Resource(R.string.error_decline_invitation)) {
             try {
                 rejectInvitation(token)
             } catch (failure: CancellationException) {
@@ -93,7 +95,7 @@ class InvitationViewModel internal constructor(
     }
 
     private fun launchAction(
-        fallback: String,
+        fallback: UiMessage,
         loading: Boolean = false,
         accepting: Boolean = false,
         block: suspend () -> Unit,

@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
@@ -59,7 +60,7 @@ internal fun RecipeShareSheet(
             is RecipeShareStatus.ReadingPage -> ShareProgress(stringResource(R.string.recipe_share_reading_page))
             RecipeShareStatus.Sending -> ShareProgress(stringResource(R.string.recipe_share_sending))
             RecipeShareStatus.Success -> ShareSuccess()
-            is RecipeShareStatus.Failed -> ShareFailure(status.message, onRetry)
+            is RecipeShareStatus.Failed -> ShareFailure(status.message.localized(), onRetry)
         }
 
         if (state.status !is RecipeShareStatus.Success) {

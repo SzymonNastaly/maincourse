@@ -1,4 +1,7 @@
 package com.getmaincourse.app.features.settings
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
+import com.getmaincourse.app.data.network.ApiProblem
 
 import com.getmaincourse.app.data.model.AccountAttributes
 import com.getmaincourse.app.data.model.AccountResponse
@@ -112,7 +115,7 @@ class SettingsViewModelTest {
         assertEquals(SESSION, provider.session.value)
         assertEquals(SESSION, store.value?.response)
         assertEquals(USER, viewModel.state.value.user)
-        assertEquals("Name is invalid", viewModel.state.value.error)
+        assertEquals(UiMessage.Api(ApiProblem(), 422), viewModel.state.value.error)
     }
 
     @Test
@@ -130,7 +133,7 @@ class SettingsViewModelTest {
         assertEquals(SESSION, store.value?.response)
         assertEquals(SESSION.copy(user = updated), provider.pendingAcceptedSession.value)
         assertTrue(viewModel.state.value.pendingPersistence)
-        assertEquals("Could not save account changes", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_save_account), viewModel.state.value.error)
     }
 
     @Test

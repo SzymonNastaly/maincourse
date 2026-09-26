@@ -1,4 +1,6 @@
 package com.getmaincourse.app.data.network
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import java.io.IOException
 import java.net.ConnectException
@@ -13,19 +15,20 @@ class ApiErrorMessageTest {
     @Test
     fun networkFailuresExplainTheFailureWithoutClaimingTheDeviceIsOffline() {
         val failures = listOf(
-            SocketTimeoutException() to "Connection timed out. Please try again.",
-            UnknownHostException() to "Could not find the server. Check your connection.",
-            ConnectException() to "Could not connect to the server. Check your connection.",
-            SSLHandshakeException("certificate") to "Could not establish a secure connection.",
-            SocketException("reset") to "Connection interrupted. Please try again.",
+            SocketTimeoutException() to R.string.error_connection_timeout,
+            UnknownHostException() to R.string.error_server_not_found,
+            ConnectException() to R.string.error_connection_failed,
+            SSLHandshakeException("certificate") to R.string.error_secure_connection,
+            SocketException("reset") to R.string.error_connection_interrupted,
         )
         for ((failure, message) in failures) {
-            assertEquals(message, failure.userMessage("Could not refresh"))
+            assertEquals(UiMessage.Resource(message), failure.userMessage(UiMessage.Resource(R.string.error_refresh_recipes)))
         }
     }
 
     @Test
     fun otherIoFailuresKeepTheOperationContext() {
-        assertEquals("Could not save the session", IOException("disk full").userMessage("Could not save the session"))
+        val fallback = UiMessage.Resource(R.string.error_save_session)
+        assertEquals(fallback, IOException("disk full").userMessage(fallback))
     }
 }

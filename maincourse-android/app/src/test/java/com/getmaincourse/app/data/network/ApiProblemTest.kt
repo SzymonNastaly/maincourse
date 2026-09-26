@@ -1,6 +1,7 @@
 package com.getmaincourse.app.data.network
 
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import com.getmaincourse.app.data.session.SessionProvider
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -41,7 +42,7 @@ class ApiProblemTest {
         try {
             val service = Retrofit.Builder().baseUrl(server.url("/"))
                 .callFactory(ApiCallFactory(SessionProvider(), SessionEvents()))
-                .addCallAdapterFactory(ApiErrorCallAdapterFactory(strings))
+                .addCallAdapterFactory(ApiErrorCallAdapterFactory())
                 .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
                 .build().create(MainCourseService::class.java)
             for ((status, code, resource) in listOf(
@@ -54,7 +55,7 @@ class ApiProblemTest {
                 val failure = runCatching { service.cookbooks() }.exceptionOrNull()
                 assertTrue(failure is HttpException)
                 assertEquals(status, (failure as HttpException).code())
-                assertEquals(strings.text(resource), failure.userMessage("fallback"))
+                assertEquals(strings.text(resource), failure.userMessage(UiMessage.Resource(R.string.error_sign_in)).resolve(strings))
                 assertEquals(code, (failure as LocalizedApiException).problem.errorCode)
             }
             server.enqueue(MockResponse().setResponseCode(200).setBody("[]"))
@@ -71,7 +72,7 @@ class ApiProblemTest {
         try {
             val service = Retrofit.Builder().baseUrl(server.url("/"))
                 .callFactory(ApiCallFactory(SessionProvider(), SessionEvents()))
-                .addCallAdapterFactory(ApiErrorCallAdapterFactory(strings))
+                .addCallAdapterFactory(ApiErrorCallAdapterFactory())
                 .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
                 .build().create(MainCourseService::class.java)
             for ((status, resource) in listOf(
@@ -94,7 +95,7 @@ class ApiProblemTest {
                     val failure = runCatching { service.cookbooks() }.exceptionOrNull()
                     assertTrue(failure is HttpException)
                     assertEquals(status, (failure as HttpException).code())
-                    assertEquals("HTTP $status: $body", strings.text(resource), failure.userMessage("fallback"))
+                    assertEquals("HTTP $status: $body", strings.text(resource), failure.userMessage(UiMessage.Resource(R.string.error_sign_in)).resolve(strings))
                 }
             }
         } finally {

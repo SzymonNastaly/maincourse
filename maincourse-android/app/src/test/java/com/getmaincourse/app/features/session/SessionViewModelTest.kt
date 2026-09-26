@@ -1,4 +1,7 @@
 package com.getmaincourse.app.features.session
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
+import com.getmaincourse.app.data.network.ApiProblem
 
 import com.getmaincourse.app.data.model.AccountResponse
 import com.getmaincourse.app.data.model.AccountUpdateRequest
@@ -217,14 +220,14 @@ class SessionViewModelTest {
 
     @Test
     fun badLoginRemainsAFormErrorWithoutClearingProtectedStorage() = runTest(dispatcher) {
-        service.signInFailure = ApiFailure(401, "Email or password is incorrect")
+        service.signInFailure = ApiFailure(401, "Email or password is incorrect", "invalid_credentials")
         val viewModel = buildViewModel()
         viewModel.restore().join()
         cleared.clear()
 
         viewModel.signIn("cook@example.com", "wrong").join()
 
-        assertEquals(SessionUiState.SignedOut("Email or password is incorrect"), viewModel.state.value)
+        assertEquals(SessionUiState.SignedOut(UiMessage.Api(ApiProblem("invalid_credentials"), 401)), viewModel.state.value)
         assertNull(provider.session.value)
         assertEquals(emptyList<String>(), cleared)
     }
@@ -362,7 +365,7 @@ class SessionViewModelTest {
         val viewModel = buildViewModel()
         viewModel.restore().join()
 
-        assertEquals(SessionUiState.CleanupError("Could not clear local data"), viewModel.state.value)
+        assertEquals(SessionUiState.CleanupError(UiMessage.Resource(R.string.error_clear_local_data)), viewModel.state.value)
         assertEquals(1, store.readCalls)
         viewModel.signIn("cook@example.com", "secret").join()
         viewModel.restore().join()

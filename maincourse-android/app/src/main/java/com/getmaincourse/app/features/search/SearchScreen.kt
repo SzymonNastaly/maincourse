@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.features.recipes.RecipeCard
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -68,7 +69,7 @@ fun SearchScreen(
 
         state.error?.let { error ->
             item(span = { GridItemSpan(maxLineSpan) }) {
-                ErrorPanel(error, onRetry)
+                ErrorPanel(error.localized(), onRetry)
             }
         }
 

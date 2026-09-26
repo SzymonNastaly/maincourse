@@ -1,12 +1,13 @@
 package com.getmaincourse.app.features.session
 
 import com.getmaincourse.app.data.model.SessionResponse
+import com.getmaincourse.app.ui.UiMessage
 
 sealed interface SessionUiState {
     data object Restoring : SessionUiState
 
     data class SignedOut(
-        val authError: String? = null,
+        val authError: UiMessage? = null,
         val busy: Boolean = false,
     ) : SessionUiState
 
@@ -15,10 +16,10 @@ sealed interface SessionUiState {
     ) : SessionUiState
 
     data class RestoreError(
-        val message: String,
+        val message: UiMessage,
     ) : SessionUiState
 
     data class CleanupError(
-        val message: String,
+        val message: UiMessage,
     ) : SessionUiState
 }

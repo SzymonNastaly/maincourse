@@ -53,6 +53,9 @@ import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
+import com.getmaincourse.app.ui.localized
+import com.getmaincourse.app.data.network.userMessage
 import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
@@ -82,7 +85,7 @@ fun RecipeEditScreen(
     onNotesChange: (String) -> Unit,
     onSourceUrlChange: (String) -> Unit,
     onImageSelected: (SharedImage) -> Unit,
-    onImageError: (String) -> Unit,
+    onImageError: (UiMessage) -> Unit,
     onClearError: () -> Unit,
     cookbooks: List<Cookbook> = emptyList(),
     cookbookId: Long = 0,
@@ -97,7 +100,7 @@ fun RecipeEditScreen(
     val actionRunning = actionState is RecipeActionUiState.Running
     val moveTargets = cookbooks.filter { it.id != cookbookId }
     val context = LocalContext.current
-    val imageFailedMessage = stringResource(R.string.recipe_edit_image_failed)
+    val imageFailedMessage = UiMessage.Resource(R.string.recipe_edit_image_failed)
     val imageReader = remember(context) { SharedImageReader(context) }
     val scope = rememberCoroutineScope()
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -106,7 +109,7 @@ fun RecipeEditScreen(
                 try {
                     onImageSelected(imageReader.read(uri.toString(), "image/*"))
                 } catch (failure: SharedImageReadException) {
-                    onImageError(failure.message ?: imageFailedMessage)
+                    onImageError(failure.userMessage(imageFailedMessage))
                 }
             }
         }
@@ -335,7 +338,7 @@ private fun RecipeEditForm(
                 }
                 when (actionState) {
                     is RecipeActionUiState.Failed -> Text(
-                        actionState.message,
+                        actionState.message.localized(),
                         color = MainCourseColors.Danger,
                         modifier = Modifier.testTag("recipe_action_error"),
                     )
@@ -398,7 +401,7 @@ private fun RecipeEditForm(
                         Modifier.fillMaxWidth().padding(start = 14.dp, top = 8.dp, end = 6.dp, bottom = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(error, Modifier.weight(1f), color = MainCourseColors.Danger)
+                        Text(error.localized(), Modifier.weight(1f), color = MainCourseColors.Danger)
                         TextButton(onClick = onClearError) { Text(stringResource(R.string.dismiss)) }
                     }
                 }

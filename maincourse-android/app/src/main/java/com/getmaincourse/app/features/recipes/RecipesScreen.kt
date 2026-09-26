@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.data.images.cardImagePath
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.network.importFailureMessage
@@ -76,7 +77,7 @@ fun RecipesScreen(
         ) {
             state.error?.let { error ->
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    StatusPanel(error, onRefresh)
+                    StatusPanel(error.localized(), onRefresh)
                 }
             }
             when {

@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -131,7 +132,7 @@ fun RecipeImportScreen(
                 color = MainCourseColors.DangerTint,
                 border = BorderStroke(1.dp, MainCourseColors.DangerLine),
             ) {
-                Text(error, Modifier.padding(14.dp), color = MainCourseColors.Danger)
+                Text(error.localized(), Modifier.padding(14.dp), color = MainCourseColors.Danger)
             }
         }
         Button(

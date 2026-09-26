@@ -69,6 +69,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.appLocale
+import com.getmaincourse.app.ui.displayNumber
 import com.getmaincourse.app.features.recipes.IngredientFormatter
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
@@ -238,11 +240,11 @@ internal fun DemoRecipePreview(sample: DemoRecipe) {
             val decrease = stringResource(R.string.demo_decrease_portions)
             val increase = stringResource(R.string.demo_increase_portions)
             OutlinedButton(onClick = { portions-- }, enabled = portions > 1, modifier = Modifier.semantics { contentDescription = decrease }) { Text("−") }
-            Text(portions.toString(), fontFamily = MainCourseMono, modifier = Modifier.testTag("demo_portions"))
+            Text(displayNumber(portions), fontFamily = MainCourseMono, modifier = Modifier.testTag("demo_portions"))
             OutlinedButton(onClick = { portions++ }, enabled = portions < 64, modifier = Modifier.testTag("demo_increment").semantics { contentDescription = increase }) { Text("+") }
         }
         Text(stringResource(R.string.recipe_ingredients), style = MaterialTheme.typography.titleLarge)
-        sample.ingredients.forEach { Text(IngredientFormatter.formatIngredient(it.structured(), portions, sample.servings)) }
+        sample.ingredients.forEach { Text(IngredientFormatter.formatIngredient(it.structured(), portions, sample.servings, appLocale())) }
         Text(stringResource(R.string.recipe_steps), style = MaterialTheme.typography.titleLarge)
         sample.instructions.forEachIndexed { index, instruction -> Text("${index + 1}. $instruction") }
     }

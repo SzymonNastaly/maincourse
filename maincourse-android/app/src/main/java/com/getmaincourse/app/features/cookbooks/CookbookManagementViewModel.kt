@@ -1,6 +1,8 @@
 package com.getmaincourse.app.features.cookbooks
 
 import androidx.lifecycle.ViewModel
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookRepository
 import com.getmaincourse.app.data.CookbookSelection
@@ -20,7 +22,7 @@ data class CookbookManagementUiState(
     val selectedCookbookId: Long? = null,
     val loading: Boolean = true,
     val working: Boolean = false,
-    val error: String? = null,
+    val error: UiMessage? = null,
     val invitation: CookbookInvitation? = null,
 ) {
     val personalCookbook: Cookbook?
@@ -65,24 +67,24 @@ class CookbookManagementViewModel internal constructor(
         refresh()
     }
 
-    fun refresh() = launchAction("Could not load cookbooks", loading = true) {
+    fun refresh() = launchAction(UiMessage.Resource(R.string.error_load_cookbooks), loading = true) {
         refreshCookbooks(userId)
     }
 
     fun create(name: String, movePersonalRecipes: Boolean) {
         val normalizedName = name.trim()
         if (normalizedName.isEmpty()) {
-            mutableState.value = mutableState.value.copy(error = "Enter a cookbook name.")
+            mutableState.value = mutableState.value.copy(error = UiMessage.Resource(R.string.error_enter_cookbook_name))
             return
         }
-        launchAction("Could not create cookbook") {
+        launchAction(UiMessage.Resource(R.string.error_create_cookbook)) {
             createSharedCookbook(userId, normalizedName, movePersonalRecipes)
         }
     }
 
     fun generateInvitation() {
         val shared = mutableState.value.sharedCookbook ?: return
-        launchAction("Could not create invitation") {
+        launchAction(UiMessage.Resource(R.string.error_create_invitation)) {
             val invitation = createCookbookInvitation(shared.id)
             mutableState.value = mutableState.value.copy(invitation = invitation)
         }
@@ -90,14 +92,14 @@ class CookbookManagementViewModel internal constructor(
 
     fun leave() {
         val shared = mutableState.value.sharedCookbook ?: return
-        launchAction("Could not leave cookbook") {
+        launchAction(UiMessage.Resource(R.string.error_leave_cookbook)) {
             leaveSharedCookbook(userId, shared.id)
         }
     }
 
     fun delete() {
         val shared = mutableState.value.sharedCookbook ?: return
-        launchAction("Could not delete cookbook") {
+        launchAction(UiMessage.Resource(R.string.error_delete_cookbook)) {
             deleteSharedCookbook(userId, shared.id)
         }
     }
@@ -111,7 +113,7 @@ class CookbookManagementViewModel internal constructor(
     }
 
     private fun launchAction(
-        fallback: String,
+        fallback: UiMessage,
         loading: Boolean = false,
         block: suspend () -> Unit,
     ): Job {

@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.recipes
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import android.os.PowerManager
 import android.view.View
@@ -55,7 +57,7 @@ class RecipeScreenAwakeTest {
         assertScreenAwake(false)
         compose.runOnUiThread { owner.lifecycle.currentState = Lifecycle.State.RESUMED }
         assertScreenAwake(true)
-        compose.runOnUiThread { state.value = RecipeDetailUiState(loading = false, error = "Unavailable") }
+        compose.runOnUiThread { state.value = RecipeDetailUiState(loading = false, error = UiMessage.Resource(R.string.recipe_unavailable)) }
         assertScreenAwake(false)
         compose.runOnUiThread { state.value = RecipeDetailUiState(recipe = recipe, loading = false) }
         assertScreenAwake(true)

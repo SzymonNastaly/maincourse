@@ -1,4 +1,6 @@
 package com.getmaincourse.app.features.recipes
+import com.getmaincourse.app.R
+import com.getmaincourse.app.ui.UiMessage
 
 import com.getmaincourse.app.data.model.RecipeDetail
 import com.getmaincourse.app.data.model.RecipeUpdateRequest
@@ -87,7 +89,7 @@ class RecipeEditViewModelTest {
         viewModel.selectImage(image)
 
         viewModel.save().join()
-        assertEquals("Could not save recipe", viewModel.state.value.error)
+        assertEquals(UiMessage.Resource(R.string.error_save_recipe), viewModel.state.value.error)
         assertFalse(viewModel.state.value.saved)
 
         viewModel.save().join()
