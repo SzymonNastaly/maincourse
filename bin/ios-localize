@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""Refresh iOS String Catalogs from a successful simulator build's compiler output."""
+
+import argparse
+import json
+from pathlib import Path
+import subprocess
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--derived-data", required=True, type=Path,
+                        help="DerivedData directory used by the preceding bin/ios-build")
+    args = parser.parse_args()
+    ios = Path(__file__).resolve().parents[1] / "hauptgang-ios"
+    intermediates = (args.derived_data.expanduser() / "Build/Intermediates.noindex"
+                     / "Hauptgang.build/Debug-iphonesimulator")
+    catalogs = {
+        "Hauptgang": ios / "Hauptgang/Resources/Localizable.xcstrings",
+        "ImportRecipeExtension": ios / "ImportRecipeExtension/Localizable.xcstrings",
+    }
+
+    # Resolve both targets before writing either catalog. Use the compiler's file
+    # list so output left behind by deleted source files cannot reintroduce keys.
+    jobs = []
+    for target, catalog in catalogs.items():
+        lists = list((intermediates / f"{target}.build/Objects-normal").glob(
+            f"*/{target}.SwiftFileList"))
+        if not lists:
+            parser.error(f"No compiler file list for {target}. Run bin/ios-build first.")
+        file_list = max(lists, key=lambda path: path.stat().st_mtime)
+        sources = [Path(line.strip().strip('"')) for line in file_list.read_text().splitlines()]
+        if not sources:
+            parser.error(f"Empty compiler file list: {file_list}")
+        stringsdata = [file_list.parent / f"{source.stem}.stringsdata" for source in sources]
+        for source, data in zip(sources, stringsdata):
+            if not source.is_file() or not data.is_file():
+                parser.error(f"Missing source or extraction output for {source}. Rebuild first.")
+        jobs.append((catalog, stringsdata))
+
+    for catalog, stringsdata in jobs:
+        subprocess.run(["xcrun", "xcstringstool", "sync", str(catalog),
+                        "--stringsdata", *map(str, stringsdata)], check=True)
+        # Explicit English values produce real fallback resources in both bundles
+        # and make pseudolocalization work for keys that otherwise only live in code.
+        content = json.loads(catalog.read_text())
+        language = content["sourceLanguage"]
+        for key, entry in content["strings"].items():
+            entry.setdefault("localizations", {}).setdefault(language, {
+                "stringUnit": {"state": "translated", "value": key}
+            })
+        catalog.write_text(json.dumps(content, ensure_ascii=False, indent=2,
+                                      separators=(",", " : ")) + "\n")
+        print(f"Updated {catalog.relative_to(ios)}")
+
+
+if __name__ == "__main__":
+    main()

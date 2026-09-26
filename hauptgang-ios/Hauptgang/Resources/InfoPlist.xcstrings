@@ -1,0 +1,31 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "App brand name. Keep MainCourse unchanged.",
+      "extractionState" : "manual",
+      "shouldTranslate" : false,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "System camera permission prompt shown when photographing a recipe for import.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse uses your camera to photograph recipes for import."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

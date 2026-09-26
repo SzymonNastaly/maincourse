@@ -29,7 +29,7 @@ module Api
 
         if params[:cursor].present?
           cursor = decode_cursor(params[:cursor])
-          return render json: { error: "Invalid cursor" }, status: :unprocessable_entity if cursor.nil?
+          return render_api_error "invalid_request", error: "Invalid cursor", status: :unprocessable_entity if cursor.nil?
 
           updated_at, id = cursor
           recipes = recipes.where("updated_at > ? OR (updated_at = ? AND id > ?)", updated_at, updated_at, id)
@@ -48,7 +48,7 @@ module Api
         recipe = current_cookbook.recipes.with_attached_cover_image.includes(:tags).find(params[:id])
         render json: recipe_detail_json(recipe)
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Recipe not found" }, status: :not_found
+        render_api_error "not_found", error: "Recipe not found", status: :not_found
       end
 
       def update
@@ -57,7 +57,7 @@ module Api
         if recipe_params[:cookbook_id].present?
           target_cookbook = current_user.cookbooks.find_by(id: recipe_params[:cookbook_id])
           unless target_cookbook
-            return render json: { error: "Target cookbook not found or not accessible" }, status: :unprocessable_entity
+            return render_api_error "cookbook_unavailable", error: "Target cookbook not found or not accessible", status: :unprocessable_entity
           end
         end
 
@@ -71,10 +71,10 @@ module Api
           end
           render json: recipe_detail_json(recipe.reload)
         else
-          render json: { errors: recipe.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(recipe)
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Recipe not found" }, status: :not_found
+        render_api_error "not_found", error: "Recipe not found", status: :not_found
       end
 
       def destroy
@@ -82,20 +82,20 @@ module Api
         recipe.destroy!
         head :no_content
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Recipe not found" }, status: :not_found
+        render_api_error "not_found", error: "Recipe not found", status: :not_found
       rescue ActiveRecord::RecordNotDestroyed
-        render json: { error: "Could not delete recipe" }, status: :unprocessable_entity
+        render_api_error "delete_failed", error: "Could not delete recipe", status: :unprocessable_entity
       end
 
       def import
         url = params[:url].to_s.strip
         if url.blank?
-          return render json: { error: "URL is required" }, status: :unprocessable_entity
+          return render_api_error "url_required", error: "URL is required", status: :unprocessable_entity
         end
 
         validation = RecipeImporters::UrlValidator.new(url).validate
         unless validation.success?
-          return render json: { error: validation.error }, status: :unprocessable_entity
+          return render_api_error "invalid_import_url", error: validation.error, status: :unprocessable_entity
         end
 
         recipe = current_user.with_lock do
@@ -116,12 +116,12 @@ module Api
       def import_with_content
         url = params[:url].to_s.strip
         if url.blank?
-          return render json: { error: "URL is required" }, status: :unprocessable_entity
+          return render_api_error "url_required", error: "URL is required", status: :unprocessable_entity
         end
 
         validation = RecipeImporters::UrlValidator.new(url).validate
         unless validation.success?
-          return render json: { error: validation.error }, status: :unprocessable_entity
+          return render_api_error "invalid_import_url", error: validation.error, status: :unprocessable_entity
         end
 
         json_ld = params[:json_ld] || []
@@ -135,7 +135,7 @@ module Api
           meta_tags.sum { |key, value| key.to_s.bytesize + value.to_s.bytesize } +
           cover_image_candidates.sum { |value| value.to_s.bytesize }
         if total_size > 2.megabytes
-          return head :payload_too_large
+          return render_api_error "content_too_large", error: "Content is too large", status: :payload_too_large
         end
 
         recipe = current_user.with_lock do
@@ -164,10 +164,10 @@ module Api
       def extract_from_text
         text = params[:text].to_s.strip
         if text.blank?
-          return render json: { error: "Text is required" }, status: :unprocessable_entity
+          return render_api_error "text_required", error: "Text is required", status: :unprocessable_entity
         end
         if text.length > 50_000
-          return render json: { error: "Text too long (max 50,000 chars)" }, status: :unprocessable_entity
+          return render_api_error "text_too_long", error: "Text too long (max 50,000 chars)", error_params: { count: 50_000 }, status: :unprocessable_entity
         end
 
         recipe = current_user.with_lock do
@@ -186,10 +186,8 @@ module Api
 
       def extract_from_image
         image = params[:image]
-        validation_error = validate_import_image(image)
-        if validation_error
-          return render json: { error: validation_error }, status: :unprocessable_entity
-        end
+        validate_import_image(image)
+        return if performed?
 
         recipe = current_user.with_lock do
           check_import_limit_locked!
@@ -223,6 +221,7 @@ module Api
           import_status: recipe.import_status,
           starter_recipe_key: recipe.starter_recipe_key,
           error_message: recipe.error_message,
+          import_error_code: recipe.failed? ? (recipe.import_error_code || "import_failed") : nil,
           updated_at: recipe.updated_at
         }
       end
@@ -338,11 +337,7 @@ module Api
       end
 
       def render_import_limit_reached
-        render json: {
-          error: "Monthly import limit reached",
-          error_code: "import_limit_reached",
-          limit: User::FREE_MONTHLY_IMPORT_LIMIT
-        }, status: :forbidden
+        render_api_error "import_limit_reached", error: "Monthly import limit reached", error_params: { count: User::FREE_MONTHLY_IMPORT_LIMIT }, limit: User::FREE_MONTHLY_IMPORT_LIMIT, status: :forbidden
       end
 
       def check_import_limit_locked!
@@ -352,12 +347,16 @@ module Api
       end
 
       def validate_import_image(image)
-        return "Image is required" if image.blank?
+        return render_api_error "image_required", error: "Image is required", status: :unprocessable_entity if image.blank?
         unless image.respond_to?(:content_type) && image.respond_to?(:size)
-          return "Invalid image upload"
+          return render_api_error "invalid_image", error: "Invalid image upload", status: :unprocessable_entity
         end
-        return "Image must be an image" unless image.content_type.to_s.start_with?("image/")
-        return "Image is too big (max 15MB)" if image.size > 15.megabytes
+        unless image.content_type.to_s.start_with?("image/")
+          return render_api_error "invalid_image", error: "Image must be an image", status: :unprocessable_entity
+        end
+        if image.size > 15.megabytes
+          render_api_error "image_too_large", error: "Image is too big (max 15MB)", status: :unprocessable_entity
+        end
 
         nil
       end

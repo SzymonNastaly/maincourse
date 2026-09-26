@@ -106,8 +106,24 @@ final class IngredientFormatterTests: XCTestCase {
     }
 
     func testFormatAmount_basic() throws {
-        XCTAssertEqual(try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "200.00"))), "200")
-        XCTAssertEqual(try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "1.5"))), "1.5")
-        XCTAssertEqual(try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "0.5"))), "½")
+        let locale = Locale(identifier: "en_US")
+        XCTAssertEqual(
+            try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "200.00")), locale: locale),
+            "200"
+        )
+        XCTAssertEqual(try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "1.5")), locale: locale), "1.5")
+        XCTAssertEqual(try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "0.5")), locale: locale), "½")
+    }
+
+    func testLocalizedDecimalRangePreservesFractionsAndUnits() throws {
+        let locale = Locale(identifier: "pl_PL")
+        XCTAssertEqual(IngredientFormatter.formatQuantity(
+            amount: Decimal(string: "1.5"), amountMax: Decimal(string: "2.75"), unit: "kg", locale: locale
+        ), "1,5–2,75 kg")
+        XCTAssertEqual(try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "0.5")), locale: locale), "½")
+        XCTAssertEqual(
+            try IngredientFormatter.formatAmount(XCTUnwrap(Decimal(string: "1.234")), locale: locale),
+            "1,23"
+        )
     }
 }

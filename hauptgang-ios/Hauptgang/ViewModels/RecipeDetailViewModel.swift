@@ -82,7 +82,7 @@ final class RecipeDetailViewModel {
                 // branch's record() call for why this is awaited inline rather than detached.
                 await self.viewTracker.record(recipeId: id)
             } else {
-                self.errorMessage = "Failed to load recipe. Tap to retry."
+                self.errorMessage = String(localized: "Failed to load recipe. Tap to retry.")
             }
         }
     }

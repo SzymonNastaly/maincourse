@@ -25,13 +25,13 @@ enum OAuthSignInError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAppleCredential, .missingIdentityToken, .missingAuthorizationCode, .missingNonce:
-            "The provider did not return valid sign-in credentials. Please try again."
+            String(localized: "The provider did not return valid sign-in credentials. Please try again.")
         case .missingPresenter:
-            "MainCourse could not open the sign-in screen. Please try again."
+            String(localized: "MainCourse could not open the sign-in screen. Please try again.")
         case .googleNotConfigured:
-            "Google Sign-In has not been configured for this build."
+            String(localized: "Google Sign-In has not been configured for this build.")
         case .appleAccountUnavailable:
-            "Sign in with Apple is unavailable. Check your Apple ID in Settings and try again."
+            String(localized: "Sign in with Apple is unavailable. Check your Apple ID in Settings and try again.")
         }
     }
 }

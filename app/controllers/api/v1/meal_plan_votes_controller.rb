@@ -5,7 +5,7 @@ module Api
 
       def create
         if @entry.meal_plan.selected?
-          return render json: { error: "Meal plan has already been finalized" }, status: :unprocessable_entity
+          return render_api_error "meal_plan_finalized", error: "Meal plan has already been finalized", status: :unprocessable_entity
         end
 
         vote = @entry.votes.find_or_create_by!(user: current_user)
@@ -23,12 +23,12 @@ module Api
           current_user: current_user
         ).as_json
       rescue ActiveRecord::RecordInvalid => e
-        render json: { error: e.message }, status: :unprocessable_entity
+        render_api_error "invalid_request", error: e.message, status: :unprocessable_entity
       end
 
       def destroy
         if @entry.meal_plan.selected?
-          return render json: { error: "Meal plan has already been finalized" }, status: :unprocessable_entity
+          return render_api_error "meal_plan_finalized", error: "Meal plan has already been finalized", status: :unprocessable_entity
         end
 
         vote = @entry.votes.find_by(user: current_user)
@@ -47,10 +47,10 @@ module Api
         meal_plan = @entry.meal_plan
 
         unless meal_plan.cookbook_id == current_cookbook.id
-          render json: { error: "Not found" }, status: :not_found
+          render_api_error "not_found", error: "Not found", status: :not_found
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Entry not found" }, status: :not_found
+        render_api_error "not_found", error: "Entry not found", status: :not_found
       end
     end
   end

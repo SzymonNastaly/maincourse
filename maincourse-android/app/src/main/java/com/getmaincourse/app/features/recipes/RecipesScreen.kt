@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +41,7 @@ import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.images.cardImagePath
 import com.getmaincourse.app.data.model.RecipeSummary
+import com.getmaincourse.app.data.network.importFailureMessage
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -95,6 +97,7 @@ internal fun RecipeCard(
     onOpenRecipe: (Long) -> Unit,
 ) {
     val ready = recipe.importStatus.isBlank() || recipe.importStatus == "completed"
+    val resources = LocalResources.current
     Surface(
         modifier = Modifier.fillMaxWidth().clip(MainCourseShapes.Card)
             .clickable(enabled = ready) { onOpenRecipe(recipe.id) }
@@ -137,7 +140,10 @@ internal fun RecipeCard(
                 if (total > 0) Text(stringResource(R.string.recipe_time, total), fontFamily = MainCourseMono, color = MainCourseColors.Body)
                 when (recipe.importStatus) {
                     "pending", "processing" -> Text(stringResource(R.string.recipe_processing), color = MainCourseColors.Body)
-                    "failed" -> Text(stringResource(R.string.recipe_failed), color = MainCourseColors.Danger)
+                    "failed" -> Text(
+                        importFailureMessage(recipe.importErrorCode) { resource, arguments -> resources.getString(resource, *arguments) },
+                        color = MainCourseColors.Danger,
+                    )
                 }
             }
         }

@@ -141,10 +141,10 @@ private struct ShoppingListItemRow: View {
             .foregroundStyle(self.item.isChecked ? Color.mcMuted : Color.mcInk)
             .strikethrough(self.item.isChecked, color: Color.mcMuted)
         guard let details = self.trimmedDetails else { return name }
-        let detailsText = Text("  \(details)")
+        let detailsText = Text(verbatim: "  \(details)")
             .font(.subheadline)
             .foregroundStyle(Color.mcMuted)
-        return Text("\(name)\(detailsText)")
+        return name + detailsText
     }
 
     var body: some View {
@@ -185,9 +185,10 @@ private struct ShoppingListItemRow: View {
             }
         }
         .accessibilityLabel(self.item.name)
-        .accessibilityValue(self.item.isChecked ? "Bought" : "To buy")
+        .accessibilityValue(self.item.isChecked ? String(localized: "Bought") : String(localized: "To buy"))
         .accessibilityHint(self.item
-            .isChecked ? "Double-tap to move back to shopping list" : "Double-tap to mark as bought")
+            .isChecked ? String(localized: "Double-tap to move back to shopping list") :
+            String(localized: "Double-tap to mark as bought"))
         .accessibilityAction(named: "Delete") {
             self.item.onDelete?()
         }

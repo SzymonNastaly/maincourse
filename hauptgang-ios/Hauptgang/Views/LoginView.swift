@@ -60,9 +60,11 @@ struct LoginView: View {
             Button("Cancel", role: .cancel, action: self.viewModel.cancelAppleAccountCreation)
         } message: {
             Text(
-                "This Apple sign-in isn't connected to a MainCourse account. " +
-                    "If you already use MainCourse, sign in the way you used before to keep your recipes. " +
-                    "Creating a new account starts a separate cookbook."
+                """
+                This Apple sign-in isn't connected to a MainCourse account. \
+                If you already use MainCourse, sign in the way you used before to keep your recipes. \
+                Creating a new account starts a separate cookbook.
+                """
             )
         }
     }
@@ -100,7 +102,7 @@ struct LoginView: View {
     @ViewBuilder
     private var logoHeader: some View {
         if self.isEmbeddedInOnboarding {
-            Text(self.viewModel.isSignUp ? "Create your account" : "Welcome back")
+            Text(self.viewModel.isSignUp ? String(localized: "Create your account") : String(localized: "Welcome back"))
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(.mcInk)
@@ -113,14 +115,13 @@ struct LoginView: View {
                     .scaledToFit()
                     .frame(width: 80, height: 80)
 
-                (Text("Cook something ")
-                    .foregroundColor(.mcInk)
-                    + Text("delicious")
-                    .foregroundColor(.mcAccent)
-                    + Text(" today")
-                    .foregroundColor(.mcInk))
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                Text(
+                    "Cook something \(Text("delicious").foregroundColor(.mcAccent)) today",
+                    comment: "Login tagline. The placeholder is the highlighted word delicious; it can be reordered."
+                )
+                .foregroundColor(.mcInk)
+                .font(.title2)
+                .fontWeight(.semibold)
             }
         }
     }
@@ -292,18 +293,12 @@ struct LoginView: View {
             }
         } label: {
             if self.viewModel.isSignUp {
-                (Text("Already have an account? ")
+                Text("Already have an account? \(Text("Sign In").foregroundColor(.mcAccent).bold())")
                     .foregroundColor(.mcBody)
-                    + Text("Sign In")
-                    .foregroundColor(.mcAccent)
-                    .bold())
                     .font(.subheadline)
             } else {
-                (Text("Don't have an account? ")
+                Text("Don't have an account? \(Text("Sign Up").foregroundColor(.mcAccent).bold())")
                     .foregroundColor(.mcBody)
-                    + Text("Sign Up")
-                    .foregroundColor(.mcAccent)
-                    .bold())
                     .font(.subheadline)
             }
         }
@@ -314,7 +309,7 @@ struct LoginView: View {
             !self.viewModel.password.isEmpty && self.viewModel.password.count < 12
     }
 
-    private var buttonLabel: String {
+    private var buttonLabel: LocalizedStringKey {
         if self.viewModel.isSignUp {
             return self.isPasswordFlowActive ? "Creating Account…" : "Create Account"
         }

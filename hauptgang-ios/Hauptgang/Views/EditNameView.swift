@@ -73,7 +73,7 @@ struct EditNameView: View {
             } catch let error as APIError {
                 self.errorMessage = error.localizedDescription
             } catch {
-                self.errorMessage = "An unexpected error occurred. Please try again."
+                self.errorMessage = String(localized: "An unexpected error occurred. Please try again.")
             }
             self.isSaving = false
         }

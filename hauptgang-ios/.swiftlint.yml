@@ -6,6 +6,7 @@ excluded:
   - build
   - DerivedData
   - .build
+  - Hauptgang/Models/ApiErrorCodes.swift # Generated wire identifiers mirror snake_case JSON.
 
 # Paths to include
 included:

@@ -2,6 +2,7 @@
 
 CI.run do
   step "Setup", "bin/setup --skip-server"
+  step "Contract: API errors", "bin/api-error-contract --check"
 
   step "Style: Ruby", "bin/rubocop"
   step "Style: iOS Lint", "bin/ios-lint"

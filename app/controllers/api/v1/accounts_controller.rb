@@ -12,7 +12,7 @@ module Api
             }
           }, status: :ok
         else
-          render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(current_user)
         end
       end
 

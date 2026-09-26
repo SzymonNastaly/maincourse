@@ -109,6 +109,20 @@ The iOS app consumes the Rails JSON API at `/api/v1/`. When working on iOS featu
 4. Update ViewModel to call service
 5. Update View to display data
 
+## Localization
+
+Use native English-source String Catalogs for app-owned text, including errors
+and accessibility labels. The app and share extension have separate catalogs.
+See `docs/ios-localization.md` for string types, pluralization, locale-aware display
+formatting, and `bin/ios-localize` to refresh catalogs after a command-line build.
+Language selection follows iOS Settings; keep server/user data and protocol values
+separate from localizable UI strings.
+
+API errors are defined in `config/api_errors.yml`. Run `bin/api-error-contract --generate`
+after changing it and handle every generated case in the dedicated
+`*Code+Message.swift` renderers. Their known-code switches must stay exhaustive;
+CI checks both clients and both iOS catalogs. See `docs/api-localization.md`.
+
 ## Code Style
 
 - Use Swift's modern concurrency (`async/await`, actors) - no completion handlers

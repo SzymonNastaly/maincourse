@@ -27,7 +27,7 @@ class Api::V1::AppleAuthTransactionsControllerTest < ActionDispatch::Integration
     end
 
     assert_response :service_unavailable
-    assert_equal({ "error" => "Apple sign-in is temporarily unavailable" }, response.parsed_body)
+    assert_equal({ "error" => "Apple sign-in is temporarily unavailable", "error_code" => "oauth_unavailable" }, response.parsed_body)
     assert_equal "no-store", response.headers["Cache-Control"]
   end
 
@@ -41,7 +41,7 @@ class Api::V1::AppleAuthTransactionsControllerTest < ActionDispatch::Integration
     end
 
     assert_response :bad_request
-    assert_equal({ "error" => "Invalid Apple authentication request" }, response.parsed_body)
+    assert_equal({ "error" => "Invalid Apple authentication request", "error_code" => "invalid_request" }, response.parsed_body)
     assert_equal 0, AppleAuthTransaction.count
   end
 
@@ -71,7 +71,7 @@ class Api::V1::AppleAuthTransactionsControllerTest < ActionDispatch::Integration
       post exchange_api_v1_apple_auth_transaction_url, params: params, as: :json
     end
     assert_response :bad_request
-    assert_equal({ "error" => "Could not authenticate with Apple" }, response.parsed_body)
+    assert_equal({ "error" => "Could not authenticate with Apple", "error_code" => "oauth_failed" }, response.parsed_body)
   end
 
   test "wrong verifier returns the same generic response and remains exchangeable" do
@@ -86,7 +86,7 @@ class Api::V1::AppleAuthTransactionsControllerTest < ActionDispatch::Integration
       }, as: :json
     end
     assert_response :bad_request
-    assert_equal({ "error" => "Could not authenticate with Apple" }, response.parsed_body)
+    assert_equal({ "error" => "Could not authenticate with Apple", "error_code" => "oauth_failed" }, response.parsed_body)
     assert_nil transaction.reload.consumed_at
 
     assert_difference("ApiToken.count", 1) do
@@ -118,7 +118,7 @@ class Api::V1::AppleAuthTransactionsControllerTest < ActionDispatch::Integration
 
     assert_response :bad_request
     assert_equal unknown_response, response.parsed_body
-    assert_equal({ "error" => "Could not authenticate with Apple" }, response.parsed_body)
+    assert_equal({ "error" => "Could not authenticate with Apple", "error_code" => "oauth_failed" }, response.parsed_body)
   end
 
   test "sensitive handoff parameters are filtered from logs" do

@@ -103,7 +103,7 @@ struct SettingsView: View {
                         Text("Name")
                             .foregroundColor(.mcInk)
                         Spacer()
-                        Text(user.name?.isEmpty == false ? user.name! : "Add your name")
+                        Text(user.name?.isEmpty == false ? user.name! : String(localized: "Add your name"))
                             .foregroundColor(.mcBody)
                             .lineLimit(1)
                         Image(systemName: "chevron.right")
@@ -169,7 +169,7 @@ struct SettingsView: View {
             // The toggle reads from authManager, which is unchanged on failure, so it
             // snaps back on its own.
             self.errorMessage = (error as? APIError)?.errorDescription
-                ?? "An unexpected error occurred. Please try again."
+                ?? String(localized: "An unexpected error occurred. Please try again.")
         }
     }
 

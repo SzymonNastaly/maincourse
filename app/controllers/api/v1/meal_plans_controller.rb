@@ -12,7 +12,7 @@ module Api
 
         render json: meal_plans.map { |mp| MealPlanSerializer.new(mp, current_user: current_user).as_json }
       rescue Date::Error
-        render json: { error: "Invalid date format. Use YYYY-MM-DD." }, status: :bad_request
+        render_api_error "invalid_request", error: "Invalid date format. Use YYYY-MM-DD.", status: :bad_request
       end
     end
   end

@@ -12,7 +12,7 @@ module Api
         delivery.save!
         head :no_content
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Notification delivery not found" }, status: :not_found
+        render_api_error "not_found", error: "Notification delivery not found", status: :not_found
       end
     end
   end

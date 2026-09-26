@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_19_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_110000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -270,6 +270,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_170000) do
     t.text "error_message"
     t.datetime "failed_recipe_fetched_at"
     t.boolean "favorite", default: false
+    t.string "import_error_code"
     t.integer "import_status", default: 1, null: false
     t.json "instructions", default: []
     t.string "name"

@@ -63,8 +63,8 @@ struct OnboardingFeaturesView: View {
 }
 
 private struct FeatureRow<Fragment: View>: View {
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
     @ViewBuilder let fragment: () -> Fragment
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -123,7 +123,7 @@ private struct PortionsFragment: View {
         VStack(spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: "minus")
-                Text("\(self.servings)")
+                Text(self.servings, format: .number.grouping(.never))
                     .font(.mcMono(.subheadline, weight: .medium))
                     .contentTransition(.numericText())
                     .frame(minWidth: 16)
@@ -156,18 +156,18 @@ private struct MealPlanFragment: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(["Mon", "Tue", "Wed"], id: \.self) { day in
+            ForEach(1 ... 3, id: \.self) { day in
                 HStack(spacing: 6) {
-                    Text(day)
+                    Text(DateFormatter().shortWeekdaySymbols[day])
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(Color.mcMuted)
                         .frame(width: 24, alignment: .leading)
-                    if day == "Tue" {
+                    if day == 2 {
                         HStack(spacing: 4) {
                             DemoRecipePhoto(imageName: self.sample.imageName, height: 14)
                                 .frame(width: 14)
                                 .clipShape(.rect(cornerRadius: 3))
-                            Text("Orzo")
+                            Text(verbatim: "Orzo")
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(Color.mcInk)
                         }

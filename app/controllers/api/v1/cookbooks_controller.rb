@@ -15,14 +15,14 @@ module Api
       def create
         name = params[:name].to_s.strip
         if name.blank?
-          return render json: { error: "Name is required" }, status: :unprocessable_entity
+          return render_api_error "name_required", error: "Name is required", status: :unprocessable_entity
         end
 
         move_recipes = ActiveModel::Type::Boolean.new.cast(params[:move_personal_recipes])
 
         cookbook = current_user.with_lock do
           if current_user.shared_cookbook.present?
-            return render json: { error: "You already have a shared cookbook" }, status: :unprocessable_entity
+            return render_api_error "shared_cookbook_exists", error: "You already have a shared cookbook", status: :unprocessable_entity
           end
 
           ActiveRecord::Base.transaction do
@@ -46,15 +46,15 @@ module Api
       def destroy
         cookbook = current_user.cookbooks.find_by(id: params[:id])
         if cookbook.nil?
-          return render json: { error: "Cookbook not found" }, status: :not_found
+          return render_api_error "not_found", error: "Cookbook not found", status: :not_found
         end
 
         if cookbook.personal?
-          return render json: { error: "Cannot delete personal cookbook" }, status: :unprocessable_entity
+          return render_api_error "personal_cookbook_required", error: "Cannot delete personal cookbook", status: :unprocessable_entity
         end
 
         unless cookbook.owner?(current_user)
-          return render json: { error: "Only the owner can delete this cookbook" }, status: :forbidden
+          return render_api_error "owner_required", error: "Only the owner can delete this cookbook", status: :forbidden
         end
 
         cookbook.destroy!
@@ -65,15 +65,15 @@ module Api
       def leave
         cookbook = current_user.cookbooks.find_by(id: params[:id])
         if cookbook.nil?
-          return render json: { error: "Cookbook not found" }, status: :not_found
+          return render_api_error "not_found", error: "Cookbook not found", status: :not_found
         end
 
         if cookbook.personal?
-          return render json: { error: "Cannot leave personal cookbook" }, status: :unprocessable_entity
+          return render_api_error "personal_cookbook_required", error: "Cannot leave personal cookbook", status: :unprocessable_entity
         end
 
         if cookbook.owner?(current_user)
-          return render json: { error: "Owner cannot leave. Delete the cookbook instead." }, status: :unprocessable_entity
+          return render_api_error "owner_cannot_leave", error: "Owner cannot leave. Delete the cookbook instead.", status: :unprocessable_entity
         end
 
         membership = cookbook.cookbook_memberships.find_by(user: current_user)

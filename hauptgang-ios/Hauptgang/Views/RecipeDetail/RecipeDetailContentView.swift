@@ -124,7 +124,7 @@ struct RecipeDetailContentView: View {
             if hasDuration {
                 HStack(spacing: 0) {
                     if let prepTime = self.recipe.prepTime, prepTime > 0 {
-                        self.durationItem(icon: "clock", label: "Prep", value: "\(prepTime)m")
+                        self.durationItem(icon: "clock", label: "Prep", value: RecipeDisplayFormatter.minutes(prepTime))
                     }
 
                     if let cookTime = self.recipe.cookTime, cookTime > 0 {
@@ -132,7 +132,7 @@ struct RecipeDetailContentView: View {
                             Divider()
                                 .frame(height: 32)
                         }
-                        self.durationItem(icon: "flame", label: "Cook", value: "\(cookTime)m")
+                        self.durationItem(icon: "flame", label: "Cook", value: RecipeDisplayFormatter.minutes(cookTime))
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -182,7 +182,7 @@ struct RecipeDetailContentView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                 ForEach(Array(self.recipe.instructions.enumerated()), id: \.offset) { index, instruction in
                     HStack(alignment: .top, spacing: Theme.Spacing.md) {
-                        Text("\(index + 1)")
+                        Text(index + 1, format: .number.grouping(.never))
                             .font(.mcMono(.caption, weight: .medium))
                             .foregroundColor(Color.mcAccent)
                             .frame(width: 22, height: 22)
@@ -201,7 +201,7 @@ struct RecipeDetailContentView: View {
         }
     }
 
-    private func durationItem(icon: String, label: String, value: String) -> some View {
+    private func durationItem(icon: String, label: LocalizedStringKey, value: String) -> some View {
         VStack(spacing: Theme.Spacing.xs) {
             Image(systemName: icon)
                 .font(.system(size: 18))
@@ -216,7 +216,8 @@ struct RecipeDetailContentView: View {
             Text(label)
                 .font(.caption)
                 .foregroundColor(.mcMuted)
-                .frame(height: 18)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 18)
         }
         .frame(maxWidth: .infinity)
     }
@@ -232,7 +233,7 @@ struct RecipeDetailContentView: View {
         }
     }
 
-    private func sectionHeader(_ title: String) -> some View {
+    private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.headline)
             .foregroundColor(.mcInk)
@@ -276,13 +277,13 @@ private struct IngredientRow: View {
         )
 
         (
-            Text(quantityText.isEmpty ? "" : "\(quantityText) ")
+            Text(verbatim: quantityText.isEmpty ? "" : "\(quantityText) ")
                 .font(.mcMono(.body, weight: .medium))
                 .foregroundColor(.mcInk)
                 + Text(self.ingredient.name ?? self.ingredient.raw)
                 .font(.body)
                 .foregroundColor(.mcInk)
-                + Text(self.ingredient.note.map { ", \($0)" } ?? "")
+                + Text(verbatim: self.ingredient.note.map { ", \($0)" } ?? "")
                 .font(.body)
                 .foregroundColor(.mcBody)
         )

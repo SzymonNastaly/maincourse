@@ -63,7 +63,7 @@ struct ShoppingListView: View {
             await self.viewModel.refresh()
         }
         .background(Color.mcCanvas.ignoresSafeArea())
-        .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
+        .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? String(localized: "Shopping List"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
             CookbookTitleMenu(

@@ -10,7 +10,7 @@ module Api
           if meal_plan.selected_entry_id == entry.id
             return render json: MealPlanSerializer.new(meal_plan, current_user: current_user).as_json
           else
-            return render json: { error: "A different recipe has already been selected for this date" }, status: :conflict
+            return render_api_error "meal_plan_selection_conflict", error: "A different recipe has already been selected for this date", status: :conflict
           end
         end
 
@@ -22,9 +22,9 @@ module Api
 
         render json: MealPlanSerializer.new(meal_plan.reload, current_user: current_user).as_json
       rescue Date::Error
-        render json: { error: "Invalid date format" }, status: :bad_request
+        render_api_error "invalid_request", error: "Invalid date format", status: :bad_request
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Meal plan or entry not found" }, status: :not_found
+        render_api_error "not_found", error: "Meal plan or entry not found", status: :not_found
       end
 
       def destroy
@@ -43,9 +43,9 @@ module Api
 
         render json: MealPlanSerializer.new(meal_plan.reload, current_user: current_user).as_json
       rescue Date::Error
-        render json: { error: "Invalid date format" }, status: :bad_request
+        render_api_error "invalid_request", error: "Invalid date format", status: :bad_request
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Meal plan not found" }, status: :not_found
+        render_api_error "not_found", error: "Meal plan not found", status: :not_found
       end
     end
   end

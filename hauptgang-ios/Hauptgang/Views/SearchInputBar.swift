@@ -3,7 +3,7 @@ import UIKit
 
 struct SearchInputBar: View {
     @Binding var text: String
-    let prompt: String
+    let prompt: LocalizedStringResource
     var icon: String = "magnifyingglass"
     var onSubmit: (() -> Void)?
     var onCancel: (() -> Void)?
@@ -20,7 +20,7 @@ struct SearchInputBar: View {
                 NonDismissingTextField(
                     text: self.$text,
                     isFocused: self.$isFocused,
-                    prompt: self.prompt,
+                    prompt: String(localized: self.prompt),
                     returnKeyType: self.resolvedReturnKey,
                     dismissOnReturn: !self.keepFocusOnSubmit,
                     onSubmit: { self.onSubmit?() }
@@ -42,6 +42,7 @@ struct SearchInputBar: View {
                         .foregroundStyle(Color(.placeholderText))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear input")
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }

@@ -23,6 +23,7 @@ final class PersistedRecipe {
     var coverImageHeroUrl: String?
     var importStatus: String?
     var errorMessage: String?
+    var importErrorCode: String?
     var starterRecipeKey: String?
     var updatedAt: Date
 
@@ -129,6 +130,7 @@ final class PersistedRecipe {
         coverImageHeroUrl: String? = nil,
         importStatus: String? = nil,
         errorMessage: String? = nil,
+        importErrorCode: String? = nil,
         starterRecipeKey: String? = nil,
         updatedAt: Date,
         lastFetchedAt: Date = Date()
@@ -145,6 +147,7 @@ final class PersistedRecipe {
         self.coverImageHeroUrl = coverImageHeroUrl
         self.importStatus = importStatus
         self.errorMessage = errorMessage
+        self.importErrorCode = importErrorCode
         self.starterRecipeKey = starterRecipeKey
         self.updatedAt = updatedAt
         self.lastFetchedAt = lastFetchedAt
@@ -165,6 +168,7 @@ final class PersistedRecipe {
             coverImageHeroUrl: listItem.heroCoverImageUrl,
             importStatus: listItem.importStatus,
             errorMessage: listItem.errorMessage,
+            importErrorCode: listItem.importErrorCode,
             starterRecipeKey: listItem.starterRecipeKey,
             updatedAt: listItem.updatedAt
         )
@@ -206,6 +210,7 @@ final class PersistedRecipe {
         self.coverImageHeroUrl = listItem.heroCoverImageUrl
         self.importStatus = listItem.importStatus
         self.errorMessage = listItem.errorMessage
+        self.importErrorCode = listItem.importErrorCode
         self.starterRecipeKey = listItem.starterRecipeKey
         self.updatedAt = listItem.updatedAt
         self.lastFetchedAt = Date()

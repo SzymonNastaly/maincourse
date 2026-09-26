@@ -2,8 +2,8 @@ import Foundation
 
 /// Pure formatter helpers for `StructuredIngredient` quantities.
 ///
-/// Mirrors the web-side `format_quantity` helper so both clients render
-/// identical strings. Uses Decimal arithmetic to avoid Double precision drift
+/// Uses the same fractions as the web-side `format_quantity` helper, with
+/// locale-aware decimal display. Uses Decimal arithmetic to avoid Double precision drift
 /// when scaling quantities (e.g. `1/3 tsp × 2`).
 enum IngredientFormatter {
     /// "200 g", "200–250 g", "½ tsp", "pinch", "" when both nil.
@@ -11,15 +11,16 @@ enum IngredientFormatter {
         amount: Decimal?,
         amountMax: Decimal?,
         unit: String?,
-        scale: Decimal = 1
+        scale: Decimal = 1,
+        locale: Locale = .autoupdatingCurrent
     ) -> String {
         let unit = (unit?.isEmpty == false) ? unit : nil
 
         let quantity: String? = switch (amount, amountMax) {
         case let (min?, max?):
-            "\(self.formatAmount(min * scale))\u{2013}\(self.formatAmount(max * scale))"
+            "\(self.formatAmount(min * scale, locale: locale))\u{2013}\(self.formatAmount(max * scale, locale: locale))"
         case let (min?, nil):
-            self.formatAmount(min * scale)
+            self.formatAmount(min * scale, locale: locale)
         default:
             nil
         }
@@ -29,7 +30,7 @@ enum IngredientFormatter {
 
     /// Format a single amount: prefer common unicode fractions, otherwise
     /// round to 2 decimals and strip trailing zeros.
-    static func formatAmount(_ value: Decimal) -> String {
+    static func formatAmount(_ value: Decimal, locale: Locale = .autoupdatingCurrent) -> String {
         if let glyph = unicodeFraction(value) {
             return glyph
         }
@@ -38,7 +39,12 @@ enum IngredientFormatter {
         var input = value
         NSDecimalRound(&rounded, &input, 2, .plain)
 
-        let formatter = Self.decimalFormatter
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
         return formatter.string(from: rounded as NSNumber) ?? "\(rounded)"
     }
 
@@ -70,15 +76,4 @@ enum IngredientFormatter {
         (Decimal(string: "0.625")!, "\u{215D}"), // ⅝
         (Decimal(string: "0.875")!, "\u{215E}") // ⅞
     ]
-
-    private static let decimalFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = false
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 2
-        formatter.decimalSeparator = "."
-        return formatter
-    }()
 }

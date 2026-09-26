@@ -91,7 +91,7 @@ struct CookbookSettingsView: View {
             self.cookbookRow(cookbook, isPersonal: isPersonal)
             self.sharedCookbookSectionContent(cookbook, isPersonal: isPersonal)
         } header: {
-            Text(isPersonal ? "Personal" : "Shared")
+            Text(isPersonal ? String(localized: "Personal") : String(localized: "Shared"))
         }
     }
 
@@ -103,7 +103,7 @@ struct CookbookSettingsView: View {
                 Text(cookbook.name)
                     .font(.body)
                     .foregroundStyle(Color.mcInk)
-                Text("\(cookbook.recipeCount) recipes")
+                Text(RecipeDisplayFormatter.recipeCount(cookbook.recipeCount))
                     .font(.caption)
                     .foregroundStyle(Color.mcBody)
             }
@@ -147,7 +147,7 @@ struct CookbookSettingsView: View {
         } label: {
             HStack {
                 Image(systemName: "link.badge.plus")
-                Text(self.isWorking ? "Generating..." : "Generate Invite Link")
+                Text(self.isWorking ? String(localized: "Generating...") : String(localized: "Generate Invite Link"))
             }
         }
         .disabled(self.isWorking)

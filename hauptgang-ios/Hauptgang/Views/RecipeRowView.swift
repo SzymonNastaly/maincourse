@@ -50,17 +50,22 @@ struct RecipeRowView: View {
 
     /// Formats prep and cook time into a readable string
     private var formattedTime: String? {
-        var parts: [String] = []
+        let prep = self.recipe.prepTime.flatMap { $0 > 0 ? RecipeDisplayFormatter.minutes($0) : nil }
+        let cook = self.recipe.cookTime.flatMap { $0 > 0 ? RecipeDisplayFormatter.minutes($0) : nil }
 
-        if let prep = recipe.prepTime, prep > 0 {
-            parts.append("\(prep)m prep")
+        switch (prep, cook) {
+        case let (prep?, cook?):
+            return String(
+                localized: "\(prep) prep + \(cook) cook",
+                comment: "Recipe preparation and cooking durations."
+            )
+        case let (prep?, nil):
+            return String(localized: "\(prep) prep", comment: "Recipe preparation duration.")
+        case let (nil, cook?):
+            return String(localized: "\(cook) cook", comment: "Recipe cooking duration.")
+        default:
+            return nil
         }
-
-        if let cook = recipe.cookTime, cook > 0 {
-            parts.append("\(cook)m cook")
-        }
-
-        return parts.isEmpty ? nil : parts.joined(separator: " + ")
     }
 }
 

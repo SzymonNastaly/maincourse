@@ -12,7 +12,7 @@ class RecipeImageExtractJob < ApplicationJob
     return if recipe.completed?
 
     unless recipe.import_image.attached?
-      recipe.update!(import_status: :failed, error_message: "Import failed.")
+      recipe.update!(import_status: :failed, error_message: "Import failed.", import_error_code: "import_failed")
       Rails.logger.error "[RecipeImageExtractJob] Missing import image for recipe #{recipe_id}"
       return
     end
@@ -25,19 +25,19 @@ class RecipeImageExtractJob < ApplicationJob
       recipe.apply_extracted_attributes!(result.recipe_attributes.merge(import_status: :completed))
       ParseRecipeIngredientsJob.perform_later(recipe.id) if recipe.ingredients.any?(&:needs_enrichment?)
     elsif not_a_recipe?(result)
-      recipe.update!(import_status: :failed, error_message: NO_RECIPE_IN_PHOTO_MESSAGE)
+      recipe.update!(import_status: :failed, error_message: NO_RECIPE_IN_PHOTO_MESSAGE, import_error_code: "no_recipe_in_photo")
       Rails.logger.info "[RecipeImageExtractJob] No recipe text in photo for recipe #{recipe_id}"
     else
       recipe.update!(
         import_status: :failed,
-        error_message: "Import failed."
+        error_message: "Import failed.", import_error_code: "import_failed"
       )
       Rails.logger.error "[RecipeImageExtractJob] Extraction failed for recipe #{recipe_id}: #{result.error}"
     end
   rescue => error
     recipe&.update(
       import_status: :failed,
-      error_message: "Import failed."
+      error_message: "Import failed.", import_error_code: "import_failed"
     )
     Rails.logger.error "[RecipeImageExtractJob] Unexpected error for recipe #{recipe_id}: #{error.class} - #{error.message}"
     raise

@@ -1,6 +1,6 @@
 module RecipesHelper
   def failed_import_heading(recipe)
-    if recipe.error_message == RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE
+    if recipe.import_error_code == "no_recipe_in_photo"
       "No recipe in that photo"
     else
       "Couldn’t read that page"

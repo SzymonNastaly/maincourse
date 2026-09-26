@@ -38,7 +38,7 @@ final class RecipeEditViewModel {
     var nameError: String? {
         let trimmed = self.name.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return "Name is required"
+            return String(localized: "Name is required")
         }
         return nil
     }
@@ -168,7 +168,7 @@ final class RecipeEditViewModel {
             self.logger.info("Successfully saved recipe \(recipe.id)")
         } catch {
             self.logger.error("Failed to save recipe: \(error.localizedDescription)")
-            self.errorMessage = "Failed to save changes. Please try again."
+            self.errorMessage = String(localized: "Failed to save changes. Please try again.")
         }
     }
 

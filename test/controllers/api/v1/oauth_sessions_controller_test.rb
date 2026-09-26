@@ -118,7 +118,7 @@ class Api::V1::OauthSessionsControllerTest < ActionDispatch::IntegrationTest
       "Update the app to create a new Apple account, or use the prior sign-in method to access an existing account.",
       response.parsed_body["error"]
     )
-    assert_nil response.parsed_body["error_code"]
+    assert_equal "app_update_required", response.parsed_body["error_code"]
   end
 
   test "signs in a known Apple identity when creation intent is omitted or false" do

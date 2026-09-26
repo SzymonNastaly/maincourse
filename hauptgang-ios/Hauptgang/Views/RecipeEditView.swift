@@ -92,7 +92,7 @@ struct RecipeEditView: View {
 
     private var photoPickerLabel: String {
         self.recipe.heroCoverImageUrl != nil || self.viewModel.hasCoverImageChange
-            ? "Change Photo" : "Add Photo"
+            ? String(localized: "Change Photo") : String(localized: "Add Photo")
     }
 
     // MARK: - Cover Image
@@ -249,7 +249,7 @@ struct RecipeEditView: View {
         Section {
             ForEach(Array(self.viewModel.instructions.enumerated()), id: \.offset) { index, _ in
                 HStack(alignment: .top) {
-                    Text("\(index + 1).")
+                    Text(verbatim: "\((index + 1).formatted(.number.grouping(.never))).")
                         .font(.body)
                         .foregroundColor(Color.mcBody)
                         .padding(.top, 8)

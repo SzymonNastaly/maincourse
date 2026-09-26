@@ -22,7 +22,7 @@ module Api
 
         unless result.success?
           first_error = result.errors.first
-          return render json: { error: first_error[:error], errors: result.errors }, status: :unprocessable_entity
+          return render_api_error "invalid_shopping_items", error: first_error[:error], errors: result.errors, status: :unprocessable_entity
         end
 
         render json: result.items.map { |item| ShoppingListItemSerializer.new(item).as_json }, status: :created
@@ -41,7 +41,7 @@ module Api
           checked = ActiveModel::Type::Boolean.new.cast(params[:checked])
           item.checked_at = checked ? Time.current : nil
         else
-          return render json: { error: "checked or checked_at is required" }, status: :unprocessable_entity
+          return render_api_error "invalid_request", error: "checked or checked_at is required", status: :unprocessable_entity
         end
 
         if params.key?(:created_at) && params[:created_at].present?
@@ -57,11 +57,11 @@ module Api
         end
         render json: ShoppingListItemSerializer.new(item).as_json
       rescue ArgumentError
-        render json: { error: "Invalid checked_at format" }, status: :unprocessable_entity
+        render_api_error "invalid_request", error: "Invalid checked_at format", status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Shopping list item not found" }, status: :not_found
+        render_api_error "not_found", error: "Shopping list item not found", status: :not_found
       rescue ActiveRecord::RecordInvalid
-        render json: { error: "Could not update item" }, status: :unprocessable_entity
+        render_api_error "update_failed", error: "Could not update item", status: :unprocessable_entity
       end
 
       def destroy
@@ -69,16 +69,16 @@ module Api
         item.destroy!
         head :no_content
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Shopping list item not found" }, status: :not_found
+        render_api_error "not_found", error: "Shopping list item not found", status: :not_found
       rescue ActiveRecord::RecordNotDestroyed
-        render json: { error: "Could not delete item" }, status: :unprocessable_entity
+        render_api_error "delete_failed", error: "Could not delete item", status: :unprocessable_entity
       end
 
       def destroy_all
         current_cookbook.shopping_list_items.find_each(&:destroy!)
         head :no_content
       rescue ActiveRecord::RecordNotDestroyed
-        render json: { error: "Could not delete all items" }, status: :unprocessable_entity
+        render_api_error "delete_failed", error: "Could not delete all items", status: :unprocessable_entity
       end
 
       private

@@ -8,6 +8,7 @@ import com.getmaincourse.app.data.ShoppingListRepository
 import com.getmaincourse.app.data.cache.MainCourseDatabase
 import com.getmaincourse.app.data.images.SessionImages
 import com.getmaincourse.app.data.network.ApiCallFactory
+import com.getmaincourse.app.data.network.ApiErrorCallAdapterFactory
 import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.network.SessionEvents
 import com.getmaincourse.app.data.onboarding.OnboardingPreferences
@@ -53,6 +54,7 @@ class AppContainer(application: Application) {
     val service: MainCourseService = Retrofit.Builder()
         .baseUrl(BuildConfig.API_BASE_URL)
         .callFactory(authenticatedClient)
+        .addCallAdapterFactory(ApiErrorCallAdapterFactory { resource, arguments -> application.getString(resource, *arguments) })
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(MainCourseService::class.java)

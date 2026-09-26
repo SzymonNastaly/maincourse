@@ -35,6 +35,12 @@ solutions.
 
 ## Verification
 
+API errors are defined in `config/api_errors.yml`. Regenerate wire enums with
+`bin/api-error-contract --generate` and implement every case in the dedicated
+`*CodeMessage.kt` renderers using native string resources. Keep known-code `when`
+expressions exhaustive. CI checks both clients and their resource references;
+see `docs/api-localization.md` for the workflow and runtime contract.
+
 Run `bin/android-build`, `bin/android-test`, and `bin/android-test --device`
 (with an emulator or device); use `bin/android-gradle :app:assembleRelease` for
 release compilation. Device tests use debug-only `MainCourseTestActivity`; live

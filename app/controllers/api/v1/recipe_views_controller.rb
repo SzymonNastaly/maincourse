@@ -11,7 +11,7 @@ module Api
 
       def create
         views = params[:views]
-        return render json: { error: "views is required" }, status: :unprocessable_entity unless views.is_a?(Array)
+        return render_api_error "invalid_request", error: "views is required", status: :unprocessable_entity unless views.is_a?(Array)
 
         # Cap the batch: each entry costs two queries, and the payload is client-supplied.
         views.first(500).each { |view| record(view) }

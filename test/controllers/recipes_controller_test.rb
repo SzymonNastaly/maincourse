@@ -67,7 +67,8 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
   test "index describes a photo that contains no recipe" do
     @cookbook.recipes.create!(
       name: "Importing…", user: @user, import_status: :failed,
-      error_message: RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE
+      error_message: RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE,
+      import_error_code: "no_recipe_in_photo"
     )
 
     get recipes_path

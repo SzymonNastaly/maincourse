@@ -30,7 +30,7 @@ struct ShoppingListReviewSheet: View {
         self.items.filter(\.isChecked)
     }
 
-    private var addButtonTitle: String {
+    private var addButtonTitle: LocalizedStringKey {
         "Add \(self.uncheckedItems.count)"
     }
 
@@ -127,8 +127,10 @@ struct ShoppingListReviewSheet: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(
-                "Some items have been here for more than 36 hours. " +
-                    "Clear the whole list before adding these ingredients?"
+                """
+                Some items have been here for more than 36 hours. \
+                Clear the whole list before adding these ingredients?
+                """
             )
         }
     }
@@ -172,7 +174,9 @@ struct ShoppingListReviewSheet: View {
         if succeeded {
             self.finishAddition()
         } else {
-            self.replacementError = "Could not replace the shopping list. Your existing items were kept."
+            self
+                .replacementError =
+                String(localized: "Could not replace the shopping list. Your existing items were kept.")
         }
     }
 

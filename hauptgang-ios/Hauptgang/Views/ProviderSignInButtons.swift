@@ -46,7 +46,7 @@ struct ContinueWithGoogleButton: View {
 // MARK: - Shared chrome
 
 private struct ProviderButtonLabel<Mark: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     @ViewBuilder let mark: Mark
     @ScaledMetric(relativeTo: .body) private var markSize: CGFloat = 18
 
@@ -56,6 +56,8 @@ private struct ProviderButtonLabel<Mark: View>: View {
                 .frame(width: self.markSize, height: self.markSize)
                 .accessibilityHidden(true)
             Text(self.title)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
     }

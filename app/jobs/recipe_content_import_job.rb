@@ -24,7 +24,7 @@ class RecipeContentImportJob < ApplicationJob
       error_message = build_error_message(source_url)
       recipe.update!(
         import_status: :failed,
-        error_message: error_message
+        error_message: error_message, import_error_code: "import_failed"
       )
       Sentry.logger.warn("recipe.import.failure", domain: domain, channel: "share_extension", recipe_id: recipe_id, error_code: result.error_code.to_s, error: result.error)
       Rails.logger.error "[RecipeContentImportJob] Import failed for recipe #{recipe_id} (#{source_url}): #{result.error}"
@@ -34,7 +34,7 @@ class RecipeContentImportJob < ApplicationJob
       error_message = build_error_message(source_url)
       recipe.update(
         import_status: :failed,
-        error_message: error_message
+        error_message: error_message, import_error_code: "import_failed"
       )
     end
     Rails.logger.error "[RecipeContentImportJob] Unexpected error for recipe #{recipe_id}: #{error.class} - #{error.message}"

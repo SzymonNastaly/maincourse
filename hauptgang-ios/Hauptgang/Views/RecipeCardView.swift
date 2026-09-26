@@ -99,7 +99,7 @@ struct RecipeCardView: View {
                 HStack(spacing: Theme.Spacing.xs) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                    Text("\(totalTime)m")
+                    Text(RecipeDisplayFormatter.minutes(totalTime))
                         .font(.mcMono(.caption))
                 }
                 .foregroundColor(.white.opacity(0.85))

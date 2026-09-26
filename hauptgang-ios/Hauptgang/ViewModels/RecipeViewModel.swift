@@ -132,19 +132,16 @@ extension RecipeViewModel {
         }
     }
 
-    /// A photo with no recipe text is a user outcome. Matches
-    /// `RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE`.
-    static let noRecipeInPhotoMessage = "No recipe found in that photo."
-
-    static func shouldReportFailedImport(errorMessage: String?) -> Bool {
-        errorMessage != self.noRecipeInPhotoMessage
+    /// A photo with no recipe text is an expected user outcome.
+    static func shouldReportFailedImport(errorCode: String?) -> Bool {
+        errorCode != "no_recipe_in_photo"
     }
 
     /// Report any newly-failed recipe imports to Sentry (deduplicated by recipe ID)
     private func reportNewlyFailedRecipes() {
         for recipe in self.failedRecipes where !self.reportedFailedRecipeIds.contains(recipe.id) {
             self.reportedFailedRecipeIds.insert(recipe.id)
-            guard Self.shouldReportFailedImport(errorMessage: recipe.errorMessage) else { continue }
+            guard Self.shouldReportFailedImport(errorCode: recipe.importErrorCode) else { continue }
             let event = Event(level: .error)
             event.message = SentryMessage(formatted: "Recipe import failed")
             event.extra = [
@@ -463,9 +460,9 @@ extension RecipeViewModel {
             self.logger.info("Import limit reached, showing paywall")
         } catch {
             if let apiError = error as? APIError {
-                self.importError = apiError.errorDescription ?? "Failed to import recipe from text."
+                self.importError = apiError.errorDescription ?? String(localized: "Failed to import recipe from text.")
             } else {
-                self.importError = "Failed to import recipe from text."
+                self.importError = String(localized: "Failed to import recipe from text.")
             }
             self.logger.error("Text import failed: \(error.localizedDescription)")
             SentrySDK.capture(error: error) { scope in
@@ -489,7 +486,7 @@ extension RecipeViewModel {
         }.value
 
         guard let compressed else {
-            self.importError = "Could not process image. Please try a different photo."
+            self.importError = String(localized: "Could not process image. Please try a different photo.")
             self.isImporting = false
             return
         }
@@ -502,9 +499,9 @@ extension RecipeViewModel {
             self.logger.info("Import limit reached, showing paywall")
         } catch {
             if let apiError = error as? APIError {
-                self.importError = apiError.errorDescription ?? "Failed to import recipe from photo."
+                self.importError = apiError.errorDescription ?? String(localized: "Failed to import recipe from photo.")
             } else {
-                self.importError = "Failed to import recipe from photo."
+                self.importError = String(localized: "Failed to import recipe from photo.")
             }
             self.logger.error("Image import failed: \(error.localizedDescription)")
             SentrySDK.capture(error: error) { scope in

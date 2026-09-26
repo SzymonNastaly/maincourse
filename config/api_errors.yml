@@ -1,0 +1,65 @@
+# Wire identifiers are stable. Run bin/api-error-contract --generate after edits.
+# Parameters are optional on clients for compatibility with older servers.
+errors:
+  account_link_required: {meaning: Sign in with the existing password account, params: {}}
+  already_cookbook_member: {meaning: Invitation recipient is already a member, params: {}}
+  app_update_required: {meaning: Installed client cannot complete this action, params: {}}
+  apple_account_creation_confirmation_required: {meaning: Obtain explicit new Apple account intent, params: {}}
+  content_too_large: {meaning: Retry pre-extracted content as a URL-only import, params: {}}
+  cookbook_unavailable: {meaning: Destination cookbook is inaccessible, params: {}}
+  delete_failed: {meaning: Deletion could not be completed, params: {}}
+  forbidden: {meaning: Authenticated caller lacks permission, params: {}}
+  image_required: {meaning: No image was supplied, params: {}}
+  image_too_large: {meaning: Uploaded image exceeds the size limit, params: {}}
+  import_limit_reached: {meaning: Monthly import allowance exhausted, params: {count: integer}}
+  invalid_credentials: {meaning: Password authentication failed, params: {}}
+  invalid_image: {meaning: Upload is not a usable image, params: {}}
+  invalid_import_url: {meaning: URL failed public recipe URL validation, params: {}}
+  invalid_recipe_save: {meaning: Restart the sample save with valid source and request ID, params: {}}
+  invalid_request: {meaning: Malformed or invalid request parameters, params: {}}
+  invalid_shopping_items: {meaning: Shopping batch contains invalid items, params: {}}
+  invitation_unavailable: {meaning: Invitation is missing or expired, params: {}}
+  meal_plan_finalized: {meaning: Finalized plan cannot be edited, params: {}}
+  meal_plan_selection_conflict: {meaning: Another recipe is already selected, params: {}}
+  name_required: {meaning: Cookbook name is blank, params: {}}
+  not_found: {meaning: Requested resource is unavailable, params: {}}
+  oauth_failed: {meaning: Provider authentication failed, params: {}}
+  oauth_unavailable: {meaning: Provider authentication is temporarily unavailable, params: {}}
+  owner_cannot_leave: {meaning: Owner must delete rather than leave a cookbook, params: {}}
+  owner_required: {meaning: Only the cookbook owner can perform the action, params: {}}
+  personal_cookbook_invitation: {meaning: Invitations require a shared cookbook, params: {}}
+  personal_cookbook_required: {meaning: Personal cookbook cannot be deleted or left, params: {}}
+  rate_limited: {meaning: Caller must wait before retrying, params: {}}
+  recipe_save_conflict: {meaning: Request ID belongs to a different save intent, params: {}}
+  recipe_save_gone: {meaning: Previously saved copy is no longer accessible, params: {}}
+  shared_cookbook_exists: {meaning: User already has a shared cookbook, params: {}}
+  text_required: {meaning: No recipe text was supplied, params: {}}
+  text_too_long: {meaning: Recipe text exceeds the character limit, params: {count: integer}}
+  unauthorized: {meaning: Session is missing or expired, params: {}}
+  update_failed: {meaning: Changes could not be saved, params: {}}
+  url_required: {meaning: No recipe URL was supplied, params: {}}
+  validation_failed: {meaning: See field-level validation details, params: {}}
+imports:
+  import_failed: {meaning: Recipe extraction failed, params: {}}
+  no_recipe_in_photo: {meaning: Photo has no recipe text; expected user outcome, params: {}}
+fields:
+  base: {meaning: Whole record, params: {}}
+  email_address: {meaning: Account email, params: {}}
+  password: {meaning: Account password, params: {}}
+  password_challenge: {meaning: Current password challenge, params: {}}
+  password_confirmation: {meaning: Repeated password, params: {}}
+  name: {meaning: Recipe or cookbook or account name, params: {}}
+  servings: {meaning: Recipe portions, params: {}}
+  prep_time: {meaning: Preparation duration, params: {}}
+  cook_time: {meaning: Cooking duration, params: {}}
+  source_url: {meaning: Original recipe URL, params: {}}
+  cover_image: {meaning: Recipe cover photo, params: {}}
+  import_image: {meaning: Photo submitted for extraction, params: {}}
+rules:
+  blank: {meaning: Required value is missing, params: {}}
+  taken: {meaning: Value must be unique, params: {}}
+  too_long: {meaning: Maximum character count exceeded, params: {count: integer}}
+  too_short: {meaning: Minimum character count not met, params: {count: integer}}
+  password_too_long: {meaning: Password exceeds bcrypt byte limit, params: {}}
+  confirmation: {meaning: Confirmation differs from original value, params: {}}
+  invalid: {meaning: Value failed validation, params: {}}

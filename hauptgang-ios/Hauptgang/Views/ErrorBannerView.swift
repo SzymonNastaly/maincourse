@@ -27,19 +27,11 @@ struct ErrorBannerView: View {
 
             // Error message text
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                if let errorMessage = recipe.errorMessage {
-                    Text(errorMessage)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(Color.mcDanger)
-                        .multilineTextAlignment(.leading)
-                } else {
-                    // Fallback for recipes without error_message
-                    Text("Import failed - page is not supported")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(Color.mcDanger)
-                }
+                Text(ImportFailure.message(code: self.recipe.importErrorCode))
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color.mcDanger)
+                    .multilineTextAlignment(.leading)
             }
 
             Spacer()

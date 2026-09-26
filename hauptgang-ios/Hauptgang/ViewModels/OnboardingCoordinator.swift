@@ -121,14 +121,20 @@ final class OnboardingCoordinator {
         self.pending = intent
         self.persist()
         guard let cookbookId = intent.cookbookId else {
-            self.state = .failed(message: "We couldn’t reach My Recipes. Your preview is still here.", canRetry: true)
+            self.state = .failed(
+                message: String(localized: "We couldn’t reach My Recipes. Your preview is still here."),
+                canRetry: true
+            )
             return
         }
         self.state = .saving
         let generation = self.generation
         defer {
             if self.isCurrent(intent, generation: generation), self.state == .saving, Task.isCancelled {
-                self.state = .failed(message: "Saving was interrupted. You can safely try again.", canRetry: true)
+                self.state = .failed(
+                    message: String(localized: "Saving was interrupted. You can safely try again."),
+                    canRetry: true
+                )
             }
         }
         do {

@@ -9,84 +9,96 @@ enum APIError: LocalizedError {
     case notFound
     case resourceGone
     case requestConflict
-    case payloadTooLarge
+    case payloadTooLarge(APIProblem?)
     case unsupportedMediaType
-    case unprocessableEntity(String?)
+    case unprocessableEntity(APIProblem)
     case serverError(statusCode: Int)
     case decodingError(Error)
-    case importLimitReached
+    case importLimitReached(APIProblem)
     case invalidCredentials
     case oauthAuthenticationFailed
     case oauthUnavailable
     case accountLinkRequired
     case appleAccountCreationConfirmationRequired
     case unknown
+    case remote(APIProblem)
 
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            "Invalid URL configuration"
+            String(localized: "Invalid URL configuration")
         case .networkError:
-            "Unable to connect. Please check your internet connection."
+            String(localized: "Unable to connect. Please check your internet connection.")
         case .invalidResponse:
-            "Received an invalid response from the server"
+            String(localized: "Received an invalid response from the server")
         case .unauthorized:
-            "Your session has expired. Please sign in again."
+            self.message(.unauthorized)
         case .forbidden:
-            "You don't have permission to perform this action"
+            self.message(.forbidden)
         case .notFound:
-            "The requested resource was not found"
+            self.message(.not_found)
         case .resourceGone:
-            "That saved recipe is no longer available. You can save a new copy from the example."
+            self.message(.recipe_save_gone)
         case .requestConflict:
-            "This save request no longer matches. Please start again from the example."
-        case .payloadTooLarge:
-            "Image is too large. Please try a smaller photo."
+            self.message(.recipe_save_conflict)
+        case let .payloadTooLarge(problem):
+            problem?.message() ?? String(localized: "Image is too large. Please try a smaller photo.")
         case .unsupportedMediaType:
-            "Unsupported image format."
-        case let .unprocessableEntity(message):
-            message ?? "Could not process this image."
+            String(localized: "Unsupported image format.")
+        case let .unprocessableEntity(problem):
+            problem.message()
         case let .serverError(code):
-            "Server error (\(code)). Please try again later."
+            String(localized: "Server error (\(code)). Please try again later.")
         case .decodingError:
-            "Unable to process the server response"
-        case .importLimitReached:
-            "You've reached your free limit of 15 imports this month. Upgrade to Pro for unlimited imports."
+            String(localized: "Unable to process the server response")
+        case let .importLimitReached(problem):
+            problem.message()
         case .invalidCredentials:
-            "Invalid email or password"
+            self.message(.invalid_credentials)
         case .oauthAuthenticationFailed:
-            "Could not sign in with that provider. Please try again."
+            self.message(.oauth_failed)
         case .oauthUnavailable:
-            "That sign-in provider is temporarily unavailable. Please try again later."
+            self.message(.oauth_unavailable)
         case .accountLinkRequired:
-            "An account already exists for this email. Sign in with your password instead."
+            self.message(.account_link_required)
         case .appleAccountCreationConfirmationRequired:
-            "Confirm that you want to create a separate MainCourse account with Apple."
+            self.message(.apple_account_creation_confirmation_required)
         case .unknown:
-            "An unexpected error occurred"
+            String(localized: "An unexpected error occurred")
+        case let .remote(problem):
+            problem.message()
         }
     }
 
     var recoverySuggestion: String? {
         switch self {
         case .networkError:
-            "Check your Wi-Fi or cellular connection and try again."
+            String(localized: "Check your Wi-Fi or cellular connection and try again.")
         case .unauthorized:
-            "Please sign in with your credentials."
+            String(localized: "Please sign in with your credentials.")
         case .invalidCredentials:
-            "Double-check your email and password, then try again."
+            String(localized: "Double-check your email and password, then try again.")
         case .oauthAuthenticationFailed:
-            "Try the provider again or use email and password."
+            String(localized: "Try the provider again or use email and password.")
         case .oauthUnavailable:
-            "Wait a moment and try again, or use email and password."
+            String(localized: "Wait a moment and try again, or use email and password.")
         case .accountLinkRequired:
-            "Use the password reset link on the website if you have forgotten your password."
+            String(localized: "Use the password reset link on the website if you have forgotten your password.")
         case .appleAccountCreationConfirmationRequired:
-            "Sign in the way you used before to keep your recipes, or confirm creation of a separate cookbook."
+            String(
+                localized: """
+                Sign in the way you used before to keep your recipes, \
+                or confirm creation of a separate cookbook.
+                """
+            )
         case .serverError:
-            "Wait a moment and try again. If the problem persists, contact support."
+            String(localized: "Wait a moment and try again. If the problem persists, contact support.")
         default:
             nil
         }
+    }
+
+    private func message(_ code: ApiErrorCode) -> String {
+        code.message(count: nil, bundle: .main, locale: .autoupdatingCurrent)
     }
 }

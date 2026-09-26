@@ -8,7 +8,7 @@ module Api
         meal_plan = current_cookbook.meal_plans.find_or_create_by!(date: date)
 
         if meal_plan.selected?
-          return render json: { error: "Meal plan for this date has already been finalized" }, status: :unprocessable_entity
+          return render_api_error "meal_plan_finalized", error: "Meal plan for this date has already been finalized", status: :unprocessable_entity
         end
 
         entry = meal_plan.entries.find_or_initialize_by(recipe: recipe)
@@ -27,11 +27,11 @@ module Api
         render json: MealPlanSerializer.new(meal_plan, current_user: current_user).as_json,
                status: (entry.previously_new_record? ? :created : :ok)
       rescue Date::Error
-        render json: { error: "Invalid date format" }, status: :bad_request
+        render_api_error "invalid_request", error: "Invalid date format", status: :bad_request
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Recipe not found" }, status: :not_found
+        render_api_error "not_found", error: "Recipe not found", status: :not_found
       rescue ActiveRecord::RecordInvalid => e
-        render json: { error: e.message }, status: :unprocessable_entity
+        render_api_error "invalid_request", error: e.message, status: :unprocessable_entity
       end
 
       def destroy
@@ -39,17 +39,17 @@ module Api
         meal_plan = entry.meal_plan
 
         unless meal_plan.cookbook_id == current_cookbook.id
-          return render json: { error: "Not found" }, status: :not_found
+          return render_api_error "not_found", error: "Not found", status: :not_found
         end
 
         if meal_plan.selected?
-          return render json: { error: "Meal plan for this date has already been finalized" }, status: :unprocessable_entity
+          return render_api_error "meal_plan_finalized", error: "Meal plan for this date has already been finalized", status: :unprocessable_entity
         end
 
         entry.destroy!
         head :no_content
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Entry not found" }, status: :not_found
+        render_api_error "not_found", error: "Entry not found", status: :not_found
       end
     end
   end

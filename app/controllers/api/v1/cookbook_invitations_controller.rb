@@ -7,15 +7,15 @@ module Api
       def create
         cookbook = current_user.cookbooks.find_by(id: params[:cookbook_id])
         if cookbook.nil?
-          return render json: { error: "Cookbook not found" }, status: :not_found
+          return render_api_error "not_found", error: "Cookbook not found", status: :not_found
         end
 
         unless cookbook.owner?(current_user)
-          return render json: { error: "Only the owner can create invitations" }, status: :forbidden
+          return render_api_error "owner_required", error: "Only the owner can create invitations", status: :forbidden
         end
 
         if cookbook.personal?
-          return render json: { error: "Cannot invite to personal cookbook" }, status: :unprocessable_entity
+          return render_api_error "personal_cookbook_invitation", error: "Cannot invite to personal cookbook", status: :unprocessable_entity
         end
 
         # Expire previous pending invitations so only one is active at a time
@@ -35,7 +35,7 @@ module Api
       def show
         invitation = CookbookInvitation.includes(cookbook: { cookbook_memberships: :user }).find_by(token: params[:token])
         if invitation.nil?
-          return render json: { error: "Invitation not found" }, status: :not_found
+          return render_api_error "invitation_unavailable", error: "Invitation not found", status: :not_found
         end
 
         render json: invitation_preview_json(invitation)
@@ -45,16 +45,16 @@ module Api
       def accept
         invitation = CookbookInvitation.active.find_by(token: params[:token])
         if invitation.nil?
-          return render json: { error: "Invitation not found or expired" }, status: :not_found
+          return render_api_error "invitation_unavailable", error: "Invitation not found or expired", status: :not_found
         end
 
         if invitation.cookbook.cookbook_memberships.exists?(user: current_user)
-          return render json: { error: "You are already a member of this cookbook" }, status: :unprocessable_entity
+          return render_api_error "already_cookbook_member", error: "You are already a member of this cookbook", status: :unprocessable_entity
         end
 
         current_user.with_lock do
           if current_user.shared_cookbook.present?
-            return render json: { error: "You already have a shared cookbook" }, status: :unprocessable_entity
+            return render_api_error "shared_cookbook_exists", error: "You already have a shared cookbook", status: :unprocessable_entity
           end
 
           ActiveRecord::Base.transaction do
@@ -73,7 +73,7 @@ module Api
       def reject
         invitation = CookbookInvitation.active.find_by(token: params[:token])
         if invitation.nil?
-          return render json: { error: "Invitation not found or expired" }, status: :not_found
+          return render_api_error "invitation_unavailable", error: "Invitation not found or expired", status: :not_found
         end
 
         invitation.rejected!

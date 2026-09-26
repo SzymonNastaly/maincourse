@@ -93,6 +93,8 @@ data class RecipeSummary(
     val errorMessage: String?,
     @SerialName("updated_at")
     val updatedAt: String,
+    @SerialName("import_error_code")
+    val importErrorCode: String? = null,
 )
 
 @Serializable

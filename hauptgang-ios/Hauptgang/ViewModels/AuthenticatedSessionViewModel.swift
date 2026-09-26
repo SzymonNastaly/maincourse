@@ -92,7 +92,7 @@ final class AuthenticatedSessionViewModel {
             self.logger.warning("No active cookbook resolved after loadCookbooks; failing startup")
             self.startupState = .failed(
                 userId: user.id,
-                message: self.cookbookViewModel.error ?? "No cookbook available"
+                message: self.cookbookViewModel.error ?? String(localized: "No cookbook available")
             )
             return
         }
@@ -158,7 +158,7 @@ final class AuthenticatedSessionViewModel {
         guard !Task.isCancelled else { return }
 
         guard let cookbookId = self.cookbookViewModel.activeCookbook?.id else {
-            self.startupState = .failed(userId: user.id, message: "No cookbook available")
+            self.startupState = .failed(userId: user.id, message: String(localized: "No cookbook available"))
             return
         }
 
@@ -178,7 +178,7 @@ final class AuthenticatedSessionViewModel {
         guard !Task.isCancelled else { return }
 
         guard let cookbookId = self.cookbookViewModel.activeCookbook?.id else {
-            self.startupState = .failed(userId: user.id, message: "No cookbook available")
+            self.startupState = .failed(userId: user.id, message: String(localized: "No cookbook available"))
             return
         }
 

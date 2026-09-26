@@ -18,6 +18,7 @@ import retrofit2.HttpException
 
 fun Throwable.userMessage(fallback: String): String = when (this) {
     is CancellationException -> throw this
+    is LocalizedApiException -> userMessage()
     is InterruptedIOException -> "Connection timed out. Please try again."
     is UnknownHostException -> "Could not find the server. Check your connection."
     is ConnectException -> "Could not connect to the server. Check your connection."

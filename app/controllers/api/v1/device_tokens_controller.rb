@@ -9,15 +9,15 @@ module Api
         environment = params[:environment].to_s.presence || "production"
 
         unless DeviceToken::PROVIDERS.include?(provider)
-          return render json: { error: "Invalid provider" }, status: :unprocessable_entity
+          return render_api_error "invalid_request", error: "Invalid provider", status: :unprocessable_entity
         end
 
         unless DeviceToken::ENVIRONMENTS.include?(environment)
-          return render json: { error: "Invalid environment" }, status: :unprocessable_entity
+          return render_api_error "invalid_request", error: "Invalid environment", status: :unprocessable_entity
         end
 
         if token.blank?
-          return render json: { error: "token is required" }, status: :unprocessable_entity
+          return render_api_error "invalid_request", error: "token is required", status: :unprocessable_entity
         end
 
         store_time_zone(params[:time_zone])

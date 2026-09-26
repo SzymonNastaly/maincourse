@@ -10,7 +10,8 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
             HauptgangSchemaV4.self,
             HauptgangSchemaV5.self,
             HauptgangSchemaV6.self,
-            HauptgangSchemaV7.self
+            HauptgangSchemaV7.self,
+            HauptgangSchemaV8.self
         ]
     }
 
@@ -21,7 +22,8 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
             migrateV3toV4,
             migrateV4toV5,
             migrateV5toV6,
-            migrateV6toV7
+            migrateV6toV7,
+            migrateV7toV8
         ]
     }
 
@@ -73,5 +75,10 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
     static let migrateV6toV7 = MigrationStage.lightweight(
         fromVersion: HauptgangSchemaV6.self,
         toVersion: HauptgangSchemaV7.self
+    )
+
+    static let migrateV7toV8 = MigrationStage.lightweight(
+        fromVersion: HauptgangSchemaV7.self,
+        toVersion: HauptgangSchemaV8.self
     )
 }

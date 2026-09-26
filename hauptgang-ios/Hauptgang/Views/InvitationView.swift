@@ -226,13 +226,13 @@ struct InvitationView: View {
             let preview = try await service.fetchInvitationPreview(token: self.token)
 
             if preview.status != "pending" {
-                self.errorMessage = "This invitation is no longer available."
+                self.errorMessage = String(localized: "This invitation is no longer available.")
                 self.state = .error
                 return
             }
 
             if preview.expiresAt < Date() {
-                self.errorMessage = "This invitation has expired."
+                self.errorMessage = String(localized: "This invitation has expired.")
                 self.state = .error
                 return
             }

@@ -9,7 +9,10 @@ struct DeleteAccountConfirmationView: View {
     @State private var isDeleting = false
     @State private var errorMessage: String?
 
-    private let requiredPhrase = "DELETE"
+    private let requiredPhrase = String(
+        localized: "DELETE",
+        comment: "Word the user must type to confirm account deletion. The translated word is also used for validation."
+    )
 
     private var canDelete: Bool {
         self.typedConfirmation == self.requiredPhrase && !self.isDeleting
@@ -90,9 +93,9 @@ struct DeleteAccountConfirmationView: View {
         }
     }
 
-    private func bulletRow(_ text: String) -> some View {
+    private func bulletRow(_ text: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-            Text("•")
+            Text(verbatim: "•")
             Text(text)
         }
         .foregroundColor(.mcInk)

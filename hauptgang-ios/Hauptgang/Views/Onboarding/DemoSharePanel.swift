@@ -138,7 +138,7 @@ private struct DemoSocialSharePanel: View {
         }
     }
 
-    private func actionLabel(_ title: String, symbol: String, highlighted: Bool = false) -> some View {
+    private func actionLabel(_ title: LocalizedStringKey, symbol: String, highlighted: Bool = false) -> some View {
         let isHinted = highlighted && self.showsHint
         return VStack(spacing: 8) {
             Image(systemName: symbol)

@@ -29,7 +29,9 @@ struct DemoAppSharePanel: View {
             Divider().padding(.horizontal, 20)
             self.appRow
             Label(
-                self.mainCourseVisible ? "Tap MainCourse to save the recipe." : "Swipe left to find MainCourse.",
+                self.mainCourseVisible
+                    ? String(localized: "Tap MainCourse to save the recipe.")
+                    : String(localized: "Swipe left to find MainCourse."),
                 systemImage: self.mainCourseVisible ? "hand.tap" : "arrow.left"
             )
             .font(.footnote.weight(self.showsHint ? .semibold : .regular))
@@ -93,33 +95,7 @@ struct DemoAppSharePanel: View {
                     if placeholderCount == 3 {
                         self.placeholderApp("Reminders", symbol: "list.bullet", width: itemWidth)
                     }
-                    Button(action: self.onMainCourse) {
-                        VStack(spacing: 8) {
-                            Image("LaunchLogo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 64, height: 64)
-                                .clipShape(.rect(cornerRadius: 14))
-                                .overlay {
-                                    if self.showsHint {
-                                        DemoHintHalo(shape: RoundedRectangle(cornerRadius: 14))
-                                    }
-                                }
-                            Text("MainCourse")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(self.showsHint ? Color.mcAccent : Color.mcInk)
-                                .multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .frame(width: itemWidth)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("demo.maincourse")
-                    .accessibilityHint("Turns this post into a recipe")
-                    .onScrollVisibilityChange(threshold: 0.95) { visible in
-                        self.mainCourseVisible = visible
-                    }
+                    self.mainCourseButton(width: itemWidth)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 6)
@@ -157,7 +133,37 @@ struct DemoAppSharePanel: View {
         .frame(height: 6 + 64 + 8 + self.labelHeight)
     }
 
-    private func placeholderApp(_ name: String, symbol: String, width: CGFloat) -> some View {
+    private func mainCourseButton(width: CGFloat) -> some View {
+        Button(action: self.onMainCourse) {
+            VStack(spacing: 8) {
+                Image("LaunchLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .clipShape(.rect(cornerRadius: 14))
+                    .overlay {
+                        if self.showsHint {
+                            DemoHintHalo(shape: RoundedRectangle(cornerRadius: 14))
+                        }
+                    }
+                Text(verbatim: "MainCourse")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(self.showsHint ? Color.mcAccent : Color.mcInk)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(width: width)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("demo.maincourse")
+        .accessibilityHint("Turns this post into a recipe")
+        .onScrollVisibilityChange(threshold: 0.95) { visible in
+            self.mainCourseVisible = visible
+        }
+    }
+
+    private func placeholderApp(_ name: LocalizedStringKey, symbol: String, width: CGFloat) -> some View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 28, weight: .regular))
@@ -184,7 +190,7 @@ struct DemoAppSharePanel: View {
         .accessibilityHidden(true)
     }
 
-    private func action(_ title: String, symbol: String) -> some View {
+    private func action(_ title: LocalizedStringKey, symbol: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
                 .font(.title2)

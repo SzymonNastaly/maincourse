@@ -104,7 +104,7 @@ actor APIClient: APIClientProtocol {
                 throw APIError.invalidResponse
             }
 
-            try self.validateResponse(httpResponse, data: data)
+            try self.validateResponse(httpResponse, data: data, endpoint: endpoint)
 
             do {
                 return try self.decoder.decode(T.self, from: data)
@@ -149,7 +149,7 @@ actor APIClient: APIClientProtocol {
                 throw APIError.invalidResponse
             }
 
-            try self.validateResponse(httpResponse, data: data)
+            try self.validateResponse(httpResponse, data: data, endpoint: endpoint)
         } catch let error as APIError {
             throw error
         } catch {
@@ -196,7 +196,7 @@ actor APIClient: APIClientProtocol {
                 throw APIError.invalidResponse
             }
 
-            try self.validateResponse(httpResponse, data: data)
+            try self.validateResponse(httpResponse, data: data, endpoint: endpoint)
 
             do {
                 return try self.decoder.decode(T.self, from: data)
@@ -224,30 +224,58 @@ actor APIClient: APIClientProtocol {
         return resolvedURL
     }
 
-    private func validateResponse(_ response: HTTPURLResponse, data: Data) throws {
+    private func validateResponse(_ response: HTTPURLResponse, data: Data, endpoint: String) throws {
+        guard !(200 ... 299).contains(response.statusCode) else { return }
         let json = self.parseJSONObject(data)
+        if let error = self.codedResponseError(status: response.statusCode, json: json, data: data) {
+            throw error
+        }
+        throw self.fallbackError(status: response.statusCode, json: json, endpoint: endpoint)
+    }
 
-        switch response.statusCode {
-        case 200 ... 299:
-            return
+    private func codedResponseError(status: Int, json: [String: Any], data: Data) -> APIError? {
+        if status == 403, json["error_code"] as? String == "import_limit_reached" {
+            return .importLimitReached(self.problem(data, fallbackCode: "import_limit_reached"))
+        }
+        if [400, 422, 429].contains(status) {
+            return self.problemError(
+                data,
+                status: status,
+                fallbackCode: status == 429 ? "rate_limited" : "invalid_request"
+            )
+        }
+        let controlFlowCodes: Set<ApiErrorCode> = [
+            .forbidden, .not_found, .recipe_save_conflict, .account_link_required,
+            .apple_account_creation_confirmation_required
+        ]
+        if [403, 404, 409, 413].contains(status),
+           let raw = json["error_code"] as? String, let code = ApiErrorCode(rawValue: raw),
+           !controlFlowCodes.contains(code) {
+            return self.problemError(data, status: status)
+        }
+        return nil
+    }
+
+    private func fallbackError(status: Int, json: [String: Any], endpoint: String) -> APIError {
+        switch status {
         case 401:
-            throw self.unauthorizedError(from: json)
+            self.unauthorizedError(from: json, endpoint: endpoint)
         case 403:
-            throw self.forbiddenError(from: json)
-        case 404, 410:
-            throw response.statusCode == 410 ? APIError.resourceGone : APIError.notFound
+            .forbidden
+        case 404:
+            .notFound
+        case 410:
+            .resourceGone
         case 409:
-            throw self.conflictError(from: json)
+            self.conflictError(from: json)
         case 413:
-            throw APIError.payloadTooLarge
+            .payloadTooLarge(nil)
         case 415:
-            throw APIError.unsupportedMediaType
-        case 422:
-            throw APIError.unprocessableEntity(self.unprocessableMessage(from: json))
+            .unsupportedMediaType
         case 500 ... 599:
-            throw self.serverError(statusCode: response.statusCode, json: json)
+            self.serverError(statusCode: status, json: json)
         default:
-            throw APIError.unknown
+            .unknown
         }
     }
 
@@ -255,22 +283,21 @@ actor APIClient: APIClientProtocol {
         (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
     }
 
-    private func unauthorizedError(from json: [String: Any]) -> APIError {
-        guard let error = json["error"] as? String else {
+    private func unauthorizedError(from json: [String: Any], endpoint: String) -> APIError {
+        switch json["error_code"] as? String {
+        case "oauth_failed": return .oauthAuthenticationFailed
+        case "invalid_credentials": return .invalidCredentials
+        case nil:
+            // Older servers lack codes. Endpoint semantics are stable; prose is not.
+            if endpoint == "session" {
+                return .invalidCredentials
+            }
+            if endpoint == "oauth_session" {
+                return .oauthAuthenticationFailed
+            }
             return .unauthorized
+        default: return .unauthorized
         }
-        if json["error_code"] as? String == "oauth_failed" ||
-            error == "Could not authenticate with that provider" {
-            return .oauthAuthenticationFailed
-        }
-        return error.lowercased().contains("invalid") ? .invalidCredentials : .unauthorized
-    }
-
-    private func forbiddenError(from json: [String: Any]) -> APIError {
-        guard let errorCode = json["error_code"] as? String else {
-            return .forbidden
-        }
-        return errorCode == "import_limit_reached" ? .importLimitReached : .forbidden
     }
 
     private func conflictError(from json: [String: Any]) -> APIError {
@@ -292,16 +319,19 @@ actor APIClient: APIClientProtocol {
             : .serverError(statusCode: statusCode)
     }
 
-    private func unprocessableMessage(from json: [String: Any]) -> String? {
-        if let error = json["error"] as? String {
-            return error
+    private func problemError(_ data: Data, status: Int, fallbackCode: String = "invalid_request") -> APIError {
+        let problem = self.problem(data, fallbackCode: fallbackCode)
+        switch status {
+        case 413: return .payloadTooLarge(problem)
+        case 422: return .unprocessableEntity(problem)
+        default: return .remote(problem)
         }
+    }
 
-        if let errors = json["errors"] as? [String] {
-            return errors.joined(separator: ". ")
-        }
-
-        return nil
+    private func problem(_ data: Data, fallbackCode: String) -> APIProblem {
+        (try? self.decoder.decode(APIProblem.self, from: data)) ?? APIProblem(
+            errorCode: fallbackCode, errorParams: nil, errorDetails: nil
+        )
     }
 }
 

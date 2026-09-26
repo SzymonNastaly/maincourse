@@ -1,6 +1,7 @@
 class Recipe < ApplicationRecord
   # Enums
   enum :import_status, { pending: 0, completed: 1, failed: 2 }
+  validates :import_error_code, inclusion: { in: ApiErrorContract::DEFINITIONS.fetch("imports").keys }, allow_nil: true
 
   # Associations
   belongs_to :cookbook

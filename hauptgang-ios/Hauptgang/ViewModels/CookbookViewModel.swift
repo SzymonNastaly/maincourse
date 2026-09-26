@@ -200,7 +200,7 @@ enum CookbookError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noSharedCookbook:
-            "No shared cookbook found"
+            String(localized: "No shared cookbook found")
         }
     }
 }

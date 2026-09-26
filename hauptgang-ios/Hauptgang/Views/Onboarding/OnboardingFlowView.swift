@@ -19,7 +19,8 @@ struct OnboardingFlowView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.mcCanvas)
-            .navigationTitle(self.step == .auth && self.onboarding.pending != nil ? "Keep it in your cookbook" : "")
+            .navigationTitle(self.step == .auth && self.onboarding
+                .pending != nil ? String(localized: "Keep it in your cookbook") : "")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(self.step == .welcome ? .hidden : .visible, for: .navigationBar)
             .toolbar {

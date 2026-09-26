@@ -22,7 +22,9 @@ struct ShoppingListDraftItem: Identifiable, Hashable {
                 amount: ingredient.amount,
                 amountMax: ingredient.amountMax,
                 unit: ingredient.unit,
-                scale: scale
+                scale: scale,
+                // Details are persisted and shared across clients; keep their numeric representation stable.
+                locale: Locale(identifier: "en_US_POSIX")
             )
             .trimmingCharacters(in: .whitespacesAndNewlines)
             let parsedName = (ingredient.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)

@@ -1,0 +1,3385 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ cook" : {
+      "comment" : "Recipe cooking duration.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ cook"
+          }
+        }
+      }
+    },
+    "%@ is already in use." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is already in use."
+          }
+        }
+      }
+    },
+    "%@ is invalid. Please check it and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is invalid. Please check it and try again."
+          }
+        }
+      }
+    },
+    "%@ is required." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is required."
+          }
+        }
+      }
+    },
+    "%@ is too long." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is too long."
+          }
+        }
+      }
+    },
+    "%@ is too short." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is too short."
+          }
+        }
+      }
+    },
+    "%@ prep" : {
+      "comment" : "Recipe preparation duration.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ prep"
+          }
+        }
+      }
+    },
+    "%@ prep + %@ cook" : {
+      "comment" : "Recipe preparation and cooking durations.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ prep + %2$@ cook"
+          }
+        }
+      }
+    },
+    "%lld recipes" : {
+      "comment" : "Number of recipes in a cookbook. Uses plural variations, including one recipe.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld recipe"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld recipes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "A different recipe has already been selected for this date." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A different recipe has already been selected for this date."
+          }
+        }
+      }
+    },
+    "A little dinner inspiration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A little dinner inspiration"
+          }
+        }
+      }
+    },
+    "A recipe will be created from the text in your clipboard." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A recipe will be created from the text in your clipboard."
+          }
+        }
+      }
+    },
+    "Ad" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad"
+          }
+        }
+      }
+    },
+    "Add %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %lld"
+          }
+        }
+      }
+    },
+    "Add Ingredient" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Ingredient"
+          }
+        }
+      }
+    },
+    "Add Photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Photo"
+          }
+        }
+      }
+    },
+    "Add Recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Recipe"
+          }
+        }
+      }
+    },
+    "Add Step" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Step"
+          }
+        }
+      }
+    },
+    "Add item" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add item"
+          }
+        }
+      }
+    },
+    "Add items from a recipe or type your own" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add items from a recipe or type your own"
+          }
+        }
+      }
+    },
+    "Add to Shopping List" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Shopping List"
+          }
+        }
+      }
+    },
+    "Add to shopping list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to shopping list"
+          }
+        }
+      }
+    },
+    "Add to story" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to story"
+          }
+        }
+      }
+    },
+    "Add your name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add your name"
+          }
+        }
+      }
+    },
+    "All recipes in this cookbook will be permanently deleted. This cannot be undone." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All recipes in this cookbook will be permanently deleted. This cannot be undone."
+          }
+        }
+      }
+    },
+    "All your recipes, ready to cook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All your recipes, ready to cook."
+          }
+        }
+      }
+    },
+    "Allow cookies?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow cookies?"
+          }
+        }
+      }
+    },
+    "Allow notifications for Hauptgang in the Settings app to receive reminders." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow notifications for Hauptgang in the Settings app to receive reminders."
+          }
+        }
+      }
+    },
+    "Already Got" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already Got"
+          }
+        }
+      }
+    },
+    "Already have an account? %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already have an account? %@"
+          }
+        }
+      }
+    },
+    "An account already exists for this email. Sign in with your password instead." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An account already exists for this email. Sign in with your password instead."
+          }
+        }
+      }
+    },
+    "An unexpected error occurred" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An unexpected error occurred"
+          }
+        }
+      }
+    },
+    "An unexpected error occurred. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An unexpected error occurred. Please try again."
+          }
+        }
+      }
+    },
+    "And once it’s in your cookbook…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "And once it’s in your cookbook…"
+          }
+        }
+      }
+    },
+    "Are you sure?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure?"
+          }
+        }
+      }
+    },
+    "Back" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "Back to sharing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to sharing"
+          }
+        }
+      }
+    },
+    "Bought" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bought"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Change Photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Photo"
+          }
+        }
+      }
+    },
+    "Change the servings and every amount adjusts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the servings and every amount adjusts."
+          }
+        }
+      }
+    },
+    "Check your Wi-Fi or cellular connection and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your Wi-Fi or cellular connection and try again."
+          }
+        }
+      }
+    },
+    "Choose a recipe photo first." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a recipe photo first."
+          }
+        }
+      }
+    },
+    "Choose from Library" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose from Library"
+          }
+        }
+      }
+    },
+    "Clear and add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear and add"
+          }
+        }
+      }
+    },
+    "Clear input" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear input"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "Close sharing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close sharing"
+          }
+        }
+      }
+    },
+    "Common staples are excluded by default. Include anything you need." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common staples are excluded by default. Include anything you need."
+          }
+        }
+      }
+    },
+    "Confirm that you want to create a separate MainCourse account with Apple." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm that you want to create a separate MainCourse account with Apple."
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "Continue with Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue with Apple"
+          }
+        }
+      }
+    },
+    "Continue with Google" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue with Google"
+          }
+        }
+      }
+    },
+    "Continue without it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue without it"
+          }
+        }
+      }
+    },
+    "Continue without saving" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue without saving"
+          }
+        }
+      }
+    },
+    "Cook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cook"
+          }
+        }
+      }
+    },
+    "Cook for any number" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cook for any number"
+          }
+        }
+      }
+    },
+    "Cook something %@ today" : {
+      "comment" : "Login tagline. The placeholder is the highlighted word delicious; it can be reordered.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cook something %@ today"
+          }
+        }
+      }
+    },
+    "Cook together" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cook together"
+          }
+        }
+      }
+    },
+    "Cookbook Name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookbook Name"
+          }
+        }
+      }
+    },
+    "Cookbooks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookbooks"
+          }
+        }
+      }
+    },
+    "Cookbooks you share with others will be transferred to a collaborator so their data is preserved." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookbooks you share with others will be transferred to a collaborator so their data is preserved."
+          }
+        }
+      }
+    },
+    "Cooking time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cooking time"
+          }
+        }
+      }
+    },
+    "Copy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
+    },
+    "Copy link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy link"
+          }
+        }
+      }
+    },
+    "Could not complete this request. Check your information and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not complete this request. Check your information and try again."
+          }
+        }
+      }
+    },
+    "Could not delete this item. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not delete this item. Please try again."
+          }
+        }
+      }
+    },
+    "Could not import this recipe. Try another source or photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not import this recipe. Try another source or photo."
+          }
+        }
+      }
+    },
+    "Could not process image. Please try a different photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not process image. Please try a different photo."
+          }
+        }
+      }
+    },
+    "Could not replace the shopping list. Your existing items were kept." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not replace the shopping list. Your existing items were kept."
+          }
+        }
+      }
+    },
+    "Could not save your changes. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not save your changes. Please try again."
+          }
+        }
+      }
+    },
+    "Could not sign in with that provider. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not sign in with that provider. Please try again."
+          }
+        }
+      }
+    },
+    "Couldn't delete account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't delete account"
+          }
+        }
+      }
+    },
+    "Couldn’t load your recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t load your recipes"
+          }
+        }
+      }
+    },
+    "Create" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        }
+      }
+    },
+    "Create Account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Account"
+          }
+        }
+      }
+    },
+    "Create Shared Cookbook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Shared Cookbook"
+          }
+        }
+      }
+    },
+    "Create a new MainCourse account?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a new MainCourse account?"
+          }
+        }
+      }
+    },
+    "Create a shared cookbook to invite other people." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a shared cookbook to invite other people."
+          }
+        }
+      }
+    },
+    "Create new account with Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create new account with Apple"
+          }
+        }
+      }
+    },
+    "Create your account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create your account"
+          }
+        }
+      }
+    },
+    "Creating Account…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creating Account…"
+          }
+        }
+      }
+    },
+    "DELETE" : {
+      "comment" : "Word the user must type to confirm account deletion. The translated word is also used for validation.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DELETE"
+          }
+        }
+      }
+    },
+    "Decline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decline"
+          }
+        }
+      }
+    },
+    "Decrease servings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decrease servings"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "Delete Account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Account"
+          }
+        }
+      }
+    },
+    "Delete Cookbook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Cookbook"
+          }
+        }
+      }
+    },
+    "Delete My Account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete My Account"
+          }
+        }
+      }
+    },
+    "Delete Recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Recipe"
+          }
+        }
+      }
+    },
+    "Delete Shared Cookbook?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Shared Cookbook?"
+          }
+        }
+      }
+    },
+    "Deleting your account permanently removes your personal cookbook, recipes, shopping list, and meal plans. Cookbooks you share with others will be transferred to a collaborator." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting your account permanently removes your personal cookbook, recipes, shopping list, and meal plans. Cookbooks you share with others will be transferred to a collaborator."
+          }
+        }
+      }
+    },
+    "Deleting your account will permanently remove:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting your account will permanently remove:"
+          }
+        }
+      }
+    },
+    "Dismiss example suggestion" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss example suggestion"
+          }
+        }
+      }
+    },
+    "Don't have an account? %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't have an account? %@"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "Double-check your email and password, then try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-check your email and password, then try again."
+          }
+        }
+      }
+    },
+    "Double-tap to mark as bought" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-tap to mark as bought"
+          }
+        }
+      }
+    },
+    "Double-tap to move back to shopping list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-tap to move back to shopping list"
+          }
+        }
+      }
+    },
+    "Edit Name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Name"
+          }
+        }
+      }
+    },
+    "Edit Recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Recipe"
+          }
+        }
+      }
+    },
+    "Edit recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit recipe"
+          }
+        }
+      }
+    },
+    "Email" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email"
+          }
+        }
+      }
+    },
+    "Enter a recipe URL." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a recipe URL."
+          }
+        }
+      }
+    },
+    "Error" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
+          }
+        }
+      }
+    },
+    "Example saved in My Recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example saved in My Recipes"
+          }
+        }
+      }
+    },
+    "Example unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example unavailable"
+          }
+        }
+      }
+    },
+    "Failed to import recipe from photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import recipe from photo."
+          }
+        }
+      }
+    },
+    "Failed to import recipe from text." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import recipe from text."
+          }
+        }
+      }
+    },
+    "Failed to load recipe. Tap to retry." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load recipe. Tap to retry."
+          }
+        }
+      }
+    },
+    "Failed to save changes. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to save changes. Please try again."
+          }
+        }
+      }
+    },
+    "Family cookbook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family cookbook"
+          }
+        }
+      }
+    },
+    "First name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First name"
+          }
+        }
+      }
+    },
+    "Free Plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free Plan"
+          }
+        }
+      }
+    },
+    "Generate Invite Link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate Invite Link"
+          }
+        }
+      }
+    },
+    "Generating..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating..."
+          }
+        }
+      }
+    },
+    "Get started" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get started"
+          }
+        }
+      }
+    },
+    "Google Sign-In has not been configured for this build." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Sign-In has not been configured for this build."
+          }
+        }
+      }
+    },
+    "Here’s a recipe from someone’s feed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here’s a recipe from someone’s feed."
+          }
+        }
+      }
+    },
+    "I already have an account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I already have an account"
+          }
+        }
+      }
+    },
+    "Image is too large. Please try a smaller photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image is too large. Please try a smaller photo."
+          }
+        }
+      }
+    },
+    "Import" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        }
+      }
+    },
+    "Import Failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Failed"
+          }
+        }
+      }
+    },
+    "Import from Clipboard?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import from Clipboard?"
+          }
+        }
+      }
+    },
+    "Import recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import recipe"
+          }
+        }
+      }
+    },
+    "Importing recipe..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing recipe..."
+          }
+        }
+      }
+    },
+    "Importing..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing..."
+          }
+        }
+      }
+    },
+    "In Instagram or your browser, tap Share, then choose MainCourse." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Instagram or your browser, tap Share, then choose MainCourse."
+          }
+        }
+      }
+    },
+    "Increase servings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Increase servings"
+          }
+        }
+      }
+    },
+    "Ingredient" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingredient"
+          }
+        }
+      }
+    },
+    "Ingredients" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingredients"
+          }
+        }
+      }
+    },
+    "Instructions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instructions"
+          }
+        }
+      }
+    },
+    "Interactive example" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interactive example"
+          }
+        }
+      }
+    },
+    "Invalid URL configuration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid URL configuration"
+          }
+        }
+      }
+    },
+    "Invalid email or password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid email or password"
+          }
+        }
+      }
+    },
+    "Invitation Error" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitation Error"
+          }
+        }
+      }
+    },
+    "Invite Link Created" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite Link Created"
+          }
+        }
+      }
+    },
+    "Invited by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invited by %@"
+          }
+        }
+      }
+    },
+    "Item not found in Keychain" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item not found in Keychain"
+          }
+        }
+      }
+    },
+    "Join Cookbook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join Cookbook"
+          }
+        }
+      }
+    },
+    "Joining cookbook..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Joining cookbook..."
+          }
+        }
+      }
+    },
+    "Keep and add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep and add"
+          }
+        }
+      }
+    },
+    "Keep in My Recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep in My Recipes"
+          }
+        }
+      }
+    },
+    "Keep it in your cookbook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep it in your cookbook"
+          }
+        }
+      }
+    },
+    "Keep this recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep this recipe"
+          }
+        }
+      }
+    },
+    "Leave" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave"
+          }
+        }
+      }
+    },
+    "Leave Cookbook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Cookbook"
+          }
+        }
+      }
+    },
+    "Leave Shared Cookbook?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Shared Cookbook?"
+          }
+        }
+      }
+    },
+    "Loading invitation..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading invitation..."
+          }
+        }
+      }
+    },
+    "Loading recipe..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading recipe..."
+          }
+        }
+      }
+    },
+    "Log in" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log in"
+          }
+        }
+      }
+    },
+    "MainCourse Pro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse Pro"
+          }
+        }
+      }
+    },
+    "MainCourse could not open the sign-in screen. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse could not open the sign-in screen. Please try again."
+          }
+        }
+      }
+    },
+    "Manage Account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Account"
+          }
+        }
+      }
+    },
+    "Manage Cookbooks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Cookbooks"
+          }
+        }
+      }
+    },
+    "Manage Subscription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Subscription"
+          }
+        }
+      }
+    },
+    "Meal Plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meal Plan"
+          }
+        }
+      }
+    },
+    "Message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message"
+          }
+        }
+      }
+    },
+    "Messages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages"
+          }
+        }
+      }
+    },
+    "More" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        }
+      }
+    },
+    "Move \"%@\" to %@?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move \"%1$@\" to %2$@?"
+          }
+        }
+      }
+    },
+    "Move Recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Recipe"
+          }
+        }
+      }
+    },
+    "Move all personal recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move all personal recipes"
+          }
+        }
+      }
+    },
+    "Move to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to %@"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "Name is required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name is required"
+          }
+        }
+      }
+    },
+    "New Shared Cookbook" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Shared Cookbook"
+          }
+        }
+      }
+    },
+    "No cookbook available" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cookbook available"
+          }
+        }
+      }
+    },
+    "No recipe found in that photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recipe found in that photo."
+          }
+        }
+      }
+    },
+    "No recipes found" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recipes found"
+          }
+        }
+      }
+    },
+    "No results" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results"
+          }
+        }
+      }
+    },
+    "No shared cookbook found" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No shared cookbook found"
+          }
+        }
+      }
+    },
+    "Not Now" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Now"
+          }
+        }
+      }
+    },
+    "Notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        }
+      }
+    },
+    "Nothing to paste. Copy a recipe to your clipboard first." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to paste. Copy a recipe to your clipboard first."
+          }
+        }
+      }
+    },
+    "Notifications are turned off" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are turned off"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Occasional nudges about recipes you saved and shopping lists you left unfinished." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Occasional nudges about recipes you saved and shopping lists you left unfinished."
+          }
+        }
+      }
+    },
+    "Offline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline"
+          }
+        }
+      }
+    },
+    "Only the cookbook owner can do this." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the cookbook owner can do this."
+          }
+        }
+      }
+    },
+    "Open" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        }
+      }
+    },
+    "Opens the example sharing options" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the example sharing options"
+          }
+        }
+      }
+    },
+    "Password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        }
+      }
+    },
+    "Password confirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password confirmation"
+          }
+        }
+      }
+    },
+    "Password confirmation does not match." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password confirmation does not match."
+          }
+        }
+      }
+    },
+    "Password must be at least 12 characters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password must be at least 12 characters"
+          }
+        }
+      }
+    },
+    "Paste from Clipboard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste from Clipboard"
+          }
+        }
+      }
+    },
+    "Paste some recipe text first." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste some recipe text first."
+          }
+        }
+      }
+    },
+    "Personal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal"
+          }
+        }
+      }
+    },
+    "Please enter a valid email" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid email"
+          }
+        }
+      }
+    },
+    "Please enter your name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter your name"
+          }
+        }
+      }
+    },
+    "Please sign in with your credentials." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please sign in with your credentials."
+          }
+        }
+      }
+    },
+    "Post from %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Post from %@"
+          }
+        }
+      }
+    },
+    "Prep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prep"
+          }
+        }
+      }
+    },
+    "Preparation time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparation time"
+          }
+        }
+      }
+    },
+    "Processing recipe…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing recipe…"
+          }
+        }
+      }
+    },
+    "Received an invalid response from the server" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Received an invalid response from the server"
+          }
+        }
+      }
+    },
+    "Recipe URL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe URL"
+          }
+        }
+      }
+    },
+    "Recipe link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe link"
+          }
+        }
+      }
+    },
+    "Recipe name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe name"
+          }
+        }
+      }
+    },
+    "Recipe photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe photo"
+          }
+        }
+      }
+    },
+    "Recipe reminders" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe reminders"
+          }
+        }
+      }
+    },
+    "Recipe text exceeds the character limit (%lld)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe text exceeds the character limit (%lld)."
+          }
+        }
+      }
+    },
+    "Recipe text is too long. Try a shorter selection." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe text is too long. Try a shorter selection."
+          }
+        }
+      }
+    },
+    "Recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipes"
+          }
+        }
+      }
+    },
+    "Recipes from posts, websites, cookbooks and screenshots come together as one clean recipe." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipes from posts, websites, cookbooks and screenshots come together as one clean recipe."
+          }
+        }
+      }
+    },
+    "Reminders" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders"
+          }
+        }
+      }
+    },
+    "Remove All" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove All"
+          }
+        }
+      }
+    },
+    "Repository not configured with model context" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repository not configured with model context"
+          }
+        }
+      }
+    },
+    "Retry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        }
+      }
+    },
+    "Review this recipe's ingredients before adding them to your shopping list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review this recipe's ingredients before adding them to your shopping list"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
+    },
+    "Save recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save recipes"
+          }
+        }
+      }
+    },
+    "Save your own recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save your own recipe"
+          }
+        }
+      }
+    },
+    "Saved" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        }
+      }
+    },
+    "Saved posts, screenshots, cookbook pages — MainCourse turns them into recipes you actually cook from." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved posts, screenshots, cookbook pages — MainCourse turns them into recipes you actually cook from."
+          }
+        }
+      }
+    },
+    "Saving to My Recipes…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving to My Recipes…"
+          }
+        }
+      }
+    },
+    "Saving was interrupted. You can safely try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving was interrupted. You can safely try again."
+          }
+        }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        }
+      }
+    },
+    "Search recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search recipes"
+          }
+        }
+      }
+    },
+    "Search your recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search your recipes"
+          }
+        }
+      }
+    },
+    "Send ingredients to a shopping list in a tap." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send ingredients to a shopping list in a tap."
+          }
+        }
+      }
+    },
+    "Server error (%lld). Please try again later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server error (%lld). Please try again later."
+          }
+        }
+      }
+    },
+    "Servings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servings"
+          }
+        }
+      }
+    },
+    "Servings (×%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servings (×%@)"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "Share" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
+    "Share Link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Link"
+          }
+        }
+      }
+    },
+    "Share a cookbook with the people you cook with." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share a cookbook with the people you cook with."
+          }
+        }
+      }
+    },
+    "Share recipes and shopping lists with your partner or family." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share recipes and shopping lists with your partner or family."
+          }
+        }
+      }
+    },
+    "Share this link with someone to invite them to your cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share this link with someone to invite them to your cookbook."
+          }
+        }
+      }
+    },
+    "Share to…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share to…"
+          }
+        }
+      }
+    },
+    "Shared" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared"
+          }
+        }
+      }
+    },
+    "Shop from one list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shop from one list"
+          }
+        }
+      }
+    },
+    "Shopping List" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping List"
+          }
+        }
+      }
+    },
+    "Shown to other members of cookbooks you share, including in push notifications." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shown to other members of cookbooks you share, including in push notifications."
+          }
+        }
+      }
+    },
+    "Sign In" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign In"
+          }
+        }
+      }
+    },
+    "Sign Out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign Out"
+          }
+        }
+      }
+    },
+    "Sign Up" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign Up"
+          }
+        }
+      }
+    },
+    "Sign in the way you used before to keep your recipes, or confirm creation of a separate cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in the way you used before to keep your recipes, or confirm creation of a separate cookbook."
+          }
+        }
+      }
+    },
+    "Sign in with Apple is unavailable. Check your Apple ID in Settings and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with Apple is unavailable. Check your Apple ID in Settings and try again."
+          }
+        }
+      }
+    },
+    "Sign out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out"
+          }
+        }
+      }
+    },
+    "Sign out?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out?"
+          }
+        }
+      }
+    },
+    "Sign up to keep this recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign up to keep this recipe"
+          }
+        }
+      }
+    },
+    "Signed in as" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signed in as"
+          }
+        }
+      }
+    },
+    "Signing in…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signing in…"
+          }
+        }
+      }
+    },
+    "Some items have been here for more than 36 hours. Clear the whole list before adding these ingredients?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some items have been here for more than 36 hours. Clear the whole list before adding these ingredients?"
+          }
+        }
+      }
+    },
+    "Some shopping list items could not be saved. Check their names and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some shopping list items could not be saved. Check their names and try again."
+          }
+        }
+      }
+    },
+    "Source URL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source URL"
+          }
+        }
+      }
+    },
+    "Start a fresh shopping list?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a fresh shopping list?"
+          }
+        }
+      }
+    },
+    "Step %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %lld"
+          }
+        }
+      }
+    },
+    "Steps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps"
+          }
+        }
+      }
+    },
+    "Subscription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscription"
+          }
+        }
+      }
+    },
+    "Swipe left to find MainCourse." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe left to find MainCourse."
+          }
+        }
+      }
+    },
+    "Syncing..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncing..."
+          }
+        }
+      }
+    },
+    "Take Photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take Photo"
+          }
+        }
+      }
+    },
+    "Tap MainCourse to save the recipe." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap MainCourse to save the recipe."
+          }
+        }
+      }
+    },
+    "Tap Share and send it to MainCourse, just like you would from Instagram." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap Share and send it to MainCourse, just like you would from Instagram."
+          }
+        }
+      }
+    },
+    "Tap to share" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to share"
+          }
+        }
+      }
+    },
+    "That cookbook is no longer available to you. Choose another cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That cookbook is no longer available to you. Choose another cookbook."
+          }
+        }
+      }
+    },
+    "That saved recipe is no longer available. You can save a new copy from the example." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That saved recipe is no longer available. You can save a new copy from the example."
+          }
+        }
+      }
+    },
+    "That sign-in provider is temporarily unavailable. Please try again later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That sign-in provider is temporarily unavailable. Please try again later."
+          }
+        }
+      }
+    },
+    "The maximum character count for %@ is %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The maximum character count for %1$@ is %2$lld."
+          }
+        }
+      }
+    },
+    "The minimum character count for %@ is %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The minimum character count for %1$@ is %2$lld."
+          }
+        }
+      }
+    },
+    "The provider did not return valid sign-in credentials. Please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provider did not return valid sign-in credentials. Please try again."
+          }
+        }
+      }
+    },
+    "The recipe content is too large. Try importing the link instead." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The recipe content is too large. Try importing the link instead."
+          }
+        }
+      }
+    },
+    "The requested resource was not found" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The requested resource was not found"
+          }
+        }
+      }
+    },
+    "This Apple sign-in isn't connected to a MainCourse account. If you already use MainCourse, sign in the way you used before to keep your recipes. Creating a new account starts a separate cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Apple sign-in isn't connected to a MainCourse account. If you already use MainCourse, sign in the way you used before to keep your recipes. Creating a new account starts a separate cookbook."
+          }
+        }
+      }
+    },
+    "This URL cannot be imported. Check the address and try a public recipe page." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This URL cannot be imported. Check the address and try a public recipe page."
+          }
+        }
+      }
+    },
+    "This cannot be undone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This cannot be undone"
+          }
+        }
+      }
+    },
+    "This file is not a supported image. Choose another photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file is not a supported image. Choose another photo."
+          }
+        }
+      }
+    },
+    "This invitation has expired." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation has expired."
+          }
+        }
+      }
+    },
+    "This invitation is no longer available." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation is no longer available."
+          }
+        }
+      }
+    },
+    "This invitation is no longer available. It may have expired." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invitation is no longer available. It may have expired."
+          }
+        }
+      }
+    },
+    "This meal plan has already been finalized." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This meal plan has already been finalized."
+          }
+        }
+      }
+    },
+    "This password is too long. Use a shorter password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This password is too long. Use a shorter password."
+          }
+        }
+      }
+    },
+    "This recipe could not be saved. Please start again from the example." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This recipe could not be saved. Please start again from the example."
+          }
+        }
+      }
+    },
+    "This save request no longer matches. Please start again from the example." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This save request no longer matches. Please start again from the example."
+          }
+        }
+      }
+    },
+    "This value" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This value"
+          }
+        }
+      }
+    },
+    "This will remove all items from your shopping list, including checked items." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will remove all items from your shopping list, including checked items."
+          }
+        }
+      }
+    },
+    "Time & Servings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time & Servings"
+          }
+        }
+      }
+    },
+    "To Buy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To Buy"
+          }
+        }
+      }
+    },
+    "To buy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To buy"
+          }
+        }
+      }
+    },
+    "Tomato and chickpea orzo with spinach and basil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomato and chickpea orzo with spinach and basil"
+          }
+        }
+      }
+    },
+    "Too many requests. Please wait a moment and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many requests. Please wait a moment and try again."
+          }
+        }
+      }
+    },
+    "Try a different search term" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try a different search term"
+          }
+        }
+      }
+    },
+    "Try again" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again"
+          }
+        }
+      }
+    },
+    "Try one together" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try one together"
+          }
+        }
+      }
+    },
+    "Try saving again" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try saving again"
+          }
+        }
+      }
+    },
+    "Try the interactive example" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try the interactive example"
+          }
+        }
+      }
+    },
+    "Try the provider again or use email and password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try the provider again or use email and password."
+          }
+        }
+      }
+    },
+    "Turn this post into a recipe. A few taps, and dinner is in your cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn this post into a recipe. A few taps, and dinner is in your cookbook."
+          }
+        }
+      }
+    },
+    "Turns this post into a recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turns this post into a recipe"
+          }
+        }
+      }
+    },
+    "Type **%@** to confirm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type **%@** to confirm"
+          }
+        }
+      }
+    },
+    "Unable to connect. Please check your internet connection." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to connect. Please check your internet connection."
+          }
+        }
+      }
+    },
+    "Unable to process the server response" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to process the server response"
+          }
+        }
+      }
+    },
+    "Unable to save to Keychain (status: %d)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to save to Keychain (status: %d)"
+          }
+        }
+      }
+    },
+    "Unsupported image format." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported image format."
+          }
+        }
+      }
+    },
+    "Update MainCourse to continue, or sign in using your previous method." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update MainCourse to continue, or sign in using your previous method."
+          }
+        }
+      }
+    },
+    "Upgrade to Pro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade to Pro"
+          }
+        }
+      }
+    },
+    "Use existing account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use existing account"
+          }
+        }
+      }
+    },
+    "Use the password reset link on the website if you have forgotten your password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the password reset link on the website if you have forgotten your password."
+          }
+        }
+      }
+    },
+    "Wait a moment and try again, or use email and password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wait a moment and try again, or use email and password."
+          }
+        }
+      }
+    },
+    "Wait a moment and try again. If the problem persists, contact support." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wait a moment and try again. If the problem persists, contact support."
+          }
+        }
+      }
+    },
+    "We couldn’t reach My Recipes. Your preview is still here." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn’t reach My Recipes. Your preview is still here."
+          }
+        }
+      }
+    },
+    "Welcome back" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome back"
+          }
+        }
+      }
+    },
+    "When enabled, your existing recipes and shopping list items will move to the shared cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When enabled, your existing recipes and shopping list items will move to the shared cookbook."
+          }
+        }
+      }
+    },
+    "Works with Instagram, websites, and more." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Works with Instagram, websites, and more."
+          }
+        }
+      }
+    },
+    "You already have a shared cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have a shared cookbook."
+          }
+        }
+      }
+    },
+    "You already have a shared cookbook. You must leave it before joining another." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have a shared cookbook. You must leave it before joining another."
+          }
+        }
+      }
+    },
+    "You are already a member of this cookbook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You are already a member of this cookbook."
+          }
+        }
+      }
+    },
+    "You don't have permission to perform this action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have permission to perform this action"
+          }
+        }
+      }
+    },
+    "You own this cookbook. Delete it instead of leaving." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You own this cookbook. Delete it instead of leaving."
+          }
+        }
+      }
+    },
+    "You'll need to sign in again to access your account." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll need to sign in again to access your account."
+          }
+        }
+      }
+    },
+    "You're in!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're in!"
+          }
+        }
+      }
+    },
+    "You've been invited!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've been invited!"
+          }
+        }
+      }
+    },
+    "You've joined %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've joined %@"
+          }
+        }
+      }
+    },
+    "You've reached your monthly recipe import limit (%lld). Upgrade to Pro for unlimited imports." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've reached your monthly recipe import limit (%lld). Upgrade to Pro for unlimited imports."
+          }
+        }
+      }
+    },
+    "You've reached your monthly recipe import limit. Upgrade to Pro for unlimited imports." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've reached your monthly recipe import limit. Upgrade to Pro for unlimited imports."
+          }
+        }
+      }
+    },
+    "Your cookbook will be here when we can connect again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your cookbook will be here when we can connect again."
+          }
+        }
+      }
+    },
+    "Your name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your name"
+          }
+        }
+      }
+    },
+    "Your personal cookbook and all its recipes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your personal cookbook and all its recipes"
+          }
+        }
+      }
+    },
+    "Your personal cookbook cannot be deleted or left." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your personal cookbook cannot be deleted or left."
+          }
+        }
+      }
+    },
+    "Your preview is still here" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your preview is still here"
+          }
+        }
+      }
+    },
+    "Your recipes will stay in the shared cookbook. You can rejoin later with a new invitation." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recipes will stay in the shared cookbook. You can rejoin later with a new invitation."
+          }
+        }
+      }
+    },
+    "Your session has expired. Please sign in again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your session has expired. Please sign in again."
+          }
+        }
+      }
+    },
+    "Your shopping list and meal plans" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your shopping list and meal plans"
+          }
+        }
+      }
+    },
+    "Your shopping list is empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your shopping list is empty"
+          }
+        }
+      }
+    },
+    "Your subscription will not be refunded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your subscription will not be refunded"
+          }
+        }
+      }
+    },
+    "delicious" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "delicious"
+          }
+        }
+      }
+    },
+    "https://..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://..."
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "make this!!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "make this!!"
+          }
+        }
+      }
+    },
+    "min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        }
+      }
+    },
+    "or" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or"
+          }
+        }
+      }
+    },
+    "qty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "qty"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

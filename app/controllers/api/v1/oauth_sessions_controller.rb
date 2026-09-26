@@ -4,7 +4,7 @@ module Api
       skip_before_action :authenticate_with_token!, only: :create
       unless Rails.env.local?
         rate_limit to: 10, within: 3.minutes, only: :create, with: -> {
-          render json: { error: "Too many login attempts. Try again later." }, status: :too_many_requests
+          render_api_error "rate_limited", error: "Too many login attempts. Try again later.", status: :too_many_requests
         }
       end
 
@@ -28,32 +28,18 @@ module Api
         render_authenticated_user(user)
       rescue Oauth::AccountCreationConfirmationRequiredError
         if account_creation_intent_present
-          render json: {
-            error: "This Apple sign-in isn't linked to a MainCourse account. Confirm creating a new account to continue.",
-            error_code: "apple_account_creation_confirmation_required"
-          }, status: :conflict
+          render_api_error "apple_account_creation_confirmation_required", error: "This Apple sign-in isn't linked to a MainCourse account. Confirm creating a new account to continue.", status: :conflict
         else
-          render json: {
-            error: "Update the app to create a new Apple account, or use the prior sign-in method to access an existing account."
-          }, status: :unprocessable_entity
+          render_api_error "app_update_required", error: "Update the app to create a new Apple account, or use the prior sign-in method to access an existing account.", status: :unprocessable_entity
         end
       rescue Oauth::LinkRequiredError
-        render json: {
-          error: "An account already exists for this email. Sign in with your password instead.",
-          error_code: "account_link_required"
-        }, status: :conflict
+        render_api_error "account_link_required", error: "An account already exists for this email. Sign in with your password instead.", status: :conflict
       rescue Oauth::UnavailableError => error
         Rails.error.report(error, handled: true, context: { provider: params[:provider] })
-        render json: {
-          error: "OAuth provider is temporarily unavailable",
-          error_code: "oauth_unavailable"
-        }, status: :service_unavailable
+        render_api_error "oauth_unavailable", error: "OAuth provider is temporarily unavailable", status: :service_unavailable
       rescue Oauth::Error, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => error
         Rails.logger.info("OAuth login failed: #{error.message}")
-        render json: {
-          error: "Could not authenticate with that provider",
-          error_code: "oauth_failed"
-        }, status: :unauthorized
+        render_api_error "oauth_failed", error: "Could not authenticate with that provider", status: :unauthorized
       ensure
         revoke_pending_apple_token unless identity_persisted
       end

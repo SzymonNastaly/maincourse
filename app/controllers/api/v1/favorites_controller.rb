@@ -22,7 +22,7 @@ module Api
       def set_recipe
         @recipe = current_cookbook.recipes.find(params[:recipe_id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Recipe not found" }, status: :not_found
+        render_api_error "not_found", error: "Recipe not found", status: :not_found
       end
     end
   end

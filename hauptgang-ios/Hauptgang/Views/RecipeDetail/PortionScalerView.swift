@@ -33,8 +33,9 @@ struct PortionScalerView: View {
                 .buttonStyle(.borderless)
                 .tint(Color.mcAccent)
                 .disabled(self.servings <= self.minServings)
+                .accessibilityLabel("Decrease servings")
 
-                Text("\(self.servings)")
+                Text(self.servings, format: .number.grouping(.never))
                     .font(.mcMono(.headline, weight: .medium))
                     .foregroundColor(.mcInk)
                     .monospacedDigit()
@@ -52,36 +53,23 @@ struct PortionScalerView: View {
                 .buttonStyle(.borderless)
                 .tint(Color.mcAccent)
                 .disabled(self.servings >= self.maxServings)
+                .accessibilityLabel("Increase servings")
             }
             .frame(height: 28)
 
-            Text(self.servings == self.baseServings ? "Servings" : "Servings (×\(self.scaleLabel))")
+            Text(self.servings == self.baseServings
+                ? String(localized: "Servings")
+                : String(localized: "Servings (×\(self.scaleLabel))"))
                 .font(.caption)
                 .foregroundColor(.mcMuted)
-                .frame(height: 18)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 18)
         }
         .frame(maxWidth: .infinity)
     }
 
     private var scaleLabel: String {
         let factor = Double(self.servings) / Double(max(self.baseServings, 1))
-        if factor.rounded() == factor {
-            return String(Int(factor))
-        }
-        return String(format: "%.2f", factor).trimmingTrailingZeros()
-    }
-}
-
-private extension String {
-    func trimmingTrailingZeros() -> String {
-        guard self.contains(".") else { return self }
-        var result = self
-        while result.hasSuffix("0") {
-            result.removeLast()
-        }
-        if result.hasSuffix(".") {
-            result.removeLast()
-        }
-        return result
+        return factor.formatted(.number.precision(.fractionLength(0 ... 2)))
     }
 }

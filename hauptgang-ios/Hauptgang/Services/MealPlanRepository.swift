@@ -8,7 +8,7 @@ enum MealPlanRepositoryError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured:
-            "Repository not configured with model context"
+            String(localized: "Repository not configured with model context")
         }
     }
 }

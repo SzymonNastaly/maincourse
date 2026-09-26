@@ -9,7 +9,7 @@ module Api
 
       def create
         cookbook = current_user.cookbooks.find_by(id: params[:cookbook_id])
-        return render json: { error: "Forbidden" }, status: :forbidden unless cookbook
+        return render_api_error "forbidden", error: "Forbidden", status: :forbidden unless cookbook
 
         recipe = Recipes::Save.call(
           user: current_user,
@@ -24,15 +24,15 @@ module Api
       private
 
       def render_unprocessable_entity(error)
-        render json: { error: error.message }, status: :unprocessable_entity
+        render_api_error "invalid_recipe_save", error: error.message, status: :unprocessable_entity
       end
 
       def render_conflict(error)
-        render json: { error: error.message, error_code: "recipe_save_conflict" }, status: :conflict
+        render_api_error "recipe_save_conflict", error: error.message, status: :conflict
       end
 
       def render_gone(error)
-        render json: { error: error.message }, status: :gone
+        render_api_error "recipe_save_gone", error: error.message, status: :gone
       end
     end
   end

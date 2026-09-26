@@ -131,7 +131,7 @@ struct RecipeSourcesAnimation: View {
                 ForEach(0 ..< 3, id: \.self) { _ in
                     Circle().fill(Color.mcHairline).frame(width: 5, height: 5)
                 }
-                Text("best-recipes.blog")
+                Text(verbatim: "best-recipes.blog")
                     .font(.system(size: 7))
                     .foregroundStyle(Color.mcMuted)
                     .padding(.leading, 3)
@@ -173,7 +173,7 @@ struct RecipeSourcesAnimation: View {
                 PlaceholderLine(width: 46, color: Color.mcMuted)
                 ForEach(1 ... 4, id: \.self) { step in
                     HStack(alignment: .top, spacing: 5) {
-                        Text("\(step)")
+                        Text(step, format: .number.grouping(.never))
                             .font(.mcMono(.caption2))
                             .foregroundStyle(Color.mcBody)
                         VStack(alignment: .leading, spacing: 3) {
@@ -193,7 +193,7 @@ struct RecipeSourcesAnimation: View {
     private var screenshotCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("9:41")
+                Text(verbatim: "9:41")
                     .font(.mcMono(.caption2, weight: .medium))
                 Spacer()
                 Image(systemName: "battery.75percent")
@@ -245,8 +245,15 @@ struct SampleRecipeCard: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 10) {
-                    Label("\(self.sample.prepTime + self.sample.cookTime) min", systemImage: "clock")
-                    Label("\(self.sample.servings)", systemImage: "person.2")
+                    Label(
+                        RecipeDisplayFormatter.minutes(self.sample.prepTime + self.sample.cookTime),
+                        systemImage: "clock"
+                    )
+                    Label {
+                        Text(self.sample.servings, format: .number.grouping(.never))
+                    } icon: {
+                        Image(systemName: "person.2")
+                    }
                 }
                 .font(.mcMono(.caption2))
                 .foregroundStyle(Color.mcBody)

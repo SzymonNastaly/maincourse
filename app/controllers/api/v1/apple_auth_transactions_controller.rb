@@ -7,13 +7,13 @@ module Api
 
       unless Rails.env.local?
         rate_limit to: 10, within: 3.minutes, only: [ :create, :exchange ], with: -> {
-          render json: { error: "Too many Apple sign-in attempts. Try again later." }, status: :too_many_requests
+          render_api_error "rate_limited", error: "Too many Apple sign-in attempts. Try again later.", status: :too_many_requests
         }
       end
 
       def create
         unless Rails.application.config.x.oauth.apple_enabled
-          return render json: { error: "Apple sign-in is temporarily unavailable" }, status: :service_unavailable
+          return render_api_error "oauth_unavailable", error: "Apple sign-in is temporarily unavailable", status: :service_unavailable
         end
 
         transaction, raw_handle = AppleAuthTransaction.start!(
@@ -26,7 +26,7 @@ module Api
           expires_at: transaction.expires_at
         }, status: :created
       rescue AppleAuthTransaction::InvalidStartError, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
-        render json: { error: "Invalid Apple authentication request" }, status: :bad_request
+        render_api_error "invalid_request", error: "Invalid Apple authentication request", status: :bad_request
       end
 
       def exchange
@@ -41,7 +41,7 @@ module Api
         )
         render json: payload, status: :created
       rescue AppleAuthTransaction::ExchangeError
-        render json: { error: "Could not authenticate with Apple" }, status: :bad_request
+        render_api_error "oauth_failed", error: "Could not authenticate with Apple", status: :bad_request
       end
 
       private

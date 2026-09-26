@@ -11,7 +11,7 @@ struct MealPlanView: View {
     @State private var pickerDate: String?
 
     private var navigationTitle: String {
-        self.cookbookViewModel.activeCookbook?.name ?? "Meal Plan"
+        self.cookbookViewModel.activeCookbook?.name ?? String(localized: "Meal Plan")
     }
 
     private var activeCookbookId: Int? {

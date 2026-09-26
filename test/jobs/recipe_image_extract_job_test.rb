@@ -44,6 +44,7 @@ class RecipeImageExtractJobTest < ActiveSupport::TestCase
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
     assert_equal RecipeImageExtractJob::NO_RECIPE_IN_PHOTO_MESSAGE, @recipe.error_message
+    assert_equal "no_recipe_in_photo", @recipe.import_error_code
   end
 
   test "marks recipe as failed when LLM times out" do
@@ -55,6 +56,7 @@ class RecipeImageExtractJobTest < ActiveSupport::TestCase
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
     assert_equal "Import failed.", @recipe.error_message
+    assert_equal "import_failed", @recipe.import_error_code
   end
 
   test "marks recipe as failed when import image is missing" do

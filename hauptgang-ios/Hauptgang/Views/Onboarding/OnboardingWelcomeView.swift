@@ -8,7 +8,7 @@ struct OnboardingWelcomeView: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    private static let subtitle = """
+    private static let subtitle: LocalizedStringKey = """
     Saved posts, screenshots, cookbook pages — \
     MainCourse turns them into recipes you actually cook from.
     """
@@ -23,7 +23,7 @@ struct OnboardingWelcomeView: View {
                             .scaledToFit()
                             .frame(width: 32, height: 32)
                             .accessibilityHidden(true)
-                        Text("MainCourse")
+                        Text(verbatim: "MainCourse")
                             .font(.headline)
                             .foregroundStyle(Color.mcInk)
                     }

@@ -17,14 +17,14 @@ class RecipeTextExtractJob < ApplicationJob
     else
       recipe.update!(
         import_status: :failed,
-        error_message: "Import failed."
+        error_message: "Import failed.", import_error_code: "import_failed"
       )
       Rails.logger.error "[RecipeTextExtractJob] Extraction failed for recipe #{recipe_id}: #{result.error}"
     end
   rescue => error
     recipe&.update(
       import_status: :failed,
-      error_message: "Import failed."
+      error_message: "Import failed.", import_error_code: "import_failed"
     )
     Rails.logger.error "[RecipeTextExtractJob] Unexpected error for recipe #{recipe_id}: #{error.class} - #{error.message}"
     raise

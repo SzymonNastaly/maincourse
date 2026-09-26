@@ -4,7 +4,7 @@ struct ImportDemoView: View {
     enum Stage: Equatable { case post, sharing, destinations, processing, recipe }
 
     let sample: DemoRecipe
-    var keepLabel = "Keep this recipe"
+    var keepLabel: LocalizedStringKey = "Keep this recipe"
     var startsWithRecipe = false
     var showsKeepButton = true
     var onRecipeReady: () -> Void = {}

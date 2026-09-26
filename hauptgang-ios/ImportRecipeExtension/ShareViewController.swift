@@ -65,14 +65,14 @@ class ShareViewController: UIViewController {
         guard let extensionItems = extensionContext?.inputItems as? [NSExtensionItem]
         else {
             logger.error("No extension item or attachments found")
-            self.updateState(.failed("No content found"))
+            self.updateState(.failed(String(localized: "No content found")))
             return
         }
 
         let attachments = extensionItems.flatMap { $0.attachments ?? [] }
         guard attachments.isEmpty == false else {
             logger.error("No attachments found across \(extensionItems.count) extension items")
-            self.updateState(.failed("No content found"))
+            self.updateState(.failed(String(localized: "No content found")))
             return
         }
 
@@ -132,7 +132,7 @@ class ShareViewController: UIViewController {
             logger.error("Could not extract any content from attachments")
             self.reportImportFailure(message: "Could not extract content from attachments", source: "extraction")
             await MainActor.run {
-                self.updateState(.failed("Could not extract recipe content"))
+                self.updateState(.failed(String(localized: "Could not extract recipe content")))
             }
         }
     }
@@ -147,7 +147,10 @@ class ShareViewController: UIViewController {
                 host: unsupportedDomain
             )
             await MainActor.run {
-                self.updateState(.failed("Importing from \(unsupportedDomain) is currently not supported."))
+                self
+                    .updateState(
+                        .failed(String(localized: "Importing from \(unsupportedDomain) is currently not supported."))
+                    )
             }
             return
         }
@@ -206,7 +209,10 @@ class ShareViewController: UIViewController {
                 host: unsupportedDomain
             )
             await MainActor.run {
-                self.updateState(.failed("Importing from \(unsupportedDomain) is currently not supported."))
+                self
+                    .updateState(
+                        .failed(String(localized: "Importing from \(unsupportedDomain) is currently not supported."))
+                    )
             }
             return
         }
@@ -267,7 +273,7 @@ class ShareViewController: UIViewController {
             logger.error("Image compression failed for \(fileURL.lastPathComponent)")
             self.reportImportFailure(message: "Image compression failed", source: "image")
             await MainActor.run {
-                self.updateState(.failed("Could not process image"))
+                self.updateState(.failed(String(localized: "Could not process image")))
             }
             return
         }

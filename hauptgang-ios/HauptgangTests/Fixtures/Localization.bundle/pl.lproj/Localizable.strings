@@ -1,0 +1,4 @@
+/* Test-only translations: these do not advertise Polish in the shipping app. */
+"Name" = "Nazwa";
+"The maximum character count for %@ is %lld." = "Maksymalna liczba znaków dla pola %1$@: %2$lld.";
+"Choose a recipe photo first." = "Najpierw wybierz zdjęcie przepisu.";

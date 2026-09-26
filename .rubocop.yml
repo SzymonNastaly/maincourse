@@ -43,6 +43,7 @@ Metrics/BlockLength:
 # Custom cops
 require:
   - ./lib/rubocop/cop/maincourse/migration_table_rebuild.rb
+  - ./lib/rubocop/cop/maincourse/api_error_contract.rb
 
 # On SQLite most schema changes rebuild the table, and that rebuild's DROP
 # fires every ON DELETE CASCADE / SET NULL pointing at it unless the migration
@@ -51,3 +52,12 @@ Maincourse/MigrationTableRebuild:
   Enabled: true
   Include:
     - "db/migrate/**/*.rb"
+
+Maincourse/ApiErrorContract:
+  Enabled: true
+  Include:
+    - "app/controllers/api/**/*.rb"
+    - "app/jobs/recipe*.rb"
+  Exclude:
+    - "app/controllers/concerns/api_error_rendering.rb"
+    - "app/controllers/api/v1/webhooks/**/*.rb"

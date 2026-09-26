@@ -169,7 +169,7 @@ struct MealPlanDayRow: View {
             self.onToggleVote(entry)
         } label: {
             HStack(spacing: Theme.Spacing.xs) {
-                Text(entry.voteCount > 0 ? "\(entry.voteCount)" : "")
+                Text(entry.voteCount > 0 ? entry.voteCount.formatted() : "")
                     .font(.mcMono(.subheadline, weight: .medium))
                     .foregroundStyle(
                         self.components.isPast

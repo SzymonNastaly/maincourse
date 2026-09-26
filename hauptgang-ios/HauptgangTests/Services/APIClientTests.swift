@@ -154,6 +154,109 @@ final class APIClientTests: XCTestCase {
 
     // MARK: - Error Mapping Tests
 
+    func testLocalizationPreservesRecoveryAndTerminalErrorCategories() async throws {
+        for (status, code) in [(413, "content_too_large"), (422, "meal_plan_finalized"), (
+            403,
+            "import_limit_reached"
+        )] {
+            MockURLProtocol.requestHandler = { request in
+                (
+                    HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!,
+                    Data("{\"error_code\":\"\(code)\",\"error_params\":{\"count\":23}}".utf8)
+                )
+            }
+            do {
+                try await self.sut.requestVoid(endpoint: "test")
+                XCTFail("Expected an error")
+            } catch APIError.payloadTooLarge where status == 413 {
+                // The share extension must still retry oversized content as URL-only.
+            } catch APIError.unprocessableEntity where status == 422 {
+                // Offline meal-plan sync must still drop terminally rejected operations.
+            } catch let APIError.importLimitReached(problem) where status == 403 {
+                XCTAssertTrue(problem.message().contains("23"))
+            } catch {
+                XCTFail("Unexpected recovery category: \(error)")
+            }
+        }
+    }
+
+    func testAllRequestPathsUseCodedErrorsRatherThanServerProse() async throws {
+        MockURLProtocol.requestHandler = { request in
+            (
+                HTTPURLResponse(url: request.url!, statusCode: 422, httpVersion: nil, headerFields: nil)!,
+                Data(#"{"error_code":"image_required","error":"DO NOT DISPLAY"}"#.utf8)
+            )
+        }
+        for path in 0 ... 2 {
+            do {
+                switch path {
+                case 0:
+                    let _: EmptyDecodable = try await self.sut.request(endpoint: "test")
+                case 1:
+                    try await self.sut.requestVoid(endpoint: "test")
+                default:
+                    let _: EmptyDecodable = try await self.sut.uploadMultipart(
+                        endpoint: "test", file: MultipartFile(
+                            data: Data([0]), fileName: "photo.png", mimeType: "image/png", paramName: "image"
+                        )
+                    )
+                }
+                XCTFail("Expected an error")
+            } catch let error as APIError {
+                XCTAssertEqual(error.errorDescription, "Choose a recipe photo first.")
+            }
+        }
+    }
+
+    func testMalformedUnknownAndUncodedErrorsNeverDisplayServerText() async throws {
+        for body in [
+            #"{"error":"DO NOT DISPLAY"}"#,
+            #"{"error_code":"future_code"}"#,
+            #"{"error_code":"text_too_long","error_params":{"count":"bad"}}"#,
+            "<html>bad gateway</html>"
+        ] {
+            MockURLProtocol.requestHandler = { request in
+                (
+                    HTTPURLResponse(url: request.url!, statusCode: 422, httpVersion: nil, headerFields: nil)!,
+                    Data(body.utf8)
+                )
+            }
+            do {
+                try await self.sut.requestVoid(endpoint: "test")
+                XCTFail("Expected an error")
+            } catch let error as APIError {
+                XCTAssertEqual(
+                    error.errorDescription,
+                    "Could not complete this request. Check your information and try again."
+                )
+            }
+        }
+    }
+
+    func testLegacyLoginUsesEndpointAndUnknownAuthCodeDoesNotGuessFromProse() async throws {
+        for (endpoint, body, expected) in [
+            ("session", "{}", "Invalid email or password"),
+            (
+                "test",
+                #"{"error":"Invalid email or password","error_code":"future_code"}"#,
+                "Your session has expired. Please sign in again."
+            )
+        ] {
+            MockURLProtocol.requestHandler = { request in
+                (
+                    HTTPURLResponse(url: request.url!, statusCode: 401, httpVersion: nil, headerFields: nil)!,
+                    Data(body.utf8)
+                )
+            }
+            do {
+                try await self.sut.requestVoid(endpoint: endpoint)
+                XCTFail("Expected an error")
+            } catch let error as APIError {
+                XCTAssertEqual(error.errorDescription, expected)
+            }
+        }
+    }
+
     func testRequest_401WithInvalidError_throwsInvalidCredentials() async throws {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(
@@ -162,7 +265,7 @@ final class APIClientTests: XCTestCase {
                 httpVersion: nil,
                 headerFields: nil
             )!
-            let body = #"{"error": "Invalid email or password"}"#.data(using: .utf8)!
+            let body = #"{"error": "Dowolna treść", "error_code": "invalid_credentials"}"#.data(using: .utf8)!
             return (response, body)
         }
 
@@ -352,8 +455,11 @@ final class APIClientTests: XCTestCase {
             )
             XCTFail("Expected unprocessableEntity error")
         } catch let error as APIError {
-            if case let .unprocessableEntity(message) = error {
-                XCTAssertEqual(message, "Recipe URL is invalid")
+            if case let .unprocessableEntity(problem) = error {
+                XCTAssertEqual(
+                    problem.message(),
+                    "Could not complete this request. Check your information and try again."
+                )
             } else {
                 XCTFail("Expected unprocessableEntity, got \(error)")
             }

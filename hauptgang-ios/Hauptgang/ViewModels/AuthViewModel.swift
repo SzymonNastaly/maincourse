@@ -69,7 +69,7 @@ final class AuthViewModel: ObservableObject {
     var nameError: String? {
         guard self.isSignUp, self.nameDirty else { return nil }
         if self.name.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "Please enter your name"
+            return String(localized: "Please enter your name")
         }
         return nil
     }
@@ -81,7 +81,7 @@ final class AuthViewModel: ObservableObject {
             return nil
         }
         if !self.isValidEmail(trimmed) {
-            return "Please enter a valid email"
+            return String(localized: "Please enter a valid email")
         }
         return nil
     }
@@ -163,7 +163,7 @@ final class AuthViewModel: ObservableObject {
            let description = localizedError.errorDescription {
             self.errorMessage = description
         } else {
-            self.errorMessage = "An unexpected error occurred. Please try again."
+            self.errorMessage = String(localized: "An unexpected error occurred. Please try again.")
         }
     }
 
@@ -187,7 +187,7 @@ final class AuthViewModel: ObservableObject {
         } catch let error as APIError {
             self.errorMessage = error.localizedDescription
         } catch {
-            self.errorMessage = "An unexpected error occurred. Please try again."
+            self.errorMessage = String(localized: "An unexpected error occurred. Please try again.")
         }
 
         return false

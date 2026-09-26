@@ -184,7 +184,7 @@ struct RecipesView: View {
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
-        .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Recipes")
+        .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? String(localized: "Recipes"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
             CookbookTitleMenu(
@@ -392,7 +392,7 @@ struct RecipesView: View {
                 self.clipboardContent = ClipboardContent(text: text)
             } else {
                 self.recipeViewModel.importError =
-                    "Nothing to paste. Copy a recipe to your clipboard first."
+                    String(localized: "Nothing to paste. Copy a recipe to your clipboard first.")
             }
         } label: {
             Label("Paste from Clipboard", systemImage: "doc.on.clipboard")

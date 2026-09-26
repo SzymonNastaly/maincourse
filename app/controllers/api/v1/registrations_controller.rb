@@ -4,7 +4,7 @@ module Api
       skip_before_action :authenticate_with_token!, only: :create
       unless Rails.env.local?
         rate_limit to: 10, within: 3.minutes, only: :create, with: -> {
-          render json: { error: "Too many signup attempts. Try again later." }, status: :too_many_requests
+          render_api_error "rate_limited", error: "Too many signup attempts. Try again later.", status: :too_many_requests
         }
       end
 
@@ -20,7 +20,7 @@ module Api
           OnboardingResponse.link_to_user!(device_id: params[:onboarding_device_id], user: user)
           render_authenticated_user(user)
         else
-          render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(user)
         end
       end
     end

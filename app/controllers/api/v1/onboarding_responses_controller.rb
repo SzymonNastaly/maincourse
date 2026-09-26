@@ -6,7 +6,7 @@ module Api
 
       unless Rails.env.local?
         rate_limit to: 10, within: 5.minutes, only: :create, with: -> {
-          render json: { error: "Too many onboarding submissions. Try again later." }, status: :too_many_requests
+          render_api_error "rate_limited", error: "Too many onboarding submissions. Try again later.", status: :too_many_requests
         }
       end
 
@@ -16,17 +16,17 @@ module Api
       def create
         device_id = params[:device_id].to_s.strip
         if device_id.blank?
-          return render json: { error: "device_id is required" }, status: :unprocessable_entity
+          return render_api_error "invalid_request", error: "device_id is required", status: :unprocessable_entity
         end
 
         raw = params[:answers]
         unless raw.is_a?(ActionController::Parameters) || raw.is_a?(Hash)
-          return render json: { error: "answers must be an object" }, status: :unprocessable_entity
+          return render_api_error "invalid_request", error: "answers must be an object", status: :unprocessable_entity
         end
 
         sanitized, error = sanitize_answers(raw.to_unsafe_h)
         if error
-          return render json: { error: error }, status: :unprocessable_entity
+          return render_api_error "invalid_request", error: error, status: :unprocessable_entity
         end
 
         record = OnboardingResponse.record!(device_id: device_id, answers: sanitized)
