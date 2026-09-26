@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { background: {{canvas}}; }
+    .tablet { position: absolute; height: 88%; right: 12%; bottom: 6%; }
+    .phone { position: absolute; height: 78%; left: 12%; bottom: 3%; }
+  </style>
+</head>
+<body>
+  <img class="tablet" data-kou-id="tablet" src="{{tablet}}" alt="MainCourse on iPad">
+  <img class="phone" data-kou-id="phone" src="{{phone}}" alt="MainCourse on iPhone">
+</body>
+</html>

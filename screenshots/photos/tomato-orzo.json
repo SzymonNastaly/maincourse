@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Soft side-window daylight, restrained warm-neutral whites,\nnatural green herbs, pale grey stone or light oak surface, understated ceramic tableware.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nA shallow ivory ceramic bowl of creamy tomato orzo, individual rice-shaped pasta clearly visible in a glossy coral-red tomato sauce, blistered red and golden cherry tomatoes, fresh small basil leaves and delicate shaved Parmesan. A spoon resting on natural linen at the edge. Three-quarter overhead angle, appetizing and generous, freshly served.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T09:24:01.877848+00:00",
+  "sha256": "275e38b61095602e28da3fd757e5a4cd0dc7c10a3cdecc7e07358f1e0f701c1b",
+  "usage": {
+    "input_tokens": 244,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 244
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1616
+  },
+  "revised_prompt": null
+}

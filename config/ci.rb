@@ -12,6 +12,7 @@ CI.run do
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error --skip-files hauptgang-mobile/"
 
   step "Tests: Rails", "bin/rails test"
+  step "Tests: Screenshot tooling", "python3 -m unittest discover -s test/screenshots -p '*_test.py'"
   step "Tests: System", "bin/rails test:system"
   step "Tests: Seeds", "env RAILS_ENV=test bin/rails db:seed:replant"
 

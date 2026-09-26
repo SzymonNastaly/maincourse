@@ -6,6 +6,10 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+screenshots:
+  service: Disk
+  root: <%= Rails.root.join("storage/screenshots/files") %>
+
 # Cloudflare R2 (S3-compatible), EU jurisdiction. Jurisdiction is fixed at bucket
 # creation and cannot be changed later.
 # Store keys via: bin/rails credentials:edit

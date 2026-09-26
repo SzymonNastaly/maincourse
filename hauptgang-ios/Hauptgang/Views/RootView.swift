@@ -39,6 +39,12 @@ struct RootView: View {
         // Note: animation removed to prevent iOS 26 Liquid Glass tab bar background initialization bug
         // .animation(.easeInOut(duration: 0.3), value: self.authManager.authState)
         .task {
+            #if DEBUG && targetEnvironment(simulator)
+            if ScreenshotSupport.isEnabled {
+                await ScreenshotSupport.signIn(self.authManager)
+                return
+            }
+            #endif
             await self.authManager.checkAuthStatus()
         }
         .onChange(of: self.authManager.authState, initial: true) { _, newValue in

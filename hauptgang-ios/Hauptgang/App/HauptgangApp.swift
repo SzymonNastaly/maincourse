@@ -45,7 +45,7 @@ struct HauptgangApp: App {
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema(versionedSchema: HauptgangSchemaV7.self)
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: ScreenshotSupport.isEnabled)
 
         // Happy path: versioned store opens with migration plan
         do {

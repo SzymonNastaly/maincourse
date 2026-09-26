@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Soft side-window daylight, restrained warm-neutral whites,\nnatural green herbs, pale grey stone or light oak surface, understated ceramic tableware.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nTwo slices of rustic toasted sourdough with thick roughly mashed green avocado, each topped with a halved seven-minute egg with deep golden jammy yolk, a few red chilli flakes and cracked black pepper. Pale handmade ceramic plate, a simple linen napkin, three-quarter overhead composition, bright but natural breakfast light.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T09:25:53.153998+00:00",
+  "sha256": "4f418380d2abd777644eaccf202bd03489a2a3329d0398d513bdb5baa8e070eb",
+  "usage": {
+    "input_tokens": 243,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 243
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1615
+  },
+  "revised_prompt": null
+}

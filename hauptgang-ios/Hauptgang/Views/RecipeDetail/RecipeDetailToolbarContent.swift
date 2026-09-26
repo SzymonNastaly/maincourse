@@ -21,12 +21,14 @@ struct RecipeDetailToolbarContent: ToolbarContent {
                 }
                 .tint(Color.mcAccent)
                 .accessibilityLabel("Add to shopping list")
+                .accessibilityIdentifier("recipe.add-to-shopping-list")
                 .accessibilityHint("Review this recipe's ingredients before adding them to your shopping list")
             } else {
                 Button(action: self.onAddToShoppingList) {
                     Image(systemName: "cart")
                 }
                 .accessibilityLabel("Add to shopping list")
+                .accessibilityIdentifier("recipe.add-to-shopping-list")
                 .accessibilityHint("Review this recipe's ingredients before adding them to your shopping list")
                 .tint(Color.mcAccent)
             }

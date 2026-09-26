@@ -6,18 +6,18 @@ enum Constants {
         /// Local development - use your Mac's IP for device testing
         /// For simulator: localhost works fine
         static let host: URL = {
+            #if targetEnvironment(simulator)
+            if UserDefaults.standard.bool(forKey: "screenshots") {
+                return URL(string: "http://127.0.0.1:3100")!
+            }
+            #endif
             guard let url = URL(string: "http://127.0.0.1:3000") else {
                 preconditionFailure("Invalid API host URL")
             }
             return url
         }()
 
-        static let baseURL: URL = {
-            guard let url = URL(string: "http://127.0.0.1:3000/api/v1") else {
-                preconditionFailure("Invalid API base URL")
-            }
-            return url
-        }()
+        static let baseURL: URL = Constants.API.host.appendingPathComponent("api/v1")
         #else
         /// Production API domain. Both this and the legacy cook.hauptgang.app are
         /// served until December 2026; this is the one new builds talk to.

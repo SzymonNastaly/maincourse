@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "bundle_id": "app.hauptgang.ios",
+  "locales": ["en-US"],
+  "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
+  "devices": {
+    "iphone": {
+      "simulator_name": "MainCourse Screenshots iPhone",
+      "device_type": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max",
+      "frame": "iPhone 17 Pro Max - Silver - Portrait",
+      "size": [1320, 2868],
+      "display_type": "IPHONE_69"
+    },
+    "ipad": {
+      "simulator_name": "MainCourse Screenshots iPad",
+      "device_type": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-8GB",
+      "frame": "iPad Pro 13 - M4 - Space Gray - Portrait",
+      "size": [2064, 2752],
+      "display_type": "IPAD_PRO_3GEN_129"
+    }
+  },
+  "screens": {
+    "recipe-library": {"plan": "library", "order": 1},
+    "recipe-detail": {"plan": "detail", "order": 2},
+    "shopping-review": {"plan": "shopping-review", "order": 3},
+    "shopping-list": {"plan": "shopping-list", "order": 4},
+    "recipe-import": {"plan": "import", "order": 5}
+  }
+}

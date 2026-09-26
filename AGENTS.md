@@ -72,6 +72,10 @@ see `docs/brand-icons.md` for generating the native and web assets together.
 
 ## Documentation
 
+For automated iPhone/iPad feature captures and marketing artwork, use
+`bin/screenshots` and the `maincourse-screenshots` skill. See `docs/screenshots.md`
+for showcase recipes/photos, ASC/AXe plans, Koubou templates, and output paths.
+
 The native Android client is in `maincourse-android/`. Read
 `maincourse-android/AGENTS.md` before changing it. Use `bin/android-build`,
 `bin/android-test`, and `bin/android-test --device` (running emulator/device)

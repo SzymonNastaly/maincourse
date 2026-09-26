@@ -200,6 +200,8 @@ struct RecipesView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Import recipe")
+                .accessibilityIdentifier("recipes.import")
             }
         }
         .photosPicker(isPresented: self.$showingPhotoPicker, selection: self.$selectedPhotoItem, matching: .images)
@@ -287,6 +289,7 @@ struct RecipesView: View {
             RecipeCardView(recipe: recipe)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("recipe.\(recipe.id)")
         .contextMenu {
             if let targetCookbook = self.cookbookViewModel.cookbooks.first(where: {
                 $0.id != self.cookbookViewModel.activeCookbook?.id

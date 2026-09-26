@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "slug": "tomato-orzo",
+      "name": "Creamy Tomato & Basil Orzo",
+      "prep_time": 10, "cook_time": 20, "servings": 4,
+      "tags": ["Lunch", "Dinner", "Vegetarian", "Quick & Easy"],
+      "favorite": true,
+      "ingredients": [
+        {"raw": "2 tbsp olive oil", "name": "olive oil", "amount": 2, "unit": "tbsp"},
+        {"raw": "3 cloves garlic, minced", "name": "garlic", "amount": 3, "unit": "cloves", "note": "minced"},
+        {"raw": "400g cherry tomatoes", "name": "cherry tomatoes", "amount": 400, "unit": "g"},
+        {"raw": "300g orzo", "name": "orzo", "amount": 300, "unit": "g"},
+        {"raw": "750ml vegetable stock", "name": "vegetable stock", "amount": 750, "unit": "ml"},
+        {"raw": "100ml cream", "name": "cream", "amount": 100, "unit": "ml"},
+        {"raw": "50g Parmesan, grated", "name": "Parmesan", "amount": 50, "unit": "g", "note": "grated"},
+        {"raw": "A handful of fresh basil", "name": "fresh basil"}
+      ],
+      "instructions": [
+        "Warm the olive oil in a deep frying pan. Add the garlic and cook gently for 1 minute.",
+        "Add the cherry tomatoes and a pinch of salt. Cook for 6–8 minutes, until softened, then crush a few with a spoon.",
+        "Stir in the orzo and vegetable stock. Simmer for 10–12 minutes, stirring often, until the pasta is tender. Add a splash of water if needed.",
+        "Stir through the cream and Parmesan. Finish with torn basil and freshly ground black pepper."
+      ],
+      "notes": "A one-pan lunch that is just as lovely for dinner. Use vegetarian hard cheese if preferred.",
+      "photo": "A shallow ivory ceramic bowl of creamy tomato orzo, individual rice-shaped pasta clearly visible in a glossy coral-red tomato sauce, blistered red and golden cherry tomatoes, fresh small basil leaves and delicate shaved Parmesan. A spoon resting on natural linen at the edge. Three-quarter overhead angle, appetizing and generous, freshly served."
+    },
+    {
+      "slug": "blueberry-pancakes",
+      "name": "Blueberry Ricotta Pancakes",
+      "prep_time": 10, "cook_time": 15, "servings": 3,
+      "tags": ["Breakfast", "Vegetarian"],
+      "favorite": true,
+      "ingredients": [
+        {"raw": "150g plain flour", "name": "plain flour", "amount": 150, "unit": "g"},
+        {"raw": "2 tsp baking powder", "name": "baking powder", "amount": 2, "unit": "tsp"},
+        {"raw": "2 eggs", "name": "eggs", "amount": 2},
+        {"raw": "200g ricotta", "name": "ricotta", "amount": 200, "unit": "g"},
+        {"raw": "120ml milk", "name": "milk", "amount": 120, "unit": "ml"},
+        {"raw": "150g blueberries", "name": "blueberries", "amount": 150, "unit": "g"},
+        {"raw": "20g butter", "name": "butter", "amount": 20, "unit": "g"},
+        {"raw": "Maple syrup, to serve", "name": "maple syrup"}
+      ],
+      "instructions": [
+        "Mix the flour, baking powder and a pinch of salt in a bowl.",
+        "Whisk the eggs, ricotta and milk together. Fold into the dry ingredients, then gently stir in half the blueberries.",
+        "Melt a little butter in a non-stick frying pan over medium-low heat. Cook small ladles of batter for 2–3 minutes per side until golden and cooked through.",
+        "Serve in small stacks with the remaining blueberries and maple syrup."
+      ],
+      "notes": "Keep the batter slightly lumpy for wonderfully soft pancakes.",
+      "photo": "A relaxed stack of four fluffy golden ricotta pancakes with blueberries baked into the crumb, on an off-white stoneware plate, a handful of fresh dusty-blue blueberries scattered around, a thin ribbon of maple syrup catching the light. One pancake edge cut to reveal tender interior. No icing, no whipped cream. Low three-quarter angle, soft breakfast daylight."
+    },
+    {
+      "slug": "peach-burrata-salad",
+      "name": "Peach & Burrata Salad",
+      "prep_time": 15, "cook_time": 0, "servings": 2,
+      "tags": ["Salads", "Lunch", "Vegetarian"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "2 ripe peaches", "name": "peaches", "amount": 2},
+        {"raw": "250g cherry tomatoes", "name": "cherry tomatoes", "amount": 250, "unit": "g"},
+        {"raw": "150g burrata", "name": "burrata", "amount": 150, "unit": "g"},
+        {"raw": "60g rocket", "name": "rocket", "amount": 60, "unit": "g"},
+        {"raw": "2 tbsp extra virgin olive oil", "name": "olive oil", "amount": 2, "unit": "tbsp"},
+        {"raw": "1 tbsp lemon juice", "name": "lemon juice", "amount": 1, "unit": "tbsp"},
+        {"raw": "Fresh basil leaves", "name": "fresh basil"}
+      ],
+      "instructions": [
+        "Slice the peaches and halve the tomatoes.",
+        "Spread the rocket on a platter. Arrange the peaches and tomatoes over the leaves.",
+        "Tear the burrata over the salad. Drizzle with olive oil and lemon juice.",
+        "Finish with basil, flaky salt and black pepper. Serve straight away."
+      ],
+      "notes": "Best made with fragrant, perfectly ripe peaches.",
+      "photo": "An abundant summer salad on a wide matte ivory platter: ripe peach wedges with golden flesh and red skins, red and yellow halved cherry tomatoes, bright green rocket leaves, soft torn white burrata showing its creamy centre, fresh basil and a fine olive-oil sheen. Naturally arranged rather than geometric. True overhead food photograph."
+    },
+    {
+      "slug": "lemon-salmon",
+      "name": "Lemon Salmon with Crispy Potatoes",
+      "prep_time": 10, "cook_time": 35, "servings": 2,
+      "tags": ["Dinner", "Fish"],
+      "favorite": true,
+      "ingredients": [
+        {"raw": "500g baby potatoes", "name": "baby potatoes", "amount": 500, "unit": "g"},
+        {"raw": "2 tbsp olive oil", "name": "olive oil", "amount": 2, "unit": "tbsp"},
+        {"raw": "2 salmon fillets", "name": "salmon fillets", "amount": 2},
+        {"raw": "200g asparagus", "name": "asparagus", "amount": 200, "unit": "g"},
+        {"raw": "1 lemon", "name": "lemon", "amount": 1},
+        {"raw": "2 cloves garlic, minced", "name": "garlic", "amount": 2, "unit": "cloves", "note": "minced"},
+        {"raw": "Fresh dill, to serve", "name": "fresh dill"}
+      ],
+      "instructions": [
+        "Heat the oven to 210°C. Halve the potatoes and toss with half the olive oil, salt and pepper on a roasting tray.",
+        "Roast for 20 minutes, then turn the potatoes.",
+        "Add the salmon and asparagus. Rub with the remaining oil, garlic and lemon zest. Add lemon slices to the tray.",
+        "Roast for 12–15 minutes more, until the salmon is cooked through and the potatoes are crisp. Finish with fresh dill and lemon juice."
+      ],
+      "notes": "Spread the potatoes out so the cut sides turn golden and crisp.",
+      "photo": "A beautifully cooked salmon fillet with delicate coral flakes and a lightly golden surface, crisp roasted baby potato halves, green asparagus, a roasted lemon slice and fresh dill, plated on a simple pale stoneware dinner plate. Realistic home cooking, moist fish, crisp potato edges, three-quarter overhead angle."
+    },
+    {
+      "slug": "avocado-toast",
+      "name": "Avocado Toast with Jammy Eggs",
+      "prep_time": 10, "cook_time": 7, "servings": 2,
+      "tags": ["Breakfast", "Lunch", "Vegetarian"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "2 eggs", "name": "eggs", "amount": 2},
+        {"raw": "2 thick slices sourdough", "name": "sourdough", "amount": 2, "unit": "slices"},
+        {"raw": "1 ripe avocado", "name": "avocado", "amount": 1},
+        {"raw": "1 tbsp lemon juice", "name": "lemon juice", "amount": 1, "unit": "tbsp"},
+        {"raw": "1 tsp olive oil", "name": "olive oil", "amount": 1, "unit": "tsp"},
+        {"raw": "A pinch of chilli flakes", "name": "chilli flakes"}
+      ],
+      "instructions": [
+        "Lower the eggs into gently boiling water and cook for 7 minutes. Cool in cold water, then peel.",
+        "Toast the sourdough until golden.",
+        "Mash the avocado with lemon juice, olive oil and a pinch of salt.",
+        "Spread on the toast. Top with halved eggs, chilli flakes and black pepper."
+      ],
+      "notes": "Use an avocado that yields gently when pressed.",
+      "photo": "Two slices of rustic toasted sourdough with thick roughly mashed green avocado, each topped with a halved seven-minute egg with deep golden jammy yolk, a few red chilli flakes and cracked black pepper. Pale handmade ceramic plate, a simple linen napkin, three-quarter overhead composition, bright but natural breakfast light."
+    },
+    {
+      "slug": "chocolate-raspberry-tart",
+      "name": "Dark Chocolate & Raspberry Tart",
+      "prep_time": 25, "cook_time": 10, "servings": 8,
+      "tags": ["Dessert", "Baking", "Vegetarian"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "200g chocolate biscuits", "name": "chocolate biscuits", "amount": 200, "unit": "g"},
+        {"raw": "80g butter, melted", "name": "butter", "amount": 80, "unit": "g", "note": "melted"},
+        {"raw": "250g dark chocolate", "name": "dark chocolate", "amount": 250, "unit": "g"},
+        {"raw": "250ml double cream", "name": "double cream", "amount": 250, "unit": "ml"},
+        {"raw": "200g raspberries", "name": "raspberries", "amount": 200, "unit": "g"},
+        {"raw": "A pinch of flaky sea salt", "name": "sea salt"}
+      ],
+      "instructions": [
+        "Heat the oven to 180°C. Crush the biscuits finely and mix with melted butter.",
+        "Press into the base and sides of a 20cm loose-bottomed tart tin. Bake for 10 minutes, then cool completely.",
+        "Chop the chocolate into a bowl. Heat the cream until steaming, pour it over the chocolate and leave for 2 minutes. Stir until smooth.",
+        "Pour into the cooled crust. Chill for at least 3 hours until set, then top with raspberries and a little flaky sea salt."
+      ],
+      "notes": "Allow at least 3 hours of chilling time. Take out of the fridge 15 minutes before slicing.",
+      "photo": "A dark chocolate ganache tart with a thin dark biscuit crust on a pale ceramic serving platter, topped with fresh vivid red raspberries in a loose crescent. One clean slice slightly separated to show the silky dense chocolate filling and crumb crust. A few tiny flakes of sea salt. Three-quarter overhead view, rich realistic chocolate texture, understated elegant dessert photography."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "app": {"bundle_id": "app.hauptgang.ios", "launch_arguments": ["-screenshots", "YES"]},
+  "steps": [
+    {"action": "launch"},
+    {"action": "wait_for", "id": "recipe.{{tomato-orzo}}", "timeout_ms": 60000},
+    {"action": "tap", "label": "Shopping List", "element_type": "RadioButton"},
+    {"action": "wait_for", "contains": "Cherry tomatoes", "timeout_ms": 30000}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "app": {"bundle_id": "app.hauptgang.ios", "launch_arguments": ["-screenshots", "YES"]},
+  "steps": [
+    {"action": "launch"},
+    {"action": "wait_for", "id": "recipe.{{tomato-orzo}}", "timeout_ms": 60000},
+    {"action": "tap", "id": "recipe.{{tomato-orzo}}"},
+    {"action": "wait_for", "id": "recipe.add-to-shopping-list", "timeout_ms": 30000}
+  ]
+}

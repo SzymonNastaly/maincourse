@@ -45,6 +45,9 @@ struct AuthenticatedAppShell: View {
         }
         .task(id: self.user.id) {
             await self.session.start(user: self.user, modelContext: self.modelContext)
+            #if DEBUG && targetEnvironment(simulator)
+            ScreenshotSupport.sessionStarted(self.session)
+            #endif
         }
         .onChange(of: self.session.canDismissStartupSplash, initial: true) { _, canDismiss in
             guard canDismiss, self.showsStartupSplash else { return }

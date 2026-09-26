@@ -52,6 +52,12 @@ struct CachedRecipeImage<Content: View, Placeholder: View, Failure: View>: View 
 
         self.phase = .empty
 
+        #if DEBUG && targetEnvironment(simulator)
+        let captureLoadId = UUID()
+        ScreenshotSupport.imageStarted(captureLoadId)
+        defer { ScreenshotSupport.imageFinished(captureLoadId) }
+        #endif
+
         do {
             let image = try await cache.image(for: url, maxPixelSize: self.maxPixelSize)
             if Task.isCancelled {
@@ -63,6 +69,9 @@ struct CachedRecipeImage<Content: View, Placeholder: View, Failure: View>: View 
                 return
             }
             self.phase = .failure
+            #if DEBUG && targetEnvironment(simulator)
+            ScreenshotSupport.imageFinished(captureLoadId, error: "Image \(url): \(error.localizedDescription)")
+            #endif
         }
     }
 

@@ -67,3 +67,7 @@ hauptgang-ios/.asc/
 
 # asc release checkpoints (repo root, written by `asc release stage`)
 /.asc/
+
+# Screenshot artifacts; source photos, plans, templates and copy are checked in.
+/screenshots/output/
+__pycache__/

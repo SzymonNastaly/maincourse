@@ -58,6 +58,7 @@ actor PushNotificationService {
     /// the stored token and time zone current when either changes (device restore, OS
     /// update, travel).
     func registerIfAuthorized() async {
+        guard !ScreenshotSupport.isEnabled else { return }
         let status = await self.authorizer.authorizationStatus()
         guard status == .authorized || status == .provisional else { return }
 
@@ -69,6 +70,7 @@ actor PushNotificationService {
     /// what the notifications are for. Once the status is settled this degrades to plain
     /// registration, which makes it safe to call from several such moments.
     func promptForAuthorization() async {
+        guard !ScreenshotSupport.isEnabled else { return }
         guard await self.authorizer.authorizationStatus() == .notDetermined else {
             await self.registerIfAuthorized()
             return

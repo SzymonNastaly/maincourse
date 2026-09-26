@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    @font-face { font-family: Plex; src: url("{{font_medium}}"); font-weight: 500; }
+    :root {
+      --canvas: {{canvas}}; --accent: {{accent}}; --lime: {{lime}};
+      --ink: {{ink}}; --body: {{body}};
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 4vh 6vw 3vh; gap: 2vh;
+      background: var(--canvas); color: var(--ink); font-family: Plex, sans-serif;
+    }
+    .brand {
+      flex: none; display: flex; align-items: center; justify-content: center; gap: 1.2vw;
+      color: var(--accent); font-size: 3.7vw; font-weight: 500; letter-spacing: -.04em;
+    }
+    .brand-logo { height: 4.8vw; width: auto; object-fit: contain; }
+    h1 {
+      flex: none; width: 100%; margin: 0;
+      font-size: 9vw; line-height: 1.06; font-weight: 500;
+      letter-spacing: -.045em; text-align: center; text-wrap: balance;
+    }
+    .device { flex: 1; min-height: 0; width: 100%; object-fit: contain; object-position: top center; }
+  </style>
+</head>
+<body class="{{preset}} {{device}}">
+  <div class="brand">
+    <img class="brand-logo" data-kou-id="brand-logo" src="{{logo}}" alt="">
+    <span data-kou-id="brand-name">MainCourse</span>
+  </div>
+  <h1 data-kou-id="headline">{{headline}}</h1>
+  <img class="device" data-kou-id="device" src="{{screen}}" alt="MainCourse app">
+</body>
+</html>
