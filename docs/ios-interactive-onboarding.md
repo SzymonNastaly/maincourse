@@ -4,10 +4,10 @@ The iOS introduction has four steps, owned by `OnboardingFlowView`:
 
 1. **Welcome** (`OnboardingWelcomeView`): brand, the promise, and `RecipeSourcesAnimation` — a post, a cluttered website, a photographed cookbook page and a screenshot drift in, then merge into one clean recipe card built from the sample. It plays once and rests on the card. Reduce Motion shows only the final card; accessibility text sizes drop the illustration. "Get started" and "I already have an account" stay pinned to the bottom.
 2. **Demo** (`ImportDemoView`): the playable sharing example described below. Its bottom action is "Continue".
-3. **What a saved recipe unlocks** (`OnboardingFeaturesView`): portions (the stepper doubles once on appear), meal plan, shopping list and shared cookbooks, each as a small illustrated fragment of the real interface. "Sign up to keep this recipe" records the keep intent; "Continue without it" clears any intent. Both lead to signup. This step exists only in the pre-signup flow, not in the authenticated replay.
+3. **What a saved recipe unlocks** (`OnboardingFeaturesView`): portions (the stepper doubles once on appear), shopping list and shared cookbooks, each as a small illustrated fragment of the real interface. "Sign up to keep this recipe" records the keep intent; "Continue without it" clears any intent. Both lead to signup. This step exists only in the pre-signup flow, not in the authenticated replay.
 4. **Signup** (the embedded `LoginView`). Back returns to step 3 once the demo has finished, so the demo does not have to be replayed.
 
-The quiz that used to precede signup is gone from iOS, together with its answer upload and device-ID linking. Android still posts quiz answers to `onboarding_response`; the Rails side is unchanged and ignores a missing `onboarding_device_id`.
+The quiz that used to precede signup is gone from iOS, together with its answer upload and device-ID linking. Android also uses the interactive flow; the Rails side is unchanged and ignores a missing `onboarding_device_id`.
 
 The demo is a local, playable social-post sharing example. It follows the familiar Share → Share to → MainCourse route, then reveals a usable recipe with portion scaling. The simulated sharing panels stay inside the app; real imports still use the existing share extension, clipboard, and photo flows.
 
@@ -46,4 +46,4 @@ The demo shows Back (to the welcome step) and Log in in its navigation bar. Afte
 
 The simulated social panel uses fictional contacts; the app panel uses muted placeholders and a horizontal row initially sized to leave half of MainCourse visible at the trailing edge. After the idle delay, the row demonstrates a short leftward swipe and return, then gently scrolls to fully reveal MainCourse. This plays once per panel visit; touching the row cancels the demonstration immediately. Reduce Motion and VoiceOver skip the automatic scrolling. The instruction changes from “Swipe left to find MainCourse” to “Tap MainCourse to save the recipe” when the destination is fully visible. These placeholders never send content to another app. The creator avatar is a bundled crop of the owner-provided photo, separate from the cookbook brand mark.
 
-Android and web retain their current introduction flows during the iOS iteration. Their future rollout can reuse the sample resources and save operation.
+Android reuses the sample resources and save operation through its native Compose introduction; see `android-onboarding-auth.md`. Web retains its current introduction.

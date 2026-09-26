@@ -89,6 +89,9 @@ android {
     namespace = "com.getmaincourse.app"
     compileSdk = 37
 
+    // Bundle the same versioned sample used by Rails and iOS, without a second copy.
+    sourceSets.getByName("main").assets.directories.add("../../config/starter_recipes")
+
     defaultConfig {
         applicationId = releaseApplicationId
         minSdk = 29

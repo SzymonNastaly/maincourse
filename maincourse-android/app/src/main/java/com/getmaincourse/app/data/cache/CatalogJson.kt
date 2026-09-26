@@ -46,6 +46,7 @@ internal fun RecipeDetail.toSummary(previous: RecipeSummary?): RecipeSummary = R
     importStatus = previous?.importStatus ?: "completed",
     errorMessage = previous?.errorMessage,
     importErrorCode = previous?.importErrorCode,
+    starterRecipeKey = starterRecipeKey,
     updatedAt = updatedAt,
 )
 

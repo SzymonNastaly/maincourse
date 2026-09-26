@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_welcome_title">All your recipes, ready to cook.</string>
+    <string name="onboarding_existing_account">I already have an account</string>
+    <string name="onboarding_log_in">Log in</string>
+    <string name="onboarding_features_title">And once it’s in your cookbook…</string>
+    <string name="onboarding_portions_title">Cook for any number</string>
+    <string name="onboarding_portions_body">Change the servings and every amount adjusts.</string>
+    <string name="onboarding_shopping_title">Shop from one list</string>
+    <string name="onboarding_shopping_body">Send ingredients to a shopping list in a tap.</string>
+    <string name="onboarding_together_title">Cook together</string>
+    <string name="onboarding_together_body">Share a cookbook with the people you cook with.</string>
+    <string name="onboarding_family_cookbook">Family cookbook</string>
+    <string name="onboarding_keep">Sign up to keep this recipe</string>
+    <string name="onboarding_without_recipe">Continue without it</string>
+    <string name="demo_keep">Keep this recipe</string>
+    <string name="demo_post_title">Here’s a recipe from someone’s feed.</string>
+    <string name="demo_post_body">Tap Share and send it to MainCourse, just like you would from Instagram.</string>
+    <string name="demo_sources">Works with Instagram, websites, and more.</string>
+    <string name="demo_share">Share</string>
+    <string name="demo_share_to">Share to…</string>
+    <string name="demo_share_title">Share this recipe</string>
+    <string name="demo_swipe">Swipe left to find MainCourse</string>
+    <string name="demo_tap_maincourse">Tap MainCourse to save the recipe</string>
+    <string name="demo_messages">Messages</string>
+    <string name="demo_lists">Lists</string>
+    <string name="demo_notes">Notes</string>
+    <string name="demo_processing">Processing recipe…</string>
+    <string name="demo_decrease_portions">Decrease servings</string>
+    <string name="demo_increase_portions">Increase servings</string>
+    <string name="demo_empty_title">Save recipes</string>
+    <string name="demo_empty_body">Share a recipe from another app to MainCourse, or import a link, photo, or text.</string>
+    <string name="demo_try">Try an example</string>
+    <string name="demo_try_body">Turn this post into a recipe. A few taps, and dinner is in your cookbook.</string>
+    <string name="demo_dismiss">Dismiss example</string>
+    <string name="demo_saving">Saving your example recipe…</string>
+    <string name="demo_save_failed">Could not save your example recipe. You can retry or continue without it.</string>
+    <string name="demo_saved">Your example recipe is ready.</string>
+    <string name="demo_open">Open recipe</string>
+    <string name="onboarding_brand_name" translatable="false">MainCourse</string>
+    <string name="demo_inspiration">A little dinner inspiration</string>
+    <string name="demo_tap_share">Tap to share</string>
+    <string name="demo_close">Close sharing</string>
+    <string name="demo_add_story">Add to story</string>
+    <string name="demo_message">Message</string>
+    <string name="demo_copy_link">Copy link</string>
+    <string name="demo_more">More</string>
+    <string name="demo_post_from">Post from %1$s</string>
+    <string name="demo_recipe_link">Recipe link</string>
+    <string name="demo_ad">Ad</string>
+    <string name="demo_cookies">Allow cookies?</string>
+    <string name="demo_make_this">make this!!</string>
+    <string name="demo_saved_badge">Saved</string>
+</resources>

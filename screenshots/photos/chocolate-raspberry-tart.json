@@ -1,24 +1,24 @@
 {
   "model": "gpt-image-2.5-sunburst",
-  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Soft side-window daylight, restrained warm-neutral whites,\nnatural green herbs, pale grey stone or light oak surface, understated ceramic tableware.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nA dark chocolate ganache tart with a thin dark biscuit crust on a pale ceramic serving platter, topped with fresh vivid red raspberries in a loose crescent. One clean slice slightly separated to show the silky dense chocolate filling and crumb crust. A few tiny flakes of sea salt. Three-quarter overhead view, rich realistic chocolate texture, understated elegant dessert photography.",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nAn elegant dark chocolate ganache tart with a thin chocolate biscuit crust on a low black patisserie cake board, vivid red raspberries arranged loosely along the back edge. One triangular slice drawn slightly forward in the centre reveals the dense silky filling and fine crumb crust; a few delicate sea-salt flakes on the chocolate. Dramatic French pastry-shop portrait: deep plum-purple matte backdrop and matching tabletop, narrow cool side-window beam tracing the satin chocolate surface and raspberry texture, rich soft shadows, a small silver dessert fork at the margin. Low three-quarter camera angle close to tart level with restrained shallow depth of field. Luxurious dark burgundy, chocolate and raspberry palette. Tart and separated slice grouped in the central horizontal band. No pale platter, beige linen, flowers, wooden boards or extra desserts.",
   "n": 1,
   "size": "1536x1024",
   "quality": "high",
   "output_format": "png",
-  "generated_at": "2026-09-26T09:26:18.773647+00:00",
-  "sha256": "0724142606dd474046005ae791aedb42e5b0fc20b533debe0becd798c4e1f601",
+  "generated_at": "2026-09-26T11:23:29.750161+00:00",
+  "sha256": "943d5a24e8083482ad08855c0501862bdd93a76972b156f7545c4ce7a1a2a2d2",
   "usage": {
-    "input_tokens": 250,
+    "input_tokens": 364,
     "input_tokens_details": {
       "image_tokens": 0,
-      "text_tokens": 250
+      "text_tokens": 364
     },
     "output_tokens": 1372,
     "output_tokens_details": {
       "image_tokens": 1372,
       "text_tokens": 0
     },
-    "total_tokens": 1622
+    "total_tokens": 1736
   },
   "revised_prompt": null
 }

@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nSix handmade mushroom potsticker dumplings on a small glossy oxblood-red rectangular lacquer tray, several tipped to reveal their crisp caramelized bases and delicate pleated edges, one split open showing finely chopped mushroom filling. A tiny black dipping saucer with red chilli oil at the edge. Minimal Japanese-inspired restaurant still life, dark cool slate tabletop, focused soft spotlight from the upper left and quiet deep shadows, close oblique angle. Warm translucent dough contrasts against the red tray and dark blue-grey background. No white plates, linen or scattered herbs. Entire hero group centered for a wide crop.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:30.542897+00:00",
+  "sha256": "c3119e7e2afcccabd9152b2b8e991273d53c6f49ce300790c72ff3629b83b700",
+  "usage": {
+    "input_tokens": 323,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 323
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1695
+  },
+  "revised_prompt": null
+}

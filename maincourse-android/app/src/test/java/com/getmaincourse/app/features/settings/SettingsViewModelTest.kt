@@ -224,6 +224,7 @@ class SettingsViewModelTest {
     }
 
     private class FakeService : MainCourseService {
+        override suspend fun saveRecipe(cookbookId: Long, destinationId: Long, request: com.getmaincourse.app.data.model.RecipeSaveRequest): com.getmaincourse.app.data.model.RecipeSaveResponse = error("Unused")
         var updatedUser: User = USER
         var updateRequest: AccountUpdateRequest? = null
         var updateFailure: Throwable? = null

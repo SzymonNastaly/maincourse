@@ -156,6 +156,16 @@ class RecipesViewModel internal constructor(
         startPolling(cookbookId, restart = true)
     }
 
+    fun sampleSaved(cookbookId: Long): Job = viewModelScope.launch {
+        try {
+            refreshRecipes(cookbookId)
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (_: Exception) {
+            // The save is confirmed; opening the detail can fetch it even if list refresh failed.
+        }
+    }
+
     fun reconcileAfterResume(): Job {
         resumeReconciliationJob?.cancel()
         pollingJob?.cancel()

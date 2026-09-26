@@ -1,24 +1,24 @@
 {
   "model": "gpt-image-2.5-sunburst",
-  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Soft side-window daylight, restrained warm-neutral whites,\nnatural green herbs, pale grey stone or light oak surface, understated ceramic tableware.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nAn abundant summer salad on a wide matte ivory platter: ripe peach wedges with golden flesh and red skins, red and yellow halved cherry tomatoes, bright green rocket leaves, soft torn white burrata showing its creamy centre, fresh basil and a fine olive-oil sheen. Naturally arranged rather than geometric. True overhead food photograph.",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nAn abundant peach and burrata salad on a transparent fluted glass platter: juicy golden peach wedges with red skins, red and yellow cherry tomatoes, green rocket, torn white burrata with creamy centres, basil and small glistening olive-oil droplets. Outdoor Mediterranean garden-lunch photograph, platter resting on a faded sky-blue painted wooden picnic table, late-afternoon dappled sunlight through leaves making irregular soft-edged patches of light and shade. High oblique camera angle rather than straight overhead, glass rim catching the sun, salad luminous and fresh. Loose natural arrangement, airy cyan, peach and green palette. No opaque ceramic plate, grey stone, beige napkin or styled ingredient bowls. Keep the salad together in the central band, not spread to the frame edges.",
   "n": 1,
   "size": "1536x1024",
   "quality": "high",
   "output_format": "png",
-  "generated_at": "2026-09-26T09:24:58.604699+00:00",
-  "sha256": "66c14490523a9787c8fdb518810647cc6a838df6df7bfba25c05bc81ce5f1464",
+  "generated_at": "2026-09-26T11:23:04.013066+00:00",
+  "sha256": "9a21efdf15e62c29ee97044ea82bf528f1830fcd843aae55659d5ed560f01688",
   "usage": {
-    "input_tokens": 244,
+    "input_tokens": 360,
     "input_tokens_details": {
       "image_tokens": 0,
-      "text_tokens": 244
+      "text_tokens": 360
     },
     "output_tokens": 1372,
     "output_tokens_details": {
       "image_tokens": 1372,
       "text_tokens": 0
     },
-    "total_tokens": 1616
+    "total_tokens": 1732
   },
   "revised_prompt": null
 }

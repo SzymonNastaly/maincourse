@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nRustic bakery still life: a rectangular slab of deeply golden dimpled rosemary focaccia on crumpled brown baking parchment over a worn metal baking tray. Two thick torn pieces lean against the slab in the centre, exposing a beautiful airy irregular crumb and olive-oil crust, rosemary needles and flaky salt embedded in the top. Low raking late-afternoon light across the bread, warm copper and caramel tones, dark flour-dusted baker's workbench, close low three-quarter angle. Bread dominates; no plates, no flowers, no napkins. Real imperfect bakery textures, not a styled white-table brunch.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:07.128667+00:00",
+  "sha256": "22f5f319e18269739cec03f14d6a278de5ba6a95c683d9c056fe30ea93ac0657",
+  "usage": {
+    "input_tokens": 328,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 328
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1700
+  },
+  "revised_prompt": null
+}

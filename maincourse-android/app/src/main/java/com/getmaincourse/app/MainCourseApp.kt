@@ -27,6 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,13 +61,14 @@ import com.getmaincourse.app.data.ShoppingListRepository
 import com.getmaincourse.app.data.network.MainCourseService
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
-import com.getmaincourse.app.features.auth.DietOption
-import com.getmaincourse.app.features.auth.HouseholdSize
 import com.getmaincourse.app.features.auth.PreAuthScreen
 import com.getmaincourse.app.features.auth.PreAuthStep
 import com.getmaincourse.app.features.auth.PreAuthUiState
 import com.getmaincourse.app.features.auth.PreAuthViewModel
-import com.getmaincourse.app.features.auth.SaveTodayOption
+import com.getmaincourse.app.features.auth.ImportDemoScreen
+import com.getmaincourse.app.features.auth.SampleSaveViewModel
+import com.getmaincourse.app.features.auth.SampleSaveUiState
+import com.getmaincourse.app.features.auth.SampleSaveBanner
 import com.getmaincourse.app.features.cookbooks.CookbookManagementScreen
 import com.getmaincourse.app.features.cookbooks.CookbookManagementViewModel
 import com.getmaincourse.app.features.cookbooks.InvitationScreen
@@ -112,6 +116,9 @@ data class IngredientReviewRoute(val recipeId: Long, val cookbookId: Long, val p
 data object RecipeImportRoute : NavKey
 
 @Serializable
+data object ImportDemoRoute : NavKey
+
+@Serializable
 data object ShoppingRoute : NavKey
 
 @Serializable
@@ -142,6 +149,7 @@ internal data class BrowsingViewModelFactories(
 fun MainCourseApp(
     sessionViewModel: SessionViewModel,
     preAuthViewModel: PreAuthViewModel,
+    sampleSaveViewModel: SampleSaveViewModel,
     cookbookRepository: CookbookRepository,
     recipeRepository: RecipeRepository,
     shoppingListRepository: ShoppingListRepository,
@@ -161,23 +169,31 @@ fun MainCourseApp(
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
     val preAuthState by preAuthViewModel.state.collectAsStateWithLifecycle()
+    val sampleSaveState by sampleSaveViewModel.state.collectAsStateWithLifecycle()
     val pendingShare by sharedRecipeInput.collectAsStateWithLifecycle()
     val pendingInvitation by invitationToken.collectAsStateWithLifecycle()
     val pendingNotification by notificationDestination.collectAsStateWithLifecycle()
     val deviceNotificationsEnabled by notificationsEnabled.collectAsStateWithLifecycle()
     LaunchedEffect(sessionState) {
         if (sessionState is SessionUiState.SignedIn) preAuthViewModel.authenticated()
+        if (sessionState is SessionUiState.SignedOut) sampleSaveViewModel.signedOut()
     }
     MainCourseAppContent(
         state = sessionState,
         preAuthState = preAuthState,
         onStartOnboarding = preAuthViewModel::start,
-        onSelectHousehold = preAuthViewModel::selectHousehold,
-        onToggleSaveToday = preAuthViewModel::toggleSaveToday,
-        onToggleDiet = preAuthViewModel::toggleDiet,
+        onDemoCompleted = preAuthViewModel::finishDemo,
         onAdvanceOnboarding = preAuthViewModel::advance,
         onBackOnboarding = preAuthViewModel::goBack,
-        onSkipOnboarding = preAuthViewModel::skip,
+        onLogIn = { sampleSaveViewModel.continueWithoutRecipe(); preAuthViewModel.logIn() },
+        onKeepSample = { sampleSaveViewModel.keep(); preAuthViewModel.signUp() },
+        onContinueWithoutSample = { sampleSaveViewModel.continueWithoutRecipe(); preAuthViewModel.signUp() },
+        sampleSaveState = sampleSaveState,
+        onRetrySampleSave = sampleSaveViewModel::retry,
+        onCancelSampleSave = sampleSaveViewModel::continueWithoutRecipe,
+        onSampleOpened = sampleSaveViewModel::acknowledgeSaved,
+        onDismissDemo = sampleSaveViewModel::dismissDemo,
+        onAuthenticatedKeepSample = sampleSaveViewModel::keep,
         onSignIn = sessionViewModel::signIn,
         onSignUp = sessionViewModel::signUp,
         onRetryRestore = sessionViewModel::restore,
@@ -257,12 +273,18 @@ internal fun MainCourseAppContent(
     state: SessionUiState,
     preAuthState: PreAuthUiState = PreAuthUiState(PreAuthStep.AUTH, onboarding = false),
     onStartOnboarding: () -> Unit = {},
-    onSelectHousehold: (HouseholdSize) -> Unit = {},
-    onToggleSaveToday: (SaveTodayOption) -> Unit = {},
-    onToggleDiet: (DietOption) -> Unit = {},
+    onDemoCompleted: () -> Unit = {},
     onAdvanceOnboarding: () -> Unit = {},
     onBackOnboarding: () -> Unit = {},
-    onSkipOnboarding: () -> Unit = {},
+    onLogIn: () -> Unit = {},
+    onKeepSample: () -> Unit = {},
+    onContinueWithoutSample: () -> Unit = {},
+    sampleSaveState: SampleSaveUiState = SampleSaveUiState(),
+    onRetrySampleSave: () -> Unit = {},
+    onCancelSampleSave: () -> Unit = {},
+    onSampleOpened: () -> Unit = {},
+    onDismissDemo: () -> Unit = {},
+    onAuthenticatedKeepSample: () -> Unit = {},
     onSignIn: (String, String) -> Unit = { _, _ -> },
     onSignUp: (String?, String, String, String) -> Unit = { _, _, _, _ -> },
     onRetryRestore: () -> Unit = {},
@@ -288,12 +310,12 @@ internal fun MainCourseAppContent(
             busy = state.busy,
             error = state.authError,
             onStart = onStartOnboarding,
-            onSelectHousehold = onSelectHousehold,
-            onToggleSaveToday = onToggleSaveToday,
-            onToggleDiet = onToggleDiet,
+            onDemoCompleted = onDemoCompleted,
             onAdvance = onAdvanceOnboarding,
             onBack = onBackOnboarding,
-            onSkip = onSkipOnboarding,
+            onLogIn = onLogIn,
+            onKeep = onKeepSample,
+            onContinueWithoutRecipe = onContinueWithoutSample,
             onSignIn = onSignIn,
             onSignUp = onSignUp,
         )
@@ -307,6 +329,12 @@ internal fun MainCourseAppContent(
                 val shellOwner = rememberViewModelStoreOwner()
                 CompositionLocalProvider(LocalViewModelStoreOwner provides shellOwner) {
                     ProtectedShell(
+                        sampleSaveState = sampleSaveState.takeIf { it.userId == state.session.user.id } ?: SampleSaveUiState(),
+                        onRetrySampleSave = onRetrySampleSave,
+                        onCancelSampleSave = onCancelSampleSave,
+                        onSampleOpened = onSampleOpened,
+                        onDismissDemo = onDismissDemo,
+                        onKeepSample = onAuthenticatedKeepSample,
                         userId = state.session.user.id,
                         factories = availableFactories,
                         imageLoader = currentImageLoader,
@@ -330,6 +358,12 @@ internal fun MainCourseAppContent(
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun ProtectedShell(
+    sampleSaveState: SampleSaveUiState,
+    onRetrySampleSave: () -> Unit,
+    onCancelSampleSave: () -> Unit,
+    onSampleOpened: () -> Unit,
+    onDismissDemo: () -> Unit,
+    onKeepSample: () -> Unit,
     userId: Long,
     factories: BrowsingViewModelFactories,
     imageLoader: ImageLoader?,
@@ -345,6 +379,10 @@ private fun ProtectedShell(
     onOpenNotificationSettings: () -> Unit,
 ) {
     val backStack = rememberNavBackStack(RecipesRoute)
+    var priorityDestination by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(invitationToken, notificationDestination, sharedRecipeInput) {
+        if (invitationToken != null || notificationDestination != null || sharedRecipeInput != null) priorityDestination = true
+    }
     val latestImageLoader by rememberUpdatedState(imageLoader)
     val latestResolveImage by rememberUpdatedState(resolveImage)
     val snackbarHostState = remember { SnackbarHostState() }
@@ -373,8 +411,8 @@ private fun ProtectedShell(
             onInvitationConsumed()
         }
     }
-    LaunchedEffect(recipesState.initialLoading, recipesState.recipes.isNotEmpty()) {
-        if (!recipesState.initialLoading && recipesState.recipes.isNotEmpty()) {
+    LaunchedEffect(recipesState.initialLoading, recipesState.recipes) {
+        if (!recipesState.initialLoading && recipesState.recipes.any { it.starterRecipeKey == null }) {
             onRequestNotificationPermission()
         }
     }
@@ -414,6 +452,21 @@ private fun ProtectedShell(
         onNotificationConsumed(destination.deliveryId)
     }
     val selected = backStack.filter { it.isTopLevel() }.lastOrNull() ?: RecipesRoute
+    val openSample: () -> Unit = {
+        sampleSaveState.saved?.let { saved ->
+            backStack.add(RecipeDetailRoute(saved.recipeId, saved.cookbookId))
+            onSampleOpened()
+        }
+    }
+    LaunchedEffect(sampleSaveState.saved) {
+        if (sampleSaveState.saved != null) {
+            recipesViewModel.refresh().join()
+            recipesViewModel.sampleSaved(sampleSaveState.saved.cookbookId).join()
+            if (!priorityDestination && invitationToken == null && notificationDestination == null &&
+                sharedRecipeInput == null && backStack.size == 1 && backStack.last() == RecipesRoute
+            ) openSample()
+        }
+    }
     val destinations = listOf(
         NavigationDestination(RecipesRoute, R.string.recipes, R.drawable.ic_recipes),
         NavigationDestination(ShoppingRoute, R.string.shopping, R.drawable.ic_shopping),
@@ -456,7 +509,7 @@ private fun ProtectedShell(
                 navigationIcon = {
                     if (
                         current is RecipeDetailRoute || current is IngredientReviewRoute ||
-                        current == RecipeImportRoute || current == CookbookSettingsRoute || current is InvitationRoute
+                        current == RecipeImportRoute || current == ImportDemoRoute || current == CookbookSettingsRoute || current is InvitationRoute
                     ) {
                         IconButton(
                             onClick = { backStack.removeLastOrNull() },
@@ -508,9 +561,11 @@ private fun ProtectedShell(
             }
         },
     ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+        SampleSaveBanner(sampleSaveState, onRetrySampleSave, onCancelSampleSave, openSample)
         NavDisplay(
             backStack = backStack,
-            modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
+            modifier = Modifier.weight(1f),
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
@@ -523,6 +578,10 @@ private fun ProtectedShell(
                         imageLoader = latestImageLoader,
                         resolveImage = latestResolveImage,
                         onRefresh = { recipesViewModel.refresh() },
+                        showDemo = !sampleSaveState.demoDismissed,
+                        onTryDemo = { backStack.add(ImportDemoRoute) },
+                        onDismissDemo = onDismissDemo,
+                        onImport = { backStack.add(RecipeImportRoute) },
                         onOpenRecipe = { recipeId ->
                             recipesState.selectedCookbookId?.let { cookbookId ->
                                 backStack.add(RecipeDetailRoute(recipeId, cookbookId))
@@ -557,6 +616,13 @@ private fun ProtectedShell(
                         onUrlChange = importViewModel::updateUrl,
                         onTextChange = importViewModel::updateText,
                         onSubmit = { importViewModel.submit() },
+                    )
+                }
+                entry<ImportDemoRoute> {
+                    ImportDemoScreen(
+                        onRecipeReady = onDismissDemo,
+                        continueLabel = R.string.demo_keep,
+                        onContinue = { onKeepSample(); backStack.removeLastOrNull() },
                     )
                 }
                 entry<RecipeDetailRoute> { route ->
@@ -756,6 +822,7 @@ private fun ProtectedShell(
                 }
             },
         )
+        }
     }
 }
 

@@ -1,24 +1,24 @@
 {
   "model": "gpt-image-2.5-sunburst",
-  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Soft side-window daylight, restrained warm-neutral whites,\nnatural green herbs, pale grey stone or light oak surface, understated ceramic tableware.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nA relaxed stack of four fluffy golden ricotta pancakes with blueberries baked into the crumb, on an off-white stoneware plate, a handful of fresh dusty-blue blueberries scattered around, a thin ribbon of maple syrup catching the light. One pancake edge cut to reveal tender interior. No icing, no whipped cream. Low three-quarter angle, soft breakfast daylight.",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nA short generous stack of three fluffy golden ricotta pancakes with blueberries baked into the crumb, fresh blueberries and a glistening thin ribbon of maple syrup, on a glossy butter-yellow diner plate. One small wedge cut away to reveal the soft blueberry-streaked interior. Retro American breakfast-counter photograph: cherry-red laminate table, a small corner of blue-and-white gingham cloth and a stainless-steel fork, warm hard early-morning sunlight from the side casting a long clear shadow. Low table-level angle, golden pancake edges in sharp focus, background softly out of focus. Cheerful nostalgic colour and honest diner texture, not beige cookbook styling. No whipped cream, icing, ivory stoneware or flower props. Keep the short stack centred for a wide crop.",
   "n": 1,
   "size": "1536x1024",
   "quality": "high",
   "output_format": "png",
-  "generated_at": "2026-09-26T09:24:28.727076+00:00",
-  "sha256": "cd86bbd2abe74a8309d507aad6cc2cb30dcc74c0e42a3bb57310284a58153b14",
+  "generated_at": "2026-09-26T11:22:58.645855+00:00",
+  "sha256": "ce0299efbe7a8faccea61dab2253355a9bc6e52011f1ba481fac295096f748fb",
   "usage": {
-    "input_tokens": 249,
+    "input_tokens": 357,
     "input_tokens_details": {
       "image_tokens": 0,
-      "text_tokens": 249
+      "text_tokens": 357
     },
     "output_tokens": 1372,
     "output_tokens_details": {
       "image_tokens": 1372,
       "text_tokens": 0
     },
-    "total_tokens": 1621
+    "total_tokens": 1729
   },
   "revised_prompt": null
 }

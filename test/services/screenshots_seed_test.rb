@@ -16,7 +16,7 @@ class ScreenshotsSeedTest < ActiveSupport::TestCase
     second = Screenshots::Seed.call
 
     assert_equal first, second
-    assert_equal 6, cookbook.recipes.count
+    assert_equal 14, cookbook.recipes.count
     assert_equal blob_id, recipe.reload.cover_image.blob.id
     assert_includes recipe.notes, "one-pan lunch"
     assert_equal 8, cookbook.shopping_list_items.count

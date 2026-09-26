@@ -46,6 +46,8 @@ app itself is localized. Check `screenshots/catalog.json` for supported locales.
 
 - Photos: `screenshots/photos/`; recipe data and per-dish prompts:
   `screenshots/recipes.json`; shared photographic direction: `screenshots/photo-style.txt`.
+  The 14-recipe library interleaves photographic styles. Keep shared realism/crop
+  constraints, but vary lighting, surfaces, tableware and angles per dish.
 - To generate missing artwork with the user-requested model:
   `bin/screenshots photos --recipe <slug>` using `OPENAI_API_KEY` from the environment.
   This uses `gpt-image-2.5-sunburst`; keep the PNG and its provenance JSON together.

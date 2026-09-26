@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nGlossy tangled wheat noodles coated in sesame sauce and red chilli oil, fine cucumber matchsticks, sliced green scallions and toasted sesame seeds in a deep charcoal-black bowl. Moody modern noodle-bar photography on dark walnut wood, directional side light with rich deep shadows and tiny highlights on the chilli oil, slightly above bowl-rim camera angle. Tight intimate food portrait, tactile strands, subtle real steam against a dark background. Dark chopsticks rest beside the bowl, no lifted noodles, no hands. No white crockery or linen. Central noodles remain visible in a wide crop.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:06.532585+00:00",
+  "sha256": "07d35a43ff6d8f8cc737f5d7a97fe4ff5b9f8d2cec4f4b60629df1f4afedd279",
+  "usage": {
+    "input_tokens": 319,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 319
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1691
+  },
+  "revised_prompt": null
+}

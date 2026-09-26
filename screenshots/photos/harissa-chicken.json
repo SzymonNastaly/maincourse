@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nUnstyled-looking generous family dinner straight from the oven: burnished brick-red harissa chicken thighs with crisp slightly charred skin, roasted red onion wedges, sweet red peppers and golden chickpeas in a battered dark steel roasting tray. Warm evening kitchen light, documentary cookbook photograph shot diagonally from above, rich reds and browns, real caramelized cooking juices. Tray placed directly on a dark green tiled kitchen counter, one folded striped tea towel barely visible at the edge. No plated portion, no white ceramics, no pale stone background. Main chicken pieces clustered in the middle horizontal band.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:37.464860+00:00",
+  "sha256": "c8fc87df5d5897b5fc2b150957eafa3b257d33cfe3ba7346a19f8ab795fa0cdb",
+  "usage": {
+    "input_tokens": 322,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 322
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1694
+  },
+  "revised_prompt": null
+}

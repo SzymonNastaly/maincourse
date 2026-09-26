@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,6 +43,9 @@ import com.getmaincourse.app.R
 import com.getmaincourse.app.data.images.cardImagePath
 import com.getmaincourse.app.data.model.RecipeSummary
 import com.getmaincourse.app.data.network.importFailureMessage
+import com.getmaincourse.app.features.auth.DemoPhoto
+import com.getmaincourse.app.features.auth.rememberDemoRecipe
+import androidx.compose.foundation.layout.height
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseMono
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -54,6 +58,10 @@ fun RecipesScreen(
     resolveImage: (String?) -> String?,
     onRefresh: () -> Unit,
     onOpenRecipe: (Long) -> Unit,
+    showDemo: Boolean = false,
+    onTryDemo: () -> Unit = {},
+    onDismissDemo: () -> Unit = {},
+    onImport: () -> Unit = {},
 ) {
     PullToRefreshBox(
         isRefreshing = state.refreshing,
@@ -79,7 +87,21 @@ fun RecipesScreen(
                     EmptyPanel(stringResource(R.string.cookbooks_empty))
                 }
                 state.recipes.isEmpty() -> item(span = { GridItemSpan(maxLineSpan) }) {
-                    EmptyPanel(stringResource(R.string.recipes_empty))
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(stringResource(R.string.demo_empty_title), style = MaterialTheme.typography.titleLarge)
+                        Button(onClick = onImport) { Text(stringResource(R.string.recipe_import)) }
+                        Text(stringResource(R.string.demo_empty_body), color = MainCourseColors.Body)
+                        if (showDemo && state.error == null && !state.refreshing) {
+                            Surface(shape = MainCourseShapes.Panel, border = BorderStroke(1.dp, MainCourseColors.Hairline)) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    DemoPhoto(rememberDemoRecipe(), Modifier.height(160.dp))
+                                    Text(stringResource(R.string.demo_try_body), color = MainCourseColors.Body)
+                                    Button(onClick = onTryDemo, modifier = Modifier.testTag("try_example")) { Text(stringResource(R.string.demo_try)) }
+                                    TextButton(onClick = onDismissDemo) { Text(stringResource(R.string.demo_dismiss)) }
+                                }
+                            }
+                        }
+                    }
                 }
                 else -> items(state.recipes, key = { it.id }) { recipe ->
                     RecipeCard(recipe, imageLoader, resolveImage, onOpenRecipe)

@@ -4,12 +4,24 @@
     "CFBundleDisplayName" : {
       "comment" : "App brand name. Keep MainCourse unchanged.",
       "extractionState" : "manual",
-      "shouldTranslate" : false,
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "MainCourse"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hauptgang"
           }
         }
       }

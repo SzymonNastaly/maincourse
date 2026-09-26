@@ -429,6 +429,7 @@ class SessionViewModelTest {
     }
 
     private class FakeService : MainCourseService {
+        override suspend fun saveRecipe(cookbookId: Long, destinationId: Long, request: com.getmaincourse.app.data.model.RecipeSaveRequest): com.getmaincourse.app.data.model.RecipeSaveResponse = error("Unused")
         var signInResponse = session()
         var signUpResponse = session()
         var signInFailure: Throwable? = null

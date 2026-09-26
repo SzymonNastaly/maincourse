@@ -16,6 +16,7 @@ import com.getmaincourse.app.data.session.EncryptedSessionStore
 import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.features.session.SessionViewModel
 import com.getmaincourse.app.features.auth.PreAuthViewModel
+import com.getmaincourse.app.features.auth.SampleSaveViewModel
 import com.getmaincourse.app.notifications.NotificationPresenter
 import com.getmaincourse.app.notifications.PushRegistrationManager
 import com.getmaincourse.app.notifications.PushRegistrationStore
@@ -86,9 +87,9 @@ class AppContainer(application: Application) {
         )
     }
     val preAuthViewModelFactory = simpleViewModelFactory {
-        PreAuthViewModel(
-            preferences = onboardingPreferences,
-            submitOnboarding = { service.submitOnboarding(it) },
-        )
+        PreAuthViewModel(onboardingPreferences)
+    }
+    val sampleSaveViewModelFactory = simpleViewModelFactory {
+        SampleSaveViewModel(onboardingPreferences, service, sessionProvider)
     }
 }

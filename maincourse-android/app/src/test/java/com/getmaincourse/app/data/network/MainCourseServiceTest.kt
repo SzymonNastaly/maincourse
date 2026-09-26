@@ -12,6 +12,8 @@ import com.getmaincourse.app.data.model.RecipePageContent
 import com.getmaincourse.app.data.model.RecipeTextImportRequest
 import com.getmaincourse.app.data.model.RecipeUpdateRequest
 import com.getmaincourse.app.data.model.RecipeUrlImportRequest
+import com.getmaincourse.app.data.model.RecipeSaveRequest
+import com.getmaincourse.app.data.model.RecipeSaveSource
 import com.getmaincourse.app.data.model.ShoppingItemRequest
 import com.getmaincourse.app.data.model.ShoppingItemsRequest
 import com.getmaincourse.app.data.model.ShoppingItemUpdateRequest
@@ -66,6 +68,19 @@ class MainCourseServiceTest {
     @After
     fun tearDown() {
         server.shutdown()
+    }
+
+    @Test
+    fun sampleSaveUsesVersionedSourceAndExplicitCookbookDestination() = runTest {
+        server.enqueue(jsonResponse(201, """{"recipe_id":91,"cookbook_id":42}"""))
+        val saved = service.saveRecipe(42, 42, RecipeSaveRequest(RecipeSaveSource("sample", "tomato-orzo-v1"), "request-uuid"))
+        assertEquals(91L, saved.recipeId)
+        assertEquals(42L, saved.cookbookId)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/cookbooks/42/recipe_saves", request.path)
+        assertEquals("42", request.getHeader("X-Cookbook-Id"))
+        assertEquals(json("""{"source":{"type":"sample","key":"tomato-orzo-v1"},"request_id":"request-uuid"}"""), json(request.body.readUtf8()))
     }
 
     @Test

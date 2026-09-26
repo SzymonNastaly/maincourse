@@ -61,9 +61,16 @@ of ordinary development data. `bin/screenshots seed` can prepare that data alone
 
 ## Content and photos
 
-`screenshots/recipes.json` contains six complete recipes with structured
+`screenshots/recipes.json` contains 14 complete recipes with structured
 ingredients, tags, timing, servings, instructions, and per-dish photo prompts.
-`screenshots/photo-style.txt` defines their shared photographic direction.
+`screenshots/photo-style.txt` defines shared realism and crop constraints. Each
+dish prompt chooses its own lighting, camera angle, surface and tableware: the
+library mixes daylight plates, colorful overheads, dark restaurant scenes,
+rustic baking and close-up textures. Recipes are interleaved in display order so
+the iPad grid shows this variety throughout, rather than in a separate block.
+All 14 dishes have individual art direction, including the original six: green
+enamel-pan orzo, retro diner pancakes, garden-lunch salad, Nordic salmon,
+flash-lit cafe toast, and a dark patisserie tart.
 
 ```sh
 # OPENAI_API_KEY must be available in the environment.

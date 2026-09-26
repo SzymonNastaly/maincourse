@@ -95,6 +95,8 @@ data class RecipeSummary(
     val updatedAt: String,
     @SerialName("import_error_code")
     val importErrorCode: String? = null,
+    @SerialName("starter_recipe_key")
+    val starterRecipeKey: String? = null,
 )
 
 @Serializable
@@ -123,6 +125,8 @@ data class RecipeDetail(
     val createdAt: String,
     @SerialName("updated_at")
     val updatedAt: String,
+    @SerialName("starter_recipe_key")
+    val starterRecipeKey: String? = null,
 )
 
 @Serializable

@@ -54,9 +54,10 @@ import com.getmaincourse.app.data.session.SessionProvider
 import com.getmaincourse.app.data.session.SessionStore
 import com.getmaincourse.app.data.session.StoredSession
 import com.getmaincourse.app.features.recipes.RecipeDetailViewModel
-import com.getmaincourse.app.features.auth.HouseholdSize
 import com.getmaincourse.app.features.auth.PreAuthStep
 import com.getmaincourse.app.features.auth.PreAuthUiState
+import com.getmaincourse.app.features.auth.SampleSaveUiState
+import com.getmaincourse.app.data.model.RecipeSaveResponse
 import com.getmaincourse.app.features.cookbooks.CookbookManagementViewModel
 import com.getmaincourse.app.features.cookbooks.InvitationViewModel
 import com.getmaincourse.app.features.recipes.RecipeEditViewModel
@@ -97,6 +98,46 @@ class MainCourseAppTest {
     }
 
     @Test
+    fun savedSampleOpensRealDetailAfterStartup() {
+        val opened = AtomicInteger()
+        show(
+            state = SessionUiState.SignedIn(SESSION),
+            sampleSaveState = SampleSaveUiState(userId = USER.id, saved = RecipeSaveResponse(DETAIL.id, COOKBOOK.id)),
+            onSampleOpened = opened::incrementAndGet,
+        )
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        assertEquals(1, opened.get())
+    }
+
+    @Test
+    fun invitationKeepsPriorityOverSavedExampleAndBannerCanOpenIt() {
+        val opened = AtomicInteger()
+        show(
+            state = SessionUiState.SignedIn(SESSION),
+            invitationToken = "invite-token",
+            sampleSaveState = SampleSaveUiState(userId = USER.id, saved = RecipeSaveResponse(DETAIL.id, COOKBOOK.id)),
+            onSampleOpened = opened::incrementAndGet,
+        )
+        compose.onNodeWithTag("invitation_accept").assertIsDisplayed()
+        assertEquals(0, opened.get())
+        compose.onNodeWithText("Open recipe").performClick()
+        compose.onNodeWithTag("recipe_detail").assertIsDisplayed()
+        assertEquals(1, opened.get())
+    }
+
+    @Test
+    fun starterRecipeAloneDoesNotAskForNotificationPermission() {
+        val prompts = AtomicInteger()
+        show(
+            state = SessionUiState.SignedIn(SESSION),
+            factories = factories(summary = SUMMARY.copy(starterRecipeKey = "tomato-orzo-v1")),
+            onRequestNotificationPermission = prompts::incrementAndGet,
+        )
+        compose.onNodeWithTag("screen_Recipes").assertIsDisplayed()
+        assertEquals(0, prompts.get())
+    }
+
+    @Test
     fun signedOutSessionShowsEmailAuthentication() {
         show(SessionUiState.SignedOut())
 
@@ -106,7 +147,7 @@ class MainCourseAppTest {
     }
 
     @Test
-    fun freshInstallStartsOnWelcomeAndUsesMaterialQuestionFlow() {
+    fun freshInstallStartsOnWelcomeAndOffersPlayableSharingExample() {
         val preAuth: MutableState<PreAuthUiState> = mutableStateOf(
             PreAuthUiState(PreAuthStep.WELCOME, onboarding = true),
         )
@@ -117,10 +158,7 @@ class MainCourseAppTest {
                         state = SessionUiState.SignedOut(),
                         preAuthState = preAuth.value,
                         onStartOnboarding = {
-                            preAuth.value = preAuth.value.copy(step = PreAuthStep.HOUSEHOLD)
-                        },
-                        onSelectHousehold = {
-                            preAuth.value = preAuth.value.copy(household = it)
+                            preAuth.value = preAuth.value.copy(step = PreAuthStep.DEMO)
                         },
                     )
                 }
@@ -129,11 +167,8 @@ class MainCourseAppTest {
 
         compose.onNodeWithTag("onboarding_logo").assertIsDisplayed()
         compose.onNodeWithTag("onboarding_start").performClick()
-        compose.onNodeWithText("How big is your household?").assertIsDisplayed()
-        compose.onNodeWithTag("onboarding_continue").assertIsNotEnabled()
-        compose.onNodeWithTag("onboarding_household_one").performClick()
-        compose.onNodeWithTag("onboarding_continue").assertIsEnabled()
-        assertEquals(HouseholdSize.ONE, preAuth.value.household)
+        compose.onNodeWithText("Here’s a recipe from someone’s feed.").assertIsDisplayed()
+        compose.onNodeWithTag("demo_share").assertExists()
     }
 
     @Test
@@ -607,6 +642,9 @@ class MainCourseAppTest {
         onSharedRecipeInputConsumed: () -> Unit = {},
         invitationToken: String? = null,
         onInvitationConsumed: () -> Unit = {},
+        sampleSaveState: SampleSaveUiState = SampleSaveUiState(),
+        onSampleOpened: () -> Unit = {},
+        onRequestNotificationPermission: () -> Unit = {},
     ) {
         compose.runOnIdle {
             MainCourseTestContent.content = {
@@ -619,6 +657,9 @@ class MainCourseAppTest {
                         onSharedRecipeInputConsumed = onSharedRecipeInputConsumed,
                         invitationToken = invitationToken,
                         onInvitationConsumed = onInvitationConsumed,
+                        sampleSaveState = sampleSaveState,
+                        onSampleOpened = onSampleOpened,
+                        onRequestNotificationPermission = onRequestNotificationPermission,
                     )
                 }
             }
@@ -793,6 +834,7 @@ class MainCourseAppTest {
     }
 
     private object UnusedService : MainCourseService {
+        override suspend fun saveRecipe(cookbookId: Long, destinationId: Long, request: com.getmaincourse.app.data.model.RecipeSaveRequest): com.getmaincourse.app.data.model.RecipeSaveResponse = error("Unused")
         override suspend fun registerDeviceToken(request: DeviceTokenRequest): DeviceTokenResponse = error("Not used")
         override suspend fun deleteDeviceToken(token: String, provider: String) = error("Not used")
         override suspend fun markNotificationOpened(id: Long, request: NotificationOpenedRequest) = error("Not used")

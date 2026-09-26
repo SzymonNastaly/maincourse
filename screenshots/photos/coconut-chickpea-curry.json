@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nGraphic true top-down food photograph of a rich golden-orange coconut chickpea curry with visible chickpeas and wilted spinach, in a small well-used brass serving bowl beside a mound of fluffy white basmati rice on a deep teal glazed platter. A few coriander leaves, no excessive garnish. Saturated jewel-tone palette: teal ceramic, warm brass, turmeric orange, backdrop of matte mustard-yellow painted wood. Clear natural sunlight and defined shadows, cheerful contemporary magazine food styling. Asymmetric but crop-safe central arrangement, no beige linen or ivory plates.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:02.091028+00:00",
+  "sha256": "477d8842fdc268527adea1d8b5dfd838b7c2e9ad5e339a44b0cde261f101caf9",
+  "usage": {
+    "input_tokens": 313,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 313
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1685
+  },
+  "revised_prompt": null
+}

@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nThree soft corn tortillas filled with crunchy golden panko-coated white fish, finely shredded purple cabbage, a small drizzle of yogurt and fresh coriander, with lime wedges. Bright punchy outdoor taqueria editorial: saturated cobalt-blue enamel platter on a terracotta-red painted table, direct late-morning sunlight with crisp diagonal shadows. Close three-quarter view, informal and lively. Show flaky white fish in one broken piece. No pale stoneware, no linen, no beige backdrop. Keep the filled tacos grouped across the central horizontal band.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:02.786107+00:00",
+  "sha256": "7941208bd344b140907633b6e91829dd256a342637c02c08be579064c4b24fa7",
+  "usage": {
+    "input_tokens": 310,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 310
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1682
+  },
+  "revised_prompt": null
+}

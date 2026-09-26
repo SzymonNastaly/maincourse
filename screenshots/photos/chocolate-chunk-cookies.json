@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nIntimate macro-style bakery photograph of three chunky brown-butter chocolate cookies loosely overlapping on a black wire cooling rack. One cookie broken into two with soft chewy crumb and large molten dark chocolate pockets, delicate flaky salt on cracked golden tops. Tight low-angle composition at cookie height, shallow depth of field but the broken centre crisply focused. Soft cool window backlight contrasts with warm golden cookie edges, blurred muted blue kitchen background, crumbs below the rack. No plates, no milk glass, no linen, no flowers. Cookies arranged across the centre with enough space for a horizontal app crop.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:35.903718+00:00",
+  "sha256": "1bc0d6f65b10d64b95c4419e89c2211a3bb93964140ae675c1fc44e765288d4c",
+  "usage": {
+    "input_tokens": 322,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 322
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1694
+  },
+  "revised_prompt": null
+}

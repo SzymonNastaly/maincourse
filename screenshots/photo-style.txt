@@ -1,7 +1,9 @@
 Create one premium editorial food photograph for MainCourse, a personal recipe app.
 The food is the hero: delicious, believable, generous home cooking, tactile ingredients,
-subtle natural imperfections. Soft side-window daylight, restrained warm-neutral whites,
-natural green herbs, pale grey stone or light oak surface, understated ceramic tableware.
+subtle natural imperfections. Follow each dish's specific lighting, camera angle,
+surface and tableware direction: the library should feel collected from different
+excellent food photographers, rather than one matching studio shoot. When a dish
+does not specify a setting, use soft daylight and simple natural materials.
 Keep the dish centered with generous crop-safe breathing room on all sides: this image
 will be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential
 food in the middle half of the image height. One scene, not a collage. High-end cookbook

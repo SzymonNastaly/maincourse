@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel by viewModels<SessionViewModel> { appContainer.sessionViewModelFactory }
     private val preAuthViewModel by viewModels<PreAuthViewModel> { appContainer.preAuthViewModelFactory }
+    private val sampleSaveViewModel by viewModels<com.getmaincourse.app.features.auth.SampleSaveViewModel> { appContainer.sampleSaveViewModelFactory }
     private var contentInstalled = false
     private val pendingSharedRecipe = MutableStateFlow<SharedRecipeInput?>(null)
     private val pendingInvitationToken = MutableStateFlow<String?>(null)
@@ -118,6 +119,7 @@ class MainActivity : ComponentActivity() {
                 MainCourseApp(
                     sessionViewModel = viewModel,
                     preAuthViewModel = preAuthViewModel,
+                    sampleSaveViewModel = sampleSaveViewModel,
                     cookbookRepository = appContainer.cookbookRepository,
                     recipeRepository = appContainer.recipeRepository,
                     shoppingListRepository = appContainer.shoppingListRepository,

@@ -1,24 +1,24 @@
 {
   "model": "gpt-image-2.5-sunburst",
-  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Soft side-window daylight, restrained warm-neutral whites,\nnatural green herbs, pale grey stone or light oak surface, understated ceramic tableware.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nA shallow ivory ceramic bowl of creamy tomato orzo, individual rice-shaped pasta clearly visible in a glossy coral-red tomato sauce, blistered red and golden cherry tomatoes, fresh small basil leaves and delicate shaved Parmesan. A spoon resting on natural linen at the edge. Three-quarter overhead angle, appetizing and generous, freshly served.",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nCreamy tomato and basil orzo served straight from a small forest-green enamel saute pan, individual rice-shaped pasta clearly visible in glossy coral-red sauce, blistered red and golden cherry tomatoes, torn basil and delicate Parmesan shavings. Freshly cooked, softly steaming, a serving spoon tucked into one side. Modern Italian home-kitchen editorial, pale pistachio painted countertop and a softly blurred sage-green tiled backsplash, clean diffused morning window light, close three-quarter angle looking just into the pan. Rich green enamel against coral pasta, tactile and spontaneous rather than formal plating. Keep the pan's food surface across the central horizontal band for a wide hero crop. No ivory bowl, beige linen, grey stone or flowers.",
   "n": 1,
   "size": "1536x1024",
   "quality": "high",
   "output_format": "png",
-  "generated_at": "2026-09-26T09:24:01.877848+00:00",
-  "sha256": "275e38b61095602e28da3fd757e5a4cd0dc7c10a3cdecc7e07358f1e0f701c1b",
+  "generated_at": "2026-09-26T11:23:00.838595+00:00",
+  "sha256": "48a73e68bd73d497a39a840a5bddbacbc7eff8e22d6f274c13a8c734ee5c8705",
   "usage": {
-    "input_tokens": 244,
+    "input_tokens": 349,
     "input_tokens_details": {
       "image_tokens": 0,
-      "text_tokens": 244
+      "text_tokens": 349
     },
     "output_tokens": 1372,
     "output_tokens_details": {
       "image_tokens": 1372,
       "text_tokens": 0
     },
-    "total_tokens": 1616
+    "total_tokens": 1721
   },
   "revised_prompt": null
 }

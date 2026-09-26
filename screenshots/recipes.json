@@ -24,7 +24,34 @@
         "Stir through the cream and Parmesan. Finish with torn basil and freshly ground black pepper."
       ],
       "notes": "A one-pan lunch that is just as lovely for dinner. Use vegetarian hard cheese if preferred.",
-      "photo": "A shallow ivory ceramic bowl of creamy tomato orzo, individual rice-shaped pasta clearly visible in a glossy coral-red tomato sauce, blistered red and golden cherry tomatoes, fresh small basil leaves and delicate shaved Parmesan. A spoon resting on natural linen at the edge. Three-quarter overhead angle, appetizing and generous, freshly served."
+      "photo": "Creamy tomato and basil orzo served straight from a small forest-green enamel saute pan, individual rice-shaped pasta clearly visible in glossy coral-red sauce, blistered red and golden cherry tomatoes, torn basil and delicate Parmesan shavings. Freshly cooked, softly steaming, a serving spoon tucked into one side. Modern Italian home-kitchen editorial, pale pistachio painted countertop and a softly blurred sage-green tiled backsplash, clean diffused morning window light, close three-quarter angle looking just into the pan. Rich green enamel against coral pasta, tactile and spontaneous rather than formal plating. Keep the pan's food surface across the central horizontal band for a wide hero crop. No ivory bowl, beige linen, grey stone or flowers."
+    },
+    {
+      "slug": "crispy-fish-tacos",
+      "name": "Crispy Fish Tacos",
+      "prep_time": 20, "cook_time": 15, "servings": 4,
+      "tags": ["Lunch", "Dinner", "Fish"],
+      "favorite": true,
+      "ingredients": [
+        {"raw": "500g cod fillets", "name": "cod fillets", "amount": 500, "unit": "g"},
+        {"raw": "60g plain flour", "name": "plain flour", "amount": 60, "unit": "g"},
+        {"raw": "2 eggs, beaten", "name": "eggs", "amount": 2, "note": "beaten"},
+        {"raw": "100g panko breadcrumbs", "name": "panko breadcrumbs", "amount": 100, "unit": "g"},
+        {"raw": "4 tbsp vegetable oil", "name": "vegetable oil", "amount": 4, "unit": "tbsp"},
+        {"raw": "8 small corn tortillas", "name": "corn tortillas", "amount": 8},
+        {"raw": "200g red cabbage, shredded", "name": "red cabbage", "amount": 200, "unit": "g", "note": "shredded"},
+        {"raw": "100g Greek yogurt", "name": "Greek yogurt", "amount": 100, "unit": "g"},
+        {"raw": "2 limes", "name": "limes", "amount": 2},
+        {"raw": "Fresh coriander, to serve", "name": "fresh coriander"}
+      ],
+      "instructions": [
+        "Cut the cod into thick strips and pat dry. Season with salt and pepper, then coat in flour, beaten egg and panko.",
+        "Heat the oil in a frying pan. Fry the fish in batches for 3–4 minutes per side until golden and cooked through.",
+        "Toss the cabbage with the juice of one lime and a pinch of salt. Stir a little lime zest into the yogurt.",
+        "Warm the tortillas in a dry pan. Fill with cabbage, crispy fish, yogurt and coriander. Serve with the remaining lime in wedges."
+      ],
+      "notes": "Warm the tortillas just before filling so they stay soft and fold easily.",
+      "photo": "Three soft corn tortillas filled with crunchy golden panko-coated white fish, finely shredded purple cabbage, a small drizzle of yogurt and fresh coriander, with lime wedges. Bright punchy outdoor taqueria editorial: saturated cobalt-blue enamel platter on a terracotta-red painted table, direct late-morning sunlight with crisp diagonal shadows. Close three-quarter view, informal and lively. Show flaky white fish in one broken piece. No pale stoneware, no linen, no beige backdrop. Keep the filled tacos grouped across the central horizontal band."
     },
     {
       "slug": "blueberry-pancakes",
@@ -49,7 +76,33 @@
         "Serve in small stacks with the remaining blueberries and maple syrup."
       ],
       "notes": "Keep the batter slightly lumpy for wonderfully soft pancakes.",
-      "photo": "A relaxed stack of four fluffy golden ricotta pancakes with blueberries baked into the crumb, on an off-white stoneware plate, a handful of fresh dusty-blue blueberries scattered around, a thin ribbon of maple syrup catching the light. One pancake edge cut to reveal tender interior. No icing, no whipped cream. Low three-quarter angle, soft breakfast daylight."
+      "photo": "A short generous stack of three fluffy golden ricotta pancakes with blueberries baked into the crumb, fresh blueberries and a glistening thin ribbon of maple syrup, on a glossy butter-yellow diner plate. One small wedge cut away to reveal the soft blueberry-streaked interior. Retro American breakfast-counter photograph: cherry-red laminate table, a small corner of blue-and-white gingham cloth and a stainless-steel fork, warm hard early-morning sunlight from the side casting a long clear shadow. Low table-level angle, golden pancake edges in sharp focus, background softly out of focus. Cheerful nostalgic colour and honest diner texture, not beige cookbook styling. No whipped cream, icing, ivory stoneware or flower props. Keep the short stack centred for a wide crop."
+    },
+    {
+      "slug": "sesame-chilli-noodles",
+      "name": "Sesame Chilli Noodles",
+      "prep_time": 10, "cook_time": 10, "servings": 2,
+      "tags": ["Lunch", "Dinner", "Vegetarian", "Quick & Easy"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "200g wheat noodles", "name": "wheat noodles", "amount": 200, "unit": "g"},
+        {"raw": "2 tbsp tahini", "name": "tahini", "amount": 2, "unit": "tbsp"},
+        {"raw": "2 tbsp soy sauce", "name": "soy sauce", "amount": 2, "unit": "tbsp"},
+        {"raw": "1 tbsp rice vinegar", "name": "rice vinegar", "amount": 1, "unit": "tbsp"},
+        {"raw": "1 tbsp chilli oil", "name": "chilli oil", "amount": 1, "unit": "tbsp"},
+        {"raw": "1 tsp honey", "name": "honey", "amount": 1, "unit": "tsp"},
+        {"raw": "1 cucumber, julienned", "name": "cucumber", "amount": 1, "note": "julienned"},
+        {"raw": "2 spring onions, sliced", "name": "spring onions", "amount": 2, "note": "sliced"},
+        {"raw": "1 tbsp sesame seeds", "name": "sesame seeds", "amount": 1, "unit": "tbsp"}
+      ],
+      "instructions": [
+        "Cook the noodles according to the packet instructions, saving a mug of cooking water before draining.",
+        "Whisk the tahini, soy sauce, rice vinegar, chilli oil and honey with 3 tablespoons of warm noodle water until smooth.",
+        "Toss the noodles in the sauce, loosening with more cooking water if needed.",
+        "Divide into bowls and add cucumber, spring onions and sesame seeds."
+      ],
+      "notes": "Start with less chilli oil if you prefer a milder bowl.",
+      "photo": "Glossy tangled wheat noodles coated in sesame sauce and red chilli oil, fine cucumber matchsticks, sliced green scallions and toasted sesame seeds in a deep charcoal-black bowl. Moody modern noodle-bar photography on dark walnut wood, directional side light with rich deep shadows and tiny highlights on the chilli oil, slightly above bowl-rim camera angle. Tight intimate food portrait, tactile strands, subtle real steam against a dark background. Dark chopsticks rest beside the bowl, no lifted noodles, no hands. No white crockery or linen. Central noodles remain visible in a wide crop."
     },
     {
       "slug": "peach-burrata-salad",
@@ -73,7 +126,31 @@
         "Finish with basil, flaky salt and black pepper. Serve straight away."
       ],
       "notes": "Best made with fragrant, perfectly ripe peaches.",
-      "photo": "An abundant summer salad on a wide matte ivory platter: ripe peach wedges with golden flesh and red skins, red and yellow halved cherry tomatoes, bright green rocket leaves, soft torn white burrata showing its creamy centre, fresh basil and a fine olive-oil sheen. Naturally arranged rather than geometric. True overhead food photograph."
+      "photo": "An abundant peach and burrata salad on a transparent fluted glass platter: juicy golden peach wedges with red skins, red and yellow cherry tomatoes, green rocket, torn white burrata with creamy centres, basil and small glistening olive-oil droplets. Outdoor Mediterranean garden-lunch photograph, platter resting on a faded sky-blue painted wooden picnic table, late-afternoon dappled sunlight through leaves making irregular soft-edged patches of light and shade. High oblique camera angle rather than straight overhead, glass rim catching the sun, salad luminous and fresh. Loose natural arrangement, airy cyan, peach and green palette. No opaque ceramic plate, grey stone, beige napkin or styled ingredient bowls. Keep the salad together in the central band, not spread to the frame edges."
+    },
+    {
+      "slug": "rosemary-focaccia",
+      "name": "Rosemary & Sea Salt Focaccia",
+      "prep_time": 20, "cook_time": 25, "servings": 8,
+      "tags": ["Baking", "Vegetarian"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "500g strong bread flour", "name": "strong bread flour", "amount": 500, "unit": "g"},
+        {"raw": "7g instant yeast", "name": "instant yeast", "amount": 7, "unit": "g"},
+        {"raw": "400ml warm water", "name": "water", "amount": 400, "unit": "ml"},
+        {"raw": "10g fine sea salt", "name": "fine sea salt", "amount": 10, "unit": "g"},
+        {"raw": "5 tbsp olive oil", "name": "olive oil", "amount": 5, "unit": "tbsp"},
+        {"raw": "3 sprigs rosemary", "name": "rosemary", "amount": 3, "unit": "sprigs"},
+        {"raw": "Flaky sea salt, to finish", "name": "flaky sea salt"}
+      ],
+      "instructions": [
+        "Mix the flour, yeast, warm water, fine salt and 2 tablespoons of oil into a sticky dough. Cover and leave for 90 minutes, folding the dough over itself twice during the first hour.",
+        "Oil a 23 × 33cm baking tin with 2 tablespoons of oil. Ease the dough into the tin and leave covered for 45 minutes, until puffy.",
+        "Heat the oven to 220°C. Drizzle with the remaining oil, dimple deeply with oiled fingers, then scatter with rosemary and flaky salt.",
+        "Bake for 25 minutes until golden. Cool on a rack for 15 minutes before slicing."
+      ],
+      "notes": "Allow an extra 2 hours 15 minutes for rising. The wet dough makes an airy, open crumb.",
+      "photo": "Rustic bakery still life: a rectangular slab of deeply golden dimpled rosemary focaccia on crumpled brown baking parchment over a worn metal baking tray. Two thick torn pieces lean against the slab in the centre, exposing a beautiful airy irregular crumb and olive-oil crust, rosemary needles and flaky salt embedded in the top. Low raking late-afternoon light across the bread, warm copper and caramel tones, dark flour-dusted baker's workbench, close low three-quarter angle. Bread dominates; no plates, no flowers, no napkins. Real imperfect bakery textures, not a styled white-table brunch."
     },
     {
       "slug": "lemon-salmon",
@@ -97,7 +174,35 @@
         "Roast for 12–15 minutes more, until the salmon is cooked through and the potatoes are crisp. Finish with fresh dill and lemon juice."
       ],
       "notes": "Spread the potatoes out so the cut sides turn golden and crisp.",
-      "photo": "A beautifully cooked salmon fillet with delicate coral flakes and a lightly golden surface, crisp roasted baby potato halves, green asparagus, a roasted lemon slice and fresh dill, plated on a simple pale stoneware dinner plate. Realistic home cooking, moist fish, crisp potato edges, three-quarter overhead angle."
+      "photo": "One moist roast salmon fillet with coral flakes and a delicately golden surface, crisp baby potato halves, slender green asparagus, a roasted lemon slice and fresh dill, generously arranged on an oval brushed stainless-steel serving platter. Crisp contemporary Scandinavian food editorial, true overhead camera, matte ice-blue background with one navy cotton napkin entering the corner. Cool clear northern window daylight, bright silver reflections controlled and realistic, clean graphic composition, natural coral and green accents. Food looks like a delicious achievable home-cooked dinner, not tiny fine-dining portions. A small edge of salmon flakes apart naturally to show its moisture. Centre the complete meal for horizontal cropping. No ivory stoneware, beige linen, rustic wood or scattered prop ingredients."
+    },
+    {
+      "slug": "coconut-chickpea-curry",
+      "name": "Coconut Chickpea Curry",
+      "prep_time": 10, "cook_time": 25, "servings": 4,
+      "tags": ["Dinner", "Vegetarian"],
+      "favorite": true,
+      "ingredients": [
+        {"raw": "1 tbsp vegetable oil", "name": "vegetable oil", "amount": 1, "unit": "tbsp"},
+        {"raw": "1 onion, diced", "name": "onion", "amount": 1, "note": "diced"},
+        {"raw": "2 cloves garlic, minced", "name": "garlic", "amount": 2, "unit": "cloves", "note": "minced"},
+        {"raw": "1 tbsp grated ginger", "name": "ginger", "amount": 1, "unit": "tbsp", "note": "grated"},
+        {"raw": "2 tbsp curry powder", "name": "curry powder", "amount": 2, "unit": "tbsp"},
+        {"raw": "400g chopped tomatoes", "name": "chopped tomatoes", "amount": 400, "unit": "g"},
+        {"raw": "400ml coconut milk", "name": "coconut milk", "amount": 400, "unit": "ml"},
+        {"raw": "480g cooked chickpeas, drained", "name": "chickpeas", "amount": 480, "unit": "g", "note": "cooked and drained"},
+        {"raw": "100g spinach", "name": "spinach", "amount": 100, "unit": "g"},
+        {"raw": "250g basmati rice", "name": "basmati rice", "amount": 250, "unit": "g"},
+        {"raw": "Fresh coriander, to serve", "name": "fresh coriander"}
+      ],
+      "instructions": [
+        "Heat the oil in a saucepan. Soften the onion for 5 minutes, then add the garlic, ginger and curry powder and stir for 1 minute.",
+        "Add the tomatoes, coconut milk and chickpeas. Simmer gently for 18 minutes, stirring occasionally.",
+        "Meanwhile, cook the rice according to the packet instructions.",
+        "Stir the spinach into the curry until wilted. Season to taste and serve with the rice and coriander."
+      ],
+      "notes": "Leftover curry thickens overnight; loosen with a splash of water when reheating.",
+      "photo": "Graphic true top-down food photograph of a rich golden-orange coconut chickpea curry with visible chickpeas and wilted spinach, in a small well-used brass serving bowl beside a mound of fluffy white basmati rice on a deep teal glazed platter. A few coriander leaves, no excessive garnish. Saturated jewel-tone palette: teal ceramic, warm brass, turmeric orange, backdrop of matte mustard-yellow painted wood. Clear natural sunlight and defined shadows, cheerful contemporary magazine food styling. Asymmetric but crop-safe central arrangement, no beige linen or ivory plates."
     },
     {
       "slug": "avocado-toast",
@@ -120,7 +225,33 @@
         "Spread on the toast. Top with halved eggs, chilli flakes and black pepper."
       ],
       "notes": "Use an avocado that yields gently when pressed.",
-      "photo": "Two slices of rustic toasted sourdough with thick roughly mashed green avocado, each topped with a halved seven-minute egg with deep golden jammy yolk, a few red chilli flakes and cracked black pepper. Pale handmade ceramic plate, a simple linen napkin, three-quarter overhead composition, bright but natural breakfast light."
+      "photo": "Two thick sourdough toasts with roughly mashed vivid green avocado and halved seven-minute eggs with deep golden jammy yolks, red chilli flakes and black pepper. Toasts served directly on a small sheet of brown deli paper on a flat aluminium cafe tray. Contemporary independent coffee-shop snapshot aesthetic: small glossy emerald-green tiled table with visible grout lines, an out-of-focus espresso cup barely entering one corner, clean direct on-camera flash mixed with ambient daylight producing crisp small shadows and lively highlights on the yolks. Close overhead-ish diagonal view, energetic and casually imperfect, genuinely photographic rather than polished studio styling. Both toasts centred and fully appetizing in a horizontal crop. No ceramic dinner plate, linen, pale stone or flower sprigs."
+    },
+    {
+      "slug": "crispy-mushroom-dumplings",
+      "name": "Crispy Mushroom Dumplings",
+      "prep_time": 30, "cook_time": 15, "servings": 4,
+      "tags": ["Lunch", "Dinner", "Vegetarian"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "300g mushrooms, finely chopped", "name": "mushrooms", "amount": 300, "unit": "g", "note": "finely chopped"},
+        {"raw": "150g cabbage, finely shredded", "name": "cabbage", "amount": 150, "unit": "g", "note": "finely shredded"},
+        {"raw": "2 spring onions, sliced", "name": "spring onions", "amount": 2, "note": "sliced"},
+        {"raw": "2 tsp grated ginger", "name": "ginger", "amount": 2, "unit": "tsp", "note": "grated"},
+        {"raw": "2 tbsp soy sauce", "name": "soy sauce", "amount": 2, "unit": "tbsp"},
+        {"raw": "1 tsp sesame oil", "name": "sesame oil", "amount": 1, "unit": "tsp"},
+        {"raw": "24 round dumpling wrappers", "name": "dumpling wrappers", "amount": 24},
+        {"raw": "2 tbsp vegetable oil", "name": "vegetable oil", "amount": 2, "unit": "tbsp"},
+        {"raw": "Chilli oil and rice vinegar, to serve", "name": "chilli oil and rice vinegar"}
+      ],
+      "instructions": [
+        "Heat half the vegetable oil in a pan. Cook the mushrooms and cabbage for 7 minutes until softened and their moisture has evaporated.",
+        "Stir in the spring onions, ginger, soy sauce and sesame oil. Let the filling cool.",
+        "Place a small spoonful of filling in each wrapper. Moisten the edges with water, fold over and pinch firmly to seal.",
+        "Heat the remaining oil in a non-stick pan. Fry the dumplings for 2 minutes, add 100ml water and cover for 5 minutes. Uncover and cook until the water evaporates and the bases are crisp. Serve with chilli oil and rice vinegar."
+      ],
+      "notes": "Keep unused wrappers under a lightly damp towel while shaping the dumplings.",
+      "photo": "Six handmade mushroom potsticker dumplings on a small glossy oxblood-red rectangular lacquer tray, several tipped to reveal their crisp caramelized bases and delicate pleated edges, one split open showing finely chopped mushroom filling. A tiny black dipping saucer with red chilli oil at the edge. Minimal Japanese-inspired restaurant still life, dark cool slate tabletop, focused soft spotlight from the upper left and quiet deep shadows, close oblique angle. Warm translucent dough contrasts against the red tray and dark blue-grey background. No white plates, linen or scattered herbs. Entire hero group centered for a wide crop."
     },
     {
       "slug": "chocolate-raspberry-tart",
@@ -143,7 +274,82 @@
         "Pour into the cooled crust. Chill for at least 3 hours until set, then top with raspberries and a little flaky sea salt."
       ],
       "notes": "Allow at least 3 hours of chilling time. Take out of the fridge 15 minutes before slicing.",
-      "photo": "A dark chocolate ganache tart with a thin dark biscuit crust on a pale ceramic serving platter, topped with fresh vivid red raspberries in a loose crescent. One clean slice slightly separated to show the silky dense chocolate filling and crumb crust. A few tiny flakes of sea salt. Three-quarter overhead view, rich realistic chocolate texture, understated elegant dessert photography."
+      "photo": "An elegant dark chocolate ganache tart with a thin chocolate biscuit crust on a low black patisserie cake board, vivid red raspberries arranged loosely along the back edge. One triangular slice drawn slightly forward in the centre reveals the dense silky filling and fine crumb crust; a few delicate sea-salt flakes on the chocolate. Dramatic French pastry-shop portrait: deep plum-purple matte backdrop and matching tabletop, narrow cool side-window beam tracing the satin chocolate surface and raspberry texture, rich soft shadows, a small silver dessert fork at the margin. Low three-quarter camera angle close to tart level with restrained shallow depth of field. Luxurious dark burgundy, chocolate and raspberry palette. Tart and separated slice grouped in the central horizontal band. No pale platter, beige linen, flowers, wooden boards or extra desserts."
+    },
+    {
+      "slug": "roasted-carrot-soup",
+      "name": "Roasted Carrot & Ginger Soup",
+      "prep_time": 10, "cook_time": 35, "servings": 4,
+      "tags": ["Lunch", "Dinner", "Vegetarian"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "800g carrots, chopped", "name": "carrots", "amount": 800, "unit": "g", "note": "chopped"},
+        {"raw": "2 tbsp olive oil", "name": "olive oil", "amount": 2, "unit": "tbsp"},
+        {"raw": "1 onion, diced", "name": "onion", "amount": 1, "note": "diced"},
+        {"raw": "2 tbsp grated ginger", "name": "ginger", "amount": 2, "unit": "tbsp", "note": "grated"},
+        {"raw": "750ml vegetable stock", "name": "vegetable stock", "amount": 750, "unit": "ml"},
+        {"raw": "150ml coconut milk", "name": "coconut milk", "amount": 150, "unit": "ml"},
+        {"raw": "2 tbsp pumpkin seeds", "name": "pumpkin seeds", "amount": 2, "unit": "tbsp"}
+      ],
+      "instructions": [
+        "Heat the oven to 220°C. Toss the carrots with half the oil and a pinch of salt. Roast for 25 minutes, turning once.",
+        "Meanwhile, soften the onion in the remaining oil for 8 minutes. Add the ginger and cook for 1 minute.",
+        "Add the roasted carrots and stock to the saucepan. Simmer for 10 minutes, then blend until smooth.",
+        "Stir in most of the coconut milk and season. Serve with the remaining coconut milk swirled over and toasted pumpkin seeds."
+      ],
+      "notes": "Roasting the carrots first gives the soup a deeper, sweeter flavour.",
+      "photo": "Bold minimalist overhead food photograph: silky vivid orange roasted carrot soup in a round dusty-rose pink bowl, one loose white coconut-milk swirl and a small cluster of toasted green pumpkin seeds. Matte pale blush-pink tabletop with a coral cotton napkin just at one edge. High-key modern colour-block editorial with soft almost shadowless daylight, exceptionally clean composition, graphic circular bowl and rich smooth soup texture. One bowl only, no rustic props, no wooden boards, no herbs scattered around. Bowl fills the centre with room for cropping."
+    },
+    {
+      "slug": "harissa-chicken",
+      "name": "Harissa Chicken Traybake",
+      "prep_time": 15, "cook_time": 40, "servings": 4,
+      "tags": ["Dinner", "Chicken"],
+      "favorite": true,
+      "ingredients": [
+        {"raw": "8 bone-in chicken thighs", "name": "chicken thighs", "amount": 8, "note": "bone-in"},
+        {"raw": "2 tbsp harissa paste", "name": "harissa paste", "amount": 2, "unit": "tbsp"},
+        {"raw": "2 tbsp olive oil", "name": "olive oil", "amount": 2, "unit": "tbsp"},
+        {"raw": "1 lemon", "name": "lemon", "amount": 1},
+        {"raw": "2 red onions, cut into wedges", "name": "red onions", "amount": 2, "note": "cut into wedges"},
+        {"raw": "2 red peppers, sliced", "name": "red peppers", "amount": 2, "note": "sliced"},
+        {"raw": "400g cooked chickpeas, drained", "name": "chickpeas", "amount": 400, "unit": "g", "note": "cooked and drained"},
+        {"raw": "Fresh parsley, to serve", "name": "fresh parsley"}
+      ],
+      "instructions": [
+        "Heat the oven to 210°C. Mix the harissa, oil, lemon zest and juice with a pinch of salt.",
+        "Toss the chicken, onions, peppers and chickpeas with the mixture in a large roasting tray. Arrange the chicken skin-side up.",
+        "Roast for 35–40 minutes, until the skin is crisp and the chicken reaches 75°C in the thickest part, away from the bone.",
+        "Rest for 5 minutes, then scatter with chopped parsley and spoon the tray juices over the vegetables."
+      ],
+      "notes": "Use a large tray so the vegetables roast rather than steam. Harissa heat varies; adjust to taste.",
+      "photo": "Unstyled-looking generous family dinner straight from the oven: burnished brick-red harissa chicken thighs with crisp slightly charred skin, roasted red onion wedges, sweet red peppers and golden chickpeas in a battered dark steel roasting tray. Warm evening kitchen light, documentary cookbook photograph shot diagonally from above, rich reds and browns, real caramelized cooking juices. Tray placed directly on a dark green tiled kitchen counter, one folded striped tea towel barely visible at the edge. No plated portion, no white ceramics, no pale stone background. Main chicken pieces clustered in the middle horizontal band."
+    },
+    {
+      "slug": "chocolate-chunk-cookies",
+      "name": "Brown Butter Chocolate Cookies",
+      "prep_time": 20, "cook_time": 12, "servings": 12,
+      "tags": ["Dessert", "Baking", "Vegetarian"],
+      "favorite": false,
+      "ingredients": [
+        {"raw": "150g butter", "name": "butter", "amount": 150, "unit": "g"},
+        {"raw": "150g light brown sugar", "name": "light brown sugar", "amount": 150, "unit": "g"},
+        {"raw": "50g caster sugar", "name": "caster sugar", "amount": 50, "unit": "g"},
+        {"raw": "1 egg", "name": "egg", "amount": 1},
+        {"raw": "1 tsp vanilla extract", "name": "vanilla extract", "amount": 1, "unit": "tsp"},
+        {"raw": "200g plain flour", "name": "plain flour", "amount": 200, "unit": "g"},
+        {"raw": "1/2 tsp bicarbonate of soda", "name": "bicarbonate of soda", "amount": 0.5, "unit": "tsp"},
+        {"raw": "180g dark chocolate, chopped", "name": "dark chocolate", "amount": 180, "unit": "g", "note": "chopped"},
+        {"raw": "Flaky sea salt, to finish", "name": "flaky sea salt"}
+      ],
+      "instructions": [
+        "Melt the butter in a saucepan and cook, swirling, until the milk solids turn golden brown. Pour into a mixing bowl and cool for 15 minutes.",
+        "Stir both sugars into the butter, then beat in the egg and vanilla. Fold in the flour, bicarbonate of soda, a pinch of salt and chocolate.",
+        "Chill the dough for 1 hour. Heat the oven to 180°C and line two baking trays with parchment.",
+        "Scoop into 12 balls, spacing well apart. Bake for 10–12 minutes until the edges are golden but the centres remain soft. Finish with flaky salt and cool on the trays."
+      ],
+      "notes": "Makes 12 large cookies. Allow an extra 15 minutes for cooling the butter and 1 hour for chilling the dough.",
+      "photo": "Intimate macro-style bakery photograph of three chunky brown-butter chocolate cookies loosely overlapping on a black wire cooling rack. One cookie broken into two with soft chewy crumb and large molten dark chocolate pockets, delicate flaky salt on cracked golden tops. Tight low-angle composition at cookie height, shallow depth of field but the broken centre crisply focused. Soft cool window backlight contrasts with warm golden cookie edges, blurred muted blue kitchen background, crumbs below the rack. No plates, no milk glass, no linen, no flowers. Cookies arranged across the centre with enough space for a horizontal app crop."
     }
   ]
 }

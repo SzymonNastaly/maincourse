@@ -1,0 +1,24 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Create one premium editorial food photograph for MainCourse, a personal recipe app.\nThe food is the hero: delicious, believable, generous home cooking, tactile ingredients,\nsubtle natural imperfections. Follow each dish's specific lighting, camera angle,\nsurface and tableware direction: the library should feel collected from different\nexcellent food photographers, rather than one matching studio shoot. When a dish\ndoes not specify a setting, use soft daylight and simple natural materials.\nKeep the dish centered with generous crop-safe breathing room on all sides: this image\nwill be cropped both to a wide 3:1 mobile hero and a 4:3 recipe card. Keep all essential\nfood in the middle half of the image height. One scene, not a collage. High-end cookbook\nphotography, true-to-life colour, detailed food texture, no plastic sheen, no excessive\nprops, no hands, no people, no text, no watermarks, no logos, no UI or device frames.\n\nDish:\n\nBold minimalist overhead food photograph: silky vivid orange roasted carrot soup in a round dusty-rose pink bowl, one loose white coconut-milk swirl and a small cluster of toasted green pumpkin seeds. Matte pale blush-pink tabletop with a coral cotton napkin just at one edge. High-key modern colour-block editorial with soft almost shadowless daylight, exceptionally clean composition, graphic circular bowl and rich smooth soup texture. One bowl only, no rustic props, no wooden boards, no herbs scattered around. Bowl fills the centre with room for cropping.",
+  "n": 1,
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "png",
+  "generated_at": "2026-09-26T11:17:26.542860+00:00",
+  "sha256": "b28e8501afcc1ab64e7ccc7fac0a82294180d5e4b20b466d9db400870d772916",
+  "usage": {
+    "input_tokens": 312,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 312
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1684
+  },
+  "revised_prompt": null
+}

@@ -14,6 +14,8 @@ import com.getmaincourse.app.data.model.NotificationOpenedRequest
 import com.getmaincourse.app.data.model.OnboardingRequest
 import com.getmaincourse.app.data.model.OnboardingResponse
 import com.getmaincourse.app.data.model.RecipeDetail
+import com.getmaincourse.app.data.model.RecipeSaveRequest
+import com.getmaincourse.app.data.model.RecipeSaveResponse
 import com.getmaincourse.app.data.model.RecipeDetailBatchResponse
 import com.getmaincourse.app.data.model.RecipeContentImportRequest
 import com.getmaincourse.app.data.model.RecipeImportResponse
@@ -41,6 +43,13 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface MainCourseService {
+    @POST("api/v1/cookbooks/{cookbookId}/recipe_saves")
+    suspend fun saveRecipe(
+        @Path("cookbookId") cookbookId: Long,
+        @Header("X-Cookbook-Id") destinationId: Long,
+        @Body request: RecipeSaveRequest,
+    ): RecipeSaveResponse
+
     @POST("api/v1/device_tokens")
     suspend fun registerDeviceToken(@Body request: DeviceTokenRequest): DeviceTokenResponse
 
