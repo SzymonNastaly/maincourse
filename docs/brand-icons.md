@@ -21,8 +21,13 @@ bin/brand-icons --landing ../maincourse-landing
 
 Omit `--landing` to update only this repository. The generator normalizes the
 source's alpha (removing sub-1% specks and making the nearly opaque cover fully
-opaque), trims transparent padding, and centres an 840px-tall book on a 1024px
-canvas. It retains antialiased edges and does not remove colours from the book.
+opaque), trims transparent padding, and fits the artwork to 840px on a 1024px
+canvas. It then shifts the artwork down 38px to centre the **book body**, ignoring
+the hanging bookmark when balancing the top/bottom margins. This optical offset
+is calibrated to the aligned source artwork; revisit it if the book or bookmark
+proportions change. The bookmark remains fully visible. The same foreground is
+used by Icon Composer, Android and the flat icon exports, so their alignment
+stays consistent. It retains antialiased edges and does not remove book colours.
 The script updates the Composer foreground but preserves `icon.json` edits.
 
 After changing the logo, run `node scripts/make-og-image.ts` in the landing repo

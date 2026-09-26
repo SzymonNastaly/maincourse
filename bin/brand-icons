@@ -41,7 +41,10 @@ Dir.mktmpdir("maincourse-brand-", root.join("tmp")) do |directory|
   # Keep antialiased edges; never key out a colour from the green cover.
   image(brand.join("book-source.png"), "-colorspace", "sRGB", "-channel", "A", "-level", "1%,99%", "+channel",
         "-background", "none", "-alpha", "background", "-trim", "+repage", "-strip", book)
-  image(book, "-resize", "840x840", "-gravity", "center", "-background", "none", "-extent", "1024x1024", foreground)
+  # Centre the book body, not the hanging bookmark. In the aligned artwork the
+  # bookmark extends ~76px below the body at this size, so move it down by half.
+  image("-size", "1024x1024", "canvas:none", "(", book, "-resize", "840x840", ")",
+        "-gravity", "center", "-geometry", "+0+38", "-composite", "-depth", "8", "-strip", foreground)
 
   { "light" => "#EEF0F2", "dark" => "#14171C" }.each do |appearance, background|
     image(foreground, "-background", background, "-alpha", "remove", "-alpha", "off", "-depth", "8",
