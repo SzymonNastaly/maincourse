@@ -16,7 +16,7 @@ module ShoppingList
         .where.not(category: nil)
         .where.not(canonical_name: nil)
         .group(:category, :canonical_name)
-        .order(Arel.sql("COUNT(*) DESC"))
+        .order(Arel.sql("COUNT(*) DESC"), :category, :canonical_name)
         .limit(1)
         .count
         .keys

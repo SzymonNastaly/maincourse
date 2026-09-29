@@ -17,36 +17,38 @@ module ShoppingList
       newly_added = []
       newly_checked = []
 
-      ActiveRecord::Base.transaction do
-        @cookbook.shopping_list_items.destroy_all if @clear_existing
+      ShoppingListItem.batching_enrichment do
+        ActiveRecord::Base.transaction do
+          @cookbook.shopping_list_items.destroy_all if @clear_existing
 
-        @items.each do |item_params|
-          client_id = item_params[:client_id]
-          name = item_params[:name]
+          @items.each do |item_params|
+            client_id = item_params[:client_id]
+            name = item_params[:name]
 
-          if client_id.blank? || name.blank?
-            errors << { client_id: client_id, error: "client_id and name are required" }
-            next
+            if client_id.blank? || name.blank?
+              errors << { client_id: client_id, error: "client_id and name are required" }
+              next
+            end
+
+            source_recipe_id = resolve_source_recipe_id(item_params[:source_recipe_id])
+            if item_params[:source_recipe_id].present? && source_recipe_id.nil?
+              errors << { client_id: client_id, error: "Recipe not found" }
+              next
+            end
+
+            item = upsert_item(client_id, name, source_recipe_id, item_params)
+            if item.persisted? && item.errors.empty?
+              created << item
+              newly_added << item if item.previously_new_record?
+              newly_checked << item if newly_checked?(item)
+            else
+              errors << { client_id: client_id, error: item.errors.full_messages.to_sentence }
+            end
           end
 
-          source_recipe_id = resolve_source_recipe_id(item_params[:source_recipe_id])
-          if item_params[:source_recipe_id].present? && source_recipe_id.nil?
-            errors << { client_id: client_id, error: "Recipe not found" }
-            next
+          if errors.any?
+            raise ActiveRecord::Rollback
           end
-
-          item = upsert_item(client_id, name, source_recipe_id, item_params)
-          if item.persisted? && item.errors.empty?
-            created << item
-            newly_added << item if item.previously_new_record?
-            newly_checked << item if newly_checked?(item)
-          else
-            errors << { client_id: client_id, error: item.errors.full_messages.to_sentence }
-          end
-        end
-
-        if errors.any?
-          raise ActiveRecord::Rollback
         end
       end
 
@@ -89,13 +91,10 @@ module ShoppingList
       item.details = item_params[:details].presence
       item.source_recipe_id = source_recipe_id
       item.checked_at = item_params[:checked_at].presence
-
-      # Category hints only describe new content. A replay must not overwrite
-      # a category the server has already worked out.
-      if item.new_record? || item.will_save_change_to_name? || item.will_save_change_to_details?
-        item.category = item_params[:category].presence
-        item.canonical_name = item_params[:canonical_name].presence
-      end
+      # Used only for a new or renamed item, so a replay never overwrites what
+      # the server has worked out.
+      item.category_hint = item_params[:category]
+      item.canonical_name_hint = item_params[:canonical_name]
     end
 
     # True when this save transitioned checked_at from nil to present — including a

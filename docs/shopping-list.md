@@ -15,27 +15,34 @@ Each item carries derived metadata used to group the list into aisles:
 - `canonical_name` — lowercase English identity, as for recipe ingredients.
 - `enrichment_version` — set only once the category is confirmed.
 
-`ShoppingListItem` categorizes itself before save whenever it is new or its
-`name`/`details` change, trying the cheapest source first:
+`ShoppingListItem` categorizes itself before save whenever it is new or renamed
+(details never change the aisle), trying the cheapest source first:
 
 1. **Source recipe.** If `source_recipe` has an enriched ingredient whose `name`
    matches the item name (case-insensitive), its category, canonical name, and
    version are copied. Every client's recipe review submits the parsed ingredient
    name, so recipe additions are complete without an LLM call.
-2. **Client hint.** A valid `category` (and `canonical_name`) sent by the client is
-   kept provisionally. Invalid hints are dropped, never a validation error.
-   `ShoppingList::UpsertItems` only applies hints to new or changed content, so a
-   replay can't overwrite a server result.
+2. **Client hint.** The API's `category` and `canonical_name` params arrive as
+   `category_hint`/`canonical_name_hint` (virtual attributes). A valid hint is kept
+   provisionally; invalid hints are ignored, never a validation error. Because
+   hints are only read for new or renamed items, a replay can't overwrite a
+   server result.
 3. **Lookup.** `ShoppingList::CategoryLookup` picks the most common category among
-   current-version recipe ingredients with the same lowercased name (indexed on
-   `lower(name)`). Also provisional.
+   current-version recipe ingredients with the same lowercased name. Also
+   provisional.
 
-Rows without a confirmed version enqueue `EnrichShoppingListItemsJob` after commit.
-It runs `IngredientParser` on `"#{details} #{name}"` outside any transaction, then
-locks each row and applies the result only if the row still exists, its
-name/details are unchanged, and it still needs enrichment. Parser fallbacks keep the
-provisional category and retry, up to three attempts in total. Checking or
-unchecking an item never recategorizes it.
+Any commit of an unchecked item without a confirmed version enqueues
+`EnrichShoppingListItemsJob` (a failed enqueue is logged, never raised). Wrap
+multi-item writes in `ShoppingListItem.batching_enrichment { ... }` to send them as
+one job and one LLM call; `ShoppingList::UpsertItems` and the web recipe add do.
+The job runs `IngredientParser` on the squished `"#{details} #{name}"` outside any
+transaction, then locks each row and applies the result only if the row still
+exists, has the same name, and still needs enrichment. It writes with
+`update_columns`, so `updated_at` (which stale-list nudges read) and the Turbo
+refresh are left alone. A parsed `other` doesn't replace a specific provisional
+category. Parser fallbacks retry at 5, 10 and 15 minutes; items that still fail
+are asked for again on their next edit (e.g. unchecking) or by the rake task
+below. Checking or unchecking an item never recategorizes it.
 
 The API exposes `category`, `canonical_name`, and `category_pending`
 (`needs_enrichment?`). All are optional for clients. `category_pending` can stay

@@ -377,11 +377,19 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     assert_equal "beverages", item.category
     assert_equal "oat milk", item.canonical_name
 
-    item.update!(category: "dairy_eggs", enrichment_version: Llm::IngredientInstructions::VERSION)
+    item.update_columns(category: "dairy_eggs", enrichment_version: Llm::IngredientInstructions::VERSION)
     ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook,
-      items: [ items.first.merge(category: "other", checked_at: Time.current) ]).call
+      items: [ items.first.merge(category: "other", details: "1 l", checked_at: Time.current) ]).call
 
     assert_equal "dairy_eggs", item.reload.category
     assert item.checked_at.present?
+  end
+
+  test "a batch of new items queues a single enrichment job" do
+    items = %w[Yuzu Kumquat Rambutan].map { |name| { client_id: name, name: name } }
+
+    assert_enqueued_jobs 1, only: EnrichShoppingListItemsJob do
+      ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook, items: items).call
+    end
   end
 end

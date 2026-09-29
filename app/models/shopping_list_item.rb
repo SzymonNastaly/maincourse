@@ -10,9 +10,11 @@ class ShoppingListItem < ApplicationRecord
   validates :canonical_name, format: { with: Llm::IngredientInstructions::CANONICAL_NAME_FORMAT }, allow_nil: true
   validates :category, inclusion: { in: Llm::IngredientInstructions::CATEGORIES }, allow_nil: true
 
-  before_validation :drop_invalid_category_hints
-  before_save :categorize, if: :categorization_input_changed?
-  after_commit :enqueue_enrichment, on: %i[create update], if: :enrichment_input_saved?
+  # Optional client guesses, used only when the name is new or changed.
+  attr_accessor :category_hint, :canonical_name_hint
+
+  before_save :categorize, if: -> { new_record? || will_save_change_to_name? }
+  after_commit :enqueue_enrichment, on: %i[create update], if: :wants_enrichment?
 
   # A shared shopping list updates for everyone looking at it.
   broadcasts_refreshes_to :cookbook
@@ -37,25 +39,37 @@ class ShoppingListItem < ApplicationRecord
   end
 
   def enrichment_input
-    [ details.presence, name ].compact.join(" ")
+    [ details.presence, name ].compact.join(" ").squish
+  end
+
+  # Collects the enrichment jobs of every item saved in the block into one job
+  # (one LLM call) instead of one per item.
+  def self.batching_enrichment
+    outer = ActiveSupport::IsolatedExecutionState[:shopping_list_enrichment_ids]
+    ids = ActiveSupport::IsolatedExecutionState[:shopping_list_enrichment_ids] = []
+    yield
+  ensure
+    ActiveSupport::IsolatedExecutionState[:shopping_list_enrichment_ids] = outer
+    if outer
+      outer.concat(ids) if ids
+    elsif ids.present?
+      enqueue_enrichment_for(ids.uniq)
+    end
+  end
+
+  # Enrichment is best effort: a failed enqueue must never fail a saved write.
+  def self.enqueue_enrichment_for(ids)
+    EnrichShoppingListItemsJob.perform_later(ids)
+  rescue StandardError => error
+    Rails.logger.error("[ShoppingListItem] could not enqueue enrichment for #{ids.join(", ")}: #{error.message}")
   end
 
   private
 
-  # Clients may send category/canonical_name as hints. A bad hint must never
-  # make an otherwise valid shopping item fail to save.
-  def drop_invalid_category_hints
-    self.category = nil if category.present? && !Llm::IngredientInstructions::CATEGORIES.include?(category)
-    self.canonical_name = Llm::IngredientInstructions.normalize_name(canonical_name) if canonical_name.present?
-  end
-
-  def categorization_input_changed?
-    new_record? || will_save_change_to_name? || will_save_change_to_details?
-  end
-
   # Cheapest source first: the source recipe's own enriched ingredient is
-  # authoritative; otherwise keep the client's hint or look the name up, and
-  # leave the row unversioned so the enrichment job confirms it.
+  # authoritative; otherwise take a valid client hint or look the name up, and
+  # leave the row unversioned so the enrichment job confirms it. Details never
+  # change the aisle, so only a new or renamed item is categorized.
   def categorize
     if (ingredient = source_recipe_ingredient)
       self.category = ingredient.category
@@ -64,11 +78,16 @@ class ShoppingListItem < ApplicationRecord
       return
     end
 
-    hinted = will_save_change_to_category? && category.present?
-    lookup = ShoppingList::CategoryLookup.call(name) unless hinted
-
-    self.category = hinted ? category : lookup&.category
-    self.canonical_name = hinted ? (canonical_name if will_save_change_to_canonical_name?) : lookup&.canonical_name
+    # Invalid hints are ignored rather than failing an otherwise valid save.
+    hint = category_hint.to_s.strip.downcase
+    if Llm::IngredientInstructions::CATEGORIES.include?(hint)
+      self.category = hint
+      self.canonical_name = Llm::IngredientInstructions.normalize_name(canonical_name_hint)
+    else
+      lookup = ShoppingList::CategoryLookup.call(name)
+      self.category = lookup&.category
+      self.canonical_name = lookup&.canonical_name
+    end
     self.enrichment_version = nil
   end
 
@@ -80,11 +99,18 @@ class ShoppingListItem < ApplicationRecord
       .detect { |ingredient| !ingredient.needs_enrichment? }
   end
 
-  def enrichment_input_saved?
-    needs_enrichment? && (previously_new_record? || saved_change_to_name? || saved_change_to_details?)
+  # Any commit of an unchecked, unconfirmed item asks for enrichment. Dirty
+  # tracking would miss items saved twice in one transaction, and re-asking on
+  # later edits (such as unchecking) recovers items whose job gave up.
+  def wants_enrichment?
+    checked_at.nil? && needs_enrichment?
   end
 
   def enqueue_enrichment
-    EnrichShoppingListItemsJob.perform_later([ id ])
+    if (batch = ActiveSupport::IsolatedExecutionState[:shopping_list_enrichment_ids])
+      batch << id
+    else
+      self.class.enqueue_enrichment_for([ id ])
+    end
   end
 end

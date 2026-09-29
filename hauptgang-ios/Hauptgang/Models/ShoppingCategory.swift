@@ -60,7 +60,9 @@ struct ShoppingCategoryHint: Hashable {
 
         // Ties break by category order so the result doesn't depend on dictionary order.
         return counts.max { lhs, rhs in
-            if lhs.value != rhs.value { return lhs.value < rhs.value }
+            if lhs.value != rhs.value {
+                return lhs.value < rhs.value
+            }
             return lhs.key.sortKey > rhs.key.sortKey
         }?.key
     }

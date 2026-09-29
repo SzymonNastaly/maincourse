@@ -10,11 +10,13 @@ class EnrichShoppingListItemsJobTest < ActiveSupport::TestCase
   end
 
   test "applies parser results without touching the typed input" do
+    updated_at = @item.updated_at
     stub_parser("2 EL Olivenöl" => hit("olive oil", "oils_spices_condiments")) do
       EnrichShoppingListItemsJob.perform_now([ @item.id ])
     end
 
     @item.reload
+    assert_equal updated_at, @item.updated_at
     assert_equal "Olivenöl", @item.name
     assert_equal "2 EL", @item.details
     assert_equal "oils_spices_condiments", @item.category
@@ -32,6 +34,27 @@ class EnrichShoppingListItemsJobTest < ActiveSupport::TestCase
 
     assert_equal "Rapsöl", @item.reload.name
     assert_nil @item.enrichment_version
+  end
+
+  test "sends collapsed whitespace so the echoed line still matches" do
+    @item.update_columns(name: "Oliven\nöl", details: "2  EL")
+
+    stub_parser("2 EL Oliven öl" => hit("olive oil", "oils_spices_condiments")) do
+      EnrichShoppingListItemsJob.perform_now([ @item.id ])
+    end
+
+    assert_equal "olive oil", @item.reload.canonical_name
+  end
+
+  test "keeps a specific provisional category when the parser only says other" do
+    @item.update_columns(category: "oils_spices_condiments")
+
+    stub_parser("2 EL Olivenöl" => hit("olive oil", "other")) do
+      EnrichShoppingListItemsJob.perform_now([ @item.id ])
+    end
+
+    assert_equal "oils_spices_condiments", @item.reload.category
+    assert_not @item.needs_enrichment?
   end
 
   test "skips rows deleted while the parser was running" do
@@ -57,7 +80,7 @@ class EnrichShoppingListItemsJobTest < ActiveSupport::TestCase
   end
 
   test "does nothing for already enriched rows" do
-    @item.update!(category: "oils_spices_condiments", canonical_name: "olive oil", enrichment_version: @version)
+    @item.update_columns(category: "oils_spices_condiments", canonical_name: "olive oil", enrichment_version: @version)
 
     IngredientParser.stub(:call, ->(_) { flunk "parser should not run" }) do
       assert_nothing_raised { EnrichShoppingListItemsJob.perform_now([ @item.id ]) }
