@@ -55,4 +55,28 @@ class DeviceTokenTest < ActiveSupport::TestCase
     assert_not record.valid?
     assert_includes record.errors[:provider], "is not included in the list"
   end
+
+  test "register! stores the installation's supported app language" do
+    record = DeviceToken.register!(user: @user, token: "lang", environment: "production", language: "pl-PL")
+    assert_equal "pl", record.language
+    assert_equal :pl, record.locale
+
+    record = DeviceToken.register!(user: @user, token: "lang", environment: "production", language: "de")
+    assert_equal "de", record.reload.language
+  end
+
+  test "unsupported or missing languages fall back to English" do
+    [ "fr", "", nil, "xx-invalid" ].each do |language|
+      record = DeviceToken.register!(user: @user, token: "lang", environment: "production", language: language)
+      assert_nil record.language, language.inspect
+      assert_equal :en, record.locale
+    end
+  end
+
+  test "an older client re-registering without a language resets it to English" do
+    DeviceToken.register!(user: @user, token: "lang", environment: "production", language: "de")
+    record = DeviceToken.register!(user: @user, token: "lang", environment: "production")
+
+    assert_nil record.language
+  end
 end

@@ -79,4 +79,30 @@ class DeliverPendingNotificationJobTest < ActiveSupport::TestCase
 
     assert_nil DeviceToken.find_by(id: @device.id)
   end
+
+  test "renders shared-cookbook activity in each installation's language" do
+    @device.update!(language: "pl")
+    @owner.update!(name: "Ana")
+    DeviceToken.register!(user: @collab, token: "device-2", environment: "sandbox", language: "de")
+    pending = PendingNotification.create!(
+      cookbook: @cookbook, actor: @owner, recipient: @collab,
+      category: "shopping_list",
+      payload: [ { "name" => "Milk" }, { "name" => "Bread" } ],
+      delivery_scheduled_at: Time.current
+    )
+
+    pushes = []
+    Apns::Client.stub :push, ->(**kwargs) {
+      pushes << kwargs
+      Apns::Client::Result.new(ok?: true, status: 200, reason: nil)
+    } do
+      DeliverPendingNotificationJob.new.perform(pending.id)
+    end
+
+    alerts = pushes.to_h { |push| [ push[:token], push[:aps][:alert] ] }
+    assert_equal "Dodano 2 pozycje do listy zakupów", alerts["device-1"][:body]
+    assert_equal "Ana w „Shared”", alerts["device-1"][:title]
+    assert_equal "2 Einträge zur Einkaufsliste hinzugefügt", alerts["device-2"][:body]
+    assert_equal "Ana in „Shared“", alerts["device-2"][:title]
+  end
 end

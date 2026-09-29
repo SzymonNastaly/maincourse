@@ -9,7 +9,7 @@ registration.
 ## Server architecture
 
 Clients register with `POST /api/v1/device_tokens`, sending `token`, `provider`,
-`environment`, and `time_zone`. `provider` is `apns` or `fcm`; omitted values
+`environment`, `time_zone`, and `language`. `provider` is `apns` or `fcm`; omitted values
 default to `apns` for compatibility with older iOS releases. The `token` field is
 an opaque provider address: an APNs device token for `apns`, and a Firebase
 Installation ID for `fcm`.
@@ -23,6 +23,26 @@ FCM uses the HTTP v1 `fid` target and Google service-account OAuth. Production
 credentials live under `firebase.project_id` and `firebase.service_account_json`
 in encrypted Rails credentials. The latter is the complete service-account JSON
 stored as a YAML block scalar. Never commit the service-account JSON.
+
+## Language
+
+Each registration stores its installation's app language (`device_tokens.language`),
+because a phone and an iPad on one account can use different app languages. Rails
+allowlists it against `I18n.available_locales` (`de-CH` becomes `de`); unknown values
+and older clients that send none are stored as `nil` and receive English.
+
+`Push::Fanout` takes a block that builds the alert and evaluates it once per language,
+inside `I18n.with_locale`, so every device gets text in its own language while the
+notification remains one logical delivery with one `NotificationDelivery` row and
+one frequency-cap slot. Push text lives under `push.*` in `config/locales/{en,de,pl}.yml`.
+Lifecycle candidates therefore carry a translation key and parameters, not rendered
+text. Recipe and cookbook names are interpolated as stored.
+
+The clients send a language the app actually ships, never the device region: iOS
+uses `Bundle.main.preferredLocalizations`, Android the `push_registration_language`
+resource of the active resource set. A changed language re-uploads an otherwise
+unchanged registration. Changing the per-app language restarts the iOS app and
+recreates Android's `MainActivity`; both registration paths run again at that point.
 
 The two sources of pushes are:
 

@@ -26,13 +26,15 @@ module Api
           user: current_user,
           token: token,
           provider: provider,
-          environment: environment
+          environment: environment,
+          language: params[:language]
         )
         render json: {
           id: record.id,
           token: record.token,
           provider: record.provider,
-          environment: record.environment
+          environment: record.environment,
+          language: record.language
         }, status: :created
       end
 

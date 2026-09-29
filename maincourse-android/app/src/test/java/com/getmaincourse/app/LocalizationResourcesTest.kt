@@ -41,6 +41,15 @@ class LocalizationResourcesTest {
         }
     }
 
+    @Test
+    fun pushRegistrationLanguageMatchesEachResourceDirectory() {
+        val root = resourceRoot()
+        for (language in listOf("en", "pl", "de")) {
+            val directory = File(root, if (language == "en") "values" else "values-$language")
+            assertEquals(language, entries(directory).getValue("push_registration_language").textContent)
+        }
+    }
+
     private fun placeholders(text: String) = Regex("%\\d+\\$[ds]").findAll(text).map { it.value }.sorted().toList()
 
     private fun entries(directory: File): Map<String, Element> = buildMap {

@@ -332,3 +332,38 @@ pl:
         few: Dodano %{count} pozycje z przepisu %{name}.
         many: Dodano %{count} pozycji z przepisu %{name}.
         other: Dodano %{count} pozycji z przepisu %{name}.
+  push:
+    lifecycle:
+      title: MainCourse
+      import_follow_up: "Przepis „%{recipe}” czeka od kilku dni. Dodać składniki do listy zakupów?"
+      resurface: "Przepis „%{recipe}” czeka już od dłuższego czasu. Ugotujesz go w tym tygodniu?"
+      stale_shopping_list:
+        one: Na liście zakupów wciąż jest %{count} pozycja.
+        few: Na liście zakupów wciąż są %{count} pozycje.
+        many: Na liście zakupów wciąż jest %{count} pozycji.
+        other: Na liście zakupów wciąż jest %{count} pozycji.
+    shared_cookbook:
+      title: "„%{cookbook}”"
+      title_with_actor: "%{actor} w „%{cookbook}”"
+      shopping_list_added:
+        one: Dodano %{count} pozycję do listy zakupów
+        few: Dodano %{count} pozycje do listy zakupów
+        many: Dodano %{count} pozycji do listy zakupów
+        other: Dodano %{count} pozycji do listy zakupów
+      meal_plan_added:
+        one: Dodano %{count} przepis do planu posiłków
+        few: Dodano %{count} przepisy do planu posiłków
+        many: Dodano %{count} przepisów do planu posiłków
+        other: Dodano %{count} przepisu do planu posiłków
+      meal_plan_voted:
+        one: Oddano głos na %{count} przepis w planie posiłków
+        few: Oddano głosy na %{count} przepisy w planie posiłków
+        many: Oddano głosy na %{count} przepisów w planie posiłków
+        other: Oddano głosy na %{count} przepisu w planie posiłków
+      meal_plan_added_and_voted:
+        one: Dodano %{count} przepis do planu posiłków i oddano głosy na %{votes}
+        few: Dodano %{count} przepisy do planu posiłków i oddano głosy na %{votes}
+        many: Dodano %{count} przepisów do planu posiłków i oddano głosy na %{votes}
+        other: Dodano %{count} przepisu do planu posiłków i oddano głosy na %{votes}
+      meal_plan_updated: Zaktualizowano plan posiłków
+      activity: Nowa aktywność

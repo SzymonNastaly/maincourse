@@ -567,6 +567,7 @@ class MainCourseServiceTest {
                 provider = "fcm",
                 environment = "production",
                 timeZone = "Europe/Berlin",
+                language = "de",
             ),
         )
         service.deleteDeviceToken("installation-id", "fcm")
@@ -577,7 +578,7 @@ class MainCourseServiceTest {
         assertEquals("/api/v1/device_tokens", register.path)
         assertEquals(
             json(
-                """{"token":"installation-id","provider":"fcm","environment":"production","time_zone":"Europe/Berlin"}""",
+                """{"token":"installation-id","provider":"fcm","environment":"production","time_zone":"Europe/Berlin","language":"de"}""",
             ),
             json(register.body.readUtf8()),
         )

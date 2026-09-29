@@ -17,8 +17,8 @@ module Notifications
         campaign: NAME,
         recipe: recipe,
         cookbook: recipe.cookbook,
-        title: "Hauptgang",
-        body: %(You saved "#{recipe.name}" a couple of days ago — add the ingredients to your shopping list?)
+        body_key: "push.lifecycle.import_follow_up",
+        body_params: { recipe: recipe.name }
       )
     end
 

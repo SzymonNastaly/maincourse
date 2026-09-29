@@ -181,6 +181,9 @@
     <string name="open_notification_settings">Benachrichtigungseinstellungen öffnen</string>
     <string name="notification_channel_reminders">Rezepterinnerungen</string>
     <string name="notification_channel_activity">Kochbuchaktivität</string>
+    <!-- The app language this resource set represents, sent with push registration so Rails renders
+         notifications in it. Must equal the directory's language code; never translate it. -->
+    <string name="push_registration_language">de</string>
     <string name="delete_account">Konto löschen</string>
     <string name="delete_warning">Dies kann nicht rückgängig gemacht werden</string>
     <string name="delete_account_details">Dein persönliches Kochbuch, deine Rezepte, deine Einkaufsliste und deine Essenspläne werden dauerhaft entfernt. Dein Abonnement wird nicht erstattet.</string>

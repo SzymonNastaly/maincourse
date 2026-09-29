@@ -131,14 +131,8 @@ the retained English fields.
 These decisions guide the language rollout; request errors do not require these
 features to work:
 
-- **Push:** use per-installation language on `DeviceToken`, not the user's last
-  request language. A phone and iPad may have different app preferences. When
-  translations ship, registration should send the app's selected *supported*
-  language (on iOS, the bundle's preferred localization, not the device region),
-  and refresh immediately on language changes, even if the push address is unchanged.
-  Render at fanout per registration with an allowlisted Rails locale and English
-  fallback for old/unsupported registrations. Both lifecycle campaigns and debounced
-  shared-cookbook notifications need this; keep one logical delivery/frequency cap.
+- **Push:** per-installation language on `DeviceToken`, rendered at fanout with
+  English fallback; implemented as described in `push-notifications.md`.
 - **Email:** use an explicit account-level communication language, English by
   default. Device registration must not silently overwrite it. Password-reset mail
   currently has only English templates; its language setting and translations belong

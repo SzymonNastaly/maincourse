@@ -24,8 +24,8 @@ module Notifications
         campaign: NAME,
         recipe: recipe,
         cookbook: recipe.cookbook,
-        title: "Hauptgang",
-        body: %(You saved "#{recipe.name}" a while back. Cook it this week?)
+        body_key: "push.lifecycle.resurface",
+        body_params: { recipe: recipe.name }
       )
     end
 

@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import com.getmaincourse.app.R
 import com.getmaincourse.app.data.model.DeviceTokenRequest
 import com.getmaincourse.app.data.model.NotificationOpenedRequest
 import com.getmaincourse.app.data.network.MainCourseService
@@ -63,7 +64,10 @@ class PushRegistrationManager(
             FirebaseMessaging.getInstance().register().await()
             val installationId = FirebaseInstallations.getInstance().id.await()
             store.currentToken = installationId
-            if (!uploadDue(installationId)) return
+            // Resolved from the active resources, so it is always a shipped language. A per-app
+            // language change recreates MainActivity, whose onResume re-runs this upload.
+            val language = context.getString(R.string.push_registration_language)
+            if (!uploadDue(installationId, language)) return
 
             service.registerDeviceToken(
                 DeviceTokenRequest(
@@ -71,9 +75,11 @@ class PushRegistrationManager(
                     provider = PROVIDER,
                     environment = "production",
                     timeZone = ZoneId.systemDefault().id,
+                    language = language,
                 ),
             )
             store.uploadedToken = installationId
+            store.uploadedLanguage = language
             store.uploadedAtMillis = clock.millis()
         } catch (failure: CancellationException) {
             throw failure
@@ -119,8 +125,8 @@ class PushRegistrationManager(
         }
     }
 
-    private fun uploadDue(token: String): Boolean {
-        if (store.uploadedToken != token) return true
+    private fun uploadDue(token: String, language: String): Boolean {
+        if (store.uploadedToken != token || store.uploadedLanguage != language) return true
         val age = Duration.ofMillis((clock.millis() - store.uploadedAtMillis).coerceAtLeast(0L))
         return age >= REGISTRATION_HEARTBEAT
     }

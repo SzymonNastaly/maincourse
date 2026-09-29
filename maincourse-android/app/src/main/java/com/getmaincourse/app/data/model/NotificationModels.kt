@@ -10,6 +10,7 @@ data class DeviceTokenRequest(
     val environment: String,
     @SerialName("time_zone")
     val timeZone: String,
+    val language: String,
 )
 
 @Serializable

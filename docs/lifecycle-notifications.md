@@ -95,7 +95,8 @@ push reaches a device, it destroys the row again and returns `nil`. It also
 returns `nil` for a candidate whose cookbook the user has left. The job treats
 both cases the same and falls through to the next campaign.
 
-A notification fans out to every active installation belonging to the user. A
+A notification fans out to every active installation belonging to the user,
+rendered in each installation's app language (English fallback). A
 tapped notification selects its cookbook, routes to its recipe or shopping list,
 and reports the shared delivery as opened. Provider and registration details are
 in `docs/push-notifications.md`.
@@ -135,8 +136,8 @@ c = Notifications::Candidate.new(
   campaign: "resurface",
   recipe: r,
   cookbook: r.cookbook,
-  title: "Hauptgang",
-  body: %(You saved "#{r.name}" a while back. Cook it this week?)
+  body_key: "push.lifecycle.resurface",
+  body_params: { recipe: r.name }
 )
 
 Notifications::Deliver.new(user: u, candidate: c).call

@@ -316,3 +316,28 @@ de:
       items_added:
         one: "%{count} Eintrag aus %{name} hinzugefügt."
         other: "%{count} Einträge aus %{name} hinzugefügt."
+  push:
+    lifecycle:
+      title: MainCourse
+      import_follow_up: "Du hast „%{recipe}“ vor ein paar Tagen gespeichert – sollen die Zutaten auf deine Einkaufsliste?"
+      resurface: "Du hast „%{recipe}“ vor einer Weile gespeichert. Diese Woche kochen?"
+      stale_shopping_list:
+        one: "%{count} Eintrag steht noch auf deiner Einkaufsliste."
+        other: "%{count} Einträge stehen noch auf deiner Einkaufsliste."
+    shared_cookbook:
+      title: "„%{cookbook}“"
+      title_with_actor: "%{actor} in „%{cookbook}“"
+      shopping_list_added:
+        one: "%{count} Eintrag zur Einkaufsliste hinzugefügt"
+        other: "%{count} Einträge zur Einkaufsliste hinzugefügt"
+      meal_plan_added:
+        one: "%{count} Rezept zum Essensplan hinzugefügt"
+        other: "%{count} Rezepte zum Essensplan hinzugefügt"
+      meal_plan_voted:
+        one: Im Essensplan für %{count} Rezept abgestimmt
+        other: Im Essensplan für %{count} Rezepte abgestimmt
+      meal_plan_added_and_voted:
+        one: "%{count} Rezept zum Essensplan hinzugefügt und für %{votes} abgestimmt"
+        other: "%{count} Rezepte zum Essensplan hinzugefügt und für %{votes} abgestimmt"
+      meal_plan_updated: Essensplan aktualisiert
+      activity: Neue Aktivität

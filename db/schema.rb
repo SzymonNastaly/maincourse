@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_175125) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -104,6 +104,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_130000) do
   create_table "device_tokens", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "environment", default: "production", null: false
+    t.string "language"
     t.datetime "last_used_at"
     t.string "provider", default: "apns", null: false
     t.string "token", null: false
