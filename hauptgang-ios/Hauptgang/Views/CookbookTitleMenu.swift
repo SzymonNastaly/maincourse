@@ -37,7 +37,7 @@ private struct CookbookTitleMenuButton: View {
         Button {
             self.onSelect(self.cookbook)
         } label: {
-            Label(self.cookbook.name, systemImage: self.systemImage)
+            Label(self.cookbook.displayName, systemImage: self.systemImage)
         }
         .disabled(self.isActive)
     }

@@ -14,6 +14,29 @@ class CookbookTest < ActiveSupport::TestCase
     assert cookbook.valid?
   end
 
+  test "a default-named cookbook displays in the current language" do
+    cookbook = cookbooks(:one_personal)
+
+    assert_equal "My Recipes", cookbook.display_name
+    assert_equal "Meine Rezepte", I18n.with_locale(:de) { cookbook.display_name }
+    assert_equal "Moje przepisy", I18n.with_locale(:pl) { cookbook.display_name }
+    assert_equal "My Recipes", cookbook.name
+  end
+
+  test "stored names are never translated, even when they match the default" do
+    cookbook = Cookbook.new(name: "My Recipes", personal: false)
+
+    assert_equal "My Recipes", I18n.with_locale(:de) { cookbook.display_name }
+  end
+
+  test "renaming a default-named cookbook keeps the new name in every language" do
+    cookbook = cookbooks(:one_personal)
+    cookbook.update!(name: "Szymon's kitchen")
+
+    assert_not cookbook.default_name?
+    assert_equal "Szymon's kitchen", I18n.with_locale(:de) { cookbook.display_name }
+  end
+
   test "personal scope returns personal cookbooks" do
     personal = Cookbook.personal
 

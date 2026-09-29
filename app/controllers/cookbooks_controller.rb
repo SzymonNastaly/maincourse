@@ -37,7 +37,7 @@ class CookbooksController < ApplicationController
     end
 
     switch_cookbook(shared)
-    redirect_to cookbooks_path, notice: t("web.flash.cookbook_ready", name: shared.name)
+    redirect_to cookbooks_path, notice: t("web.flash.cookbook_ready", name: shared.display_name)
   end
 
   def destroy
@@ -65,7 +65,7 @@ class CookbooksController < ApplicationController
 
     @cookbook.cookbook_memberships.find_by!(user: Current.user).destroy!
     reset_to_personal_cookbook
-    redirect_to cookbooks_path, notice: t("web.flash.left_cookbook", name: @cookbook.name)
+    redirect_to cookbooks_path, notice: t("web.flash.left_cookbook", name: @cookbook.display_name)
   end
 
   private

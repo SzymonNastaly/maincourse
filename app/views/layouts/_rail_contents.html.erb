@@ -15,7 +15,7 @@
       <%= icon cookbook_icon(current_cookbook), size: 12, stroke: 2, style: "color: var(--color-lime)" %>
     </span>
     <span class="min-w-0 grow">
-      <span class="block truncate text-[12.5px] font-medium text-ink"><%= current_cookbook.name %></span>
+      <span class="block truncate text-[12.5px] font-medium text-ink"><%= current_cookbook.display_name %></span>
       <span class="mt-px block truncate text-[10px] text-muted"><%= cookbook_subtitle(current_cookbook) %></span>
     </span>
     <%= icon "chevrons-up-down", size: 11, stroke: 2.4, class: "text-muted" %>

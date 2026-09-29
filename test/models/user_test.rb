@@ -39,6 +39,7 @@ class UserTest < ActiveSupport::TestCase
     assert_not_nil user.personal_cookbook
     assert user.personal_cookbook.personal?
     assert_equal "My Recipes", user.personal_cookbook.name
+    assert user.personal_cookbook.default_name?
     assert user.personal_cookbook.owner?(user)
   end
 

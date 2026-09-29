@@ -376,3 +376,5 @@ pl:
       link: tej stronie
       body_text: "Hasło możesz zresetować na tej stronie:"
       expiry: "Link wygaśnie za %{duration}."
+  cookbooks:
+    default_name: Moje przepisy

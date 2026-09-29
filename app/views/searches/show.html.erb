@@ -21,7 +21,7 @@
   <% if @query.present? %>
     <div class="pt-4 pb-3.5">
       <span class="text-[12.5px] font-light text-muted">
-        <%= t("web.search_results_html", count: @results.size, number: mono(@results.size, class: "text-[12px] text-ink"), names: @cookbooks.map(&:name).to_sentence) %>
+        <%= t("web.search_results_html", count: @results.size, number: mono(@results.size, class: "text-[12px] text-ink"), names: @cookbooks.map(&:display_name).to_sentence) %>
       </span>
     </div>
   <% end %>

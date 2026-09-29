@@ -184,7 +184,7 @@ struct RecipesView: View {
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
-        .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? String(localized: "Recipes"))
+        .navigationTitle(self.cookbookViewModel.activeCookbook?.displayName ?? String(localized: "Recipes"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
             CookbookTitleMenu(
@@ -299,10 +299,10 @@ struct RecipesView: View {
                         id: recipe.id,
                         name: recipe.name,
                         targetCookbookId: targetCookbook.id,
-                        targetCookbookName: targetCookbook.name
+                        targetCookbookName: targetCookbook.displayName
                     )
                 } label: {
-                    Label("Move to \(targetCookbook.name)", systemImage: "arrow.right.arrow.left")
+                    Label("Move to \(targetCookbook.displayName)", systemImage: "arrow.right.arrow.left")
                 }
             }
             Button(role: .destructive) {

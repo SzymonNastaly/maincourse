@@ -57,6 +57,9 @@ catalogs.
 
 Recipe names, instructions, ingredient units, tags, cookbook names and notes are
 stored content, not translation keys. Language switches never rename them.
+The one exception is a personal cookbook still flagged `default_name`: show every
+cookbook with `Cookbook#display_name`, which uses `cookbooks.default_name` for it
+and the stored name for everything else.
 Pending-import labels and failure messages are presentation text: use import
 status/codes rather than stored English names or error prose.
 

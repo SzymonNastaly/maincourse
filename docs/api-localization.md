@@ -141,10 +141,12 @@ features to work:
   unsupported value returns `invalid_request` (422) rather than a field validation
   code, so the error contract needs no new field. Mailers render inside
   `I18n.with_locale(user.communication_locale)`; see `web-localization.md`.
-- **Default cookbook names:** retain stored names and never infer ownership of a
-  name from equality with “My Recipes.” A translated default label needs a semantic
-  default-name marker or an explicit presentation rule, while preserving renamed
-  cookbooks. Do not rename shared data on a language switch.
+- **Default cookbook names:** `cookbooks.default_name` marks a personal cookbook
+  that still has its generated name. The stored `name` stays “My Recipes” for
+  older apps; cookbook JSON adds `default_name`, and clients show their own
+  translation when it is true. Web uses `Cookbook#display_name`. Nothing compares
+  names with “My Recipes”; renaming clears the flag, and a shared cookbook a
+  person names “My Recipes” is shown as typed.
 - **Starter content:** translate versioned sample content deliberately alongside
   the client preview and Rails saved-copy source. Imported recipes, units, user
   names, and notes remain their authors' content.

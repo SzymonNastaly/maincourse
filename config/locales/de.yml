@@ -350,3 +350,5 @@ de:
       link: dieser Seite
       body_text: "Du kannst dein Passwort auf dieser Seite zurücksetzen:"
       expiry: "Dieser Link läuft in %{duration} ab."
+  cookbooks:
+    default_name: Meine Rezepte

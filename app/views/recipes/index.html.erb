@@ -6,7 +6,7 @@
   <div>
     <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]"><%= @active_tag ? @active_tag.name : t("web.all_recipes") %></h1>
     <div class="text-[12.5px] font-light text-muted">
-      <%= t("web.recipes_in_html", count: @recipes.size, number: mono(@recipes.size, class: "text-[12px]"), name: current_cookbook.name) %>
+      <%= t("web.recipes_in_html", count: @recipes.size, number: mono(@recipes.size, class: "text-[12px]"), name: current_cookbook.display_name) %>
     </div>
   </div>
 
@@ -24,7 +24,7 @@
             data-controller="dialog-opener"
             data-dialog-opener-target-value="cookbook-switcher"
             data-action="dialog-opener#open">
-      <span class="text-[11.5px] font-light"><%= current_cookbook.name %> ·</span>
+      <span class="text-[11.5px] font-light"><%= current_cookbook.display_name %> ·</span>
       <%= mono @recipes.size, class: "text-[11px]" %>
       <%= icon "chevron-down", size: 11, stroke: 2.4 %>
     </button>

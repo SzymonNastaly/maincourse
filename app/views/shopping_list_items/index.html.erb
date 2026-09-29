@@ -6,7 +6,7 @@
   <div>
     <h1 class="mb-1.5 text-[29px] font-semibold tracking-[-0.7px]"><%= t("web.shopping_list") %></h1>
     <div class="text-[12.5px] font-light text-muted">
-      <%= t("web.to_buy_in_html", number: mono(@to_buy.size, class: "text-[12px]"), name: current_cookbook.name) %>
+      <%= t("web.to_buy_in_html", number: mono(@to_buy.size, class: "text-[12px]"), name: current_cookbook.display_name) %>
     </div>
   </div>
 
@@ -19,7 +19,7 @@
   <div class="min-w-0">
     <h1 class="mb-1 text-[23px] font-semibold tracking-[-0.5px]"><%= t("web.shopping_list") %></h1>
     <div class="truncate text-[11.5px] font-light text-muted">
-      <%= t("web.to_buy_in_html", number: mono(@to_buy.size, class: "text-[11px]"), name: current_cookbook.name) %>
+      <%= t("web.to_buy_in_html", number: mono(@to_buy.size, class: "text-[11px]"), name: current_cookbook.display_name) %>
     </div>
   </div>
 

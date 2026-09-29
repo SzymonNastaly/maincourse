@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.features.cookbooks.displayName
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
@@ -54,7 +55,7 @@ internal fun CookbookPicker(
                     color = MainCourseColors.Muted,
                 )
                 Text(
-                    selected?.name ?: stringResource(R.string.cookbook_none_selected),
+                    selected?.displayName() ?: stringResource(R.string.cookbook_none_selected),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -62,7 +63,7 @@ internal fun CookbookPicker(
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             cookbooks.forEach { cookbook ->
                 DropdownMenuItem(
-                    text = { Text(cookbook.name) },
+                    text = { Text(cookbook.displayName()) },
                     onClick = {
                         expanded = false
                         if (cookbook.id != selectedId) onSelect(cookbook.id)

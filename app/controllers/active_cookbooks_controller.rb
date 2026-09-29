@@ -8,7 +8,7 @@ class ActiveCookbooksController < ApplicationController
     end
 
     switch_cookbook(cookbook)
-    redirect_to destination_after_switch, notice: t("web.flash.showing_cookbook", name: cookbook.name)
+    redirect_to destination_after_switch, notice: t("web.flash.showing_cookbook", name: cookbook.display_name)
   end
 
   private

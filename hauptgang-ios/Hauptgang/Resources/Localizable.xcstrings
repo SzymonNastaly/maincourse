@@ -3801,6 +3801,29 @@
         }
       }
     },
+    "My Recipes" : {
+      "comment" : "Name of each person's personal cookbook while it keeps its default name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Recipes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meine Rezepte"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moje przepisy"
+          }
+        }
+      }
+    },
     "Name" : {
       "localizations" : {
         "en" : {

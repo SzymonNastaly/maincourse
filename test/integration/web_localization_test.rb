@@ -91,6 +91,9 @@ class WebLocalizationTest < ActionDispatch::IntegrationTest
       get recipe_path(recipe), headers: { "Accept-Language" => locale }
       assert_select "h1", text: recipe.name
       assert_equal "My Recipes", users(:one).personal_cookbook.name
+
+      get cookbooks_path, headers: { "Accept-Language" => locale }
+      assert_match I18n.t("cookbooks.default_name", locale: locale), response.body
     end
   end
 

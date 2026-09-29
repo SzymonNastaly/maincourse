@@ -22,7 +22,7 @@
       <%= button_to move_recipe_path(recipe, cookbook_id: cookbook.id), method: :patch,
                     form_class: "block",
                     class: "flex w-full items-center gap-2.5 rounded-control px-[11px] py-2 text-left text-[12.5px] text-ink hover:bg-sunken" do %>
-        <%= icon "book-open", size: 14, stroke: 2 %><span class="truncate"><%= t("web.move_to", name: cookbook.name) %></span>
+        <%= icon "book-open", size: 14, stroke: 2 %><span class="truncate"><%= t("web.move_to", name: cookbook.display_name) %></span>
       <% end %>
     <% end %>
 

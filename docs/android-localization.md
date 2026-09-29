@@ -62,9 +62,12 @@ resource keys. The versioned English starter recipe stays aligned with the Rails
 saved-copy source; its surrounding demo UI is translated. Translating starter
 content requires coordinated preview/saved-copy versions. Push registration sends
 the active resource set's `push_registration_language` so Rails renders
-notifications in the app language (`push-notifications.md`). Account-language
-email, default-name semantics, and store/purchase copy have separate ownership and
-remain tracked in GitHub #133.
+notifications in the app language (`push-notifications.md`). Email follows the
+account's email language. A personal cookbook that keeps its generated name arrives
+with `default_name: true`; show cookbooks through `Cookbook.displayName()`, which
+uses `R.string.cookbook_default_name` for it and the stored name otherwise. The
+field defaults to false so cached Room blobs from before it still decode.
+Store/purchase copy remains tracked in GitHub #133.
 
 ## Verification
 

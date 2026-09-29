@@ -24,7 +24,7 @@ class InvitationsController < ApplicationController
 
     if signed_in_member?
       switch_cookbook(@invitation.cookbook)
-      return redirect_to recipes_path, notice: t("web.flash.already_in_cookbook", name: @invitation.cookbook.name)
+      return redirect_to recipes_path, notice: t("web.flash.already_in_cookbook", name: @invitation.cookbook.display_name)
     end
 
     joined = Current.user.with_lock do

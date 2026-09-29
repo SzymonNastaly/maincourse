@@ -52,7 +52,7 @@ class RecipeShareViewModelTest {
         assertEquals(listOf(10L to content), fixture.contentImports)
         assertTrue(fixture.urlImports.isEmpty())
         assertEquals(RecipeShareStatus.Success, viewModel.state.value.status)
-        assertEquals("Home", viewModel.state.value.destinationName)
+        assertEquals("Home", viewModel.state.value.destination?.name)
     }
 
     @Test

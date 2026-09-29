@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.getmaincourse.app.MainCourseTestActivity
 import com.getmaincourse.app.MainCourseTestContent
+import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.ui.theme.MainCourseTheme
 import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.After
@@ -30,7 +31,7 @@ class RecipeShareScreenTest {
 
     @Test
     fun compactShareSheetShowsDestinationAndProgress() {
-        show(RecipeShareUiState("Home", RecipeShareStatus.ReadingPage(1, "https://example.com")))
+        show(RecipeShareUiState(HOME, RecipeShareStatus.ReadingPage(1, "https://example.com")))
 
         compose.onNodeWithTag("recipe_share_sheet").assertIsDisplayed()
         compose.onNodeWithText("Saving to Home").assertIsDisplayed()
@@ -44,7 +45,7 @@ class RecipeShareScreenTest {
             MainCourseTestContent.content = {
                 MainCourseTheme {
                     RecipeShareSheet(
-                        state = RecipeShareUiState("Home", RecipeShareStatus.Failed(UiMessage.Resource(R.string.error_connection_timeout))),
+                        state = RecipeShareUiState(HOME, RecipeShareStatus.Failed(UiMessage.Resource(R.string.error_connection_timeout))),
                         onRetry = { retried.set(true) },
                         onDismiss = {},
                     )
@@ -60,11 +61,15 @@ class RecipeShareScreenTest {
 
     @Test
     fun acceptedShareExplainsThatTheUserCanReturn() {
-        show(RecipeShareUiState("Home", RecipeShareStatus.Success))
+        show(RecipeShareUiState(HOME, RecipeShareStatus.Success))
 
         compose.onNodeWithTag("share_success").assertIsDisplayed()
         compose.onNodeWithText("Import started").assertIsDisplayed()
         compose.onNodeWithText("You can return to what you were doing.", substring = true).assertIsDisplayed()
+    }
+
+    private companion object {
+        val HOME = Cookbook(1, "Home", false, 0, emptyList())
     }
 
     private fun show(state: RecipeShareUiState) {

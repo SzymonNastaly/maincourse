@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.getmaincourse.app.R
+import com.getmaincourse.app.features.cookbooks.displayName
 import com.getmaincourse.app.ui.UiMessage
 import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.data.network.userMessage
@@ -165,7 +166,7 @@ fun RecipeEditScreen(
                             enabled = !actionRunning,
                             modifier = Modifier.fillMaxWidth().testTag("move_target_${cookbook.id}"),
                         ) {
-                            Text(stringResource(R.string.recipe_move_target, cookbook.name))
+                            Text(stringResource(R.string.recipe_move_target, cookbook.displayName()))
                         }
                     }
                 }

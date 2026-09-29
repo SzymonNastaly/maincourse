@@ -218,7 +218,7 @@ private fun CookbookSummaryCard(cookbook: Cookbook, label: String) {
     ) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MainCourseColors.Muted)
-            Text(cookbook.name, style = MaterialTheme.typography.titleMedium)
+            Text(cookbook.displayName(), style = MaterialTheme.typography.titleMedium)
             Text(
                 pluralStringResource(R.plurals.cookbook_recipes, cookbook.recipeCount, cookbook.recipeCount),
                 style = MaterialTheme.typography.bodySmall,
@@ -246,7 +246,7 @@ private fun SharedCookbookCard(
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.cookbook_shared), style = MaterialTheme.typography.labelMedium, color = MainCourseColors.Muted)
-                Text(cookbook.name, style = MaterialTheme.typography.titleLarge)
+                Text(cookbook.displayName(), style = MaterialTheme.typography.titleLarge)
                 Text(
                     pluralStringResource(R.plurals.cookbook_recipes, cookbook.recipeCount, cookbook.recipeCount),
                     style = MaterialTheme.typography.bodySmall,

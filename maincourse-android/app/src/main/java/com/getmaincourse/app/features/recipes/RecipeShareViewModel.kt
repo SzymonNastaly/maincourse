@@ -2,6 +2,7 @@ package com.getmaincourse.app.features.recipes
 
 import androidx.lifecycle.ViewModel
 import com.getmaincourse.app.R
+import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.ui.UiMessage
 import androidx.lifecycle.viewModelScope
 import com.getmaincourse.app.data.CookbookSelection
@@ -34,7 +35,7 @@ sealed interface RecipeShareStatus {
 }
 
 data class RecipeShareUiState(
-    val destinationName: String? = null,
+    val destination: Cookbook? = null,
     val status: RecipeShareStatus = RecipeShareStatus.Preparing,
 )
 
@@ -60,7 +61,7 @@ class RecipeShareViewModel(
             observeCookbooks().collect { selection ->
                 cookbookSelection = selection
                 mutableState.value = mutableState.value.copy(
-                    destinationName = selection.cookbooks.firstOrNull { it.id == selection.selectedId }?.name,
+                    destination = selection.cookbooks.firstOrNull { it.id == selection.selectedId },
                 )
                 maybeStartImport()
             }

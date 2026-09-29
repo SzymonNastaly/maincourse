@@ -52,6 +52,7 @@
     <string name="cookbook_selected">Selected cookbook</string>
     <string name="cookbook_none_selected">No cookbook selected</string>
     <string name="cookbook_manage">Manage Cookbooks</string>
+    <string name="cookbook_default_name">My Recipes</string>
     <string name="cookbook_personal">PERSONAL COOKBOOK</string>
     <string name="cookbook_shared">SHARED COOKBOOK</string>
     <string name="cookbook_create_shared">Create a shared cookbook</string>

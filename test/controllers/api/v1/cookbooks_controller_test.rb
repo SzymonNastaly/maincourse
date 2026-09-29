@@ -20,6 +20,7 @@ class Api::V1::CookbooksControllerTest < ActionDispatch::IntegrationTest
     assert_kind_of Array, json
     assert_equal 1, json.length
     assert_equal "My Recipes", json.first["name"]
+    assert_equal true, json.first["default_name"]
     assert json.first["personal"]
     assert json.first["members"].any?
   end
@@ -51,6 +52,7 @@ class Api::V1::CookbooksControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
     json = response.parsed_body
     assert_equal "Family Recipes", json["name"]
+    assert_equal false, json["default_name"]
     assert_not json["personal"]
     assert_equal 1, json["members"].length
     assert_equal "owner", json["members"].first["role"]

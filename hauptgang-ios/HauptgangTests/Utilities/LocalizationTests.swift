@@ -46,6 +46,36 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(count(5, "pl"), "5 przepisów")
     }
 
+    func testDefaultCookbookNameUsesTheMarkerNotTheStoredName() throws {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        func cookbook(_ json: String) throws -> Cookbook {
+            try decoder.decode(Cookbook.self, from: Data(json.utf8))
+        }
+        let personal = try cookbook(
+            #"{"id":1,"name":"My Recipes","default_name":true,"personal":true,"recipe_count":0,"members":[]}"#
+        )
+        XCTAssertEqual(personal.displayName, "My Recipes")
+        let shared = try cookbook(
+            #"{"id":2,"name":"My Recipes","default_name":false,"personal":false,"recipe_count":0,"members":[]}"#
+        )
+        XCTAssertEqual(shared.displayName, "My Recipes")
+        XCTAssertNotEqual(shared.defaultName, true)
+
+        // Cookbooks cached before the marker existed still decode and keep their name.
+        let cached = try JSONDecoder().decode(Cookbook.self, from: Data(
+            #"{"id":3,"name":"Family","personal":false,"recipeCount":0,"members":[]}"#.utf8
+        ))
+        XCTAssertNil(cached.defaultName)
+        XCTAssertEqual(cached.displayName, "Family")
+
+        func translated(_ id: String) -> String {
+            String(localized: LocalizedStringResource("My Recipes", locale: Locale(identifier: id)))
+        }
+        XCTAssertEqual(translated("de"), "Meine Rezepte")
+        XCTAssertEqual(translated("pl"), "Moje przepisy")
+    }
+
     func testGermanAndPolishAreBundledInAppAndExtension() throws {
         let plugins = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
         let extensionBundle = try XCTUnwrap(
