@@ -48,17 +48,22 @@ asc subscriptions versions images upload \
   --file docs/app-store/subscription-promo/hauptgang-pro-monthly.png
 ```
 
-**A subscription version only accepts an image while it is modifiable.** Both
-subscriptions are currently on `APPROVED` version 1, and uploading to those
-fails with:
+**A subscription version only accepts an image while it is modifiable.**
+Uploading to an `APPROVED` version fails with:
 
 ```
 failed to reserve: Version is not in modifiable state.
 ```
 
-Attaching these therefore means `asc subscriptions versions create` for a new
-version per subscription and putting that version through review — not a
-metadata edit in place. Do not start that while an app submission is in flight.
+Changing the image then means `asc subscriptions versions create` for a new
+version per subscription, which App Review checks together with the next app
+version. The current images are on version 2 of each subscription, created in
+September 2026 for the MainCourse rename:
+
+| Subscription | Version 2 ID |
+|---|---|
+| Monthly | `0653c7db-3c34-4cea-aa48-8275ce680991` |
+| Yearly | `b05e3fe9-c2e8-44ef-87f2-fc5c664f4b66` |
 
 Verify with:
 
@@ -66,4 +71,4 @@ Verify with:
 asc validate subscriptions --app 6758990872
 ```
 
-The two `subscriptions.images.recommended` warnings should be gone.
+It should report no `subscriptions.images.recommended` warnings.

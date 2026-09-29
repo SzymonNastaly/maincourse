@@ -16,7 +16,8 @@ the apps.
 | Play Store listing | `maincourse-android/fastlane/metadata/android/<locale>/` | Play Console main store listing |
 
 App Store locales are `en-US`, `en-GB`, `de-DE` and `pl`; Play uses `en-US`,
-`de-DE` and `pl-PL`; RevenueCat uses `en_US`, `de_DE` and `pl_PL`.
+`de-DE` and `pl-PL`; RevenueCat uses `en_US`, `de_DE` and `pl` (the paywall editor stores Polish
+under `pl`, not `pl_PL`).
 
 ## App Store listing
 
@@ -45,9 +46,13 @@ asc subscriptions versions localizations create --version-id VERSION_ID \
   --locale de-DE --name "..." --description "..."
 ```
 
-The group name uses `asc subscriptions groups versions localizations`. If the
-current version is already approved, App Store Connect asks for a new
-subscription version, which is reviewed together with the next app version.
+The group name uses `asc subscriptions groups versions localizations`. An
+approved version cannot be edited: `asc subscriptions versions create` (and
+`asc subscriptions groups versions create`) starts a new one that copies the
+existing localizations, and App Review checks it together with the next app
+version. Version 2 of both subscriptions and of the group carries the
+MainCourse names in all three languages and the promo images
+(`app-store/subscription-promo/README.md`).
 After publishing, re-sync `hauptgang-ios/Hauptgang-StoreKit.storekit` from Xcode;
 it is a synced configuration, so do not edit it by hand.
 
@@ -68,8 +73,9 @@ curl -s -H "Authorization: Bearer $PUBLIC_SDK_KEY" -H "X-Platform: iOS" \
   "https://api.revenuecat.com/v1/subscribers/%24RCAnonymousID%3Acompare/offerings"
 ```
 
-When the paywall layout changes in RevenueCat, its component IDs change too.
-Refresh the files from that response before translating.
+The files mirror the published paywall. After editing text in the dashboard, or
+when the layout changes (which also changes component IDs), refresh them from
+that response.
 
 ## Play Store listing
 
