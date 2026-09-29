@@ -123,7 +123,9 @@ The personal cookbook's generated name arrives with `default_name: true`, and
 `Cookbook.displayName` shows the "My Recipes" string from `Localizable.xcstrings`
 instead of the stored English name. Show cookbooks through `displayName`; any other
 name is user content. The field is optional so cookbooks cached in UserDefaults
-before it existed still decode. Still English-only: the starter recipe and
+before it existed still decode. `DemoRecipe.load()` picks the starter version for
+the app's language (`Bundle.main.preferredLocalizations`), and Keep saves that
+version's key, so the preview and the saved copy match. Still English-only:
 store/paywall copy, tracked in
 [#133](https://github.com/SzymonNastaly/maincourse/issues/133).
 

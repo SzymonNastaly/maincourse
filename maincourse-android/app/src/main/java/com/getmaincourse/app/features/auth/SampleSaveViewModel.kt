@@ -88,9 +88,10 @@ class SampleSaveViewModel internal constructor(
         if (readIntent()?.userId != null) writeIntent(null)
     }
 
-    fun keep() {
+    /** [sourceKey] is the starter version the person previewed. */
+    fun keep(sourceKey: String) {
         if (state.value.saving) return
-        writeIntent(SampleSaveIntent(UUID.randomUUID().toString(), userId = userId))
+        writeIntent(SampleSaveIntent(UUID.randomUUID().toString(), sourceKey, userId = userId))
         userId?.let { dismissDemo(); retry() }
     }
 

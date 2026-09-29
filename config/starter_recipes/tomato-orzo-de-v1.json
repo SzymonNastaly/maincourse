@@ -1,0 +1,27 @@
+{
+  "key": "tomato-orzo-de-v1",
+  "name": "Orzo mit Tomaten und Kichererbsen aus einer Pfanne",
+  "creator": "maincourse.kitchen",
+  "caption": "Das 25-Minuten-Abendessen, das ich immer wieder koche. Knoblauch in Olivenöl andünsten, Kirschtomaten, Orzo, Kichererbsen und Brühe dazu und köcheln lassen, bis alles cremig ist. Spinat unterheben, mit Basilikum vollenden. Eine Pfanne, zwei glückliche Menschen. Das ganze Rezept geht im Trubel unter? Teil es einfach mit MainCourse.",
+  "prep_time": 5,
+  "cook_time": 20,
+  "servings": 2,
+  "image_name": "tomato-orzo-v1.jpg",
+  "ingredients": [
+    {"raw": "1 EL Olivenöl", "amount": 1, "unit": "EL", "name": "Olivenöl", "note": null},
+    {"raw": "2 Zehen Knoblauch, fein gehackt", "amount": 2, "unit": "Zehen", "name": "Knoblauch", "note": "fein gehackt"},
+    {"raw": "250 g Kirschtomaten, halbiert", "amount": 250, "unit": "g", "name": "Kirschtomaten", "note": "halbiert"},
+    {"raw": "160 g Orzo", "amount": 160, "unit": "g", "name": "Orzo", "note": null},
+    {"raw": "240 g gekochte Kichererbsen, abgetropft und abgespült", "amount": 240, "unit": "g", "name": "gekochte Kichererbsen", "note": "abgetropft und abgespült"},
+    {"raw": "500 ml Gemüsebrühe", "amount": 500, "unit": "ml", "name": "Gemüsebrühe", "note": "bei Bedarf etwas mehr"},
+    {"raw": "60 g Babyspinat", "amount": 60, "unit": "g", "name": "Babyspinat", "note": null},
+    {"raw": "5 g frisches Basilikum, zerzupft", "amount": 5, "unit": "g", "name": "frisches Basilikum", "note": "zerzupft"},
+    {"raw": "Salz und schwarzer Pfeffer, nach Geschmack", "amount": null, "unit": null, "name": "Salz und schwarzer Pfeffer", "note": "nach Geschmack"}
+  ],
+  "instructions": [
+    "Erhitze das Olivenöl in einer weiten, tiefen Pfanne bei mittlerer Hitze. Gib den Knoblauch dazu und rühre 30 Sekunden, bis er duftet, aber noch nicht braun wird.",
+    "Gib die Kirschtomaten und eine Prise Salz dazu. Lass sie 5 Minuten garen, rühre gelegentlich um und drücke einige Tomaten mit der Rückseite eines Löffels an, damit sie ihren Saft abgeben.",
+    "Rühre Orzo, Kichererbsen und Gemüsebrühe ein. Bring alles zum leichten Köcheln und gare es offen 10–12 Minuten unter häufigem Rühren, bis die Nudeln weich sind. Wird es in der Pfanne zu trocken, bevor die Nudeln gar sind, gib einen Schuss Wasser dazu.",
+    "Heb den Spinat unter und lass ihn 1–2 Minuten zusammenfallen. Nimm die Pfanne vom Herd, rühre das Basilikum ein und schmecke mit Salz und schwarzem Pfeffer ab. Verteile alles auf zwei Schalen und serviere."
+  ]
+}

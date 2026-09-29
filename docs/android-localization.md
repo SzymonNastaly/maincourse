@@ -58,9 +58,9 @@ remain unchanged. The deletion confirmation token is still `DELETE`; its
 translated prompt explicitly asks for that exact token.
 
 Stored cookbook names and imported/user-authored recipes remain content, not
-resource keys. The versioned English starter recipe stays aligned with the Rails
-saved-copy source; its surrounding demo UI is translated. Translating starter
-content requires coordinated preview/saved-copy versions. Push registration sends
+resource keys. `R.string.starter_recipe_key` names the starter version for the
+active resource set; the demo preview loads that bundled file and Keep saves the
+same key, so preview and saved copy always match (`api-localization.md`). Push registration sends
 the active resource set's `push_registration_language` so Rails renders
 notifications in the app language (`push-notifications.md`). Email follows the
 account's email language. A personal cookbook that keeps its generated name arrives

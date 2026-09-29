@@ -44,7 +44,7 @@ class SampleSaveViewModelTest {
             RecipeSaveResponse(42, checkNotNull(it.cookbookId))
         }
         runCurrent()
-        model.keep()
+        model.keep("tomato-orzo-pl-v1")
         val requestId = intent!!.requestId
         assertNull(intent!!.userId)
         assertTrue(requests.isEmpty())
@@ -59,6 +59,7 @@ class SampleSaveViewModelTest {
         runCurrent()
         assertEquals(listOf(requestId, requestId), requests.map { it.requestId })
         assertEquals(listOf(10L, 10L), requests.map { it.cookbookId })
+        assertEquals(listOf("tomato-orzo-pl-v1", "tomato-orzo-pl-v1"), requests.map { it.sourceKey })
         assertNull(intent)
         assertEquals(RecipeSaveResponse(42, 10), model.state.value.saved)
     }
@@ -67,7 +68,7 @@ class SampleSaveViewModelTest {
     fun continuingWithoutRecipeClearsAnonymousIntentAndNeverSaves() = runTest(dispatcher) {
         val model = model()
         runCurrent()
-        model.keep()
+        model.keep("tomato-orzo-v1")
         model.continueWithoutRecipe()
         users.value = 1
         runCurrent()
@@ -93,7 +94,7 @@ class SampleSaveViewModelTest {
         val response = CompletableDeferred<RecipeSaveResponse>()
         val model = model { withContext(NonCancellable) { response.await() } }
         runCurrent()
-        model.keep()
+        model.keep("tomato-orzo-v1")
         users.value = 1
         runCurrent()
         assertTrue(model.state.value.saving)
@@ -127,9 +128,9 @@ class SampleSaveViewModelTest {
         runCurrent()
         model.dismissDemo()
         assertTrue(model.state.value.demoDismissed)
-        model.keep()
+        model.keep("tomato-orzo-v1")
         runCurrent()
-        model.keep()
+        model.keep("tomato-orzo-v1")
         runCurrent()
         assertNotEquals(requests[0].requestId, requests[1].requestId)
         users.value = 2

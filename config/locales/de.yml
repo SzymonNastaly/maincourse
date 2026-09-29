@@ -352,3 +352,5 @@ de:
       expiry: "Dieser Link läuft in %{duration} ab."
   cookbooks:
     default_name: Meine Rezepte
+  starter_recipes:
+    attribution: "Ein originales Beispielrezept von MainCourse."

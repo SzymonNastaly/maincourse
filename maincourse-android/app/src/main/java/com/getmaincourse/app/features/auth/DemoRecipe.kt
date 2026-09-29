@@ -20,7 +20,8 @@ data class DemoRecipe(
     val instructions: List<String>,
 ) {
     companion object {
-        fun load(assets: AssetManager): DemoRecipe = assets.open("tomato-orzo-v1.json").bufferedReader().use {
+        /** [key] comes from `R.string.starter_recipe_key`, so preview and save use one version. */
+        fun load(assets: AssetManager, key: String): DemoRecipe = assets.open("$key.json").bufferedReader().use {
             Json.decodeFromString(it.readText())
         }
     }

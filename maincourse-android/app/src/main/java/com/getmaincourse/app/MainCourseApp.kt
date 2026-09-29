@@ -170,6 +170,7 @@ fun MainCourseApp(
 ) {
     val sessionState by sessionViewModel.state.collectAsStateWithLifecycle()
     val preAuthState by preAuthViewModel.state.collectAsStateWithLifecycle()
+    val starterRecipeKey = stringResource(R.string.starter_recipe_key)
     val sampleSaveState by sampleSaveViewModel.state.collectAsStateWithLifecycle()
     val pendingShare by sharedRecipeInput.collectAsStateWithLifecycle()
     val pendingInvitation by invitationToken.collectAsStateWithLifecycle()
@@ -187,14 +188,14 @@ fun MainCourseApp(
         onAdvanceOnboarding = preAuthViewModel::advance,
         onBackOnboarding = preAuthViewModel::goBack,
         onLogIn = { sampleSaveViewModel.continueWithoutRecipe(); preAuthViewModel.logIn() },
-        onKeepSample = { sampleSaveViewModel.keep(); preAuthViewModel.signUp() },
+        onKeepSample = { sampleSaveViewModel.keep(starterRecipeKey); preAuthViewModel.signUp() },
         onContinueWithoutSample = { sampleSaveViewModel.continueWithoutRecipe(); preAuthViewModel.signUp() },
         sampleSaveState = sampleSaveState,
         onRetrySampleSave = sampleSaveViewModel::retry,
         onCancelSampleSave = sampleSaveViewModel::continueWithoutRecipe,
         onSampleOpened = sampleSaveViewModel::acknowledgeSaved,
         onDismissDemo = sampleSaveViewModel::dismissDemo,
-        onAuthenticatedKeepSample = sampleSaveViewModel::keep,
+        onAuthenticatedKeepSample = { sampleSaveViewModel.keep(starterRecipeKey) },
         onSignIn = sessionViewModel::signIn,
         onSignUp = sessionViewModel::signUp,
         onRetryRestore = sessionViewModel::restore,

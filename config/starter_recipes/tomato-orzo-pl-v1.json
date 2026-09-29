@@ -1,0 +1,27 @@
+{
+  "key": "tomato-orzo-pl-v1",
+  "name": "Orzo z pomidorami i ciecierzycą z jednej patelni",
+  "creator": "maincourse.kitchen",
+  "caption": "Obiad w 25 minut, do którego ciągle wracam. Czosnek podsmażyć na oliwie, dodać pomidorki koktajlowe, orzo, ciecierzycę i bulion, gotować na wolnym ogniu, aż zrobi się kremowo. Na koniec wmieszać szpinak i dodać bazylię. Jedna patelnia, dwie szczęśliwe osoby. Pełny przepis gdzieś pod tym wszystkim? Wystarczy udostępnić go w MainCourse.",
+  "prep_time": 5,
+  "cook_time": 20,
+  "servings": 2,
+  "image_name": "tomato-orzo-v1.jpg",
+  "ingredients": [
+    {"raw": "1 łyżka oliwy z oliwek", "amount": 1, "unit": "łyżka", "name": "oliwa z oliwek", "note": null},
+    {"raw": "2 ząbki czosnku, drobno posiekane", "amount": 2, "unit": "ząbki", "name": "czosnek", "note": "drobno posiekany"},
+    {"raw": "250 g pomidorków koktajlowych, przekrojonych na pół", "amount": 250, "unit": "g", "name": "pomidorki koktajlowe", "note": "przekrojone na pół"},
+    {"raw": "160 g makaronu orzo", "amount": 160, "unit": "g", "name": "makaron orzo", "note": null},
+    {"raw": "240 g ugotowanej ciecierzycy, odsączonej i opłukanej", "amount": 240, "unit": "g", "name": "ugotowana ciecierzyca", "note": "odsączona i opłukana"},
+    {"raw": "500 ml bulionu warzywnego", "amount": 500, "unit": "ml", "name": "bulion warzywny", "note": "w razie potrzeby nieco więcej"},
+    {"raw": "60 g młodego szpinaku", "amount": 60, "unit": "g", "name": "młody szpinak", "note": null},
+    {"raw": "5 g świeżej bazylii, porwanej na kawałki", "amount": 5, "unit": "g", "name": "świeża bazylia", "note": "porwana na kawałki"},
+    {"raw": "Sól i czarny pieprz do smaku", "amount": null, "unit": null, "name": "sól i czarny pieprz", "note": "do smaku"}
+  ],
+  "instructions": [
+    "Na szerokiej, głębokiej patelni rozgrzać oliwę na średnim ogniu. Dodać czosnek i mieszać przez 30 sekund, aż zacznie pachnieć, ale jeszcze się nie zrumieni.",
+    "Dodać pomidorki i szczyptę soli. Smażyć 5 minut, od czasu do czasu mieszając i rozgniatając kilka pomidorków grzbietem łyżki, żeby puściły sok.",
+    "Wmieszać orzo, ciecierzycę i bulion. Doprowadzić do delikatnego wrzenia i gotować bez przykrycia 10–12 minut, często mieszając, aż makaron zmięknie. Jeśli na patelni zrobi się sucho, zanim makaron będzie gotowy, dolać odrobinę wody.",
+    "Wmieszać szpinak i gotować 1–2 minuty, aż zwiędnie. Zdjąć z ognia, wmieszać bazylię i doprawić solą i czarnym pieprzem. Rozłożyć do dwóch misek i podawać."
+  ]
+}

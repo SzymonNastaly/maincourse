@@ -22,6 +22,24 @@ struct DemoRecipeTests {
         #expect(UIImage(named: imageName) != nil)
     }
 
+    @Test func eachAppLanguagePreviewsAndSavesItsOwnBundledVersion() throws {
+        #expect(DemoRecipe.key(forLanguage: "en") == "tomato-orzo-v1")
+        #expect(DemoRecipe.key(forLanguage: "fr") == "tomato-orzo-v1")
+        #expect(DemoRecipe.key(forLanguage: nil) == "tomato-orzo-v1")
+        let english = try DemoRecipe.load(key: "tomato-orzo-v1")
+        for (language, name) in [
+            ("de", "Orzo mit Tomaten und Kichererbsen aus einer Pfanne"),
+            ("pl", "Orzo z pomidorami i ciecierzycą z jednej patelni")
+        ] {
+            let key = DemoRecipe.key(forLanguage: language)
+            let sample = try DemoRecipe.load(key: key)
+            #expect(sample.key == key)
+            #expect(sample.name == name)
+            #expect(sample.imageName == english.imageName)
+            #expect(sample.ingredients.map(\.amount) == english.ingredients.map(\.amount))
+        }
+    }
+
     @Test func previewRetainsStructuredAmountsForPortionScaling() throws {
         let sample = try DemoRecipe.load()
         #expect(sample.key == "tomato-orzo-v1")
