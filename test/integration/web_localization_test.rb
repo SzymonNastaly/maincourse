@@ -55,6 +55,20 @@ class WebLocalizationTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Ustaw nowe hasło"
   end
 
+  test "web sign-up starts the email language from the page language and later browsers do not change it" do
+    post registration_path, headers: { "Accept-Language" => "de" }, params: {
+      user: { name: "Lea", email_address: "lea@example.com", password: "password123", password_confirmation: "password123" }
+    }
+    user = User.find_by!(email_address: "lea@example.com")
+    assert_equal "de", user.communication_language
+
+    sign_out
+    assert_enqueued_email_with PasswordsMailer, :reset, args: [ user ] do
+      post passwords_path, headers: { "Accept-Language" => "pl" }, params: { email_address: user.email_address }
+    end
+    assert_equal "Passwort zurücksetzen", PasswordsMailer.reset(user).message.subject
+  end
+
   test "every web screen renders in each locale with user content preserved" do
     sign_in_as users(:one)
     recipe = recipes(:one)

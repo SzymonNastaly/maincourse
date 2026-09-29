@@ -27,9 +27,19 @@ together. Responses declare `Content-Language` and vary by language and cookie.
 
 API controllers inherit from `ActionController::API`, not `ApplicationController`,
 so browser negotiation does not affect API codes, legacy English error fields,
-or machine serialization. See `api-localization.md`. Password-reset email remains
-explicitly English, including its duration formatting, until the separate
-account-level communication-language work in #125 ships.
+or machine serialization. See `api-localization.md`.
+
+## Email
+
+Email follows the account's communication language (`users.communication_language`),
+not the browser or device that triggered it: a password reset requested from a
+Polish browser for a German account arrives in German. Web sign-up initializes it
+from the page language; the “Email language” control in Settings changes it.
+Mailers wrap `mail` in `I18n.with_locale(user.communication_locale)`, so the
+subject (Rails' default `<mailer>.<action>.subject` lookup), lazy `t(".key")`
+template keys, durations and the layout's `lang` all follow it. New mailers must
+do the same and add their strings under `<mailer_name>.<action>` in all three
+catalogs.
 
 ## Adding text
 

@@ -38,6 +38,20 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to edit_settings_path
   end
 
+  test "changes the email language" do
+    patch settings_path, params: { user: { communication_language: "pl" } }
+
+    assert_equal "pl", @user.reload.communication_language
+    assert_redirected_to edit_settings_path
+  end
+
+  test "rejects an unsupported email language" do
+    patch settings_path, params: { user: { communication_language: "fr" } }
+
+    assert_response :unprocessable_entity
+    assert_equal "en", @user.reload.communication_language
+  end
+
   test "toggles recipe reminders" do
     assert @user.lifecycle_notifications_enabled
 

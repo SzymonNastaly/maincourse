@@ -29,6 +29,8 @@ de:
       cancel_creation: Vorhandenes Konto verwenden / Abbrechen
     language: Sprache
     browser_language: Browsersprache
+    email_language: E-Mail-Sprache
+    email_language_hint: Wird für E-Mails wie das Zurücksetzen des Passworts verwendet.
     save: Speichern
     settings: Einstellungen
     recipes: Rezepte
@@ -341,3 +343,10 @@ de:
         other: "%{count} Rezepte zum Essensplan hinzugefügt und für %{votes} abgestimmt"
       meal_plan_updated: Essensplan aktualisiert
       activity: Neue Aktivität
+  passwords_mailer:
+    reset:
+      subject: Passwort zurücksetzen
+      body_html: "Du kannst dein Passwort auf %{link} zurücksetzen."
+      link: dieser Seite
+      body_text: "Du kannst dein Passwort auf dieser Seite zurücksetzen:"
+      expiry: "Dieser Link läuft in %{duration} ab."
