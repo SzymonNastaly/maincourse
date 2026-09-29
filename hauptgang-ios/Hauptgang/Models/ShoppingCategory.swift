@@ -37,14 +37,33 @@ enum ShoppingCategory: String, CaseIterable, Identifiable {
         case .other: String(localized: "Other")
         }
     }
+
+    /// Groups items by aisle in display order, keeping their order within each
+    /// aisle. A list that is entirely Other (e.g. right after an upgrade, before the
+    /// server has categorized anything) comes back as one unlabeled group.
+    static func aisles<Item>(
+        for items: [Item],
+        category: (Item) -> ShoppingCategory
+    ) -> [(aisle: ShoppingCategory?, items: [Item])] {
+        guard !items.isEmpty else { return [] }
+
+        let byAisle = Dictionary(grouping: items, by: category)
+        if byAisle.keys.allSatisfy({ $0 == .other }) {
+            return [(nil, items)]
+        }
+        return Self.allCases.compactMap { aisle in
+            byAisle[aisle].map { (aisle, $0) }
+        }
+    }
 }
 
 struct ShoppingCategoryHint: Hashable {
     let category: String
     let canonicalName: String?
 
-    /// The most common category among recipe ingredients whose parsed or canonical
-    /// name matches `name`, ignoring case.
+    /// The most common category and canonical name pair among recipe ingredients
+    /// whose parsed or canonical name matches `name`, ignoring case. Mirrors the
+    /// server's `ShoppingList::CategoryLookup`.
     static func lookup(name: String, in ingredients: [StructuredIngredient]) -> ShoppingCategoryHint? {
         let key = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !key.isEmpty else { return nil }

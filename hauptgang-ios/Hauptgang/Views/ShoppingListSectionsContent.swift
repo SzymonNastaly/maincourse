@@ -70,10 +70,10 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
     private var uncheckedRows: [Row] {
         guard self.groupsByAisle else { return self.uncheckedItems.map(Row.item) }
 
-        let byAisle = Dictionary(grouping: self.uncheckedItems, by: \.category)
-        let aisles = ShoppingCategory.allCases.filter { byAisle[$0] != nil }
-        return aisles.enumerated().flatMap { index, aisle in
-            [Row.aisleHeader(aisle, isFirst: index == 0)] + (byAisle[aisle] ?? []).map(Row.item)
+        let groups = ShoppingCategory.aisles(for: self.uncheckedItems, category: \.category)
+        return groups.enumerated().flatMap { index, group in
+            let header = group.aisle.map { [Row.aisleHeader($0, isFirst: index == 0)] } ?? []
+            return header + group.items.map(Row.item)
         }
     }
 

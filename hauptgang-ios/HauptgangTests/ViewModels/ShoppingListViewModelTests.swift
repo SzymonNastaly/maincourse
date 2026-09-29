@@ -267,6 +267,40 @@ struct ShoppingListViewModelTests {
         #expect(repo.items.first?.category == nil)
     }
 
+    @Test func addCustomItem_refetchesOnceWhenServerCategoryIsPending() async {
+        let service = MockShoppingListService()
+        var pending = self.makeResponse(id: 10, clientId: "placeholder", name: "Dragon fruit")
+        pending.categoryPending = true
+        service.createResult = [pending]
+
+        let vm = ShoppingListViewModel(
+            repository: MockShoppingListRepository(),
+            service: service,
+            categoryRefreshDelay: .milliseconds(10)
+        )
+        vm.addCustomItem("Dragon fruit")
+
+        try? await Task.sleep(for: .milliseconds(300))
+        #expect(service.fetchCallCount == 1)
+    }
+
+    @Test func addCustomItem_doesNotRefetchWhenServerCategoryIsConfirmed() async {
+        let service = MockShoppingListService()
+        var confirmed = self.makeResponse(id: 10, clientId: "placeholder", name: "Milk")
+        confirmed.categoryPending = false
+        service.createResult = [confirmed]
+
+        let vm = ShoppingListViewModel(
+            repository: MockShoppingListRepository(),
+            service: service,
+            categoryRefreshDelay: .milliseconds(10)
+        )
+        vm.addCustomItem("Milk")
+
+        try? await Task.sleep(for: .milliseconds(300))
+        #expect(service.fetchCallCount == 0)
+    }
+
     @Test func addIngredientsFromRecipe_carriesCategories() {
         let (vm, repo, _) = self.makeVM()
 

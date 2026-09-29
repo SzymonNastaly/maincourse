@@ -27,14 +27,18 @@ final class ShoppingListViewModel {
     private let repository: ShoppingListRepositoryProtocol
     private let service: ShoppingListServiceProtocol
     private let networkGate = ShoppingListNetworkGate.shared
+    private let categoryRefreshDelay: Duration
+    private var categoryRefreshTask: Task<Void, Never>?
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "ShoppingListViewModel")
 
     init(
         repository: ShoppingListRepositoryProtocol? = nil,
-        service: ShoppingListServiceProtocol = ShoppingListService.shared
+        service: ShoppingListServiceProtocol = ShoppingListService.shared,
+        categoryRefreshDelay: Duration = .seconds(8)
     ) {
         self.repository = repository ?? ShoppingListRepository()
         self.service = service
+        self.categoryRefreshDelay = categoryRefreshDelay
     }
 
     func configure(modelContext: ModelContext) {
@@ -76,7 +80,7 @@ final class ShoppingListViewModel {
         do {
             try self.repository.addLocalItems(newItems)
             self.loadCachedItems()
-            Task { await self.syncPendingChanges() }
+            Task { await self.syncAddedItems() }
         } catch {
             self.logger.error("Failed to add ingredients: \(error.localizedDescription)")
         }
@@ -126,7 +130,7 @@ final class ShoppingListViewModel {
             )
             try self.repository.addLocalItems([newItem])
             self.loadCachedItems()
-            Task { await self.syncPendingChanges() }
+            Task { await self.syncAddedItems() }
         } catch {
             self.logger.error("Failed to add custom item: \(error.localizedDescription)")
         }
@@ -180,6 +184,7 @@ final class ShoppingListViewModel {
 
     /// Cancel in-flight work and clear data for a cookbook switch
     func resetForCookbookSwitch() {
+        self.categoryRefreshTask?.cancel()
         self.items = []
         self.isSyncing = false
         self.hasCompletedShoppingListRefresh = false
@@ -198,6 +203,7 @@ final class ShoppingListViewModel {
     }
 
     func clearData() {
+        self.categoryRefreshTask?.cancel()
         do {
             try self.repository.clearAll()
             self.items = []
@@ -206,7 +212,10 @@ final class ShoppingListViewModel {
         }
     }
 
-    private func syncPendingChanges() async {
+    /// Returns whether any created item still awaits its server category.
+    @discardableResult
+    private func syncPendingChanges() async -> Bool {
+        var categoryPending = false
         do {
             try await self.networkGate.withLock {
                 let pendingCreates = try repository.getPendingCreates()
@@ -225,6 +234,7 @@ final class ShoppingListViewModel {
 
                     let created = try await service.createItems(payload, clearExisting: false)
                     try self.repository.saveItems(created, pruneOrphans: false)
+                    categoryPending = created.contains { $0.categoryPending == true }
                 }
 
                 let pendingUpdates = try repository.getPendingUpdates()
@@ -247,6 +257,27 @@ final class ShoppingListViewModel {
             }
         } catch {
             self.logger.error("Failed to sync pending changes: \(error.localizedDescription)")
+        }
+        return categoryPending
+    }
+
+    /// Syncs a local add, then fetches once more if the server is still
+    /// categorizing the new items. Only adds schedule this, so it can't loop.
+    private func syncAddedItems() async {
+        if await self.syncPendingChanges() {
+            self.scheduleCategoryRefresh()
+        }
+    }
+
+    /// The server confirms a new item's aisle in the background, usually within
+    /// seconds. Fetch once after that instead of leaving the item under Other until
+    /// the next manual refresh. Further adds restart the wait.
+    private func scheduleCategoryRefresh() {
+        self.categoryRefreshTask?.cancel()
+        self.categoryRefreshTask = Task { [weak self, delay = self.categoryRefreshDelay] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled else { return }
+            await self?.refresh()
         }
     }
 

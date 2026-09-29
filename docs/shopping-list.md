@@ -56,4 +56,13 @@ vocabulary change):
 bin/rails shopping_list:enqueue_enrichment
 ```
 
+## Clients
+
+iOS (SwiftData schema V9) groups To Buy into aisles; web and Android show a flat
+list for now. A manual add looks the name up in cached recipes' structured
+ingredients and sends a hit as the hint. If a create comes back with
+`category_pending`, the app refetches once about eight seconds later. Items
+without a category display under Other, and a list that is all Other shows no
+aisle headers (e.g. right after upgrading, before the enqueue task has run).
+
 See `docs/ingredients.md` for staple defaults and the old-list replacement flow.

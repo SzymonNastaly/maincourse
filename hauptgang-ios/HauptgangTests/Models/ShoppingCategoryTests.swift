@@ -51,6 +51,34 @@ final class ShoppingCategoryTests: XCTestCase {
         )
     }
 
+    func testAislesGroupInDisplayOrderAndKeepListOrderWithinAnAisle() {
+        let items: [(String, ShoppingCategory)] = [
+            ("Soap", .household), ("Milk", .dairyEggs), ("Basil", .produce), ("Butter", .dairyEggs)
+        ]
+
+        let groups = ShoppingCategory.aisles(for: items, category: \.1)
+
+        XCTAssertEqual(groups.map(\.aisle), [.produce, .dairyEggs, .household])
+        XCTAssertEqual(groups.map { $0.items.map(\.0) }, [["Basil"], ["Milk", "Butter"], ["Soap"]])
+    }
+
+    func testAislesPutOtherLastWhenMixed() {
+        let items: [(String, ShoppingCategory)] = [("Mystery", .other), ("Bread", .bakery)]
+
+        XCTAssertEqual(ShoppingCategory.aisles(for: items, category: \.1).map(\.aisle), [.bakery, .other])
+    }
+
+    func testAislesLeaveAnAllOtherListUnlabeled() {
+        let items: [(String, ShoppingCategory)] = [("Milk", .other), ("Eggs", .other)]
+
+        let groups = ShoppingCategory.aisles(for: items, category: \.1)
+
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertNil(groups[0].aisle)
+        XCTAssertEqual(groups[0].items.map(\.0), ["Milk", "Eggs"])
+        XCTAssertTrue(ShoppingCategory.aisles(for: [(String, ShoppingCategory)](), category: \.1).isEmpty)
+    }
+
     private func ingredient(name: String, canonicalName: String, category: String) -> StructuredIngredient {
         StructuredIngredient(
             id: 1,
