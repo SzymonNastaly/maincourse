@@ -1,7 +1,7 @@
 {
   "version": 1,
   "bundle_id": "app.hauptgang.ios",
-  "locales": ["en-US"],
+  "locales": ["en-US", "de-DE", "pl-PL"],
   "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
   "devices": {
     "iphone": {

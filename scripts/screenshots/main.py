@@ -52,11 +52,31 @@ def backend_env():
             "DATABASE_URL": f"sqlite3:{STATE / 'database.sqlite3'}", "WEB_CONCURRENCY": "0"}
 
 
-def seed():
+def fixture_path(locale):
+    return SOURCE / ("recipes.json" if locale == "en-US" else f"recipes.{locale}.json")
+
+
+def ui_strings(locale):
+    """Map English plan labels to the text the app shows in `locale`."""
+    if locale == "en-US":
+        return {}
+    language = locale.split("-")[0]
+    catalog = read_json(ROOT / "hauptgang-ios/Hauptgang/Resources/Localizable.xcstrings")["strings"]
+    strings = {key: entry["localizations"][language]["stringUnit"]["value"]
+               for key, entry in catalog.items()
+               if "stringUnit" in entry.get("localizations", {}).get(language, {})}
+    # Shopping list items are fixture data; the locale's list translates them in order.
+    english, localized = (read_json(fixture_path(l))["shopping_list"] for l in ("en-US", locale))
+    strings.update({a["name"]: b["name"] for a, b in zip(english, localized)})
+    return strings
+
+
+def seed(locale="en-US"):
     STATE.mkdir(parents=True, exist_ok=True)
-    print("Preparing the dedicated screenshot database…", flush=True)
+    print(f"Preparing the dedicated screenshot database ({locale})…", flush=True)
     run(ROOT / "bin/rails", "db:migrate", env=backend_env())
-    print(run(ROOT / "bin/rails", "runner", "scripts/screenshots/seed.rb", env=backend_env()), flush=True)
+    print(run(ROOT / "bin/rails", "runner", "scripts/screenshots/seed.rb",
+              env={**backend_env(), "SCREENSHOT_LOCALE": locale}), flush=True)
     return read_json(STATE / "seed.json")
 
 
@@ -147,13 +167,21 @@ def built_app():
     return Path(result["data"]["artifacts"]["appPath"])
 
 
-def resolve_plan(path, recipe_ids, locale):
+def resolve_plan(path, recipe_ids, locale, strings=None):
     text = path.read_text()
     for slug, recipe_id in recipe_ids.items():
         text = text.replace("{{" + slug + "}}", str(recipe_id))
     if "{{" in text:
         raise ValueError(f"Unresolved recipe selector in {path}")
     plan = json.loads(text)
+    # Plans are written in English. Never fall back to English text in another locale.
+    if locale != "en-US":
+        for step in plan["steps"]:
+            for key in ("label", "contains"):
+                if key in step:
+                    if step[key] not in (strings or {}):
+                        raise ValueError(f"No {locale} text for {step[key]!r} in {path}")
+                    step[key] = strings[step[key]]
     plan["app"]["launch_arguments"] += ["-AppleLanguages", f"({locale.split('-')[0]})",
                                         "-AppleLocale", locale.replace("-", "_")]
     return plan
@@ -259,7 +287,8 @@ def capture(args, catalog):
     app = Path(args.app).resolve() if args.app else built_app()
     if not (app / "Hauptgang").is_file():
         raise ValueError(f"Not a built Hauptgang simulator app: {app}")
-    fixture = seed()
+    fixture = seed(args.locale)
+    strings = ui_strings(args.locale)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
     work = OUTPUT / "runs" / run_id
     work.mkdir(parents=True, exist_ok=True)
@@ -278,7 +307,8 @@ def capture(args, catalog):
                     run("xcrun", "simctl", "terminate", udid, catalog["bundle_id"], check=False)
                     status.unlink(missing_ok=True)
                     scene = catalog["screens"][screen]
-                    plan = resolve_plan(SOURCE / "plans" / f'{scene["plan"]}.json', fixture["recipes"], args.locale)
+                    plan = resolve_plan(SOURCE / "plans" / f'{scene["plan"]}.json', fixture["recipes"], args.locale,
+                                        strings)
                     plan_file = work / device_name / f"{screen}.json"
                     write_json(plan_file, plan)
                     if plan["steps"][0]["action"] != "launch":
@@ -313,7 +343,7 @@ def capture(args, catalog):
                         "git_commit": run("git", "rev-parse", "HEAD"),
                         "git_dirty": bool(run("git", "status", "--porcelain")),
                         "app_sha256": digest(app / "Hauptgang"), "sha256": digest(destination),
-                        "plan": plan, "recipes_sha256": digest(SOURCE / "recipes.json"),
+                        "plan": plan, "recipes_sha256": digest(fixture_path(args.locale)),
                         "photos": {p.name: digest(p) for p in sorted((SOURCE / "photos").glob("*.png"))},
                     }
                     write_json(destination.with_suffix(".json"), metadata)
@@ -370,7 +400,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor", help="Check local tool versions and artwork")
-    commands.add_parser("seed", help="Reset the dedicated local showcase data")
+    seed_command = commands.add_parser("seed", help="Reset the dedicated local showcase data")
+    seed_command.add_argument("--locale", default="en-US")
     commands.add_parser("gallery", help="Rebuild the local image contact sheet")
     commands.add_parser("list", help="List named screens and devices")
     photos = commands.add_parser("photos", help="Generate missing recipe photos with GPT Image 2.5 Sunburst")
@@ -410,7 +441,8 @@ def main():
                 except BlockingIOError:
                     raise RuntimeError("Another screenshot seed/capture/render command is running.") from None
                 if args.command == "seed":
-                    seed()
+                    selection(args.locale, catalog["locales"], "locale")
+                    seed(args.locale)
                 elif args.command == "capture":
                     capture(args, catalog)
                 elif args.command == "render":

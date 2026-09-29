@@ -1,0 +1,1012 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "slug": "tomato-orzo",
+      "name": "Cremiger Orzo mit Tomaten und Basilikum",
+      "prep_time": 10,
+      "cook_time": 20,
+      "servings": 4,
+      "tags": [
+        "Mittagessen",
+        "Abendessen",
+        "Vegetarisch",
+        "Schnell & einfach"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "2 EL Olivenöl",
+          "name": "Olivenöl",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "3 Knoblauchzehen, gehackt",
+          "name": "Knoblauch",
+          "amount": 3,
+          "unit": "Zehen",
+          "note": "gehackt"
+        },
+        {
+          "raw": "400 g Kirschtomaten",
+          "name": "Kirschtomaten",
+          "amount": 400,
+          "unit": "g"
+        },
+        {
+          "raw": "300 g Orzo",
+          "name": "Orzo",
+          "amount": 300,
+          "unit": "g"
+        },
+        {
+          "raw": "750 ml Gemüsebrühe",
+          "name": "Gemüsebrühe",
+          "amount": 750,
+          "unit": "ml"
+        },
+        {
+          "raw": "100 ml Sahne",
+          "name": "Sahne",
+          "amount": 100,
+          "unit": "ml"
+        },
+        {
+          "raw": "50 g Parmesan, gerieben",
+          "name": "Parmesan",
+          "amount": 50,
+          "unit": "g",
+          "note": "gerieben"
+        },
+        {
+          "raw": "Eine Handvoll frisches Basilikum",
+          "name": "frisches Basilikum"
+        }
+      ],
+      "instructions": [
+        "Erhitze das Olivenöl in einer tiefen Pfanne. Gib den Knoblauch dazu und dünste ihn 1 Minute sanft an.",
+        "Gib die Kirschtomaten und eine Prise Salz dazu. Lass sie 6–8 Minuten garen, bis sie weich sind, und drücke dann einige mit einem Löffel an.",
+        "Rühre Orzo und Gemüsebrühe ein. Lass alles 10–12 Minuten unter häufigem Rühren köcheln, bis die Nudeln weich sind. Gib bei Bedarf einen Schuss Wasser dazu.",
+        "Rühre Sahne und Parmesan unter. Vollende den Orzo mit zerzupftem Basilikum und frisch gemahlenem schwarzem Pfeffer."
+      ],
+      "notes": "Ein Mittagessen aus einer Pfanne, das abends genauso gut schmeckt. Wer mag, nimmt statt Parmesan einen vegetarischen Hartkäse."
+    },
+    {
+      "slug": "crispy-fish-tacos",
+      "name": "Knusprige Fisch-Tacos",
+      "prep_time": 20,
+      "cook_time": 15,
+      "servings": 4,
+      "tags": [
+        "Mittagessen",
+        "Abendessen",
+        "Fisch"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "500 g Kabeljaufilets",
+          "name": "Kabeljaufilets",
+          "amount": 500,
+          "unit": "g"
+        },
+        {
+          "raw": "60 g Weizenmehl",
+          "name": "Weizenmehl",
+          "amount": 60,
+          "unit": "g"
+        },
+        {
+          "raw": "2 Eier, verquirlt",
+          "name": "Eier",
+          "amount": 2,
+          "note": "verquirlt"
+        },
+        {
+          "raw": "100 g Panko-Paniermehl",
+          "name": "Panko-Paniermehl",
+          "amount": 100,
+          "unit": "g"
+        },
+        {
+          "raw": "4 EL Pflanzenöl",
+          "name": "Pflanzenöl",
+          "amount": 4,
+          "unit": "EL"
+        },
+        {
+          "raw": "8 kleine Maistortillas",
+          "name": "Maistortillas",
+          "amount": 8
+        },
+        {
+          "raw": "200 g Rotkohl, fein gehobelt",
+          "name": "Rotkohl",
+          "amount": 200,
+          "unit": "g",
+          "note": "fein gehobelt"
+        },
+        {
+          "raw": "100 g griechischer Joghurt",
+          "name": "griechischer Joghurt",
+          "amount": 100,
+          "unit": "g"
+        },
+        {
+          "raw": "2 Limetten",
+          "name": "Limetten",
+          "amount": 2
+        },
+        {
+          "raw": "Frischer Koriander zum Servieren",
+          "name": "frischer Koriander"
+        }
+      ],
+      "instructions": [
+        "Schneide den Kabeljau in dicke Streifen und tupfe ihn trocken. Würze ihn mit Salz und Pfeffer und wende ihn nacheinander in Mehl, verquirltem Ei und Panko.",
+        "Erhitze das Öl in einer Pfanne. Brate den Fisch portionsweise 3–4 Minuten pro Seite, bis er goldbraun und durchgegart ist.",
+        "Vermische den Rotkohl mit dem Saft einer Limette und einer Prise Salz. Rühre etwas Limettenabrieb in den Joghurt.",
+        "Erwärme die Tortillas in einer Pfanne ohne Fett. Fülle sie mit Rotkohl, knusprigem Fisch, Joghurt und Koriander. Serviere die übrige Limette in Spalten dazu."
+      ],
+      "notes": "Erwärme die Tortillas erst kurz vor dem Füllen – so bleiben sie weich und lassen sich leicht falten."
+    },
+    {
+      "slug": "blueberry-pancakes",
+      "name": "Blaubeer-Ricotta-Pancakes",
+      "prep_time": 10,
+      "cook_time": 15,
+      "servings": 3,
+      "tags": [
+        "Frühstück",
+        "Vegetarisch"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "150 g Weizenmehl",
+          "name": "Weizenmehl",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "2 TL Backpulver",
+          "name": "Backpulver",
+          "amount": 2,
+          "unit": "TL"
+        },
+        {
+          "raw": "2 Eier",
+          "name": "Eier",
+          "amount": 2
+        },
+        {
+          "raw": "200 g Ricotta",
+          "name": "Ricotta",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "120 ml Milch",
+          "name": "Milch",
+          "amount": 120,
+          "unit": "ml"
+        },
+        {
+          "raw": "150 g Blaubeeren",
+          "name": "Blaubeeren",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "20 g Butter",
+          "name": "Butter",
+          "amount": 20,
+          "unit": "g"
+        },
+        {
+          "raw": "Ahornsirup zum Servieren",
+          "name": "Ahornsirup"
+        }
+      ],
+      "instructions": [
+        "Vermische Mehl, Backpulver und eine Prise Salz in einer Schüssel.",
+        "Verquirle Eier, Ricotta und Milch. Heb die Mischung unter die trockenen Zutaten und rühre dann vorsichtig die Hälfte der Blaubeeren ein.",
+        "Zerlass etwas Butter in einer beschichteten Pfanne bei mittlerer bis niedriger Hitze. Gib jeweils eine kleine Kelle Teig hinein und backe die Pancakes 2–3 Minuten pro Seite, bis sie goldbraun und durchgegart sind.",
+        "Serviere sie in kleinen Stapeln mit den übrigen Blaubeeren und Ahornsirup."
+      ],
+      "notes": "Rühr den Teig nur kurz, ein paar Klümpchen dürfen bleiben – so werden die Pancakes herrlich fluffig."
+    },
+    {
+      "slug": "sesame-chilli-noodles",
+      "name": "Sesam-Chili-Nudeln",
+      "prep_time": 10,
+      "cook_time": 10,
+      "servings": 2,
+      "tags": [
+        "Mittagessen",
+        "Abendessen",
+        "Vegetarisch",
+        "Schnell & einfach"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "200 g Weizennudeln",
+          "name": "Weizennudeln",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "2 EL Tahini",
+          "name": "Tahini",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "2 EL Sojasauce",
+          "name": "Sojasauce",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 EL Reisessig",
+          "name": "Reisessig",
+          "amount": 1,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 EL Chiliöl",
+          "name": "Chiliöl",
+          "amount": 1,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 TL Honig",
+          "name": "Honig",
+          "amount": 1,
+          "unit": "TL"
+        },
+        {
+          "raw": "1 Salatgurke, in feine Streifen geschnitten",
+          "name": "Salatgurke",
+          "amount": 1,
+          "note": "in feine Streifen geschnitten"
+        },
+        {
+          "raw": "2 Frühlingszwiebeln, in Ringe geschnitten",
+          "name": "Frühlingszwiebeln",
+          "amount": 2,
+          "note": "in Ringe geschnitten"
+        },
+        {
+          "raw": "1 EL Sesam",
+          "name": "Sesam",
+          "amount": 1,
+          "unit": "EL"
+        }
+      ],
+      "instructions": [
+        "Koche die Nudeln nach Packungsanweisung und fang vor dem Abgießen eine Tasse Kochwasser auf.",
+        "Verrühre Tahini, Sojasauce, Reisessig, Chiliöl und Honig mit 3 Esslöffeln warmem Nudelwasser zu einer glatten Sauce.",
+        "Schwenke die Nudeln in der Sauce und lockere sie bei Bedarf mit etwas mehr Kochwasser auf.",
+        "Verteile die Nudeln auf Schalen und gib Gurke, Frühlingszwiebeln und Sesam darüber."
+      ],
+      "notes": "Wenn du es milder magst, nimm zunächst weniger Chiliöl."
+    },
+    {
+      "slug": "peach-burrata-salad",
+      "name": "Pfirsich-Burrata-Salat",
+      "prep_time": 15,
+      "cook_time": 0,
+      "servings": 2,
+      "tags": [
+        "Salate",
+        "Mittagessen",
+        "Vegetarisch"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "2 reife Pfirsiche",
+          "name": "Pfirsiche",
+          "amount": 2
+        },
+        {
+          "raw": "250 g Kirschtomaten",
+          "name": "Kirschtomaten",
+          "amount": 250,
+          "unit": "g"
+        },
+        {
+          "raw": "150 g Burrata",
+          "name": "Burrata",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "60 g Rucola",
+          "name": "Rucola",
+          "amount": 60,
+          "unit": "g"
+        },
+        {
+          "raw": "2 EL natives Olivenöl extra",
+          "name": "Olivenöl",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 EL Zitronensaft",
+          "name": "Zitronensaft",
+          "amount": 1,
+          "unit": "EL"
+        },
+        {
+          "raw": "Frische Basilikumblätter",
+          "name": "frisches Basilikum"
+        }
+      ],
+      "instructions": [
+        "Schneide die Pfirsiche in Spalten und halbiere die Tomaten.",
+        "Verteile den Rucola auf einer Platte. Lege Pfirsiche und Tomaten darauf.",
+        "Zupfe die Burrata über den Salat. Beträufle alles mit Olivenöl und Zitronensaft.",
+        "Vollende den Salat mit Basilikum, Salzflocken und schwarzem Pfeffer. Serviere ihn sofort."
+      ],
+      "notes": "Am besten mit duftenden, perfekt reifen Pfirsichen."
+    },
+    {
+      "slug": "rosemary-focaccia",
+      "name": "Focaccia mit Rosmarin und Meersalz",
+      "prep_time": 20,
+      "cook_time": 25,
+      "servings": 8,
+      "tags": [
+        "Backen",
+        "Vegetarisch"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "500 g Weizenmehl Type 550",
+          "name": "Weizenmehl Type 550",
+          "amount": 500,
+          "unit": "g"
+        },
+        {
+          "raw": "7 g Trockenhefe",
+          "name": "Trockenhefe",
+          "amount": 7,
+          "unit": "g"
+        },
+        {
+          "raw": "400 ml warmes Wasser",
+          "name": "Wasser",
+          "amount": 400,
+          "unit": "ml"
+        },
+        {
+          "raw": "10 g feines Meersalz",
+          "name": "feines Meersalz",
+          "amount": 10,
+          "unit": "g"
+        },
+        {
+          "raw": "5 EL Olivenöl",
+          "name": "Olivenöl",
+          "amount": 5,
+          "unit": "EL"
+        },
+        {
+          "raw": "3 Zweige Rosmarin",
+          "name": "Rosmarin",
+          "amount": 3,
+          "unit": "Zweige"
+        },
+        {
+          "raw": "Meersalzflocken zum Bestreuen",
+          "name": "Meersalzflocken"
+        }
+      ],
+      "instructions": [
+        "Verrühre Mehl, Hefe, warmes Wasser, feines Salz und 2 Esslöffel Öl zu einem klebrigen Teig. Lass ihn abgedeckt 90 Minuten gehen und falte ihn in der ersten Stunde zweimal über sich selbst.",
+        "Fette eine Backform (23 × 33 cm) mit 2 Esslöffeln Öl ein. Gib den Teig behutsam hinein und lass ihn abgedeckt 45 Minuten gehen, bis er schön aufgegangen ist.",
+        "Heize den Backofen auf 220 °C vor. Beträufle den Teig mit dem restlichen Öl, drücke mit geölten Fingern tiefe Mulden hinein und bestreue ihn mit Rosmarin und Salzflocken.",
+        "Backe die Focaccia 25 Minuten, bis sie goldbraun ist. Lass sie vor dem Anschneiden 15 Minuten auf einem Gitter abkühlen."
+      ],
+      "notes": "Plane zusätzlich 2 Stunden und 15 Minuten Gehzeit ein. Der weiche, feuchte Teig sorgt für eine luftige, großporige Krume."
+    },
+    {
+      "slug": "lemon-salmon",
+      "name": "Zitronenlachs mit knusprigen Kartoffeln",
+      "prep_time": 10,
+      "cook_time": 35,
+      "servings": 2,
+      "tags": [
+        "Abendessen",
+        "Fisch"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "500 g Drillinge",
+          "name": "Drillinge",
+          "amount": 500,
+          "unit": "g"
+        },
+        {
+          "raw": "2 EL Olivenöl",
+          "name": "Olivenöl",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "2 Lachsfilets",
+          "name": "Lachsfilets",
+          "amount": 2
+        },
+        {
+          "raw": "200 g grüner Spargel",
+          "name": "grüner Spargel",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "1 Zitrone",
+          "name": "Zitrone",
+          "amount": 1
+        },
+        {
+          "raw": "2 Knoblauchzehen, gehackt",
+          "name": "Knoblauch",
+          "amount": 2,
+          "unit": "Zehen",
+          "note": "gehackt"
+        },
+        {
+          "raw": "Frischer Dill zum Servieren",
+          "name": "frischer Dill"
+        }
+      ],
+      "instructions": [
+        "Heize den Backofen auf 210 °C vor. Halbiere die Kartoffeln und vermenge sie auf einem Backblech mit der Hälfte des Olivenöls, Salz und Pfeffer.",
+        "Röste sie 20 Minuten im Ofen und wende sie dann.",
+        "Leg Lachs und Spargel dazu. Reibe beides mit dem restlichen Öl, Knoblauch und Zitronenabrieb ein. Verteile Zitronenscheiben auf dem Blech.",
+        "Gare alles weitere 12–15 Minuten, bis der Lachs durchgegart und die Kartoffeln knusprig sind. Vollende das Gericht mit frischem Dill und Zitronensaft."
+      ],
+      "notes": "Verteile die Kartoffeln mit etwas Abstand, damit die Schnittflächen goldbraun und knusprig werden."
+    },
+    {
+      "slug": "coconut-chickpea-curry",
+      "name": "Kokos-Kichererbsen-Curry",
+      "prep_time": 10,
+      "cook_time": 25,
+      "servings": 4,
+      "tags": [
+        "Abendessen",
+        "Vegetarisch"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "1 EL Pflanzenöl",
+          "name": "Pflanzenöl",
+          "amount": 1,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 Zwiebel, gewürfelt",
+          "name": "Zwiebel",
+          "amount": 1,
+          "note": "gewürfelt"
+        },
+        {
+          "raw": "2 Knoblauchzehen, gehackt",
+          "name": "Knoblauch",
+          "amount": 2,
+          "unit": "Zehen",
+          "note": "gehackt"
+        },
+        {
+          "raw": "1 EL Ingwer, gerieben",
+          "name": "Ingwer",
+          "amount": 1,
+          "unit": "EL",
+          "note": "gerieben"
+        },
+        {
+          "raw": "2 EL Currypulver",
+          "name": "Currypulver",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "400 g gehackte Tomaten",
+          "name": "gehackte Tomaten",
+          "amount": 400,
+          "unit": "g"
+        },
+        {
+          "raw": "400 ml Kokosmilch",
+          "name": "Kokosmilch",
+          "amount": 400,
+          "unit": "ml"
+        },
+        {
+          "raw": "480 g Kichererbsen, gekocht und abgetropft",
+          "name": "Kichererbsen",
+          "amount": 480,
+          "unit": "g",
+          "note": "gekocht und abgetropft"
+        },
+        {
+          "raw": "100 g Spinat",
+          "name": "Spinat",
+          "amount": 100,
+          "unit": "g"
+        },
+        {
+          "raw": "250 g Basmatireis",
+          "name": "Basmatireis",
+          "amount": 250,
+          "unit": "g"
+        },
+        {
+          "raw": "Frischer Koriander zum Servieren",
+          "name": "frischer Koriander"
+        }
+      ],
+      "instructions": [
+        "Erhitze das Öl in einem Topf. Dünste die Zwiebel 5 Minuten weich, gib dann Knoblauch, Ingwer und Currypulver dazu und rühre 1 Minute um.",
+        "Gib Tomaten, Kokosmilch und Kichererbsen dazu. Lass alles 18 Minuten sanft köcheln und rühre gelegentlich um.",
+        "Koche in der Zwischenzeit den Reis nach Packungsanweisung.",
+        "Rühre den Spinat unter das Curry, bis er zusammengefallen ist. Schmecke ab und serviere das Curry mit Reis und Koriander."
+      ],
+      "notes": "Übriges Curry dickt über Nacht nach. Gib beim Aufwärmen einfach einen Schuss Wasser dazu."
+    },
+    {
+      "slug": "avocado-toast",
+      "name": "Avocado-Toast mit wachsweichen Eiern",
+      "prep_time": 10,
+      "cook_time": 7,
+      "servings": 2,
+      "tags": [
+        "Frühstück",
+        "Mittagessen",
+        "Vegetarisch"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "2 Eier",
+          "name": "Eier",
+          "amount": 2
+        },
+        {
+          "raw": "2 dicke Scheiben Sauerteigbrot",
+          "name": "Sauerteigbrot",
+          "amount": 2,
+          "unit": "Scheiben"
+        },
+        {
+          "raw": "1 reife Avocado",
+          "name": "Avocado",
+          "amount": 1
+        },
+        {
+          "raw": "1 EL Zitronensaft",
+          "name": "Zitronensaft",
+          "amount": 1,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 TL Olivenöl",
+          "name": "Olivenöl",
+          "amount": 1,
+          "unit": "TL"
+        },
+        {
+          "raw": "Eine Prise Chiliflocken",
+          "name": "Chiliflocken"
+        }
+      ],
+      "instructions": [
+        "Lass die Eier in sanft kochendes Wasser gleiten und gare sie 7 Minuten. Schrecke sie in kaltem Wasser ab und pelle sie.",
+        "Röste das Sauerteigbrot goldbraun.",
+        "Zerdrücke die Avocado mit Zitronensaft, Olivenöl und einer Prise Salz.",
+        "Streiche die Avocadocreme auf die Brote. Belege sie mit den halbierten Eiern und bestreue sie mit Chiliflocken und schwarzem Pfeffer."
+      ],
+      "notes": "Nimm eine Avocado, die auf leichten Druck nachgibt."
+    },
+    {
+      "slug": "crispy-mushroom-dumplings",
+      "name": "Knusprige Pilz-Dumplings",
+      "prep_time": 30,
+      "cook_time": 15,
+      "servings": 4,
+      "tags": [
+        "Mittagessen",
+        "Abendessen",
+        "Vegetarisch"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "300 g Pilze, fein gehackt",
+          "name": "Pilze",
+          "amount": 300,
+          "unit": "g",
+          "note": "fein gehackt"
+        },
+        {
+          "raw": "150 g Weißkohl, fein gehobelt",
+          "name": "Weißkohl",
+          "amount": 150,
+          "unit": "g",
+          "note": "fein gehobelt"
+        },
+        {
+          "raw": "2 Frühlingszwiebeln, in Ringe geschnitten",
+          "name": "Frühlingszwiebeln",
+          "amount": 2,
+          "note": "in Ringe geschnitten"
+        },
+        {
+          "raw": "2 TL Ingwer, gerieben",
+          "name": "Ingwer",
+          "amount": 2,
+          "unit": "TL",
+          "note": "gerieben"
+        },
+        {
+          "raw": "2 EL Sojasauce",
+          "name": "Sojasauce",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 TL Sesamöl",
+          "name": "Sesamöl",
+          "amount": 1,
+          "unit": "TL"
+        },
+        {
+          "raw": "24 runde Dumpling-Teigblätter",
+          "name": "Dumpling-Teigblätter",
+          "amount": 24
+        },
+        {
+          "raw": "2 EL Pflanzenöl",
+          "name": "Pflanzenöl",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "Chiliöl und Reisessig zum Servieren",
+          "name": "Chiliöl und Reisessig"
+        }
+      ],
+      "instructions": [
+        "Erhitze die Hälfte des Pflanzenöls in einer Pfanne. Brate Pilze und Kohl 7 Minuten, bis sie weich sind und die Flüssigkeit verdampft ist.",
+        "Rühre Frühlingszwiebeln, Ingwer, Sojasauce und Sesamöl unter. Lass die Füllung abkühlen.",
+        "Setz jeweils einen kleinen Löffel Füllung auf ein Teigblatt. Befeuchte die Ränder mit Wasser, klapp das Teigblatt zusammen und drück die Ränder fest an.",
+        "Erhitze das restliche Öl in einer beschichteten Pfanne. Brate die Dumplings 2 Minuten an, gieß 100 ml Wasser an und gare sie 5 Minuten zugedeckt. Nimm den Deckel ab und brate sie weiter, bis das Wasser verdampft ist und die Unterseiten knusprig sind. Serviere sie mit Chiliöl und Reisessig."
+      ],
+      "notes": "Deck die übrigen Teigblätter beim Formen mit einem leicht feuchten Tuch ab, damit sie nicht austrocknen."
+    },
+    {
+      "slug": "chocolate-raspberry-tart",
+      "name": "Zartbitter-Schokoladentarte mit Himbeeren",
+      "prep_time": 25,
+      "cook_time": 10,
+      "servings": 8,
+      "tags": [
+        "Dessert",
+        "Backen",
+        "Vegetarisch"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "200 g Schokoladenkekse",
+          "name": "Schokoladenkekse",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "80 g Butter, geschmolzen",
+          "name": "Butter",
+          "amount": 80,
+          "unit": "g",
+          "note": "geschmolzen"
+        },
+        {
+          "raw": "250 g Zartbitterschokolade",
+          "name": "Zartbitterschokolade",
+          "amount": 250,
+          "unit": "g"
+        },
+        {
+          "raw": "250 ml Schlagsahne",
+          "name": "Schlagsahne",
+          "amount": 250,
+          "unit": "ml"
+        },
+        {
+          "raw": "200 g Himbeeren",
+          "name": "Himbeeren",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "Eine Prise Meersalzflocken",
+          "name": "Meersalz"
+        }
+      ],
+      "instructions": [
+        "Heize den Backofen auf 180 °C vor. Zerbrösle die Kekse fein und vermische sie mit der geschmolzenen Butter.",
+        "Drücke die Masse auf Boden und Rand einer Tarteform mit Hebeboden (20 cm Ø). Backe den Boden 10 Minuten und lass ihn dann vollständig abkühlen.",
+        "Hacke die Schokolade und gib sie in eine Schüssel. Erhitze die Sahne, bis sie dampft, gieß sie über die Schokolade und lass alles 2 Minuten stehen. Rühre dann, bis die Masse glatt ist.",
+        "Gieß die Schokoladenmasse auf den abgekühlten Boden. Lass die Tarte mindestens 3 Stunden im Kühlschrank fest werden und belege sie dann mit Himbeeren und ein paar Meersalzflocken."
+      ],
+      "notes": "Plane mindestens 3 Stunden Kühlzeit ein. Nimm die Tarte 15 Minuten vor dem Anschneiden aus dem Kühlschrank."
+    },
+    {
+      "slug": "roasted-carrot-soup",
+      "name": "Geröstete Karotten-Ingwer-Suppe",
+      "prep_time": 10,
+      "cook_time": 35,
+      "servings": 4,
+      "tags": [
+        "Mittagessen",
+        "Abendessen",
+        "Vegetarisch"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "800 g Karotten, klein geschnitten",
+          "name": "Karotten",
+          "amount": 800,
+          "unit": "g",
+          "note": "klein geschnitten"
+        },
+        {
+          "raw": "2 EL Olivenöl",
+          "name": "Olivenöl",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 Zwiebel, gewürfelt",
+          "name": "Zwiebel",
+          "amount": 1,
+          "note": "gewürfelt"
+        },
+        {
+          "raw": "2 EL Ingwer, gerieben",
+          "name": "Ingwer",
+          "amount": 2,
+          "unit": "EL",
+          "note": "gerieben"
+        },
+        {
+          "raw": "750 ml Gemüsebrühe",
+          "name": "Gemüsebrühe",
+          "amount": 750,
+          "unit": "ml"
+        },
+        {
+          "raw": "150 ml Kokosmilch",
+          "name": "Kokosmilch",
+          "amount": 150,
+          "unit": "ml"
+        },
+        {
+          "raw": "2 EL Kürbiskerne",
+          "name": "Kürbiskerne",
+          "amount": 2,
+          "unit": "EL"
+        }
+      ],
+      "instructions": [
+        "Heize den Backofen auf 220 °C vor. Vermenge die Karotten mit der Hälfte des Öls und einer Prise Salz. Röste sie 25 Minuten und wende sie einmal.",
+        "Dünste in der Zwischenzeit die Zwiebel im restlichen Öl 8 Minuten weich. Gib den Ingwer dazu und brate ihn 1 Minute mit.",
+        "Gib die gerösteten Karotten und die Brühe in den Topf. Lass alles 10 Minuten köcheln und püriere die Suppe dann fein.",
+        "Rühre den Großteil der Kokosmilch ein und schmecke die Suppe ab. Zieh die restliche Kokosmilch beim Servieren in Schlieren durch die Suppe und bestreue sie mit gerösteten Kürbiskernen."
+      ],
+      "notes": "Durch das Rösten im Ofen bekommt die Suppe ein tieferes, süßeres Aroma."
+    },
+    {
+      "slug": "harissa-chicken",
+      "name": "Harissa-Hähnchen vom Blech",
+      "prep_time": 15,
+      "cook_time": 40,
+      "servings": 4,
+      "tags": [
+        "Abendessen",
+        "Hähnchen"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "8 Hähnchenoberschenkel mit Knochen",
+          "name": "Hähnchenoberschenkel",
+          "amount": 8,
+          "note": "mit Knochen"
+        },
+        {
+          "raw": "2 EL Harissapaste",
+          "name": "Harissapaste",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "2 EL Olivenöl",
+          "name": "Olivenöl",
+          "amount": 2,
+          "unit": "EL"
+        },
+        {
+          "raw": "1 Zitrone",
+          "name": "Zitrone",
+          "amount": 1
+        },
+        {
+          "raw": "2 rote Zwiebeln, in Spalten geschnitten",
+          "name": "rote Zwiebeln",
+          "amount": 2,
+          "note": "in Spalten geschnitten"
+        },
+        {
+          "raw": "2 rote Paprikaschoten, in Streifen geschnitten",
+          "name": "rote Paprikaschoten",
+          "amount": 2,
+          "note": "in Streifen geschnitten"
+        },
+        {
+          "raw": "400 g Kichererbsen, gekocht und abgetropft",
+          "name": "Kichererbsen",
+          "amount": 400,
+          "unit": "g",
+          "note": "gekocht und abgetropft"
+        },
+        {
+          "raw": "Frische Petersilie zum Servieren",
+          "name": "frische Petersilie"
+        }
+      ],
+      "instructions": [
+        "Heize den Backofen auf 210 °C vor. Verrühre Harissa, Öl, Zitronenabrieb und -saft mit einer Prise Salz.",
+        "Vermenge Hähnchen, Zwiebeln, Paprika und Kichererbsen auf einem großen Backblech mit der Marinade. Leg das Hähnchen mit der Hautseite nach oben.",
+        "Brate alles 35–40 Minuten im Ofen, bis die Haut knusprig ist und das Hähnchen an der dicksten Stelle, abseits des Knochens, 75 °C erreicht.",
+        "Lass es 5 Minuten ruhen, bestreue es dann mit gehackter Petersilie und löffle den Bratensaft über das Gemüse."
+      ],
+      "notes": "Nimm ein großes Blech, damit das Gemüse röstet statt dünstet. Harissa ist unterschiedlich scharf – dosiere nach Geschmack."
+    },
+    {
+      "slug": "chocolate-chunk-cookies",
+      "name": "Schoko-Cookies mit brauner Butter",
+      "prep_time": 20,
+      "cook_time": 12,
+      "servings": 12,
+      "tags": [
+        "Dessert",
+        "Backen",
+        "Vegetarisch"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "150 g Butter",
+          "name": "Butter",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "150 g heller brauner Zucker",
+          "name": "heller brauner Zucker",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "50 g feiner Zucker",
+          "name": "feiner Zucker",
+          "amount": 50,
+          "unit": "g"
+        },
+        {
+          "raw": "1 Ei",
+          "name": "Ei",
+          "amount": 1
+        },
+        {
+          "raw": "1 TL Vanilleextrakt",
+          "name": "Vanilleextrakt",
+          "amount": 1,
+          "unit": "TL"
+        },
+        {
+          "raw": "200 g Weizenmehl",
+          "name": "Weizenmehl",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "½ TL Natron",
+          "name": "Natron",
+          "amount": 0.5,
+          "unit": "TL"
+        },
+        {
+          "raw": "180 g Zartbitterschokolade, gehackt",
+          "name": "Zartbitterschokolade",
+          "amount": 180,
+          "unit": "g",
+          "note": "gehackt"
+        },
+        {
+          "raw": "Meersalzflocken zum Bestreuen",
+          "name": "Meersalzflocken"
+        }
+      ],
+      "instructions": [
+        "Zerlass die Butter in einem Topf und lass sie unter Schwenken weiterköcheln, bis die Milchbestandteile goldbraun werden. Gieß sie in eine Rührschüssel und lass sie 15 Minuten abkühlen.",
+        "Rühre beide Zuckersorten in die Butter und schlage dann Ei und Vanille unter. Heb Mehl, Natron, eine Prise Salz und die Schokolade unter.",
+        "Stell den Teig 1 Stunde kalt. Heize den Backofen auf 180 °C vor und lege zwei Backbleche mit Backpapier aus.",
+        "Forme 12 Kugeln und setze sie mit reichlich Abstand auf die Bleche. Backe die Cookies 10–12 Minuten, bis die Ränder goldbraun, die Mitten aber noch weich sind. Bestreue sie mit Salzflocken und lass sie auf den Blechen abkühlen."
+      ],
+      "notes": "Ergibt 12 große Cookies. Plane zusätzlich 15 Minuten zum Abkühlen der Butter und 1 Stunde Kühlzeit für den Teig ein."
+    }
+  ],
+  "shopping_list": [
+    {
+      "name": "Kirschtomaten",
+      "details": "400 g",
+      "category": "produce",
+      "canonical_name": "cherry tomato"
+    },
+    {
+      "name": "Orzo",
+      "details": "300 g",
+      "category": "pantry",
+      "canonical_name": "orzo"
+    },
+    {
+      "name": "Frisches Basilikum",
+      "details": "1 Bund",
+      "category": "produce",
+      "canonical_name": "basil"
+    },
+    {
+      "name": "Parmesan",
+      "details": "50 g",
+      "category": "dairy_eggs",
+      "canonical_name": "parmesan"
+    },
+    {
+      "name": "Blaubeeren",
+      "details": "150 g",
+      "category": "produce",
+      "canonical_name": "blueberry"
+    },
+    {
+      "name": "Ricotta",
+      "details": "200 g",
+      "category": "dairy_eggs",
+      "canonical_name": "ricotta"
+    },
+    {
+      "name": "Sauerteigbrot",
+      "details": "1 Laib",
+      "category": "bakery",
+      "canonical_name": "sourdough bread"
+    },
+    {
+      "name": "Zitronen",
+      "details": "3",
+      "category": "produce",
+      "canonical_name": "lemon"
+    }
+  ]
+}

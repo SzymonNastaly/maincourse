@@ -93,4 +93,7 @@ paste the text into Play Console → Main store listing → Manage translations.
 
 ## Screenshots
 
-Store screenshots are English only. See `screenshots.md` for adding a locale.
+`bin/screenshots capture --locale de-DE` (and `pl-PL`) captures the app in that
+language with translated showcase recipes, and `render --locale` uses the
+headlines in `screenshots/copy/<locale>.json`. Upload each locale's App Store
+panels to its own localization; see `screenshots.md`.

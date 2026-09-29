@@ -351,5 +351,15 @@
       "notes": "Makes 12 large cookies. Allow an extra 15 minutes for cooling the butter and 1 hour for chilling the dough.",
       "photo": "Intimate macro-style bakery photograph of three chunky brown-butter chocolate cookies loosely overlapping on a black wire cooling rack. One cookie broken into two with soft chewy crumb and large molten dark chocolate pockets, delicate flaky salt on cracked golden tops. Tight low-angle composition at cookie height, shallow depth of field but the broken centre crisply focused. Soft cool window backlight contrasts with warm golden cookie edges, blurred muted blue kitchen background, crumbs below the rack. No plates, no milk glass, no linen, no flowers. Cookies arranged across the centre with enough space for a horizontal app crop."
     }
+  ],
+  "shopping_list": [
+    {"name": "Cherry tomatoes", "details": "400 g", "category": "produce", "canonical_name": "cherry tomato"},
+    {"name": "Orzo", "details": "300 g", "category": "pantry", "canonical_name": "orzo"},
+    {"name": "Fresh basil", "details": "1 bunch", "category": "produce", "canonical_name": "basil"},
+    {"name": "Parmesan", "details": "50 g", "category": "dairy_eggs", "canonical_name": "parmesan"},
+    {"name": "Blueberries", "details": "150 g", "category": "produce", "canonical_name": "blueberry"},
+    {"name": "Ricotta", "details": "200 g", "category": "dairy_eggs", "canonical_name": "ricotta"},
+    {"name": "Sourdough", "details": "1 loaf", "category": "bakery", "canonical_name": "sourdough bread"},
+    {"name": "Lemons", "details": "3", "category": "produce", "canonical_name": "lemon"}
   ]
 }

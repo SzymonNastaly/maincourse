@@ -27,6 +27,42 @@ class ScreenshotsSeedTest < ActiveSupport::TestCase
       cookbook.recipes.flat_map { |r| r.tags.pluck(:name) }.uniq.intersection(%w[Breakfast Lunch Dinner Dessert Salads]).sort
   end
 
+  test "seeds a translated showcase with the same recipes and shopping list" do
+    english = Screenshots::Seed.call
+    german = Screenshots::Seed.call(locale: "de-DE")
+    cookbook = Cookbook.find(german.fetch(:cookbook_id))
+    recipe = Recipe.find(german.fetch(:recipes).fetch("tomato-orzo"))
+
+    assert_equal english.fetch(:recipes).keys, german.fetch(:recipes).keys
+    assert_equal 14, cookbook.recipes.count
+    assert_equal "Cremiger Orzo mit Tomaten und Basilikum", recipe.name
+    assert recipe.cover_image.attached?
+    assert_includes cookbook.recipes.flat_map { |r| r.tags.pluck(:name) }, "Frühstück"
+    item = cookbook.shopping_list_items.find_by!(name: "Kirschtomaten")
+    assert_equal [ "400 g", "produce", "cherry tomato" ], [ item.details, item.category, item.canonical_name ]
+    assert_raises(ArgumentError) { Screenshots::Seed.call(locale: "fr-FR") }
+  end
+
+  test "translated fixtures keep the English quantities, order and shopping aisles" do
+    english = Screenshots::Seed.fixture("en-US")
+    comparable = ->(fixture) do
+      {
+        recipes: fixture.fetch("recipes").map do |recipe|
+          recipe.slice("slug", "prep_time", "cook_time", "servings", "favorite").merge(
+            "tags" => recipe.fetch("tags").size,
+            "instructions" => recipe.fetch("instructions").size,
+            "amounts" => recipe.fetch("ingredients").map { |ingredient| ingredient["amount"] }
+          )
+        end,
+        shopping: fixture.fetch("shopping_list").map { |item| item.slice("category", "canonical_name") }
+      }
+    end
+
+    (Screenshots::Seed::LOCALES - [ "en-US" ]).each do |locale|
+      assert_equal comparable.(english), comparable.(Screenshots::Seed.fixture(locale)), locale
+    end
+  end
+
   test "refuses to seed production or ordinary development databases" do
     %w[production development].each do |environment|
       Rails.stub(:env, ActiveSupport::StringInquirer.new(environment)) do

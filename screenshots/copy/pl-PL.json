@@ -1,0 +1,7 @@
+{
+  "recipe-library": {"headline": "Wszystkie przepisy w jednym miejscu"},
+  "recipe-detail": {"headline": "Składniki i kroki w jednym widoku"},
+  "shopping-review": {"headline": "Wybierz składniki na listę zakupów"},
+  "shopping-list": {"headline": "Odhaczaj produkty z listy zakupów"},
+  "recipe-import": {"headline": "Zapisuj przepisy z linków i zdjęć"}
+}

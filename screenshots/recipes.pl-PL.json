@@ -1,0 +1,1012 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "slug": "tomato-orzo",
+      "name": "Kremowe orzo z pomidorami i bazylią",
+      "prep_time": 10,
+      "cook_time": 20,
+      "servings": 4,
+      "tags": [
+        "Lunch",
+        "Obiad",
+        "Wegetariańskie",
+        "Szybkie i łatwe"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "2 łyżki oliwy z oliwek",
+          "name": "oliwa z oliwek",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "3 ząbki czosnku, posiekane",
+          "name": "czosnek",
+          "amount": 3,
+          "unit": "ząbki",
+          "note": "posiekane"
+        },
+        {
+          "raw": "400 g pomidorków koktajlowych",
+          "name": "pomidorki koktajlowe",
+          "amount": 400,
+          "unit": "g"
+        },
+        {
+          "raw": "300 g makaronu orzo",
+          "name": "makaron orzo",
+          "amount": 300,
+          "unit": "g"
+        },
+        {
+          "raw": "750 ml bulionu warzywnego",
+          "name": "bulion warzywny",
+          "amount": 750,
+          "unit": "ml"
+        },
+        {
+          "raw": "100 ml śmietanki",
+          "name": "śmietanka",
+          "amount": 100,
+          "unit": "ml"
+        },
+        {
+          "raw": "50 g parmezanu, startego",
+          "name": "parmezan",
+          "amount": 50,
+          "unit": "g",
+          "note": "starty"
+        },
+        {
+          "raw": "Garść świeżej bazylii",
+          "name": "świeża bazylia"
+        }
+      ],
+      "instructions": [
+        "Na głębokiej patelni rozgrzać oliwę. Dodać czosnek i smażyć na małym ogniu przez 1 minutę.",
+        "Dodać pomidorki i szczyptę soli. Smażyć 6–8 minut, aż zmiękną, a następnie rozgnieść kilka z nich łyżką.",
+        "Wmieszać orzo i bulion. Gotować na wolnym ogniu 10–12 minut, często mieszając, aż makaron zmięknie. W razie potrzeby dolać odrobinę wody.",
+        "Wmieszać śmietankę i parmezan. Na koniec dodać porwaną bazylię i świeżo zmielony czarny pieprz."
+      ],
+      "notes": "Lunch z jednej patelni, który równie dobrze sprawdzi się na obiad. W wersji wegetariańskiej użyć twardego sera bez podpuszczki zwierzęcej."
+    },
+    {
+      "slug": "crispy-fish-tacos",
+      "name": "Chrupiące tacos z rybą",
+      "prep_time": 20,
+      "cook_time": 15,
+      "servings": 4,
+      "tags": [
+        "Lunch",
+        "Obiad",
+        "Ryby"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "500 g filetów z dorsza",
+          "name": "filety z dorsza",
+          "amount": 500,
+          "unit": "g"
+        },
+        {
+          "raw": "60 g mąki pszennej",
+          "name": "mąka pszenna",
+          "amount": 60,
+          "unit": "g"
+        },
+        {
+          "raw": "2 jajka, roztrzepane",
+          "name": "jajka",
+          "amount": 2,
+          "note": "roztrzepane"
+        },
+        {
+          "raw": "100 g bułki tartej panko",
+          "name": "bułka tarta panko",
+          "amount": 100,
+          "unit": "g"
+        },
+        {
+          "raw": "4 łyżki oleju roślinnego",
+          "name": "olej roślinny",
+          "amount": 4,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "8 małych tortilli kukurydzianych",
+          "name": "tortille kukurydziane",
+          "amount": 8
+        },
+        {
+          "raw": "200 g czerwonej kapusty, poszatkowanej",
+          "name": "czerwona kapusta",
+          "amount": 200,
+          "unit": "g",
+          "note": "poszatkowana"
+        },
+        {
+          "raw": "100 g jogurtu greckiego",
+          "name": "jogurt grecki",
+          "amount": 100,
+          "unit": "g"
+        },
+        {
+          "raw": "2 limonki",
+          "name": "limonki",
+          "amount": 2
+        },
+        {
+          "raw": "Świeża kolendra do podania",
+          "name": "świeża kolendra"
+        }
+      ],
+      "instructions": [
+        "Dorsza pokroić w grube paski i osuszyć ręcznikiem papierowym. Doprawić solą i pieprzem, a następnie obtoczyć w mące, roztrzepanym jajku i panko.",
+        "Na patelni rozgrzać olej. Smażyć rybę partiami po 3–4 minuty z każdej strony, aż będzie złocista i dobrze usmażona w środku.",
+        "Kapustę wymieszać z sokiem z jednej limonki i szczyptą soli. Do jogurtu dodać odrobinę startej skórki z limonki.",
+        "Tortille podgrzać na suchej patelni. Nałożyć kapustę, chrupiącą rybę, jogurt i kolendrę. Podawać z cząstkami pozostałej limonki."
+      ],
+      "notes": "Tortille podgrzać tuż przed nałożeniem farszu, żeby pozostały miękkie i łatwo się składały."
+    },
+    {
+      "slug": "blueberry-pancakes",
+      "name": "Pancakes z ricottą i borówkami",
+      "prep_time": 10,
+      "cook_time": 15,
+      "servings": 3,
+      "tags": [
+        "Śniadanie",
+        "Wegetariańskie"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "150 g mąki pszennej",
+          "name": "mąka pszenna",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "2 łyżeczki proszku do pieczenia",
+          "name": "proszek do pieczenia",
+          "amount": 2,
+          "unit": "łyżeczki"
+        },
+        {
+          "raw": "2 jajka",
+          "name": "jajka",
+          "amount": 2
+        },
+        {
+          "raw": "200 g ricotty",
+          "name": "ricotta",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "120 ml mleka",
+          "name": "mleko",
+          "amount": 120,
+          "unit": "ml"
+        },
+        {
+          "raw": "150 g borówek amerykańskich",
+          "name": "borówki amerykańskie",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "20 g masła",
+          "name": "masło",
+          "amount": 20,
+          "unit": "g"
+        },
+        {
+          "raw": "Syrop klonowy do podania",
+          "name": "syrop klonowy"
+        }
+      ],
+      "instructions": [
+        "W misce wymieszać mąkę, proszek do pieczenia i szczyptę soli.",
+        "Jajka, ricottę i mleko wymieszać trzepaczką. Delikatnie połączyć z suchymi składnikami, a następnie wmieszać połowę borówek.",
+        "Na patelni z powłoką nieprzywierającą roztopić odrobinę masła na średnio-małym ogniu. Nakładać ciasto małą chochlą i smażyć placuszki 2–3 minuty z każdej strony, aż będą złociste i ścięte w środku.",
+        "Podawać w niewielkich stosikach z pozostałymi borówkami i syropem klonowym."
+      ],
+      "notes": "Ciasto może mieć drobne grudki – dzięki temu pancakes wyjdą wyjątkowo puszyste."
+    },
+    {
+      "slug": "sesame-chilli-noodles",
+      "name": "Sezamowy makaron z chili",
+      "prep_time": 10,
+      "cook_time": 10,
+      "servings": 2,
+      "tags": [
+        "Lunch",
+        "Obiad",
+        "Wegetariańskie",
+        "Szybkie i łatwe"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "200 g makaronu pszennego",
+          "name": "makaron pszenny",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "2 łyżki tahini",
+          "name": "tahini",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "2 łyżki sosu sojowego",
+          "name": "sos sojowy",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "1 łyżka octu ryżowego",
+          "name": "ocet ryżowy",
+          "amount": 1,
+          "unit": "łyżka"
+        },
+        {
+          "raw": "1 łyżka oleju chili",
+          "name": "olej chili",
+          "amount": 1,
+          "unit": "łyżka"
+        },
+        {
+          "raw": "1 łyżeczka miodu",
+          "name": "miód",
+          "amount": 1,
+          "unit": "łyżeczka"
+        },
+        {
+          "raw": "1 ogórek, pokrojony w cienkie słupki",
+          "name": "ogórek",
+          "amount": 1,
+          "note": "pokrojony w cienkie słupki"
+        },
+        {
+          "raw": "2 dymki, pokrojone w krążki",
+          "name": "dymki",
+          "amount": 2,
+          "note": "pokrojone w krążki"
+        },
+        {
+          "raw": "1 łyżka sezamu",
+          "name": "sezam",
+          "amount": 1,
+          "unit": "łyżka"
+        }
+      ],
+      "instructions": [
+        "Makaron ugotować zgodnie z instrukcją na opakowaniu. Przed odcedzeniem odlać kubek wody z gotowania.",
+        "Tahini, sos sojowy, ocet ryżowy, olej chili i miód wymieszać trzepaczką z 3 łyżkami ciepłej wody z gotowania makaronu na gładki sos.",
+        "Makaron wymieszać z sosem, w razie potrzeby rozrzedzając go odrobiną wody z gotowania.",
+        "Rozłożyć do misek, dodać ogórek i dymkę, a na koniec posypać sezamem."
+      ],
+      "notes": "W łagodniejszej wersji dodać na początek mniej oleju chili."
+    },
+    {
+      "slug": "peach-burrata-salad",
+      "name": "Sałatka z brzoskwiniami i burratą",
+      "prep_time": 15,
+      "cook_time": 0,
+      "servings": 2,
+      "tags": [
+        "Sałatki",
+        "Lunch",
+        "Wegetariańskie"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "2 dojrzałe brzoskwinie",
+          "name": "brzoskwinie",
+          "amount": 2
+        },
+        {
+          "raw": "250 g pomidorków koktajlowych",
+          "name": "pomidorki koktajlowe",
+          "amount": 250,
+          "unit": "g"
+        },
+        {
+          "raw": "150 g burraty",
+          "name": "burrata",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "60 g rukoli",
+          "name": "rukola",
+          "amount": 60,
+          "unit": "g"
+        },
+        {
+          "raw": "2 łyżki oliwy z oliwek extra virgin",
+          "name": "oliwa z oliwek",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "1 łyżka soku z cytryny",
+          "name": "sok z cytryny",
+          "amount": 1,
+          "unit": "łyżka"
+        },
+        {
+          "raw": "Świeże listki bazylii",
+          "name": "świeża bazylia"
+        }
+      ],
+      "instructions": [
+        "Brzoskwinie pokroić w cząstki, a pomidorki przekroić na pół.",
+        "Rukolę rozłożyć na półmisku. Na liściach ułożyć brzoskwinie i pomidorki.",
+        "Burratę porwać na kawałki bezpośrednio nad sałatką. Skropić oliwą i sokiem z cytryny.",
+        "Na koniec dodać bazylię, posypać płatkami soli i czarnym pieprzem. Podawać od razu."
+      ],
+      "notes": "Najlepsza z aromatycznymi, idealnie dojrzałymi brzoskwiniami."
+    },
+    {
+      "slug": "rosemary-focaccia",
+      "name": "Focaccia z rozmarynem i solą morską",
+      "prep_time": 20,
+      "cook_time": 25,
+      "servings": 8,
+      "tags": [
+        "Wypieki",
+        "Wegetariańskie"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "500 g mąki chlebowej",
+          "name": "mąka chlebowa",
+          "amount": 500,
+          "unit": "g"
+        },
+        {
+          "raw": "7 g drożdży instant",
+          "name": "drożdże instant",
+          "amount": 7,
+          "unit": "g"
+        },
+        {
+          "raw": "400 ml ciepłej wody",
+          "name": "woda",
+          "amount": 400,
+          "unit": "ml"
+        },
+        {
+          "raw": "10 g drobnej soli morskiej",
+          "name": "drobna sól morska",
+          "amount": 10,
+          "unit": "g"
+        },
+        {
+          "raw": "5 łyżek oliwy z oliwek",
+          "name": "oliwa z oliwek",
+          "amount": 5,
+          "unit": "łyżek"
+        },
+        {
+          "raw": "3 gałązki rozmarynu",
+          "name": "rozmaryn",
+          "amount": 3,
+          "unit": "gałązki"
+        },
+        {
+          "raw": "Płatki soli morskiej do posypania",
+          "name": "płatki soli morskiej"
+        }
+      ],
+      "instructions": [
+        "Mąkę, drożdże, ciepłą wodę, drobną sól i 2 łyżki oliwy wymieszać na lepkie ciasto. Przykryć i odstawić na 90 minut, w ciągu pierwszej godziny dwukrotnie składając ciasto.",
+        "Formę o wymiarach 23 × 33 cm wysmarować 2 łyżkami oliwy. Delikatnie przełożyć do niej ciasto i odstawić pod przykryciem na 45 minut, aż ładnie wyrośnie.",
+        "Piekarnik nagrzać do 220°C. Ciasto skropić pozostałą oliwą, naoliwionymi palcami zrobić w nim głębokie wgłębienia, a następnie posypać rozmarynem i płatkami soli.",
+        "Piec 25 minut, aż focaccia się zezłoci. Przed pokrojeniem studzić 15 minut na kratce."
+      ],
+      "notes": "Na wyrastanie trzeba doliczyć dodatkowe 2 godziny i 15 minut. Dzięki wilgotnemu ciastu miąższ wychodzi lekki i pełen dużych dziur."
+    },
+    {
+      "slug": "lemon-salmon",
+      "name": "Łosoś z cytryną i chrupiącymi ziemniakami",
+      "prep_time": 10,
+      "cook_time": 35,
+      "servings": 2,
+      "tags": [
+        "Obiad",
+        "Ryby"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "500 g młodych ziemniaków",
+          "name": "młode ziemniaki",
+          "amount": 500,
+          "unit": "g"
+        },
+        {
+          "raw": "2 łyżki oliwy z oliwek",
+          "name": "oliwa z oliwek",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "2 filety z łososia",
+          "name": "filety z łososia",
+          "amount": 2
+        },
+        {
+          "raw": "200 g szparagów",
+          "name": "szparagi",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "1 cytryna",
+          "name": "cytryna",
+          "amount": 1
+        },
+        {
+          "raw": "2 ząbki czosnku, posiekane",
+          "name": "czosnek",
+          "amount": 2,
+          "unit": "ząbki",
+          "note": "posiekane"
+        },
+        {
+          "raw": "Świeży koperek do podania",
+          "name": "świeży koperek"
+        }
+      ],
+      "instructions": [
+        "Piekarnik nagrzać do 210°C. Ziemniaki przekroić na pół i wymieszać na blasze z połową oliwy, solą i pieprzem.",
+        "Piec 20 minut, a następnie przewrócić ziemniaki.",
+        "Dodać łososia i szparagi. Natrzeć je pozostałą oliwą, czosnkiem i startą skórką z cytryny. Rozłożyć na blasze plasterki cytryny.",
+        "Piec jeszcze 12–15 minut, aż łosoś będzie upieczony, a ziemniaki chrupiące. Na koniec posypać świeżym koperkiem i skropić sokiem z cytryny."
+      ],
+      "notes": "Ziemniaki rozłożyć luźno, żeby przekrojone strony zrobiły się złociste i chrupiące."
+    },
+    {
+      "slug": "coconut-chickpea-curry",
+      "name": "Kokosowe curry z ciecierzycą",
+      "prep_time": 10,
+      "cook_time": 25,
+      "servings": 4,
+      "tags": [
+        "Obiad",
+        "Wegetariańskie"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "1 łyżka oleju roślinnego",
+          "name": "olej roślinny",
+          "amount": 1,
+          "unit": "łyżka"
+        },
+        {
+          "raw": "1 cebula, pokrojona w kostkę",
+          "name": "cebula",
+          "amount": 1,
+          "note": "pokrojona w kostkę"
+        },
+        {
+          "raw": "2 ząbki czosnku, posiekane",
+          "name": "czosnek",
+          "amount": 2,
+          "unit": "ząbki",
+          "note": "posiekane"
+        },
+        {
+          "raw": "1 łyżka startego imbiru",
+          "name": "imbir",
+          "amount": 1,
+          "unit": "łyżka",
+          "note": "starty"
+        },
+        {
+          "raw": "2 łyżki curry w proszku",
+          "name": "curry w proszku",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "400 g krojonych pomidorów",
+          "name": "krojone pomidory",
+          "amount": 400,
+          "unit": "g"
+        },
+        {
+          "raw": "400 ml mleka kokosowego",
+          "name": "mleko kokosowe",
+          "amount": 400,
+          "unit": "ml"
+        },
+        {
+          "raw": "480 g ugotowanej ciecierzycy, odsączonej",
+          "name": "ciecierzyca",
+          "amount": 480,
+          "unit": "g",
+          "note": "ugotowana i odsączona"
+        },
+        {
+          "raw": "100 g szpinaku",
+          "name": "szpinak",
+          "amount": 100,
+          "unit": "g"
+        },
+        {
+          "raw": "250 g ryżu basmati",
+          "name": "ryż basmati",
+          "amount": 250,
+          "unit": "g"
+        },
+        {
+          "raw": "Świeża kolendra do podania",
+          "name": "świeża kolendra"
+        }
+      ],
+      "instructions": [
+        "W rondlu rozgrzać olej. Cebulę zeszklić przez 5 minut, następnie dodać czosnek, imbir oraz curry i smażyć 1 minutę, cały czas mieszając.",
+        "Dodać pomidory, mleko kokosowe i ciecierzycę. Gotować na wolnym ogniu 18 minut, od czasu do czasu mieszając.",
+        "W tym czasie ugotować ryż zgodnie z instrukcją na opakowaniu.",
+        "Do curry wmieszać szpinak i podgrzewać, aż zwiędnie. Doprawić do smaku i podawać z ryżem oraz kolendrą."
+      ],
+      "notes": "Curry gęstnieje przez noc – przy odgrzewaniu wystarczy dolać odrobinę wody."
+    },
+    {
+      "slug": "avocado-toast",
+      "name": "Tost z awokado i jajkiem na półmiękko",
+      "prep_time": 10,
+      "cook_time": 7,
+      "servings": 2,
+      "tags": [
+        "Śniadanie",
+        "Lunch",
+        "Wegetariańskie"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "2 jajka",
+          "name": "jajka",
+          "amount": 2
+        },
+        {
+          "raw": "2 grube kromki chleba na zakwasie",
+          "name": "chleb na zakwasie",
+          "amount": 2,
+          "unit": "kromki"
+        },
+        {
+          "raw": "1 dojrzałe awokado",
+          "name": "awokado",
+          "amount": 1
+        },
+        {
+          "raw": "1 łyżka soku z cytryny",
+          "name": "sok z cytryny",
+          "amount": 1,
+          "unit": "łyżka"
+        },
+        {
+          "raw": "1 łyżeczka oliwy z oliwek",
+          "name": "oliwa z oliwek",
+          "amount": 1,
+          "unit": "łyżeczka"
+        },
+        {
+          "raw": "Szczypta płatków chili",
+          "name": "płatki chili"
+        }
+      ],
+      "instructions": [
+        "Jajka włożyć do delikatnie wrzącej wody i gotować 7 minut. Przełożyć do zimnej wody, a po ostudzeniu obrać.",
+        "Kromki chleba opiec w tosterze na złoto.",
+        "Awokado rozgnieść widelcem z sokiem z cytryny, oliwą i szczyptą soli.",
+        "Rozsmarować na tostach. Na wierzchu ułożyć przekrojone na pół jajka i posypać płatkami chili oraz czarnym pieprzem."
+      ],
+      "notes": "Wybrać awokado, które lekko ugina się pod naciskiem palca."
+    },
+    {
+      "slug": "crispy-mushroom-dumplings",
+      "name": "Chrupiące pierożki z grzybami",
+      "prep_time": 30,
+      "cook_time": 15,
+      "servings": 4,
+      "tags": [
+        "Lunch",
+        "Obiad",
+        "Wegetariańskie"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "300 g grzybów, drobno posiekanych",
+          "name": "grzyby",
+          "amount": 300,
+          "unit": "g",
+          "note": "drobno posiekane"
+        },
+        {
+          "raw": "150 g kapusty, drobno poszatkowanej",
+          "name": "kapusta",
+          "amount": 150,
+          "unit": "g",
+          "note": "drobno poszatkowana"
+        },
+        {
+          "raw": "2 dymki, pokrojone w krążki",
+          "name": "dymki",
+          "amount": 2,
+          "note": "pokrojone w krążki"
+        },
+        {
+          "raw": "2 łyżeczki startego imbiru",
+          "name": "imbir",
+          "amount": 2,
+          "unit": "łyżeczki",
+          "note": "starty"
+        },
+        {
+          "raw": "2 łyżki sosu sojowego",
+          "name": "sos sojowy",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "1 łyżeczka oleju sezamowego",
+          "name": "olej sezamowy",
+          "amount": 1,
+          "unit": "łyżeczka"
+        },
+        {
+          "raw": "24 okrągłe płaty ciasta na pierożki",
+          "name": "płaty ciasta na pierożki",
+          "amount": 24
+        },
+        {
+          "raw": "2 łyżki oleju roślinnego",
+          "name": "olej roślinny",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "Olej chili i ocet ryżowy do podania",
+          "name": "olej chili i ocet ryżowy"
+        }
+      ],
+      "instructions": [
+        "Na patelni rozgrzać połowę oleju roślinnego. Smażyć grzyby i kapustę przez 7 minut, aż zmiękną, a wydzielony sok odparuje.",
+        "Wmieszać dymkę, imbir, sos sojowy i olej sezamowy. Odstawić farsz do ostygnięcia.",
+        "Na środek każdego płata nałożyć łyżeczkę farszu. Brzegi zwilżyć wodą, złożyć płat na pół i mocno skleić.",
+        "Na patelni z powłoką nieprzywierającą rozgrzać pozostały olej. Smażyć pierożki 2 minuty, wlać 100 ml wody i przykryć na 5 minut. Zdjąć pokrywkę i smażyć, aż woda odparuje, a spody będą chrupiące. Podawać z olejem chili i octem ryżowym."
+      ],
+      "notes": "Podczas lepienia pierożków trzymać niewykorzystane płaty pod lekko wilgotną ściereczką."
+    },
+    {
+      "slug": "chocolate-raspberry-tart",
+      "name": "Tarta z gorzką czekoladą i malinami",
+      "prep_time": 25,
+      "cook_time": 10,
+      "servings": 8,
+      "tags": [
+        "Desery",
+        "Wypieki",
+        "Wegetariańskie"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "200 g herbatników czekoladowych",
+          "name": "herbatniki czekoladowe",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "80 g masła, roztopionego",
+          "name": "masło",
+          "amount": 80,
+          "unit": "g",
+          "note": "roztopione"
+        },
+        {
+          "raw": "250 g gorzkiej czekolady",
+          "name": "gorzka czekolada",
+          "amount": 250,
+          "unit": "g"
+        },
+        {
+          "raw": "250 ml śmietanki 36%",
+          "name": "śmietanka 36%",
+          "amount": 250,
+          "unit": "ml"
+        },
+        {
+          "raw": "200 g malin",
+          "name": "maliny",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "Szczypta płatków soli morskiej",
+          "name": "sól morska"
+        }
+      ],
+      "instructions": [
+        "Piekarnik nagrzać do 180°C. Herbatniki drobno pokruszyć i wymieszać z roztopionym masłem.",
+        "Masę wcisnąć w dno i boki formy do tarty z wyjmowanym dnem o średnicy 20 cm. Piec 10 minut, a następnie całkowicie ostudzić.",
+        "Czekoladę posiekać i przełożyć do miski. Śmietankę podgrzać, aż zacznie parować, zalać nią czekoladę i odstawić na 2 minuty. Mieszać do uzyskania gładkiej masy.",
+        "Wylać na ostudzony spód. Schłodzić w lodówce co najmniej 3 godziny, aż masa stężeje, a następnie udekorować malinami i posypać odrobiną płatków soli morskiej."
+      ],
+      "notes": "Tarta potrzebuje co najmniej 3 godzin w lodówce. Wyjąć ją 15 minut przed krojeniem."
+    },
+    {
+      "slug": "roasted-carrot-soup",
+      "name": "Zupa z pieczonej marchewki z imbirem",
+      "prep_time": 10,
+      "cook_time": 35,
+      "servings": 4,
+      "tags": [
+        "Lunch",
+        "Obiad",
+        "Wegetariańskie"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "800 g marchewki, pokrojonej w kawałki",
+          "name": "marchewka",
+          "amount": 800,
+          "unit": "g",
+          "note": "pokrojona w kawałki"
+        },
+        {
+          "raw": "2 łyżki oliwy z oliwek",
+          "name": "oliwa z oliwek",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "1 cebula, pokrojona w kostkę",
+          "name": "cebula",
+          "amount": 1,
+          "note": "pokrojona w kostkę"
+        },
+        {
+          "raw": "2 łyżki startego imbiru",
+          "name": "imbir",
+          "amount": 2,
+          "unit": "łyżki",
+          "note": "starty"
+        },
+        {
+          "raw": "750 ml bulionu warzywnego",
+          "name": "bulion warzywny",
+          "amount": 750,
+          "unit": "ml"
+        },
+        {
+          "raw": "150 ml mleka kokosowego",
+          "name": "mleko kokosowe",
+          "amount": 150,
+          "unit": "ml"
+        },
+        {
+          "raw": "2 łyżki pestek dyni",
+          "name": "pestki dyni",
+          "amount": 2,
+          "unit": "łyżki"
+        }
+      ],
+      "instructions": [
+        "Piekarnik nagrzać do 220°C. Marchewkę wymieszać z połową oliwy i szczyptą soli. Piec 25 minut, raz przewracając.",
+        "W tym czasie w rondlu zeszklić cebulę na pozostałej oliwie przez 8 minut. Dodać imbir i smażyć 1 minutę.",
+        "Do rondla dodać upieczoną marchewkę i bulion. Gotować na wolnym ogniu 10 minut, a następnie zmiksować na gładki krem.",
+        "Wmieszać większość mleka kokosowego i doprawić. Przed podaniem polać zupę resztą mleka kokosowego i posypać uprażonymi pestkami dyni."
+      ],
+      "notes": "Dzięki upieczeniu marchewki zupa ma głębszy, słodszy smak."
+    },
+    {
+      "slug": "harissa-chicken",
+      "name": "Kurczak z harissą z blachy",
+      "prep_time": 15,
+      "cook_time": 40,
+      "servings": 4,
+      "tags": [
+        "Obiad",
+        "Kurczak"
+      ],
+      "favorite": true,
+      "ingredients": [
+        {
+          "raw": "8 udek z kurczaka z kością",
+          "name": "udka z kurczaka",
+          "amount": 8,
+          "note": "z kością"
+        },
+        {
+          "raw": "2 łyżki pasty harissa",
+          "name": "pasta harissa",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "2 łyżki oliwy z oliwek",
+          "name": "oliwa z oliwek",
+          "amount": 2,
+          "unit": "łyżki"
+        },
+        {
+          "raw": "1 cytryna",
+          "name": "cytryna",
+          "amount": 1
+        },
+        {
+          "raw": "2 czerwone cebule, pokrojone w cząstki",
+          "name": "czerwone cebule",
+          "amount": 2,
+          "note": "pokrojone w cząstki"
+        },
+        {
+          "raw": "2 czerwone papryki, pokrojone w paski",
+          "name": "czerwone papryki",
+          "amount": 2,
+          "note": "pokrojone w paski"
+        },
+        {
+          "raw": "400 g ugotowanej ciecierzycy, odsączonej",
+          "name": "ciecierzyca",
+          "amount": 400,
+          "unit": "g",
+          "note": "ugotowana i odsączona"
+        },
+        {
+          "raw": "Świeża natka pietruszki do podania",
+          "name": "świeża natka pietruszki"
+        }
+      ],
+      "instructions": [
+        "Piekarnik nagrzać do 210°C. Harissę wymieszać z oliwą, startą skórką i sokiem z cytryny oraz szczyptą soli.",
+        "W dużej brytfannie wymieszać kurczaka, cebulę, paprykę i ciecierzycę z przygotowaną marynatą. Udka ułożyć skórą do góry.",
+        "Piec 35–40 minut, aż skórka będzie chrupiąca, a mięso w najgrubszym miejscu, z dala od kości, osiągnie 75°C.",
+        "Odstawić na 5 minut, a następnie posypać posiekaną natką i polać warzywa sosem z brytfanny."
+      ],
+      "notes": "Użyć dużej brytfanny, żeby warzywa się piekły, a nie dusiły. Pasty harissa różnią się ostrością, więc ilość warto dopasować do własnego smaku."
+    },
+    {
+      "slug": "chocolate-chunk-cookies",
+      "name": "Ciasteczka czekoladowe na brązowym maśle",
+      "prep_time": 20,
+      "cook_time": 12,
+      "servings": 12,
+      "tags": [
+        "Desery",
+        "Wypieki",
+        "Wegetariańskie"
+      ],
+      "favorite": false,
+      "ingredients": [
+        {
+          "raw": "150 g masła",
+          "name": "masło",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "150 g jasnego brązowego cukru",
+          "name": "jasny brązowy cukier",
+          "amount": 150,
+          "unit": "g"
+        },
+        {
+          "raw": "50 g drobnego cukru",
+          "name": "drobny cukier",
+          "amount": 50,
+          "unit": "g"
+        },
+        {
+          "raw": "1 jajko",
+          "name": "jajko",
+          "amount": 1
+        },
+        {
+          "raw": "1 łyżeczka ekstraktu waniliowego",
+          "name": "ekstrakt waniliowy",
+          "amount": 1,
+          "unit": "łyżeczka"
+        },
+        {
+          "raw": "200 g mąki pszennej",
+          "name": "mąka pszenna",
+          "amount": 200,
+          "unit": "g"
+        },
+        {
+          "raw": "1/2 łyżeczki sody oczyszczonej",
+          "name": "soda oczyszczona",
+          "amount": 0.5,
+          "unit": "łyżeczki"
+        },
+        {
+          "raw": "180 g gorzkiej czekolady, posiekanej",
+          "name": "gorzka czekolada",
+          "amount": 180,
+          "unit": "g",
+          "note": "posiekana"
+        },
+        {
+          "raw": "Płatki soli morskiej do posypania",
+          "name": "płatki soli morskiej"
+        }
+      ],
+      "instructions": [
+        "Masło roztopić w rondlu i podgrzewać, poruszając naczyniem, aż osad na dnie nabierze złotobrązowego koloru. Przelać do miski i studzić 15 minut.",
+        "Do masła wmieszać oba rodzaje cukru, po czym dodać jajko oraz ekstrakt waniliowy i energicznie wymieszać. Delikatnie wmieszać mąkę, sodę, szczyptę soli i czekoladę.",
+        "Ciasto schłodzić w lodówce przez 1 godzinę. Piekarnik nagrzać do 180°C, a dwie blachy wyłożyć papierem do pieczenia.",
+        "Uformować 12 kul i ułożyć je na blachach w dużych odstępach. Piec 10–12 minut, aż brzegi się zezłocą, a środek pozostanie miękki. Posypać płatkami soli i zostawić do ostygnięcia na blachach."
+      ],
+      "notes": "Z tej porcji wychodzi 12 dużych ciasteczek. Trzeba doliczyć dodatkowe 15 minut na przestudzenie masła i 1 godzinę na schłodzenie ciasta."
+    }
+  ],
+  "shopping_list": [
+    {
+      "name": "Pomidorki koktajlowe",
+      "details": "400 g",
+      "category": "produce",
+      "canonical_name": "cherry tomato"
+    },
+    {
+      "name": "Orzo",
+      "details": "300 g",
+      "category": "pantry",
+      "canonical_name": "orzo"
+    },
+    {
+      "name": "Świeża bazylia",
+      "details": "1 pęczek",
+      "category": "produce",
+      "canonical_name": "basil"
+    },
+    {
+      "name": "Parmezan",
+      "details": "50 g",
+      "category": "dairy_eggs",
+      "canonical_name": "parmesan"
+    },
+    {
+      "name": "Borówki",
+      "details": "150 g",
+      "category": "produce",
+      "canonical_name": "blueberry"
+    },
+    {
+      "name": "Ricotta",
+      "details": "200 g",
+      "category": "dairy_eggs",
+      "canonical_name": "ricotta"
+    },
+    {
+      "name": "Chleb na zakwasie",
+      "details": "1 bochenek",
+      "category": "bakery",
+      "canonical_name": "sourdough bread"
+    },
+    {
+      "name": "Cytryny",
+      "details": "3",
+      "category": "produce",
+      "canonical_name": "lemon"
+    }
+  ]
+}
