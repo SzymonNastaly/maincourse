@@ -65,7 +65,7 @@ xcodegen generate
 resolve_simulator() {
   local requested_id="$1"
 
-  xcodebuildmcp --style minimal simulator list | ruby -e '
+  xcodebuildmcp --style minimal simulator list | ruby -E UTF-8:UTF-8 -e '
     requested_id = ARGV[0]
     devices = []
     runtime = nil

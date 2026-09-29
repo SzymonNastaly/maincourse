@@ -3,8 +3,13 @@
 The iOS app uses Apple's String Catalogs with English (`en`) as the development
 language. Language selection belongs to iOS: follow the system preference and
 the built-in per-app language setting. There is no in-app language override.
-The language setting becomes useful when a second supported language ships;
-the foundation itself only ships English.
+The app ships English (source and fallback), German (`de`) and Polish (`pl`),
+matching Android and web. Both languages are in all four catalogs.
+
+Terminology and tone (informal, direct) follow the glossary in
+`android-localization.md`; reuse Android/web wording for strings that overlap.
+Polish count strings need `one`, `few`, `many` and `other`; German needs `one`
+and `other`. Prefer colon constructions over declining interpolated names.
 
 ## Catalogs and bundles
 
@@ -96,8 +101,10 @@ into the bundles.
 
 ## Adding and verifying a language
 
-Add translations in Xcode's String Catalog editor, including both InfoPlist
-catalogs. Use Xcode's Export/Import Localizations workflow for translator handoff.
+New UI text must get `de` and `pl` entries in the catalog(s) it appears in
+(`LocalizationTests` checks that both languages are bundled in the app and the
+extension). Add translations in Xcode's String Catalog editor, including both
+InfoPlist catalogs. Use Xcode's Export/Import Localizations workflow for translator handoff.
 English remains the source and fallback. Translate all plural forms and preserve
 format specifiers and Markdown placeholders.
 
@@ -109,6 +116,11 @@ Double-Length Pseudolanguage reveals clipping before translations exist. Check
 onboarding, login, recipe detail, shopping-list review, settings, alerts, and the
 share extension on iPhone/iPad, with accessibility text sizes. For real language
 rollouts, also verify switching through iOS Settings and any applicable RTL layout.
+
+Still English-only, by design: server-rendered push and email text, starter/default
+content (including the "My Recipes" cookbook name that the UI text refers to), and
+store/paywall copy. These are tracked in
+[#133](https://github.com/SzymonNastaly/maincourse/issues/133).
 
 The backend error contract and language-ownership decisions are documented in
 `api-localization.md` ([#125](https://github.com/SzymonNastaly/maincourse/issues/125)).

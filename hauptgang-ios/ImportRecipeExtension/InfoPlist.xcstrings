@@ -10,6 +10,18 @@
             "state" : "translated",
             "value" : "Import to MainCourse"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In MainCourse importieren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuj do MainCourse"
+          }
         }
       }
     },

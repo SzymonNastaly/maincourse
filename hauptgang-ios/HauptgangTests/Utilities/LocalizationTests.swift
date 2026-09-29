@@ -35,6 +35,47 @@ final class LocalizationTests: XCTestCase {
         ), "Invalid email or password", "Shared API errors must also be in the extension bundle")
     }
 
+    func testRecipeCountUsesGermanAndPolishPlurals() {
+        func count(_ n: Int, _ id: String) -> String {
+            String(localized: LocalizedStringResource("\(n) recipes", locale: Locale(identifier: id)))
+        }
+        XCTAssertEqual(count(1, "de"), "1 Rezept")
+        XCTAssertEqual(count(2, "de"), "2 Rezepte")
+        XCTAssertEqual(count(1, "pl"), "1 przepis")
+        XCTAssertEqual(count(3, "pl"), "3 przepisy")
+        XCTAssertEqual(count(5, "pl"), "5 przepisów")
+    }
+
+    func testGermanAndPolishAreBundledInAppAndExtension() throws {
+        let plugins = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        let extensionBundle = try XCTUnwrap(
+            Bundle(url: plugins.appendingPathComponent("ImportRecipeExtension.appex"))
+        )
+        let infoPlistKeys = [Bundle.main: "NSCameraUsageDescription", extensionBundle: "CFBundleDisplayName"]
+        for language in ["de", "pl"] {
+            for bundle in [Bundle.main, extensionBundle] {
+                let name = bundle.bundleURL.lastPathComponent
+                let path = try XCTUnwrap(
+                    bundle.path(forResource: language, ofType: "lproj"),
+                    "\(language) missing from \(name)"
+                )
+                let localized = try XCTUnwrap(Bundle(path: path))
+                let apiError = "Invalid email or password"
+                XCTAssertNotEqual(
+                    localized.localizedString(forKey: apiError, value: "missing", table: "Localizable"),
+                    apiError,
+                    "\(language) is untranslated in \(name)"
+                )
+                let key = try XCTUnwrap(infoPlistKeys[bundle])
+                XCTAssertNotEqual(
+                    localized.localizedString(forKey: key, value: "missing", table: "InfoPlist"),
+                    "missing",
+                    "\(language) InfoPlist \(key) missing in \(name)"
+                )
+            }
+        }
+    }
+
     func testServerErrorFormatsStatusCode() {
         XCTAssertEqual(
             APIError.serverError(statusCode: 503).errorDescription,

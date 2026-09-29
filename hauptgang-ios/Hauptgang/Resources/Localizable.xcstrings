@@ -9,6 +9,18 @@
             "state" : "translated",
             "value" : "%@ cook"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Kochzeit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotowanie: %@"
+          }
         }
       }
     },
@@ -18,6 +30,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ is already in use."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Wert für „%@“ wird bereits verwendet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wartość pola „%@” jest już używana."
           }
         }
       }
@@ -29,6 +53,18 @@
             "state" : "translated",
             "value" : "%@ is invalid. Please check it and try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Wert für „%@“ ist ungültig. Prüfe ihn und versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pole „%@” zawiera nieprawidłową wartość. Sprawdź ją i spróbuj ponownie."
+          }
         }
       }
     },
@@ -38,6 +74,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ is required."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte fülle das Feld „%@“ aus."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzupełnij pole „%@”."
           }
         }
       }
@@ -49,6 +97,18 @@
             "state" : "translated",
             "value" : "%@ is too long."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Wert für „%@“ ist zu lang."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wartość pola „%@” jest zbyt długa."
+          }
         }
       }
     },
@@ -58,6 +118,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ is too short."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Wert für „%@“ ist zu kurz."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wartość pola „%@” jest zbyt krótka."
           }
         }
       }
@@ -70,6 +142,18 @@
             "state" : "translated",
             "value" : "%@ prep"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Vorbereitung"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przygotowanie: %@"
+          }
         }
       }
     },
@@ -80,6 +164,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ prep + %2$@ cook"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ Vorbereitung + %2$@ Kochzeit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przygotowanie: %1$@ + gotowanie: %2$@"
           }
         }
       }
@@ -104,6 +200,54 @@
               }
             }
           }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Rezept"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Rezepte"
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld przepis"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld przepisy"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld przepisów"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld przepisu"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -113,6 +257,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A different recipe has already been selected for this date."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für dieses Datum wurde bereits ein anderes Rezept ausgewählt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na ten dzień wybrano już inny przepis."
           }
         }
       }
@@ -124,6 +280,18 @@
             "state" : "translated",
             "value" : "A little dinner inspiration"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein bisschen Inspiration fürs Abendessen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trochę inspiracji na kolację"
+          }
         }
       }
     },
@@ -133,6 +301,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A recipe will be created from the text in your clipboard."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus dem Text in deiner Zwischenablage wird ein Rezept erstellt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przepis zostanie utworzony z tekstu ze schowka."
           }
         }
       }
@@ -144,6 +324,18 @@
             "state" : "translated",
             "value" : "Ad"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werbung"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reklama"
+          }
         }
       }
     },
@@ -153,6 +345,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add %lld"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj (%lld)"
           }
         }
       }
@@ -164,6 +368,18 @@
             "state" : "translated",
             "value" : "Add Ingredient"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zutat hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj składnik"
+          }
         }
       }
     },
@@ -173,6 +389,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Photo"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj zdjęcie"
           }
         }
       }
@@ -184,6 +412,18 @@
             "state" : "translated",
             "value" : "Add Recipe"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj przepis"
+          }
         }
       }
     },
@@ -193,6 +433,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Step"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schritt hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj krok"
           }
         }
       }
@@ -204,6 +456,18 @@
             "state" : "translated",
             "value" : "Add item"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artikel hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj produkt"
+          }
         }
       }
     },
@@ -213,6 +477,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add items from a recipe or type your own"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge Artikel aus einem Rezept hinzu oder trage eigene ein"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj produkty z przepisu lub wpisz własne"
           }
         }
       }
@@ -224,6 +500,18 @@
             "state" : "translated",
             "value" : "Add to Shopping List"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zur Einkaufsliste hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do listy zakupów"
+          }
         }
       }
     },
@@ -233,6 +521,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add to shopping list"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zur Einkaufsliste hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do listy zakupów"
           }
         }
       }
@@ -244,6 +544,18 @@
             "state" : "translated",
             "value" : "Add to story"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zur Story hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do relacji"
+          }
         }
       }
     },
@@ -253,6 +565,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add your name"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Namen hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj swoje imię"
           }
         }
       }
@@ -264,6 +588,18 @@
             "state" : "translated",
             "value" : "All recipes in this cookbook will be permanently deleted. This cannot be undone."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Rezepte in diesem Kochbuch werden dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wszystkie przepisy w tej książce kucharskiej zostaną trwale usunięte. Tej operacji nie można cofnąć."
+          }
         }
       }
     },
@@ -273,6 +609,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All your recipes, ready to cook."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle deine Rezepte. Bereit zum Kochen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wszystkie przepisy, gotowe do gotowania."
           }
         }
       }
@@ -284,6 +632,18 @@
             "state" : "translated",
             "value" : "Allow cookies?"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies erlauben?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić na pliki cookie?"
+          }
         }
       }
     },
@@ -293,6 +653,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Allow notifications for Hauptgang in the Settings app to receive reminders."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlaube Mitteilungen für Hauptgang in den Einstellungen, um Erinnerungen zu erhalten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwól na powiadomienia dla Hauptgang w aplikacji Ustawienia, aby otrzymywać przypomnienia."
           }
         }
       }
@@ -304,6 +676,18 @@
             "state" : "translated",
             "value" : "Already Got"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schon gekauft"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Już kupione"
+          }
         }
       }
     },
@@ -313,6 +697,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Already have an account? %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schon ein Konto? %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masz już konto? %@"
           }
         }
       }
@@ -324,6 +720,18 @@
             "state" : "translated",
             "value" : "An account already exists for this email. Sign in with your password instead."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für diese E-Mail-Adresse gibt es bereits ein Konto. Melde dich stattdessen mit deinem Passwort an."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto z tym adresem e-mail już istnieje. Zaloguj się za pomocą hasła."
+          }
         }
       }
     },
@@ -333,6 +741,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "An unexpected error occurred"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein unerwarteter Fehler ist aufgetreten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wystąpił nieoczekiwany błąd"
           }
         }
       }
@@ -344,6 +764,18 @@
             "state" : "translated",
             "value" : "An unexpected error occurred. Please try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wystąpił nieoczekiwany błąd. Spróbuj ponownie."
+          }
         }
       }
     },
@@ -353,6 +785,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "And once it’s in your cookbook…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Und sobald es in deinem Kochbuch ist…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A gdy przepis jest już w Twojej książce…"
           }
         }
       }
@@ -364,6 +808,18 @@
             "state" : "translated",
             "value" : "Are you sure?"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bist du sicher?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na pewno?"
+          }
         }
       }
     },
@@ -374,6 +830,18 @@
             "state" : "translated",
             "value" : "Back"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wstecz"
+          }
         }
       }
     },
@@ -383,6 +851,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Back to sharing"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück zum Teilen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wróć do udostępniania"
           }
         }
       }
@@ -395,6 +875,18 @@
             "state" : "translated",
             "value" : "Bakery"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backwaren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pieczywo"
+          }
         }
       }
     },
@@ -404,6 +896,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bought"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gekauft"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kupione"
           }
         }
       }
@@ -415,6 +919,18 @@
             "state" : "translated",
             "value" : "Cancel"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anuluj"
+          }
         }
       }
     },
@@ -424,6 +940,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change Photo"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto ändern"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień zdjęcie"
           }
         }
       }
@@ -435,6 +963,18 @@
             "state" : "translated",
             "value" : "Change the servings and every amount adjusts."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändere die Portionen, und alle Mengen passen sich an."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień liczbę porcji, a ilości składników dostosują się automatycznie."
+          }
         }
       }
     },
@@ -444,6 +984,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Check your Wi-Fi or cellular connection and try again."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prüfe deine WLAN- oder Mobilfunkverbindung und versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprawdź połączenie Wi-Fi lub komórkowe i spróbuj ponownie."
           }
         }
       }
@@ -455,6 +1007,18 @@
             "state" : "translated",
             "value" : "Choose a recipe photo first."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle zuerst ein Rezeptfoto aus."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najpierw wybierz zdjęcie przepisu."
+          }
         }
       }
     },
@@ -464,6 +1028,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose from Library"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus Fotomediathek wählen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz z biblioteki"
           }
         }
       }
@@ -475,6 +1051,18 @@
             "state" : "translated",
             "value" : "Clear and add"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leeren und hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyczyść i dodaj"
+          }
         }
       }
     },
@@ -484,6 +1072,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clear input"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eingabe löschen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyczyść pole"
           }
         }
       }
@@ -495,6 +1095,18 @@
             "state" : "translated",
             "value" : "Close"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij"
+          }
         }
       }
     },
@@ -504,6 +1116,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close sharing"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teilen schließen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij udostępnianie"
           }
         }
       }
@@ -515,6 +1139,18 @@
             "state" : "translated",
             "value" : "Common staples are excluded by default. Include anything you need."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übliche Vorratszutaten sind standardmäßig abgewählt. Wähle alles aus, was du brauchst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podstawowe produkty są domyślnie pomijane. Zaznacz wszystko, czego potrzebujesz."
+          }
         }
       }
     },
@@ -524,6 +1160,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confirm that you want to create a separate MainCourse account with Apple."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestätige, dass du mit Apple ein separates MainCourse-Konto erstellen möchtest."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potwierdź, że chcesz utworzyć osobne konto MainCourse za pomocą Apple."
           }
         }
       }
@@ -535,6 +1183,18 @@
             "state" : "translated",
             "value" : "Continue"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalej"
+          }
         }
       }
     },
@@ -544,6 +1204,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continue with Apple"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter mit Apple"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontynuuj z Apple"
           }
         }
       }
@@ -555,6 +1227,18 @@
             "state" : "translated",
             "value" : "Continue with Google"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter mit Google"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontynuuj z Google"
+          }
         }
       }
     },
@@ -564,6 +1248,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continue without it"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ohne Rezept fortfahren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontynuuj bez niego"
           }
         }
       }
@@ -575,6 +1271,18 @@
             "state" : "translated",
             "value" : "Continue without saving"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ohne Speichern fortfahren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontynuuj bez zapisywania"
+          }
         }
       }
     },
@@ -585,6 +1293,18 @@
             "state" : "translated",
             "value" : "Cook"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kochzeit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotowanie"
+          }
         }
       }
     },
@@ -594,6 +1314,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cook for any number"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koche für beliebig viele"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotuj dla dowolnej liczby osób"
           }
         }
       }
@@ -606,6 +1338,18 @@
             "state" : "translated",
             "value" : "Cook something %@ today"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koch heute etwas %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ugotuj dziś coś %@"
+          }
         }
       }
     },
@@ -615,6 +1359,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cook together"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemeinsam kochen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotujcie razem"
           }
         }
       }
@@ -626,6 +1382,18 @@
             "state" : "translated",
             "value" : "Cookbook Name"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name des Kochbuchs"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nazwa książki kucharskiej"
+          }
         }
       }
     },
@@ -635,6 +1403,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cookbooks"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kochbücher"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Książki kucharskie"
           }
         }
       }
@@ -646,6 +1426,18 @@
             "state" : "translated",
             "value" : "Cookbooks you share with others will be transferred to a collaborator so their data is preserved."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemeinsame Kochbücher werden einem anderen Mitglied übertragen, damit dessen Daten erhalten bleiben."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Książki kucharskie współdzielone z innymi osobami zostaną przekazane jednemu z członków, aby zachować ich dane."
+          }
         }
       }
     },
@@ -655,6 +1447,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cooking time"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kochzeit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czas gotowania"
           }
         }
       }
@@ -666,6 +1470,18 @@
             "state" : "translated",
             "value" : "Copy"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiuj"
+          }
         }
       }
     },
@@ -675,6 +1491,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy link"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link kopieren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiuj link"
           }
         }
       }
@@ -686,6 +1514,18 @@
             "state" : "translated",
             "value" : "Could not complete this request. Check your information and try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anfrage konnte nicht abgeschlossen werden. Prüfe deine Angaben und versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się wykonać żądania. Sprawdź dane i spróbuj ponownie."
+          }
         }
       }
     },
@@ -695,6 +1535,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Could not delete this item. Please try again."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Eintrag konnte nicht gelöscht werden. Bitte versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się usunąć tego elementu. Spróbuj ponownie."
           }
         }
       }
@@ -706,6 +1558,18 @@
             "state" : "translated",
             "value" : "Could not import this recipe. Try another source or photo."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Rezept konnte nicht importiert werden. Versuche eine andere Quelle oder ein anderes Foto."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zaimportować przepisu. Spróbuj użyć innego źródła lub zdjęcia."
+          }
         }
       }
     },
@@ -715,6 +1579,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Could not process image. Please try a different photo."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Bild konnte nicht verarbeitet werden. Bitte versuche es mit einem anderen Foto."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się przetworzyć zdjęcia. Spróbuj użyć innego."
           }
         }
       }
@@ -726,6 +1602,18 @@
             "state" : "translated",
             "value" : "Could not replace the shopping list. Your existing items were kept."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Einkaufsliste konnte nicht ersetzt werden. Deine bisherigen Artikel wurden behalten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zastąpić listy zakupów. Dotychczasowe produkty zostały zachowane."
+          }
         }
       }
     },
@@ -735,6 +1623,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Could not save your changes. Please try again."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zapisać zmian. Spróbuj ponownie."
           }
         }
       }
@@ -746,6 +1646,18 @@
             "state" : "translated",
             "value" : "Could not sign in with that provider. Please try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldung bei diesem Anbieter ist fehlgeschlagen. Bitte versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zalogować u tego dostawcy. Spróbuj ponownie."
+          }
         }
       }
     },
@@ -755,6 +1667,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't delete account"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto konnte nicht gelöscht werden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się usunąć konta"
           }
         }
       }
@@ -766,6 +1690,18 @@
             "state" : "translated",
             "value" : "Couldn’t load your recipes"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Rezepte konnten nicht geladen werden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się wczytać przepisów"
+          }
         }
       }
     },
@@ -775,6 +1711,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz"
           }
         }
       }
@@ -786,6 +1734,18 @@
             "state" : "translated",
             "value" : "Create Account"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto erstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz konto"
+          }
         }
       }
     },
@@ -795,6 +1755,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create Shared Cookbook"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemeinsames Kochbuch erstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz wspólną książkę kucharską"
           }
         }
       }
@@ -806,6 +1778,18 @@
             "state" : "translated",
             "value" : "Create a new MainCourse account?"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues MainCourse-Konto erstellen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utworzyć nowe konto MainCourse?"
+          }
         }
       }
     },
@@ -815,6 +1799,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create a shared cookbook to invite other people."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstelle ein gemeinsames Kochbuch, um andere einzuladen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz wspólną książkę kucharską, aby zaprosić inne osoby."
           }
         }
       }
@@ -826,6 +1822,18 @@
             "state" : "translated",
             "value" : "Create new account with Apple"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Konto mit Apple erstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz nowe konto przez Apple"
+          }
         }
       }
     },
@@ -835,6 +1843,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create your account"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstelle dein Konto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz konto"
           }
         }
       }
@@ -846,6 +1866,18 @@
             "state" : "translated",
             "value" : "Creating Account…"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto wird erstellt…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tworzenie konta…"
+          }
         }
       }
     },
@@ -853,6 +1885,18 @@
       "comment" : "Word the user must type to confirm account deletion. The translated word is also used for validation.",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DELETE"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DELETE"
+          }
+        },
+        "pl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "DELETE"
@@ -868,6 +1912,18 @@
             "state" : "translated",
             "value" : "Dairy & Eggs"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Milchprodukte & Eier"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nabiał i jajka"
+          }
         }
       }
     },
@@ -877,6 +1933,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Decline"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ablehnen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odrzuć"
           }
         }
       }
@@ -888,6 +1956,18 @@
             "state" : "translated",
             "value" : "Decrease servings"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portionen verringern"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmniejsz liczbę porcji"
+          }
         }
       }
     },
@@ -897,6 +1977,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń"
           }
         }
       }
@@ -908,6 +2000,18 @@
             "state" : "translated",
             "value" : "Delete Account"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto löschen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń konto"
+          }
         }
       }
     },
@@ -917,6 +2021,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete Cookbook"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kochbuch löschen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń książkę kucharską"
           }
         }
       }
@@ -928,6 +2044,18 @@
             "state" : "translated",
             "value" : "Delete My Account"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mein Konto löschen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń moje konto"
+          }
         }
       }
     },
@@ -937,6 +2065,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete Recipe"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept löschen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń przepis"
           }
         }
       }
@@ -948,6 +2088,18 @@
             "state" : "translated",
             "value" : "Delete Shared Cookbook?"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemeinsames Kochbuch löschen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć wspólną książkę kucharską?"
+          }
         }
       }
     },
@@ -957,6 +2109,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Deleting your account permanently removes your personal cookbook, recipes, shopping list, and meal plans. Cookbooks you share with others will be transferred to a collaborator."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Löschen deines Kontos werden dein persönliches Kochbuch, deine Rezepte, deine Einkaufsliste und deine Essenspläne dauerhaft entfernt. Gemeinsame Kochbücher werden einem anderen Mitglied übertragen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunięcie konta trwale usuwa Twoją osobistą książkę kucharską, przepisy, listę zakupów i plany posiłków. Książki kucharskie współdzielone z innymi osobami zostaną przekazane jednemu z członków."
           }
         }
       }
@@ -968,6 +2132,18 @@
             "state" : "translated",
             "value" : "Deleting your account will permanently remove:"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Löschen deines Kontos wird Folgendes dauerhaft entfernt:"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunięcie konta trwale usunie:"
+          }
         }
       }
     },
@@ -977,6 +2153,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dismiss example suggestion"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beispiel ausblenden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj przykład"
           }
         }
       }
@@ -988,6 +2176,18 @@
             "state" : "translated",
             "value" : "Don't have an account? %@"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neu bei MainCourse? %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie masz konta? %@"
+          }
         }
       }
     },
@@ -997,6 +2197,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Done"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotowe"
           }
         }
       }
@@ -1008,6 +2220,18 @@
             "state" : "translated",
             "value" : "Double-check your email and password, then try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prüfe deine E-Mail-Adresse und dein Passwort noch einmal und versuche es dann erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprawdź adres e-mail i hasło, a potem spróbuj ponownie."
+          }
         }
       }
     },
@@ -1018,6 +2242,18 @@
             "state" : "translated",
             "value" : "Double-tap to mark as bought"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doppeltippen, um als gekauft zu markieren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dotknij dwukrotnie, aby oznaczyć jako kupione"
+          }
         }
       }
     },
@@ -1027,6 +2263,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Double-tap to move back to shopping list"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doppeltippen, um zurück auf die Einkaufsliste zu legen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dotknij dwukrotnie, aby przenieść z powrotem na listę zakupów"
           }
         }
       }
@@ -1039,6 +2287,18 @@
             "state" : "translated",
             "value" : "Drinks"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Getränke"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napoje"
+          }
         }
       }
     },
@@ -1048,6 +2308,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Name"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Namen bearbeiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edytuj imię"
           }
         }
       }
@@ -1059,6 +2331,18 @@
             "state" : "translated",
             "value" : "Edit Recipe"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept bearbeiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edytuj przepis"
+          }
         }
       }
     },
@@ -1068,6 +2352,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit recipe"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept bearbeiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edytuj przepis"
           }
         }
       }
@@ -1079,6 +2375,18 @@
             "state" : "translated",
             "value" : "Email"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-Mail"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adres e-mail"
+          }
         }
       }
     },
@@ -1088,6 +2396,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter a recipe URL."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib eine Rezept-URL ein."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wpisz adres przepisu."
           }
         }
       }
@@ -1099,6 +2419,18 @@
             "state" : "translated",
             "value" : "Error"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehler"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Błąd"
+          }
         }
       }
     },
@@ -1108,6 +2440,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Example saved in My Recipes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beispiel in „Meine Rezepte“ gespeichert"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przykład zapisany w Moich przepisach"
           }
         }
       }
@@ -1119,6 +2463,18 @@
             "state" : "translated",
             "value" : "Example unavailable"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beispiel nicht verfügbar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przykład niedostępny"
+          }
         }
       }
     },
@@ -1128,6 +2484,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to import recipe from photo."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Rezept konnte nicht aus dem Foto importiert werden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zaimportować przepisu ze zdjęcia."
           }
         }
       }
@@ -1139,6 +2507,18 @@
             "state" : "translated",
             "value" : "Failed to import recipe from text."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Rezept konnte nicht aus dem Text importiert werden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zaimportować przepisu z tekstu."
+          }
         }
       }
     },
@@ -1148,6 +2528,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to load recipe. Tap to retry."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept konnte nicht geladen werden. Zum erneuten Versuch tippen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się wczytać przepisu. Dotknij, aby spróbować ponownie."
           }
         }
       }
@@ -1159,6 +2551,18 @@
             "state" : "translated",
             "value" : "Failed to save changes. Please try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zapisać zmian. Spróbuj ponownie."
+          }
         }
       }
     },
@@ -1168,6 +2572,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Family cookbook"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Familienkochbuch"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rodzinna książka kucharska"
           }
         }
       }
@@ -1179,6 +2595,18 @@
             "state" : "translated",
             "value" : "First name"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorname"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imię"
+          }
         }
       }
     },
@@ -1188,6 +2616,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Free Plan"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenloser Tarif"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan bezpłatny"
           }
         }
       }
@@ -1200,6 +2640,18 @@
             "state" : "translated",
             "value" : "Frozen"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiefkühlkost"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mrożonki"
+          }
         }
       }
     },
@@ -1209,6 +2661,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Generate Invite Link"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einladungslink erstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz link z zaproszeniem"
           }
         }
       }
@@ -1220,6 +2684,18 @@
             "state" : "translated",
             "value" : "Generating..."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird erstellt…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tworzenie…"
+          }
         }
       }
     },
@@ -1229,6 +2705,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Get started"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loslegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaczynamy"
           }
         }
       }
@@ -1240,6 +2728,18 @@
             "state" : "translated",
             "value" : "Google Sign-In has not been configured for this build."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldung mit Google ist für diesen Build nicht eingerichtet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logowanie przez Google nie zostało skonfigurowane w tej wersji aplikacji."
+          }
         }
       }
     },
@@ -1249,6 +2749,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Here’s a recipe from someone’s feed."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hier ist ein Rezept aus einem Feed."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oto przepis z czyjegoś posta."
           }
         }
       }
@@ -1261,6 +2773,18 @@
             "state" : "translated",
             "value" : "Household"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haushalt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artykuły domowe"
+          }
         }
       }
     },
@@ -1270,6 +2794,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "I already have an account"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich habe bereits ein Konto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mam już konto"
           }
         }
       }
@@ -1281,12 +2817,36 @@
             "state" : "translated",
             "value" : "Image is too large. Please try a smaller photo."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Bild ist zu groß. Bitte versuche es mit einem kleineren Foto."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdjęcie jest zbyt duże. Spróbuj użyć mniejszego."
+          }
         }
       }
     },
     "Import" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "pl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Import"
@@ -1301,6 +2861,18 @@
             "state" : "translated",
             "value" : "Import Failed"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import fehlgeschlagen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import nie powiódł się"
+          }
         }
       }
     },
@@ -1310,6 +2882,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Import from Clipboard?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus Zwischenablage importieren?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaimportować ze schowka?"
           }
         }
       }
@@ -1321,6 +2905,18 @@
             "state" : "translated",
             "value" : "Import recipe"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept importieren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuj przepis"
+          }
         }
       }
     },
@@ -1330,6 +2926,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Importing recipe..."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept wird importiert…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importowanie przepisu…"
           }
         }
       }
@@ -1341,6 +2949,18 @@
             "state" : "translated",
             "value" : "Importing..."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird importiert…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importowanie…"
+          }
         }
       }
     },
@@ -1350,6 +2970,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In Instagram or your browser, tap Share, then choose MainCourse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe in Instagram oder deinem Browser auf Teilen und wähle MainCourse."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W Instagramie lub przeglądarce dotknij Udostępnij, a potem wybierz MainCourse."
           }
         }
       }
@@ -1361,6 +2993,18 @@
             "state" : "translated",
             "value" : "Increase servings"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portionen erhöhen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwiększ liczbę porcji"
+          }
         }
       }
     },
@@ -1370,6 +3014,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ingredient"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zutat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Składnik"
           }
         }
       }
@@ -1381,6 +3037,18 @@
             "state" : "translated",
             "value" : "Ingredients"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zutaten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Składniki"
+          }
         }
       }
     },
@@ -1390,6 +3058,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Instructions"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zubereitung"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sposób przygotowania"
           }
         }
       }
@@ -1401,6 +3081,18 @@
             "state" : "translated",
             "value" : "Interactive example"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interaktives Beispiel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interaktywny przykład"
+          }
         }
       }
     },
@@ -1410,6 +3102,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid URL configuration"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ungültige URL-Konfiguration"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieprawidłowa konfiguracja adresu URL"
           }
         }
       }
@@ -1421,6 +3125,18 @@
             "state" : "translated",
             "value" : "Invalid email or password"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ungültige E-Mail-Adresse oder ungültiges Passwort"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieprawidłowy adres e-mail lub hasło"
+          }
         }
       }
     },
@@ -1430,6 +3146,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invitation Error"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einladungsfehler"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Błąd zaproszenia"
           }
         }
       }
@@ -1441,6 +3169,18 @@
             "state" : "translated",
             "value" : "Invite Link Created"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einladungslink erstellt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link z zaproszeniem jest gotowy"
+          }
         }
       }
     },
@@ -1450,6 +3190,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invited by %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eingeladen von %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaprasza: %@"
           }
         }
       }
@@ -1461,6 +3213,18 @@
             "state" : "translated",
             "value" : "Item not found in Keychain"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag im Schlüsselbund nicht gefunden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie znaleziono elementu w Pęku kluczy"
+          }
         }
       }
     },
@@ -1470,6 +3234,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Join Cookbook"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kochbuch beitreten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dołącz do książki kucharskiej"
           }
         }
       }
@@ -1481,6 +3257,18 @@
             "state" : "translated",
             "value" : "Joining cookbook..."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beitritt zum Kochbuch…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dołączanie do książki kucharskiej…"
+          }
         }
       }
     },
@@ -1490,6 +3278,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep and add"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behalten und hinzufügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj i dodaj"
           }
         }
       }
@@ -1501,6 +3301,18 @@
             "state" : "translated",
             "value" : "Keep in My Recipes"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In „Meine Rezepte“ behalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj w Moich przepisach"
+          }
         }
       }
     },
@@ -1510,6 +3322,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep it in your cookbook"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In deinem Kochbuch behalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj w swojej książce kucharskiej"
           }
         }
       }
@@ -1521,6 +3345,18 @@
             "state" : "translated",
             "value" : "Keep this recipe"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Rezept behalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj ten przepis"
+          }
         }
       }
     },
@@ -1530,6 +3366,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leave"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlassen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opuść"
           }
         }
       }
@@ -1541,6 +3389,18 @@
             "state" : "translated",
             "value" : "Leave Cookbook"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kochbuch verlassen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opuść książkę kucharską"
+          }
         }
       }
     },
@@ -1550,6 +3410,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leave Shared Cookbook?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemeinsames Kochbuch verlassen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opuścić wspólną książkę kucharską?"
           }
         }
       }
@@ -1561,6 +3433,18 @@
             "state" : "translated",
             "value" : "Loading invitation..."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einladung wird geladen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wczytywanie zaproszenia…"
+          }
         }
       }
     },
@@ -1570,6 +3454,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading recipe..."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept wird geladen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wczytywanie przepisu…"
           }
         }
       }
@@ -1581,12 +3477,36 @@
             "state" : "translated",
             "value" : "Log in"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anmelden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaloguj się"
+          }
         }
       }
     },
     "MainCourse Pro" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse Pro"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse Pro"
+          }
+        },
+        "pl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "MainCourse Pro"
@@ -1601,6 +3521,18 @@
             "state" : "translated",
             "value" : "MainCourse could not open the sign-in screen. Please try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse konnte den Anmeldebildschirm nicht öffnen. Bitte versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse nie mógł otworzyć ekranu logowania. Spróbuj ponownie."
+          }
         }
       }
     },
@@ -1610,6 +3542,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manage Account"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto verwalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj kontem"
           }
         }
       }
@@ -1621,6 +3565,18 @@
             "state" : "translated",
             "value" : "Manage Cookbooks"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kochbücher verwalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj książkami kucharskimi"
+          }
         }
       }
     },
@@ -1631,6 +3587,18 @@
             "state" : "translated",
             "value" : "Manage Subscription"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abo verwalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj subskrypcją"
+          }
         }
       }
     },
@@ -1640,6 +3608,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Meal Plan"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essensplan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan posiłków"
           }
         }
       }
@@ -1652,6 +3632,18 @@
             "state" : "translated",
             "value" : "Meat & Seafood"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fleisch & Fisch"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mięso i ryby"
+          }
         }
       }
     },
@@ -1661,6 +3653,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Message"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachricht"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wiadomość"
           }
         }
       }
@@ -1672,6 +3676,18 @@
             "state" : "translated",
             "value" : "Messages"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachrichten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wiadomości"
+          }
         }
       }
     },
@@ -1681,6 +3697,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Więcej"
           }
         }
       }
@@ -1692,6 +3720,18 @@
             "state" : "translated",
             "value" : "Move \"%1$@\" to %2$@?"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%1$@“ nach %2$@ verschieben?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenieść „%1$@” do: %2$@?"
+          }
         }
       }
     },
@@ -1701,6 +3741,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move Recipe"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept verschieben"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenieś przepis"
           }
         }
       }
@@ -1712,6 +3764,18 @@
             "state" : "translated",
             "value" : "Move all personal recipes"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meine bisherigen Rezepte verschieben"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenieś wszystkie osobiste przepisy"
+          }
         }
       }
     },
@@ -1721,6 +3785,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach %@ verschieben"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenieś do: %@"
           }
         }
       }
@@ -1732,6 +3808,18 @@
             "state" : "translated",
             "value" : "Name"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nazwa"
+          }
         }
       }
     },
@@ -1741,6 +3829,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Name is required"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Name ist erforderlich"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nazwa jest wymagana"
           }
         }
       }
@@ -1752,6 +3852,18 @@
             "state" : "translated",
             "value" : "New Shared Cookbook"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues gemeinsames Kochbuch"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowa wspólna książka kucharska"
+          }
         }
       }
     },
@@ -1761,6 +3873,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No cookbook available"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Kochbuch verfügbar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak dostępnych książek kucharskich"
           }
         }
       }
@@ -1772,6 +3896,18 @@
             "state" : "translated",
             "value" : "No recipe found in that photo."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf diesem Foto wurde kein Rezept gefunden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tym zdjęciu nie znaleziono przepisu."
+          }
         }
       }
     },
@@ -1781,6 +3917,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No recipes found"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Rezepte gefunden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie znaleziono przepisów"
           }
         }
       }
@@ -1792,6 +3940,18 @@
             "state" : "translated",
             "value" : "No results"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Ergebnisse"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak wyników"
+          }
         }
       }
     },
@@ -1801,6 +3961,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No shared cookbook found"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein gemeinsames Kochbuch gefunden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie znaleziono wspólnej książki kucharskiej"
           }
         }
       }
@@ -1812,6 +3984,18 @@
             "state" : "translated",
             "value" : "Not Now"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht jetzt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie teraz"
+          }
         }
       }
     },
@@ -1821,6 +4005,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notizen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notatki"
           }
         }
       }
@@ -1832,6 +4028,18 @@
             "state" : "translated",
             "value" : "Nothing to paste. Copy a recipe to your clipboard first."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nichts zum Einfügen. Kopiere zuerst ein Rezept in die Zwischenablage."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie ma nic do wklejenia. Najpierw skopiuj przepis do schowka."
+          }
         }
       }
     },
@@ -1842,12 +4050,36 @@
             "state" : "translated",
             "value" : "Notifications are turned off"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen sind ausgeschaltet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia są wyłączone"
+          }
         }
       }
     },
     "OK" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "pl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
@@ -1862,12 +4094,36 @@
             "state" : "translated",
             "value" : "Occasional nudges about recipes you saved and shopping lists you left unfinished."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelegentliche Erinnerungen an gespeicherte Rezepte und offene Einkaufslisten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sporadyczne przypomnienia o zapisanych przepisach i niedokończonych listach zakupów."
+          }
         }
       }
     },
     "Offline" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline"
+          }
+        },
+        "pl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Offline"
@@ -1883,6 +4139,18 @@
             "state" : "translated",
             "value" : "Oils, Spices & Sauces"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öle, Gewürze & Saucen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oleje, przyprawy i sosy"
+          }
         }
       }
     },
@@ -1892,6 +4160,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Only the cookbook owner can do this."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das kann nur der Inhaber des Kochbuchs tun."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko właściciel książki kucharskiej może to zrobić."
           }
         }
       }
@@ -1903,6 +4183,18 @@
             "state" : "translated",
             "value" : "Open"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz"
+          }
         }
       }
     },
@@ -1913,6 +4205,18 @@
             "state" : "translated",
             "value" : "Open Settings"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen öffnen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz Ustawienia"
+          }
         }
       }
     },
@@ -1922,6 +4226,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opens the example sharing options"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet die Teilen-Optionen des Beispiels"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwiera opcje udostępniania w przykładzie"
           }
         }
       }
@@ -1934,6 +4250,18 @@
             "state" : "translated",
             "value" : "Other"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonstiges"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inne"
+          }
         }
       }
     },
@@ -1945,6 +4273,18 @@
             "state" : "translated",
             "value" : "Pantry"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorratsschrank"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produkty suche"
+          }
         }
       }
     },
@@ -1954,6 +4294,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Password"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwort"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasło"
           }
         }
       }
@@ -1965,6 +4317,18 @@
             "state" : "translated",
             "value" : "Password confirmation"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwortbestätigung"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potwierdzenie hasła"
+          }
         }
       }
     },
@@ -1974,6 +4338,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Password confirmation does not match."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Passwortbestätigung stimmt nicht überein."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potwierdzenie hasła nie jest zgodne z hasłem."
           }
         }
       }
@@ -1985,6 +4361,18 @@
             "state" : "translated",
             "value" : "Password must be at least 12 characters"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Passwort muss mindestens 12 Zeichen lang sein"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasło musi mieć co najmniej 12 znaków"
+          }
         }
       }
     },
@@ -1994,6 +4382,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paste from Clipboard"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus Zwischenablage einfügen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wklej ze schowka"
           }
         }
       }
@@ -2005,6 +4405,18 @@
             "state" : "translated",
             "value" : "Paste some recipe text first."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge zuerst einen Rezepttext ein."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najpierw wklej tekst przepisu."
+          }
         }
       }
     },
@@ -2014,6 +4426,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Personal"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persönlich"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osobista"
           }
         }
       }
@@ -2025,6 +4449,18 @@
             "state" : "translated",
             "value" : "Please enter a valid email"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib eine gültige E-Mail-Adresse ein"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wpisz prawidłowy adres e-mail"
+          }
         }
       }
     },
@@ -2034,6 +4470,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Please enter your name"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib deinen Namen ein"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wpisz swoje imię"
           }
         }
       }
@@ -2045,6 +4493,18 @@
             "state" : "translated",
             "value" : "Please sign in with your credentials."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte melde dich mit deinen Zugangsdaten an."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaloguj się, używając swoich danych."
+          }
         }
       }
     },
@@ -2054,6 +4514,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Post from %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beitrag von %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Post od: %@"
           }
         }
       }
@@ -2065,6 +4537,18 @@
             "state" : "translated",
             "value" : "Prep"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorbereitung"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przygotowanie"
+          }
         }
       }
     },
@@ -2075,6 +4559,18 @@
             "state" : "translated",
             "value" : "Preparation time"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorbereitungszeit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czas przygotowania"
+          }
         }
       }
     },
@@ -2084,6 +4580,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Processing recipe…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept wird verarbeitet…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przygotowywanie przepisu…"
           }
         }
       }
@@ -2096,6 +4604,18 @@
             "state" : "translated",
             "value" : "Produce"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obst & Gemüse"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Owoce i warzywa"
+          }
         }
       }
     },
@@ -2105,6 +4625,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Received an invalid response from the server"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ungültige Antwort vom Server erhalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otrzymano nieprawidłową odpowiedź z serwera"
           }
         }
       }
@@ -2116,6 +4648,18 @@
             "state" : "translated",
             "value" : "Recipe URL"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezept-URL"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adres przepisu"
+          }
         }
       }
     },
@@ -2125,6 +4669,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recipe link"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezeptlink"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link do przepisu"
           }
         }
       }
@@ -2136,6 +4692,18 @@
             "state" : "translated",
             "value" : "Recipe name"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezeptname"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nazwa przepisu"
+          }
         }
       }
     },
@@ -2145,6 +4713,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recipe photo"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezeptfoto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdjęcie przepisu"
           }
         }
       }
@@ -2156,6 +4736,18 @@
             "state" : "translated",
             "value" : "Recipe reminders"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezepterinnerungen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypomnienia o przepisach"
+          }
         }
       }
     },
@@ -2165,6 +4757,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recipe text exceeds the character limit (%lld)."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Rezepttext überschreitet die Zeichenbegrenzung (%lld)."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekst przepisu przekracza limit znaków (%lld)."
           }
         }
       }
@@ -2176,6 +4780,18 @@
             "state" : "translated",
             "value" : "Recipe text is too long. Try a shorter selection."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Rezepttext ist zu lang. Versuche einen kürzeren Ausschnitt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekst przepisu jest zbyt długi. Spróbuj wkleić krótszy fragment."
+          }
         }
       }
     },
@@ -2185,6 +4801,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recipes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezepte"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przepisy"
           }
         }
       }
@@ -2196,6 +4824,18 @@
             "state" : "translated",
             "value" : "Recipes from posts, websites, cookbooks and screenshots come together as one clean recipe."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezepte aus Beiträgen, Websites, Kochbüchern und Screenshots werden zu einem übersichtlichen Rezept."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przepisy z postów, stron internetowych, książek kucharskich i zrzutów ekranu zamieniają się w jeden przejrzysty przepis."
+          }
         }
       }
     },
@@ -2205,6 +4845,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminders"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erinnerungen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypomnienia"
           }
         }
       }
@@ -2216,6 +4868,18 @@
             "state" : "translated",
             "value" : "Remove All"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles entfernen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń wszystko"
+          }
         }
       }
     },
@@ -2225,6 +4889,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Repository not configured with model context"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repository ist nicht mit einem Modellkontext konfiguriert"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repozytorium nie ma skonfigurowanego kontekstu modelu"
           }
         }
       }
@@ -2236,6 +4912,18 @@
             "state" : "translated",
             "value" : "Retry"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj ponownie"
+          }
         }
       }
     },
@@ -2245,6 +4933,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Review this recipe's ingredients before adding them to your shopping list"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prüfe die Zutaten dieses Rezepts, bevor du sie zur Einkaufsliste hinzufügst"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprawdź składniki tego przepisu, zanim dodasz je do listy zakupów"
           }
         }
       }
@@ -2256,6 +4956,18 @@
             "state" : "translated",
             "value" : "Save"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speichern"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisz"
+          }
         }
       }
     },
@@ -2265,6 +4977,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save recipes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezepte speichern"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisuj przepisy"
           }
         }
       }
@@ -2276,6 +5000,18 @@
             "state" : "translated",
             "value" : "Save your own recipe"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigenes Rezept speichern"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisz własny przepis"
+          }
         }
       }
     },
@@ -2285,6 +5021,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Saved"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gespeichert"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisano"
           }
         }
       }
@@ -2296,6 +5044,18 @@
             "state" : "translated",
             "value" : "Saved posts, screenshots, cookbook pages — MainCourse turns them into recipes you actually cook from."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gespeicherte Beiträge, Screenshots, Kochbuchseiten — MainCourse macht daraus Rezepte, nach denen du wirklich kochen kannst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisane posty, zrzuty ekranu, strony książek kucharskich — MainCourse zamienia je w przepisy, z których naprawdę wygodnie się gotuje."
+          }
         }
       }
     },
@@ -2305,6 +5065,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Saving to My Recipes…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird in „Meine Rezepte“ gespeichert…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisywanie w Moich przepisach…"
           }
         }
       }
@@ -2316,6 +5088,18 @@
             "state" : "translated",
             "value" : "Saving was interrupted. You can safely try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Speichern wurde unterbrochen. Du kannst es bedenkenlos erneut versuchen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisywanie zostało przerwane. Możesz bezpiecznie spróbować ponownie."
+          }
         }
       }
     },
@@ -2325,6 +5109,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szukaj"
           }
         }
       }
@@ -2336,6 +5132,18 @@
             "state" : "translated",
             "value" : "Search recipes"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezepte suchen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szukaj przepisów"
+          }
         }
       }
     },
@@ -2345,6 +5153,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search your recipes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durchsuche deine Rezepte"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeszukaj swoje przepisy"
           }
         }
       }
@@ -2356,6 +5176,18 @@
             "state" : "translated",
             "value" : "Send ingredients to a shopping list in a tap."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sende Zutaten mit einem Tippen an eine Einkaufsliste."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jednym dotknięciem dodaj składniki do listy zakupów."
+          }
         }
       }
     },
@@ -2365,6 +5197,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Server error (%lld). Please try again later."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serverfehler (%lld). Bitte versuche es später erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Błąd serwera (%lld). Spróbuj ponownie później."
           }
         }
       }
@@ -2376,6 +5220,18 @@
             "state" : "translated",
             "value" : "Servings"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portionen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porcje"
+          }
         }
       }
     },
@@ -2385,6 +5241,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Servings (×%@)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portionen (×%@)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porcje (×%@)"
           }
         }
       }
@@ -2396,6 +5264,18 @@
             "state" : "translated",
             "value" : "Settings"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia"
+          }
         }
       }
     },
@@ -2405,6 +5285,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teilen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udostępnij"
           }
         }
       }
@@ -2416,6 +5308,18 @@
             "state" : "translated",
             "value" : "Share Link"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link teilen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udostępnij link"
+          }
         }
       }
     },
@@ -2425,6 +5329,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share a cookbook with the people you cook with."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile ein Kochbuch mit den Menschen, mit denen du kochst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dziel książkę kucharską z osobami, z którymi gotujesz."
           }
         }
       }
@@ -2436,6 +5352,18 @@
             "state" : "translated",
             "value" : "Share recipes and shopping lists with your partner or family."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile Rezepte und Einkaufslisten mit Partner oder Familie."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dziel się przepisami i listami zakupów z partnerem lub rodziną."
+          }
         }
       }
     },
@@ -2445,6 +5373,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share this link with someone to invite them to your cookbook."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile diesen Link, um jemanden zu deinem Kochbuch einzuladen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udostępnij ten link, aby zaprosić kogoś do swojej książki kucharskiej."
           }
         }
       }
@@ -2456,6 +5396,18 @@
             "state" : "translated",
             "value" : "Share to…"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teilen mit…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udostępnij w…"
+          }
         }
       }
     },
@@ -2465,6 +5417,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shared"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemeinsam"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wspólna"
           }
         }
       }
@@ -2476,6 +5440,18 @@
             "state" : "translated",
             "value" : "Shop from one list"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Liste für den Einkauf"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kupuj z jedną listą"
+          }
         }
       }
     },
@@ -2485,6 +5461,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shopping List"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einkaufsliste"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista zakupów"
           }
         }
       }
@@ -2496,6 +5484,18 @@
             "state" : "translated",
             "value" : "Shown to other members of cookbooks you share, including in push notifications."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für andere Mitglieder deiner gemeinsamen Kochbücher sichtbar, auch in Push-Mitteilungen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widoczne dla innych członków wspólnych książek kucharskich, także w powiadomieniach push."
+          }
         }
       }
     },
@@ -2505,6 +5505,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sign In"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anmelden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaloguj się"
           }
         }
       }
@@ -2516,6 +5528,18 @@
             "state" : "translated",
             "value" : "Sign Out"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abmelden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyloguj się"
+          }
         }
       }
     },
@@ -2525,6 +5549,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sign Up"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrieren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarejestruj się"
           }
         }
       }
@@ -2536,6 +5572,18 @@
             "state" : "translated",
             "value" : "Sign in the way you used before to keep your recipes, or confirm creation of a separate cookbook."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melde dich wie zuvor an, um deine Rezepte zu behalten, oder bestätige die Erstellung eines separaten Kochbuchs."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaloguj się tak jak wcześniej, aby zachować swoje przepisy, lub potwierdź utworzenie osobnej książki kucharskiej."
+          }
         }
       }
     },
@@ -2545,6 +5593,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sign in with Apple is unavailable. Check your Apple ID in Settings and try again."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldung mit Apple ist nicht verfügbar. Prüfe deine Apple-ID in den Einstellungen und versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logowanie przez Apple jest niedostępne. Sprawdź swoje Apple ID w Ustawieniach i spróbuj ponownie."
           }
         }
       }
@@ -2556,6 +5616,18 @@
             "state" : "translated",
             "value" : "Sign out"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abmelden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyloguj się"
+          }
         }
       }
     },
@@ -2565,6 +5637,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sign out?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abmelden?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wylogować się?"
           }
         }
       }
@@ -2576,6 +5660,18 @@
             "state" : "translated",
             "value" : "Sign up to keep this recipe"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrieren und Rezept behalten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarejestruj się, aby zachować przepis"
+          }
         }
       }
     },
@@ -2585,6 +5681,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Signed in as"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angemeldet als"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zalogowano jako"
           }
         }
       }
@@ -2596,6 +5704,18 @@
             "state" : "translated",
             "value" : "Signing in…"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anmeldung läuft…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logowanie…"
+          }
         }
       }
     },
@@ -2605,6 +5725,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Some items have been here for more than 36 hours. Clear the whole list before adding these ingredients?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Artikel stehen seit über 36 Stunden auf der Liste. Die gesamte Liste leeren, bevor diese Zutaten hinzugefügt werden?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niektóre produkty są na liście od ponad 36 godzin. Wyczyścić całą listę przed dodaniem tych składników?"
           }
         }
       }
@@ -2616,6 +5748,18 @@
             "state" : "translated",
             "value" : "Some shopping list items could not be saved. Check their names and try again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Einkaufsartikel konnten nicht gespeichert werden. Prüfe ihre Namen und versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zapisać niektórych produktów na liście zakupów. Sprawdź ich nazwy i spróbuj ponownie."
+          }
         }
       }
     },
@@ -2625,6 +5769,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Source URL"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quell-URL"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adres źródła"
           }
         }
       }
@@ -2636,6 +5792,18 @@
             "state" : "translated",
             "value" : "Start a fresh shopping list?"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Einkaufsliste beginnen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zacząć nową listę zakupów?"
+          }
         }
       }
     },
@@ -2645,6 +5813,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Step %lld"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schritt %lld"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krok %lld"
           }
         }
       }
@@ -2656,6 +5836,18 @@
             "state" : "translated",
             "value" : "Steps"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zubereitung"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kroki"
+          }
         }
       }
     },
@@ -2665,6 +5857,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Subscription"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrypcja"
           }
         }
       }
@@ -2676,6 +5880,18 @@
             "state" : "translated",
             "value" : "Swipe left to find MainCourse."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wische nach links, um MainCourse zu finden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przesuń w lewo, aby znaleźć MainCourse."
+          }
         }
       }
     },
@@ -2685,6 +5901,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Syncing..."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird synchronisiert…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizacja…"
           }
         }
       }
@@ -2696,6 +5924,18 @@
             "state" : "translated",
             "value" : "Take Photo"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto aufnehmen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrób zdjęcie"
+          }
         }
       }
     },
@@ -2705,6 +5945,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap MainCourse to save the recipe."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf MainCourse, um das Rezept zu speichern."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dotknij MainCourse, aby zapisać przepis."
           }
         }
       }
@@ -2716,6 +5968,18 @@
             "state" : "translated",
             "value" : "Tap Share and send it to MainCourse, just like you would from Instagram."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf Teilen und sende es an MainCourse — genau wie auf Instagram."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dotknij Udostępnij i wyślij go do MainCourse, tak jak na Instagramie."
+          }
         }
       }
     },
@@ -2725,6 +5989,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to share"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Teilen tippen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dotknij, aby udostępnić"
           }
         }
       }
@@ -2736,6 +6012,18 @@
             "state" : "translated",
             "value" : "That cookbook is no longer available to you. Choose another cookbook."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Kochbuch ist für dich nicht mehr verfügbar. Wähle ein anderes Kochbuch."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie masz już dostępu do tej książki kucharskiej. Wybierz inną."
+          }
         }
       }
     },
@@ -2745,6 +6033,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "That saved recipe is no longer available. You can save a new copy from the example."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses gespeicherte Rezept ist nicht mehr verfügbar. Du kannst eine neue Kopie aus dem Beispiel speichern."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten zapisany przepis nie jest już dostępny. Możesz zapisać nową kopię z przykładu."
           }
         }
       }
@@ -2756,6 +6056,18 @@
             "state" : "translated",
             "value" : "That sign-in provider is temporarily unavailable. Please try again later."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Anmeldeanbieter ist vorübergehend nicht verfügbar. Bitte versuche es später erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten dostawca logowania jest chwilowo niedostępny. Spróbuj ponownie później."
+          }
         }
       }
     },
@@ -2765,6 +6077,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "The maximum character count for %1$@ is %2$lld."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die maximale Zeichenanzahl für „%1$@“ beträgt %2$lld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maksymalna liczba znaków w polu „%1$@” to %2$lld."
           }
         }
       }
@@ -2776,6 +6100,18 @@
             "state" : "new",
             "value" : "The minimum character count for %1$@ is %2$lld."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die minimale Zeichenanzahl für „%1$@“ beträgt %2$lld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimalna liczba znaków w polu „%1$@” to %2$lld."
+          }
         }
       }
     },
@@ -2785,6 +6121,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The provider did not return valid sign-in credentials. Please try again."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Anbieter hat keine gültigen Anmeldedaten zurückgegeben. Bitte versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostawca nie zwrócił prawidłowych danych logowania. Spróbuj ponownie."
           }
         }
       }
@@ -2796,6 +6144,18 @@
             "state" : "translated",
             "value" : "The recipe content is too large. Try importing the link instead."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Rezeptinhalt ist zu groß. Versuche stattdessen, den Link zu importieren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Treść przepisu jest zbyt duża. Spróbuj zaimportować link."
+          }
         }
       }
     },
@@ -2805,6 +6165,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The requested resource was not found"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die angeforderte Ressource wurde nicht gefunden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie znaleziono żądanego zasobu"
           }
         }
       }
@@ -2816,6 +6188,18 @@
             "state" : "translated",
             "value" : "This Apple sign-in isn't connected to a MainCourse account. If you already use MainCourse, sign in the way you used before to keep your recipes. Creating a new account starts a separate cookbook."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Apple-Anmeldung ist mit keinem MainCourse-Konto verbunden. Wenn du MainCourse bereits nutzt, melde dich wie zuvor an, um deine Rezepte zu behalten. Ein neues Konto beginnt mit einem separaten Kochbuch."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To logowanie przez Apple nie jest połączone z kontem MainCourse. Jeśli korzystasz już z MainCourse, zaloguj się tak jak wcześniej, aby zachować swoje przepisy. Nowe konto oznacza osobną książkę kucharską."
+          }
         }
       }
     },
@@ -2825,6 +6209,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This URL cannot be imported. Check the address and try a public recipe page."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese URL kann nicht importiert werden. Prüfe die Adresse und versuche eine öffentlich zugängliche Rezeptseite."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można zaimportować tego adresu. Sprawdź go i spróbuj użyć publicznie dostępnej strony z przepisem."
           }
         }
       }
@@ -2836,6 +6232,18 @@
             "state" : "translated",
             "value" : "This cannot be undone"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dies kann nicht rückgängig gemacht werden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tej operacji nie można cofnąć"
+          }
         }
       }
     },
@@ -2845,6 +6253,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This file is not a supported image. Choose another photo."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Datei ist kein unterstütztes Bild. Wähle ein anderes Foto."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten plik nie jest obsługiwanym obrazem. Wybierz inne zdjęcie."
           }
         }
       }
@@ -2856,6 +6276,18 @@
             "state" : "translated",
             "value" : "This invitation has expired."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Einladung ist abgelaufen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To zaproszenie wygasło."
+          }
         }
       }
     },
@@ -2865,6 +6297,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This invitation is no longer available."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Einladung ist nicht mehr verfügbar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To zaproszenie nie jest już dostępne."
           }
         }
       }
@@ -2876,6 +6320,18 @@
             "state" : "translated",
             "value" : "This invitation is no longer available. It may have expired."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Einladung ist nicht mehr verfügbar. Sie ist möglicherweise abgelaufen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To zaproszenie nie jest już dostępne. Mogło wygasnąć."
+          }
         }
       }
     },
@@ -2885,6 +6341,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This meal plan has already been finalized."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Essensplan wurde bereits abgeschlossen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten plan posiłków został już zatwierdzony."
           }
         }
       }
@@ -2896,6 +6364,18 @@
             "state" : "translated",
             "value" : "This password is too long. Use a shorter password."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Passwort ist zu lang. Verwende ein kürzeres Passwort."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To hasło jest zbyt długie. Użyj krótszego hasła."
+          }
         }
       }
     },
@@ -2905,6 +6385,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This recipe could not be saved. Please start again from the example."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Rezept konnte nicht gespeichert werden. Beginne erneut mit dem Beispiel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zapisać tego przepisu. Zacznij ponownie od przykładu."
           }
         }
       }
@@ -2916,6 +6408,18 @@
             "state" : "translated",
             "value" : "This save request no longer matches. Please start again from the example."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Speicheranfrage ist nicht mehr aktuell. Beginne erneut mit dem Beispiel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Żądanie zapisu jest już nieaktualne. Zacznij ponownie od przykładu."
+          }
         }
       }
     },
@@ -2925,6 +6429,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This value"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Wert"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta wartość"
           }
         }
       }
@@ -2936,6 +6452,18 @@
             "state" : "translated",
             "value" : "This will remove all items from your shopping list, including checked items."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Artikel werden von deiner Einkaufsliste entfernt, auch bereits abgehakte."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wszystkie produkty z listy zakupów zostaną usunięte, także te już zaznaczone."
+          }
         }
       }
     },
@@ -2945,6 +6473,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Time & Servings"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeit & Portionen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czas i porcje"
           }
         }
       }
@@ -2956,6 +6496,18 @@
             "state" : "translated",
             "value" : "To Buy"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu kaufen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do kupienia"
+          }
         }
       }
     },
@@ -2965,6 +6517,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To buy"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu kaufen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do kupienia"
           }
         }
       }
@@ -2976,6 +6540,18 @@
             "state" : "translated",
             "value" : "Tomato and chickpea orzo with spinach and basil"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomaten-Kichererbsen-Orzo mit Spinat und Basilikum"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orzo z pomidorami, ciecierzycą, szpinakiem i bazylią"
+          }
         }
       }
     },
@@ -2985,6 +6561,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Too many requests. Please wait a moment and try again."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zbyt wiele żądań. Poczekaj chwilę i spróbuj ponownie."
           }
         }
       }
@@ -2996,6 +6584,18 @@
             "state" : "translated",
             "value" : "Try a different search term"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versuche einen anderen Suchbegriff"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj wpisać inne hasło"
+          }
         }
       }
     },
@@ -3005,6 +6605,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj ponownie"
           }
         }
       }
@@ -3016,6 +6628,18 @@
             "state" : "translated",
             "value" : "Try one together"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probieren wir eins zusammen aus"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbujmy razem"
+          }
         }
       }
     },
@@ -3025,6 +6649,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try saving again"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut speichern"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj zapisać ponownie"
           }
         }
       }
@@ -3036,6 +6672,18 @@
             "state" : "translated",
             "value" : "Try the interactive example"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interaktives Beispiel ausprobieren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj interaktywny przykład"
+          }
         }
       }
     },
@@ -3045,6 +6693,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try the provider again or use email and password."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versuche es erneut mit dem Anbieter oder nutze E-Mail und Passwort."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj ponownie u dostawcy logowania lub użyj adresu e-mail i hasła."
           }
         }
       }
@@ -3056,6 +6716,18 @@
             "state" : "translated",
             "value" : "Turn this post into a recipe. A few taps, and dinner is in your cookbook."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mach aus diesem Beitrag ein Rezept. Ein paar Mal tippen, und dein Abendessen steht im Kochbuch."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamień ten post w przepis. Kilka dotknięć i pomysł na kolację jest w Twojej książce kucharskiej."
+          }
         }
       }
     },
@@ -3065,6 +6737,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turns this post into a recipe"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Macht aus diesem Beitrag ein Rezept"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamienia ten post w przepis"
           }
         }
       }
@@ -3076,6 +6760,18 @@
             "state" : "translated",
             "value" : "Type **%@** to confirm"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib zur Bestätigung **%@** ein"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wpisz **%@**, aby potwierdzić"
+          }
         }
       }
     },
@@ -3085,6 +6781,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to connect. Please check your internet connection."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung nicht möglich. Bitte prüfe deine Internetverbindung."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można się połączyć. Sprawdź połączenie z internetem."
           }
         }
       }
@@ -3096,6 +6804,18 @@
             "state" : "translated",
             "value" : "Unable to process the server response"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serverantwort konnte nicht verarbeitet werden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się przetworzyć odpowiedzi serwera"
+          }
         }
       }
     },
@@ -3105,6 +6825,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to save to Keychain (status: %d)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speichern im Schlüsselbund nicht möglich (Status: %d)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zapisać w Pęku kluczy (status: %d)"
           }
         }
       }
@@ -3116,6 +6848,18 @@
             "state" : "translated",
             "value" : "Unsupported image format."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht unterstütztes Bildformat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieobsługiwany format zdjęcia."
+          }
         }
       }
     },
@@ -3125,6 +6869,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Update MainCourse to continue, or sign in using your previous method."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisiere MainCourse, um fortzufahren, oder melde dich mit deiner bisherigen Methode an."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaktualizuj MainCourse, aby kontynuować, lub zaloguj się dotychczasową metodą."
           }
         }
       }
@@ -3136,6 +6892,18 @@
             "state" : "translated",
             "value" : "Upgrade to Pro"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Pro wechseln"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź na Pro"
+          }
         }
       }
     },
@@ -3145,6 +6913,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use existing account"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorhandenes Konto verwenden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj istniejącego konta"
           }
         }
       }
@@ -3156,6 +6936,18 @@
             "state" : "translated",
             "value" : "Use the password reset link on the website if you have forgotten your password."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutze den Link zum Zurücksetzen des Passworts auf der Website, falls du dein Passwort vergessen hast."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeśli nie pamiętasz hasła, skorzystaj z linku do resetowania hasła na stronie internetowej."
+          }
         }
       }
     },
@@ -3165,6 +6957,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wait a moment and try again, or use email and password."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warte einen Moment und versuche es erneut, oder nutze E-Mail und Passwort."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poczekaj chwilę i spróbuj ponownie lub użyj adresu e-mail i hasła."
           }
         }
       }
@@ -3176,6 +6980,18 @@
             "state" : "translated",
             "value" : "Wait a moment and try again. If the problem persists, contact support."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warte einen Moment und versuche es erneut. Wenn das Problem weiterhin besteht, wende dich an den Support."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poczekaj chwilę i spróbuj ponownie. Jeśli problem się powtarza, skontaktuj się z pomocą techniczną."
+          }
         }
       }
     },
@@ -3185,6 +7001,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "We couldn’t reach My Recipes. Your preview is still here."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„Meine Rezepte“ war nicht erreichbar. Deine Vorschau ist weiterhin da."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się połączyć z Moimi przepisami. Twój podgląd nadal tu jest."
           }
         }
       }
@@ -3196,6 +7024,18 @@
             "state" : "translated",
             "value" : "Welcome back"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Willkommen zurück"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Witaj ponownie"
+          }
         }
       }
     },
@@ -3205,6 +7045,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When enabled, your existing recipes and shopping list items will move to the shared cookbook."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn aktiviert, werden deine bestehenden Rezepte und Einkaufsartikel in das gemeinsame Kochbuch verschoben."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po włączeniu Twoje obecne przepisy i produkty z listy zakupów zostaną przeniesione do wspólnej książki kucharskiej."
           }
         }
       }
@@ -3216,6 +7068,18 @@
             "state" : "translated",
             "value" : "Works with Instagram, websites, and more."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funktioniert mit Instagram, Websites und mehr."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Działa z Instagramem, stronami internetowymi i nie tylko."
+          }
         }
       }
     },
@@ -3225,6 +7089,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You already have a shared cookbook."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast bereits ein gemeinsames Kochbuch."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masz już wspólną książkę kucharską."
           }
         }
       }
@@ -3236,6 +7112,18 @@
             "state" : "translated",
             "value" : "You already have a shared cookbook. You must leave it before joining another."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast bereits ein gemeinsames Kochbuch. Verlasse es, bevor du einem anderen beitrittst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masz już wspólną książkę kucharską. Opuść ją lub usuń, zanim dołączysz do innej."
+          }
         }
       }
     },
@@ -3245,6 +7133,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You are already a member of this cookbook."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist bereits Mitglied dieses Kochbuchs."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Należysz już do tej książki kucharskiej."
           }
         }
       }
@@ -3256,6 +7156,18 @@
             "state" : "translated",
             "value" : "You don't have permission to perform this action"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast keine Berechtigung für diese Aktion"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie masz uprawnień do wykonania tej czynności"
+          }
         }
       }
     },
@@ -3265,6 +7177,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You own this cookbook. Delete it instead of leaving."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dir gehört dieses Kochbuch. Lösche es, anstatt es zu verlassen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta książka kucharska należy do Ciebie. Możesz ją usunąć zamiast opuszczać."
           }
         }
       }
@@ -3276,6 +7200,18 @@
             "state" : "translated",
             "value" : "You'll need to sign in again to access your account."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du musst dich erneut anmelden, um auf dein Konto zuzugreifen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby uzyskać dostęp do konta, musisz zalogować się ponownie."
+          }
         }
       }
     },
@@ -3285,6 +7221,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You're in!"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist dabei!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotowe!"
           }
         }
       }
@@ -3296,6 +7244,18 @@
             "state" : "translated",
             "value" : "You've been invited!"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist eingeladen!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masz zaproszenie!"
+          }
         }
       }
     },
@@ -3305,6 +7265,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You've joined %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist „%@“ beigetreten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dołączono do: %@"
           }
         }
       }
@@ -3316,6 +7288,18 @@
             "state" : "translated",
             "value" : "You've reached your monthly recipe import limit (%lld). Upgrade to Pro for unlimited imports."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast dein monatliches Importlimit für Rezepte (%lld) erreicht. Wechsle zu Pro, um unbegrenzt zu importieren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miesięczny limit importu przepisów (%lld) został osiągnięty. Przejdź na Pro, aby importować bez ograniczeń."
+          }
         }
       }
     },
@@ -3325,6 +7309,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You've reached your monthly recipe import limit. Upgrade to Pro for unlimited imports."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast dein monatliches Importlimit für Rezepte erreicht. Wechsle zu Pro, um unbegrenzt zu importieren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miesięczny limit importu przepisów został osiągnięty. Przejdź na Pro, aby importować bez ograniczeń."
           }
         }
       }
@@ -3336,6 +7332,18 @@
             "state" : "translated",
             "value" : "Your cookbook will be here when we can connect again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Kochbuch ist wieder da, sobald wir uns erneut verbinden können."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja książka kucharska będzie tu na Ciebie czekać, gdy tylko odzyskamy połączenie."
+          }
         }
       }
     },
@@ -3345,6 +7353,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your name"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Name"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoje imię"
           }
         }
       }
@@ -3356,6 +7376,18 @@
             "state" : "translated",
             "value" : "Your personal cookbook and all its recipes"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein persönliches Kochbuch und alle darin enthaltenen Rezepte"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoją osobistą książkę kucharską i wszystkie jej przepisy"
+          }
         }
       }
     },
@@ -3365,6 +7397,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your personal cookbook cannot be deleted or left."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein persönliches Kochbuch kann nicht gelöscht oder verlassen werden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można usunąć ani opuścić osobistej książki kucharskiej."
           }
         }
       }
@@ -3376,6 +7420,18 @@
             "state" : "translated",
             "value" : "Your preview is still here"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Vorschau ist weiterhin da"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój podgląd nadal tu jest"
+          }
         }
       }
     },
@@ -3385,6 +7441,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your recipes will stay in the shared cookbook. You can rejoin later with a new invitation."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Rezepte bleiben im gemeinsamen Kochbuch. Mit einer neuen Einladung kannst du später wieder beitreten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoje przepisy pozostaną we wspólnej książce kucharskiej. Możesz dołączyć ponownie, korzystając z nowego zaproszenia."
           }
         }
       }
@@ -3396,6 +7464,18 @@
             "state" : "translated",
             "value" : "Your session has expired. Please sign in again."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja sesja wygasła. Zaloguj się ponownie."
+          }
         }
       }
     },
@@ -3405,6 +7485,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your shopping list and meal plans"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Einkaufsliste und deine Essenspläne"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoją listę zakupów i plany posiłków"
           }
         }
       }
@@ -3416,6 +7508,18 @@
             "state" : "translated",
             "value" : "Your shopping list is empty"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Einkaufsliste ist leer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja lista zakupów jest pusta"
+          }
         }
       }
     },
@@ -3426,6 +7530,18 @@
             "state" : "translated",
             "value" : "Your subscription will not be refunded"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Abonnement wird nicht erstattet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opłata za subskrypcję nie zostanie zwrócona"
+          }
         }
       }
     },
@@ -3435,6 +7551,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "delicious"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leckeres"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pysznego"
           }
         }
       }
@@ -3457,12 +7585,36 @@
             "state" : "translated",
             "value" : "make this!!"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "unbedingt nachkochen!!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "koniecznie to zrób!!"
+          }
         }
       }
     },
     "min" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min."
+          }
+        },
+        "pl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "min"
@@ -3477,6 +7629,18 @@
             "state" : "translated",
             "value" : "or"
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "oder"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lub"
+          }
         }
       }
     },
@@ -3486,6 +7650,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "qty"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anz."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ilość"
           }
         }
       }
