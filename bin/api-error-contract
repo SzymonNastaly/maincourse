@@ -3,6 +3,9 @@ require_relative "../lib/api_error_contract"
 require "json"
 require "rexml/document"
 
+# The catalogs hold German and Polish text; don't depend on the shell's LANG.
+Encoding.default_external = Encoding::UTF_8
+
 ROOT = File.expand_path("..", __dir__)
 GROUPS = { "errors" => "ApiErrorCode", "imports" => "ImportErrorCode", "fields" => "ValidationFieldCode", "rules" => "ValidationRuleCode" }.freeze
 SWIFT = "hauptgang-ios/Hauptgang/Models/ApiErrorCodes.swift"

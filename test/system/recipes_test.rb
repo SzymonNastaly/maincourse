@@ -18,10 +18,15 @@ class RecipesTest < ApplicationSystemTestCase
 
     assert_selector "#add-recipe[open]"
     fill_in "url", with: "https://smittenkitchen.com/2026/miso-butter-roast-chicken"
-    click_button "Import recipe"
 
-    assert_text "Importing your recipe"
-    assert_selector "[data-testid=importing-overlay]"
+    # The SSRF check resolves the host; real DNS can take longer than
+    # Capybara waits, so hand it a public address instead.
+    Resolv.stub(:getaddress, "93.184.215.14") do
+      click_button "Import recipe"
+
+      assert_text "Importing your recipe"
+      assert_selector "[data-testid=importing-overlay]"
+    end
   end
 
   test "the servings stepper rescales the ingredient quantities" do

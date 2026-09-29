@@ -41,9 +41,7 @@ class WebLocalizationSystemTest < ApplicationSystemTestCase
       assert_equal false, page.evaluate_script("document.documentElement.scrollWidth > window.innerWidth")
 
       visit cookbooks_path
-      wait_for_stimulus("[data-testid=create-shared-cookbook]")
-      find("[data-testid=create-shared-cookbook]").click
-      assert_selector "#create-cookbook[open]"
+      open_dialog("[data-testid=create-shared-cookbook]", "#create-cookbook")
       assert_equal false, page.evaluate_script("document.querySelector('#create-cookbook').scrollWidth > document.querySelector('#create-cookbook').clientWidth")
 
       visit recipe_path(recipes(:one))

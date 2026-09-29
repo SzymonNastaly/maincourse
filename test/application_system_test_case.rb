@@ -38,6 +38,17 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     end
   end
 
+  # Under load a click on a dialog opener occasionally goes unhandled even
+  # though its controller is connected (#136). Click again only while the
+  # dialog is still closed, so a slow first click cannot be undone.
+  def open_dialog(trigger, dialog)
+    wait_for_stimulus(trigger)
+    find(trigger).click
+    find(trigger).click unless has_selector?("#{dialog}[open]", wait: 2)
+
+    assert_selector "#{dialog}[open]"
+  end
+
   def sign_in_through_the_form(user, password: "password")
     visit new_session_path
     fill_in_credentials(user, password)
