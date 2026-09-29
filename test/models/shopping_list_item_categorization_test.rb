@@ -33,6 +33,16 @@ class ShoppingListItemCategorizationTest < ActiveSupport::TestCase
     assert item.needs_enrichment?
   end
 
+  test "a manual item the parser confirmed categorizes the next one with the same name" do
+    first = create_item(name: "Dish soap")
+    first.update_columns(category: "household", canonical_name: "dish soap", enrichment_version: @version)
+
+    second = create_item(name: "dish soap")
+    assert_equal "household", second.category
+    assert_equal "dish soap", second.canonical_name
+    assert second.needs_enrichment?, "a lookup guess is still confirmed by the parser"
+  end
+
   test "keeps a valid client hint and ignores an invalid one" do
     hinted = create_item(name: "Hafermilch", category_hint: " Beverages ", canonical_name_hint: "Oat Milk")
     assert_equal "beverages", hinted.category

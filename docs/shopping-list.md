@@ -28,7 +28,9 @@ Each item carries derived metadata used to group the list into aisles:
    hints are only read for new or renamed items, a replay can't overwrite a
    server result.
 3. **Lookup.** `ShoppingList::CategoryLookup` picks the most common category among
-   current-version recipe ingredients with the same lowercased name. Also
+   current-version recipe ingredients and confirmed shopping list items with the
+   same lowercased name, so an item the parser has categorized once (e.g. dish
+   soap, which no recipe mentions) is placed immediately next time. Also
    provisional.
 
 Any commit of an unchecked item without a confirmed version enqueues
