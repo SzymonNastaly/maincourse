@@ -157,9 +157,9 @@ features to work:
   `test/services/recipes/sample_source_test.rb`. Once saved, a starter is ordinary
   recipe content and never re-translated. Imported recipes, units, user names, and
   notes remain their authors' content.
-- **Purchases:** RevenueCat paywall copy, StoreKit product/subscription metadata,
-  and App Store listings have their own localization systems. Review those together
-  with each supported-language release.
+- **Purchases and stores:** the RevenueCat paywall, App Store subscription names,
+  and App Store and Play listings are localized in those services. Their source
+  text lives in the repo; see `store-localization.md`.
 
 Follow-up implementation and real-language device QA are tracked in #126.
 

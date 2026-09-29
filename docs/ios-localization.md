@@ -125,9 +125,9 @@ instead of the stored English name. Show cookbooks through `displayName`; any ot
 name is user content. The field is optional so cookbooks cached in UserDefaults
 before it existed still decode. `DemoRecipe.load()` picks the starter version for
 the app's language (`Bundle.main.preferredLocalizations`), and Keep saves that
-version's key, so the preview and the saved copy match. Still English-only:
-store/paywall copy, tracked in
-[#133](https://github.com/SzymonNastaly/maincourse/issues/133).
+version's key, so the preview and the saved copy match. Store listings,
+subscription names and the paywall are localized outside the app; see
+`store-localization.md`.
 
 The backend error contract and language-ownership decisions are documented in
 `api-localization.md` ([#125](https://github.com/SzymonNastaly/maincourse/issues/125)).

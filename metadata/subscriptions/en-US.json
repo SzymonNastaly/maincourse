@@ -1,0 +1,15 @@
+{
+  "group": {
+    "name": "MainCourse Pro"
+  },
+  "subscriptions": {
+    "app.hauptgang.pro.monthly": {
+      "name": "MainCourse Pro Monthly",
+      "description": "Unlimited imports and all premium features."
+    },
+    "app.hauptgang.pro.yearly": {
+      "name": "MainCourse Pro Yearly",
+      "description": "All premium features. Save over 15% yearly."
+    }
+  }
+}

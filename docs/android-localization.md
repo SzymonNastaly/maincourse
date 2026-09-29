@@ -67,7 +67,7 @@ account's email language. A personal cookbook that keeps its generated name arri
 with `default_name: true`; show cookbooks through `Cookbook.displayName()`, which
 uses `R.string.cookbook_default_name` for it and the stored name otherwise. The
 field defaults to false so cached Room blobs from before it still decode.
-Store/purchase copy remains tracked in GitHub #133.
+The Play Store listing is localized outside the app; see `store-localization.md`.
 
 ## Verification
 
