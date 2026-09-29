@@ -27,7 +27,7 @@ module Screenshots
         user = User.find_or_initialize_by(email_address: EMAIL)
         user.update!(name: "Alex Morgan", password: PASSWORD, lifecycle_notifications_enabled: false)
         cookbook = user.personal_cookbook
-        cookbook.update!(name: "My Recipes")
+        cookbook.update!(name: Cookbook::DEFAULT_NAME, default_name: true)
         cookbook.recipes.where.not(name: catalog.map { |r| r.fetch("name") }).destroy_all
         recipe_ids = {}
 

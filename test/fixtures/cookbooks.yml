@@ -1,7 +1,9 @@
 one_personal:
   name: My Recipes
   personal: true
+  default_name: true
 
 two_personal:
   name: My Recipes
   personal: true
+  default_name: true

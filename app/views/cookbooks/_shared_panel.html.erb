@@ -6,7 +6,7 @@
       <%= icon "users", size: 15, class: "text-accent" %>
     </span>
     <span class="min-w-0 grow">
-      <span class="block truncate text-[13.5px] font-medium tracking-[-0.15px]"><%= cookbook.name %></span>
+      <span class="block truncate text-[13.5px] font-medium tracking-[-0.15px]"><%= cookbook.display_name %></span>
       <span class="mt-0.5 block text-[11.5px] font-light text-muted">
         <%= t("web.recipe_count", count: cookbook.recipes.count) %> · <%= t("web.member_count", count: memberships.size) %>
       </span>
@@ -81,7 +81,7 @@
     </div>
 
     <p class="mt-2.5 text-[11.5px] font-light text-body">
-      <%= t("web.invite_expiry", name: cookbook.name, time: distance_of_time_in_words_to_now(invitation.expires_at)) %>
+      <%= t("web.invite_expiry", name: cookbook.display_name, time: distance_of_time_in_words_to_now(invitation.expires_at)) %>
     </p>
   </div>
 <% end %>

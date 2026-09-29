@@ -19,7 +19,7 @@
           <%= icon "user", size: 15, class: "text-body" %>
         </span>
         <span class="min-w-0 grow">
-          <span class="block text-[13.5px] font-medium tracking-[-0.15px]"><%= @personal.name %></span>
+          <span class="block text-[13.5px] font-medium tracking-[-0.15px]"><%= @personal.display_name %></span>
           <span class="mt-0.5 block text-[11.5px] font-light text-muted"><%= t("web.recipe_count", count: @personal.recipes.count) %></span>
         </span>
         <% if current_cookbook&.id == @personal.id %>

@@ -14,6 +14,19 @@ class Cookbook < ApplicationRecord
 
   validates :name, presence: true
 
+  # A rename (for example through the admin) makes the name user content.
+  before_update -> { self.default_name = false }, if: -> { name_changed? && !default_name_changed? }
+
+  # Stored for every personal cookbook and still sent as `name` to older apps.
+  DEFAULT_NAME = "My Recipes"
+
+  # Name to show people. A cookbook flagged `default_name` is presented in the
+  # viewer's language; stored names are user content and are never translated or
+  # compared against the English default.
+  def display_name
+    default_name? ? I18n.t("cookbooks.default_name") : name
+  end
+
   def owner
     cookbook_memberships.find_by(role: :owner)&.user
   end

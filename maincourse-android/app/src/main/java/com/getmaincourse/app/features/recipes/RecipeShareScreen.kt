@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
+import com.getmaincourse.app.features.cookbooks.displayName
 import com.getmaincourse.app.ui.localized
 import com.getmaincourse.app.ui.theme.MainCourseColors
 import com.getmaincourse.app.ui.theme.MainCourseShapes
@@ -46,9 +47,9 @@ internal fun RecipeShareSheet(
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
         )
-        state.destinationName?.let { destination ->
+        state.destination?.let { destination ->
             Text(
-                stringResource(R.string.recipe_share_destination, destination),
+                stringResource(R.string.recipe_share_destination, destination.displayName()),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MainCourseColors.Body,
             )

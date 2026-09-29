@@ -12,7 +12,7 @@
 
 <div class="px-4 pt-5 pb-10 md:px-[30px] md:pt-[26px]">
   <h1 class="mb-1.5 text-[23px] font-semibold tracking-[-0.5px] md:text-[29px] md:tracking-[-0.7px]"><%= t("web.new_recipe") %></h1>
-  <p class="mb-6 text-[12.5px] font-light text-muted"><%= t("web.adding_to", name: current_cookbook.name) %></p>
+  <p class="mb-6 text-[12.5px] font-light text-muted"><%= t("web.adding_to", name: current_cookbook.display_name) %></p>
 
   <%= render "recipes/form", recipe: @recipe %>
 </div>

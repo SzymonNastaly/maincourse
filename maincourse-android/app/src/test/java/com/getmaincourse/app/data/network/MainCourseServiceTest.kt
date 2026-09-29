@@ -162,13 +162,14 @@ class MainCourseServiceTest {
         server.enqueue(
             jsonResponse(
                 200,
-                """[{"id":42,"name":"Mine","personal":true,"recipe_count":1,"members":[]}]""",
+                """[{"id":42,"name":"My Recipes","default_name":true,"personal":true,"recipe_count":1,"members":[]}]""",
             ),
         )
 
         val cookbooks = service.cookbooks()
 
         assertEquals(42L, cookbooks.single().id)
+        assertTrue(cookbooks.single().defaultName)
         val request = server.takeRequest()
         assertEquals("GET", request.method)
         assertEquals("/api/v1/cookbooks", request.path)

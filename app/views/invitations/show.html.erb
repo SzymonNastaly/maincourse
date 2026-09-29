@@ -41,7 +41,7 @@
       <%= icon "book-open", size: 18, stroke: 2, style: "color: var(--color-lime)" %>
     </span>
     <span class="min-w-0 grow">
-      <span class="block truncate text-[14px] font-medium"><%= @invitation.cookbook.name %></span>
+      <span class="block truncate text-[14px] font-medium"><%= @invitation.cookbook.display_name %></span>
       <span class="mt-0.5 block text-[11.5px] font-light text-muted">
         <%= t("web.recipe_count", count: @invitation.cookbook.recipes.count) %> ·
         <%= t("web.member_count", count: @invitation.cookbook.cookbook_memberships.count) %>
@@ -60,14 +60,14 @@
 
   <% elsif @already_member %>
     <p class="mb-4 text-[12.5px] font-light text-muted"><%= t("web.already_member") %></p>
-    <%= link_to t("web.open_cookbook", name: @invitation.cookbook.name), recipes_path,
+    <%= link_to t("web.open_cookbook", name: @invitation.cookbook.display_name), recipes_path,
                 class: "mc-btn mc-btn-primary w-full py-3 text-[13.5px]" %>
 
   <% elsif @blocked_by_existing_shared %>
     <div class="mb-4 flex items-start gap-2.5 rounded-card border border-danger-line bg-danger-tint px-3 py-2.5 text-[11.5px] leading-relaxed text-danger">
       <%= icon "triangle-alert", size: 15, stroke: 2, class: "mt-px" %>
       <span>
-        <%= t("web.leave_before_joining_html", name: tag.strong(Current.user.shared_cookbook.name, class: "font-medium")) %>
+        <%= t("web.leave_before_joining_html", name: tag.strong(Current.user.shared_cookbook.display_name, class: "font-medium")) %>
       </span>
     </div>
     <%= link_to t("web.manage_cookbooks"), cookbooks_path, class: "mc-btn mc-btn-outline w-full py-3 text-[13.5px]" %>

@@ -51,6 +51,7 @@
     <string name="cookbook_selected">Wybrana książka kucharska</string>
     <string name="cookbook_none_selected">Nie wybrano książki kucharskiej</string>
     <string name="cookbook_manage">Zarządzaj książkami kucharskimi</string>
+    <string name="cookbook_default_name">Moje przepisy</string>
     <string name="cookbook_personal">OSOBISTA KSIĄŻKA KUCHARSKA</string>
     <string name="cookbook_shared">WSPÓLNA KSIĄŻKA KUCHARSKA</string>
     <string name="cookbook_create_shared">Utwórz wspólną książkę kucharską</string>

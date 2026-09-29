@@ -100,7 +100,7 @@ struct CookbookSettingsView: View {
             Image(systemName: isPersonal ? "person.fill" : "person.2.fill")
                 .foregroundStyle(Color.mcAccent)
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                Text(cookbook.name)
+                Text(cookbook.displayName)
                     .font(.body)
                     .foregroundStyle(Color.mcInk)
                 Text(RecipeDisplayFormatter.recipeCount(cookbook.recipeCount))

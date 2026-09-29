@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.filters.SdkSuppress
+import com.getmaincourse.app.data.model.Cookbook
 import com.getmaincourse.app.data.network.ApiProblem
 import com.getmaincourse.app.features.recipes.RecipeShareSheet
 import com.getmaincourse.app.features.recipes.RecipeShareStatus
@@ -38,7 +39,9 @@ class LocalizationScreenTest {
     fun systemAppLanguageChangesRerenderRetainedErrorsAndShareUi() {
         // The same immutable state survives every locale-triggered activity recreation.
         val error = UiMessage.Api(ApiProblem("invalid_credentials"), 401)
-        val shareState = RecipeShareUiState("Family / Rodzina", RecipeShareStatus.Failed(error))
+        // The stored English default is presented in the app language.
+        val personal = Cookbook(1, "My Recipes", true, 0, emptyList(), defaultName = true)
+        val shareState = RecipeShareUiState(personal, RecipeShareStatus.Failed(error))
         compose.runOnIdle {
             originalLocales = compose.activity.getSystemService(LocaleManager::class.java).applicationLocales
             MainCourseTestContent.content = {
@@ -52,9 +55,9 @@ class LocalizationScreenTest {
             }
         }
         for ((language, title, credentials, destination) in listOf(
-            listOf("pl", "Przepisy", "Nieprawidłowy adres e-mail lub hasło", "Zapisywanie w: Family / Rodzina"),
-            listOf("de", "Rezepte", "Ungültige E-Mail-Adresse oder ungültiges Passwort", "Wird in „Family / Rodzina“ gespeichert"),
-            listOf("en", "Recipes", "Invalid email or password", "Saving to Family / Rodzina"),
+            listOf("pl", "Przepisy", "Nieprawidłowy adres e-mail lub hasło", "Zapisywanie w: Moje przepisy"),
+            listOf("de", "Rezepte", "Ungültige E-Mail-Adresse oder ungültiges Passwort", "Wird in „Meine Rezepte“ gespeichert"),
+            listOf("en", "Recipes", "Invalid email or password", "Saving to My Recipes"),
         )) {
             compose.runOnIdle {
                 compose.activity.getSystemService(LocaleManager::class.java).applicationLocales = LocaleList.forLanguageTags(language)

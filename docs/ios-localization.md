@@ -118,9 +118,13 @@ share extension on iPhone/iPad, with accessibility text sizes. For real language
 rollouts, also verify switching through iOS Settings and any applicable RTL layout.
 
 Push text is rendered by Rails in the language the app sends with its APNs
-registration (`push-notifications.md`). Still English-only, by design: email text, starter/default
-content (including the "My Recipes" cookbook name that the UI text refers to), and
-store/paywall copy. These are tracked in
+registration (`push-notifications.md`); email follows the account's email language.
+The personal cookbook's generated name arrives with `default_name: true`, and
+`Cookbook.displayName` shows the "My Recipes" string from `Localizable.xcstrings`
+instead of the stored English name. Show cookbooks through `displayName`; any other
+name is user content. The field is optional so cookbooks cached in UserDefaults
+before it existed still decode. Still English-only: the starter recipe and
+store/paywall copy, tracked in
 [#133](https://github.com/SzymonNastaly/maincourse/issues/133).
 
 The backend error contract and language-ownership decisions are documented in

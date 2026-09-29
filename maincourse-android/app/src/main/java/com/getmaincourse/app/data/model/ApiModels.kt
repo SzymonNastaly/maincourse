@@ -29,6 +29,10 @@ data class Cookbook(
     @SerialName("recipe_count")
     val recipeCount: Int,
     val members: List<CookbookMember>,
+    // True while a personal cookbook keeps its generated name. Defaulted so
+    // cached blobs and older servers without the key still decode.
+    @SerialName("default_name")
+    val defaultName: Boolean = false,
 )
 
 @Serializable

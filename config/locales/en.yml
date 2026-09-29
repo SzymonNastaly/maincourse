@@ -350,3 +350,5 @@ en:
       link: this password reset page
       body_text: "You can reset your password on this page:"
       expiry: "This link will expire in %{duration}."
+  cookbooks:
+    default_name: My Recipes

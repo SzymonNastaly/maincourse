@@ -51,6 +51,7 @@
     <string name="cookbook_selected">Ausgewähltes Kochbuch</string>
     <string name="cookbook_none_selected">Kein Kochbuch ausgewählt</string>
     <string name="cookbook_manage">Kochbücher verwalten</string>
+    <string name="cookbook_default_name">Meine Rezepte</string>
     <string name="cookbook_personal">PERSÖNLICHES KOCHBUCH</string>
     <string name="cookbook_shared">GEMEINSAMES KOCHBUCH</string>
     <string name="cookbook_create_shared">Gemeinsames Kochbuch erstellen</string>

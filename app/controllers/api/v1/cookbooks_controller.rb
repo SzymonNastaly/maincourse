@@ -86,7 +86,10 @@ module Api
       def cookbook_json(cookbook, recipe_count: nil)
         {
           id: cookbook.id,
+          # Stored name; older apps show it as-is. When `default_name` is true,
+          # current apps show their own translation of "My Recipes" instead.
           name: cookbook.name,
+          default_name: cookbook.default_name,
           personal: cookbook.personal,
           recipe_count: recipe_count || cookbook.recipes.count,
           members: cookbook.cookbook_memberships.map do |membership|

@@ -89,10 +89,10 @@ struct RecipeSearchView: View {
                         id: recipe.id,
                         name: recipe.name,
                         targetCookbookId: targetCookbook.id,
-                        targetCookbookName: targetCookbook.name
+                        targetCookbookName: targetCookbook.displayName
                     )
                 } label: {
-                    Label("Move to \(targetCookbook.name)", systemImage: "arrow.right.arrow.left")
+                    Label("Move to \(targetCookbook.displayName)", systemImage: "arrow.right.arrow.left")
                 }
             }
             Button(role: .destructive) {

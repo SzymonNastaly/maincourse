@@ -37,9 +37,9 @@ class DeliverPendingNotificationJob < ApplicationJob
   def build_title(actor, cookbook)
     name = actor.name.to_s.strip
     if name.empty?
-      I18n.t("push.shared_cookbook.title", cookbook: cookbook.name)
+      I18n.t("push.shared_cookbook.title", cookbook: cookbook.display_name)
     else
-      I18n.t("push.shared_cookbook.title_with_actor", actor: name, cookbook: cookbook.name)
+      I18n.t("push.shared_cookbook.title_with_actor", actor: name, cookbook: cookbook.display_name)
     end
   end
 

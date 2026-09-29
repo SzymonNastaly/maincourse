@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.getmaincourse.app.R
 import com.getmaincourse.app.data.model.Cookbook
+import com.getmaincourse.app.features.cookbooks.displayName
 import com.getmaincourse.app.ui.theme.MainCourseShapes
 
 @Composable
@@ -57,7 +58,7 @@ internal fun CookbookTitleMenu(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = selected?.name ?: stringResource(R.string.recipes),
+                text = selected?.displayName() ?: stringResource(R.string.recipes),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -77,7 +78,7 @@ internal fun CookbookTitleMenu(
             cookbooks.forEach { cookbook ->
                 val isSelected = cookbook.id == selectedId
                 DropdownMenuItem(
-                    text = { Text(cookbook.name) },
+                    text = { Text(cookbook.displayName()) },
                     onClick = {
                         expanded = false
                         onSelect(cookbook.id)

@@ -78,7 +78,7 @@ class User < ApplicationRecord
   end
 
   def create_personal_cookbook!
-    cookbook = Cookbook.create!(name: "My Recipes", personal: true)
+    cookbook = Cookbook.create!(name: Cookbook::DEFAULT_NAME, personal: true, default_name: true)
     cookbook_memberships.create!(cookbook: cookbook, role: :owner)
   end
 
