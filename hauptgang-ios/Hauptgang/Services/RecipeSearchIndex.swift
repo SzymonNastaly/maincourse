@@ -17,7 +17,7 @@ protocol RecipeSearchIndexProtocol: Sendable {
 
 actor RecipeSearchIndex: RecipeSearchIndexProtocol {
     static let shared = RecipeSearchIndex()
-    private static let schemaVersion = "3"
+    private static let schemaVersion = "4"
 
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipeSearchIndex")
     private var dbQueue: DatabaseQueue?

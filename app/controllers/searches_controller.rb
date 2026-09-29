@@ -13,17 +13,18 @@ class SearchesController < ApplicationController
   private
 
   def search
-    term = "%#{ActiveRecord::Base.sanitize_sql_like(@query.downcase)}%"
+    # search_fold (config/initializers/search_fold.rb) ignores case and accents.
+    term = "%#{ActiveRecord::Base.sanitize_sql_like(SearchFold.call(@query))}%"
 
     Recipe.where(cookbook_id: @cookbooks.map(&:id))
           .where.not(import_status: :failed)
           .where(<<~SQL.squish, term: term)
-            LOWER(recipes.name) LIKE :term
-            OR LOWER(COALESCE(recipes.instructions, '')) LIKE :term
+            search_fold(recipes.name) LIKE :term
+            OR search_fold(COALESCE(recipes.instructions, '')) LIKE :term
             OR EXISTS (
               SELECT 1 FROM ingredients
               WHERE ingredients.recipe_id = recipes.id
-                AND LOWER(ingredients.raw) LIKE :term
+                AND search_fold(ingredients.raw) LIKE :term
             )
           SQL
           .with_attached_cover_image

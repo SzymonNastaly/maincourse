@@ -29,6 +29,14 @@ API controllers inherit from `ActionController::API`, not `ApplicationController
 so browser negotiation does not affect API codes, legacy English error fields,
 or machine serialization. See `api-localization.md`.
 
+## Search
+
+Web search compares recipe names, ingredients and steps through `search_fold`,
+a SQLite function registered in `config/initializers/search_fold.rb`. SQLite's
+own `LOWER` and `LIKE` only fold ASCII, so without it “śmietana” missed
+“Śmietana” and “apfel” missed “Äpfel”. The fold ignores case and accents,
+treats ß as “ss” and ł as “l”. Web search has no synonyms.
+
 ## Email
 
 Email follows the account's communication language (`users.communication_language`),

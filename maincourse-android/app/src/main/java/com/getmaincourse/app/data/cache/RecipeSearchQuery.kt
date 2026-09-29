@@ -14,10 +14,14 @@ internal object RecipeSearchQuery {
         return tokens.joinToString(" AND ") { token -> "$prefix$token*" }
     }
 
+    // ł has no combining mark to strip, and ß folds to "ss" as on iOS and web.
+    // Documents are rebuilt when search opens, so changing this needs no migration.
     fun normalizeIndexedText(raw: String): String =
         Normalizer.normalize(raw, Normalizer.Form.NFD)
             .replace(COMBINING_MARKS, "")
             .lowercase(Locale.ROOT)
+            .replace("ł", "l")
+            .replace("ß", "ss")
 }
 
 private val COMBINING_MARKS = Regex("\\p{M}+")

@@ -92,9 +92,9 @@ Room database schema 4 added two derived tables:
 
 Schema 5 uses FTS4's default `simple` tokenizer because Android 10's platform
 SQLite does not provide the Unicode61 tokenizer. Search documents and queries
-are both lowercased and stripped of diacritics before reaching SQLite, so
-accent-insensitive matches such as `cafe` for `Café` remain available without
-shipping a second SQLite runtime. The 3-to-5 migration creates the compatible
+are both lowercased and stripped of diacritics (ł becomes `l`, ß `ss`) before
+reaching SQLite, so accent-insensitive matches such as `cafe` for `Café` or `bulka`
+for `bułka` remain available without shipping a second SQLite runtime. The 3-to-5 migration creates the compatible
 projection directly. The 4-to-5 migration discards only the derived search
 documents; the Search screen rebuilds them from canonical recipe rows.
 
@@ -170,7 +170,8 @@ The most relevant coverage lives in:
 - `maincourse-android/app/src/test/java/com/getmaincourse/app/features/search/SearchViewModelTest.kt`
 - `maincourse-android/app/src/test/java/com/getmaincourse/app/data/cache/RecipeSearchQueryTest.kt`
 
-Synonym expansion, fuzzy or typo matching, cross-cookbook search, system search
+Synonym expansion (iOS has English, German and Polish regional synonyms), fuzzy
+or typo matching, cross-cookbook search, system search
 surfaces, and persistent background hydration are intentionally absent. Add
 them only in response to observed search-quality or product requirements. Do
 not upgrade Room or bundle another SQLite runtime solely to reproduce iOS's

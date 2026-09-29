@@ -51,8 +51,10 @@ change `I18n.locale` from `Accept-Language`. This lets a shared recipe's import
 failure render in each viewer's language and works identically for JSON, multipart,
 and the iOS share extension. No client-language header is needed for these errors.
 
-The existing `error` / `errors` English fields remain for installed clients.
-They are compatibility prose, never identifiers or format strings. Codes are
+The existing `error` / `errors` English fields remain for installed clients;
+current clients ignore them. They are compatibility prose, never identifiers or
+format strings. They can go once older releases can be required to update
+(minimum-version enforcement, #71); #138 tracks the removal. Codes are
 additive: changing wording must not change a code; clients must tolerate new codes,
 missing metadata, and non-JSON proxy responses. Deploy Rails before the new clients
 to retain detailed messages throughout the rollout.

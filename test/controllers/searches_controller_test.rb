@@ -40,6 +40,18 @@ class SearchesControllerTest < ActionDispatch::IntegrationTest
     assert_match recipes(:three).name, response.body
   end
 
+  test "ignores case and accents beyond ASCII" do
+    recipe = cookbooks(:one_personal).recipes.create!(name: "Łosoś w Śmietanie", user: @user)
+    recipe.ingredients.create!(raw: "2 Äpfel", position: 0)
+    recipe.update!(instructions: "Den Weißkohl hobeln.")
+
+    [ "łosoś", "losos", "śmietanie", "apfel", "ÄPFEL", "weisskohl", "WEISSKOHL" ].each do |query|
+      get search_path(q: query)
+
+      assert_match recipe.name, response.body, "expected #{query.inspect} to find the recipe"
+    end
+  end
+
   test "searches across every cookbook the user belongs to" do
     shared = create_shared_cookbook_for(@user)
     shared_recipe = shared.recipes.create!(name: "Shared Labneh Flatbread", user: @user)
