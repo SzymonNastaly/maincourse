@@ -17,8 +17,8 @@
   "atZL04pbDh": "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
   "bAF4Hd75Ox": "Weiter",
   "cQSOmgSfE-": "{{ product.periodly | capitalize }}",
-  "eWqKEhHO1k": "14 TAGE KOSTENLOS TESTEN",
-  "i5syMLk2wH": "Starte die {{ product.offer_period_with_unit }} kostenlose Testversion",
+  "eWqKEhHO1k": "{{ product.offer_period_with_unit }} KOSTENLOS TESTEN",
+  "i5syMLk2wH": "{{ product.offer_period_with_unit }} kostenlos testen",
   "icB8YQ4_LF": "Weiter",
   "kNZTJj4jqI": "{{ product.periodly | capitalize }}",
   "kfRyyKjgLl": "Datenschutz",
@@ -28,7 +28,7 @@
   "q5fR2KTzi7": "Kostenlose Testversion aktiviert",
   "rs43o5YjzJ": "{{ product.periodly | capitalize }}",
   "u2w9OMxxR3": "Nutzungsbedingungen",
-  "uhiFohUdvB": "Starte die {{ product.offer_period_with_unit }} kostenlose Testversion",
+  "uhiFohUdvB": "{{ product.offer_period_with_unit }} kostenlos testen",
   "v1Wz3IILGT": "{{ product.price_per_period_abbreviated }}",
   "z8Us4Fspsz": "{{ product.price_per_period_abbreviated }}"
 }

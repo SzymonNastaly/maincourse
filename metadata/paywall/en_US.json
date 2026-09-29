@@ -17,7 +17,7 @@
   "atZL04pbDh": "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
   "bAF4Hd75Ox": "Continue",
   "cQSOmgSfE-": "{{ product.periodly | capitalize }}",
-  "eWqKEhHO1k": "14-DAY FREE TRIAL",
+  "eWqKEhHO1k": "FREE {{ product.offer_period_with_unit }} TRIAL",
   "i5syMLk2wH": "Start {{ product.offer_period_with_unit }} free trial",
   "icB8YQ4_LF": "Continue",
   "kNZTJj4jqI": "{{ product.periodly | capitalize }}",
