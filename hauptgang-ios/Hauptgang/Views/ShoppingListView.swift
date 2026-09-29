@@ -23,6 +23,7 @@ struct ShoppingListView: View {
                 id: item.scopedClientId,
                 name: item.name,
                 details: item.details,
+                category: ShoppingCategory(serverValue: item.category),
                 isChecked: item.isChecked,
                 onTap: { self.viewModel.toggleItem(item) },
                 onDelete: { self.viewModel.deleteItem(item) }
@@ -127,7 +128,8 @@ struct ShoppingListView: View {
                 ShoppingListSectionsContent(
                     uncheckedItems: self.displayUncheckedItems,
                     checkedItems: self.displayCheckedItems,
-                    checkedSectionExpanded: self.$checkedSectionExpanded
+                    checkedSectionExpanded: self.$checkedSectionExpanded,
+                    groupsByAisle: true
                 ) {
                     self.removeAllButton
                 }

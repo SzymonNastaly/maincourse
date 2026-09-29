@@ -4,6 +4,7 @@ struct ShoppingListDisplayItem: Identifiable {
     let id: String
     let name: String
     let details: String?
+    let category: ShoppingCategory
     let isChecked: Bool
     let onTap: () -> Void
     let onDelete: (() -> Void)?
@@ -12,6 +13,7 @@ struct ShoppingListDisplayItem: Identifiable {
         id: String,
         name: String,
         details: String? = nil,
+        category: ShoppingCategory = .other,
         isChecked: Bool,
         onTap: @escaping () -> Void,
         onDelete: (() -> Void)? = nil
@@ -19,6 +21,7 @@ struct ShoppingListDisplayItem: Identifiable {
         self.id = id
         self.name = name
         self.details = details
+        self.category = category
         self.isChecked = isChecked
         self.onTap = onTap
         self.onDelete = onDelete
@@ -29,31 +32,48 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
     let uncheckedItems: [ShoppingListDisplayItem]
     let checkedItems: [ShoppingListDisplayItem]
     @Binding var checkedSectionExpanded: Bool
+    /// Splits To Buy into aisle sections. Already Got always stays one list.
+    let groupsByAisle: Bool
     let uncheckedHeaderTrailing: HeaderTrailing
 
     init(
         uncheckedItems: [ShoppingListDisplayItem],
         checkedItems: [ShoppingListDisplayItem],
         checkedSectionExpanded: Binding<Bool>,
+        groupsByAisle: Bool = false,
         @ViewBuilder uncheckedHeaderTrailing: () -> HeaderTrailing
     ) {
         self.uncheckedItems = uncheckedItems
         self.checkedItems = checkedItems
         self._checkedSectionExpanded = checkedSectionExpanded
+        self.groupsByAisle = groupsByAisle
         self.uncheckedHeaderTrailing = uncheckedHeaderTrailing()
     }
 
     private enum Row: Identifiable {
         case uncheckedHeader
+        case aisleHeader(ShoppingCategory, isFirst: Bool)
         case checkedHeader
         case item(ShoppingListDisplayItem)
 
         var id: String {
             switch self {
             case .uncheckedHeader: "header.unchecked"
+            case let .aisleHeader(category, _): "header.aisle.\(category.rawValue)"
             case .checkedHeader: "header.checked"
             case let .item(item): item.id
             }
+        }
+    }
+
+    /// Unchecked rows in aisle order; items keep their list order within an aisle.
+    private var uncheckedRows: [Row] {
+        guard self.groupsByAisle else { return self.uncheckedItems.map(Row.item) }
+
+        let byAisle = Dictionary(grouping: self.uncheckedItems, by: \.category)
+        let aisles = ShoppingCategory.allCases.filter { byAisle[$0] != nil }
+        return aisles.enumerated().flatMap { index, aisle in
+            [Row.aisleHeader(aisle, isFirst: index == 0)] + (byAisle[aisle] ?? []).map(Row.item)
         }
     }
 
@@ -62,7 +82,7 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
         if !self.uncheckedItems.isEmpty || !self.checkedItems.isEmpty {
             rows.append(.uncheckedHeader)
         }
-        rows += self.uncheckedItems.map(Row.item)
+        rows += self.uncheckedRows
         if !self.checkedItems.isEmpty {
             rows.append(.checkedHeader)
             if self.checkedSectionExpanded {
@@ -79,6 +99,9 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
                 switch row {
                 case .uncheckedHeader:
                     self.uncheckedHeader
+                case let .aisleHeader(category, isFirst):
+                    Self.aisleHeader(category)
+                        .padding(.top, isFirst ? 0 : Theme.Spacing.sm)
                 case .checkedHeader:
                     self.checkedHeader
                         .padding(.top, Theme.Spacing.md)
@@ -101,6 +124,14 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
             Spacer()
             self.uncheckedHeaderTrailing
         }
+    }
+
+    private static func aisleHeader(_ category: ShoppingCategory) -> some View {
+        Text(category.title)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color.mcBody)
+            .padding(.leading, Theme.Spacing.xs)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private var checkedHeader: some View {

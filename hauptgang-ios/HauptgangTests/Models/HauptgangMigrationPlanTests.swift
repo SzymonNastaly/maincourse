@@ -4,13 +4,13 @@ import XCTest
 
 @MainActor
 final class HauptgangMigrationPlanTests: XCTestCase {
-    func testV7ToV8PreservesStarterRecipeAndStoresNewErrorCode() throws {
+    func testV7ToV9PreservesStarterRecipeAndStoresNewErrorCode() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = directory.appendingPathComponent("migration.store")
         try self.seedV7Store(at: url)
-        let schema = Schema(versionedSchema: HauptgangSchemaV8.self)
+        let schema = Schema(versionedSchema: HauptgangSchemaV9.self)
         let config = ModelConfiguration("MigrationTest", schema: schema, url: url, cloudKitDatabase: .none)
         let container = try ModelContainer(
             for: schema,
@@ -45,7 +45,7 @@ final class HauptgangMigrationPlanTests: XCTestCase {
         try context.save()
     }
 
-    func testV6ToV8RetainsRecipeDetailsAndPendingShoppingEdit() throws {
+    func testV6ToV9RetainsRecipeDetailsAndPendingShoppingEdit() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("hauptgang-v6-v7-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -54,7 +54,7 @@ final class HauptgangMigrationPlanTests: XCTestCase {
 
         try self.seedV6Store(at: storeURL)
 
-        let schema = Schema(versionedSchema: HauptgangSchemaV8.self)
+        let schema = Schema(versionedSchema: HauptgangSchemaV9.self)
         let configuration = ModelConfiguration(
             "MigrationTest",
             schema: schema,
@@ -85,6 +85,7 @@ final class HauptgangMigrationPlanTests: XCTestCase {
         XCTAssertEqual(shoppingItem.name, "Olive oil")
         XCTAssertEqual(shoppingItem.details, "2 tbsp")
         XCTAssertEqual(shoppingItem.syncState, .pendingUpdate)
+        XCTAssertNil(shoppingItem.category)
     }
 
     private func seedV6Store(at storeURL: URL) throws {

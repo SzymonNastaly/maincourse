@@ -11,7 +11,8 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
             HauptgangSchemaV5.self,
             HauptgangSchemaV6.self,
             HauptgangSchemaV7.self,
-            HauptgangSchemaV8.self
+            HauptgangSchemaV8.self,
+            HauptgangSchemaV9.self
         ]
     }
 
@@ -23,7 +24,8 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
             migrateV4toV5,
             migrateV5toV6,
             migrateV6toV7,
-            migrateV7toV8
+            migrateV7toV8,
+            migrateV8toV9
         ]
     }
 
@@ -80,5 +82,12 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
     static let migrateV7toV8 = MigrationStage.lightweight(
         fromVersion: HauptgangSchemaV7.self,
         toVersion: HauptgangSchemaV8.self
+    )
+
+    /// V8 → V9: Lightweight — adds optional aisle metadata to shopping list items.
+    /// Existing rows show under Other until the next sync fills them in.
+    static let migrateV8toV9 = MigrationStage.lightweight(
+        fromVersion: HauptgangSchemaV8.self,
+        toVersion: HauptgangSchemaV9.self
     )
 }

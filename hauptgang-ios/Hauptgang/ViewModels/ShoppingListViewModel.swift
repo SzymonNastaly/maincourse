@@ -113,15 +113,17 @@ final class ShoppingListViewModel {
         let name = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
 
-        let newItem = ShoppingListItemCreate(
-            clientId: UUID().uuidString,
-            name: name,
-            details: nil,
-            checkedAt: nil,
-            sourceRecipeId: nil
-        )
-
         do {
+            let hint = try? self.repository.categoryHint(forName: name)
+            let newItem = ShoppingListItemCreate(
+                clientId: UUID().uuidString,
+                name: name,
+                details: nil,
+                checkedAt: nil,
+                sourceRecipeId: nil,
+                category: hint?.category,
+                canonicalName: hint?.canonicalName
+            )
             try self.repository.addLocalItems([newItem])
             self.loadCachedItems()
             Task { await self.syncPendingChanges() }
@@ -215,7 +217,9 @@ final class ShoppingListViewModel {
                             name: $0.name,
                             details: $0.details,
                             checkedAt: $0.checkedAt,
-                            sourceRecipeId: $0.sourceRecipeId
+                            sourceRecipeId: $0.sourceRecipeId,
+                            category: $0.category,
+                            canonicalName: $0.canonicalName
                         )
                     }
 
@@ -269,7 +273,9 @@ final class ShoppingListViewModel {
                 name: name,
                 details: details,
                 checkedAt: nil,
-                sourceRecipeId: sourceRecipeId
+                sourceRecipeId: sourceRecipeId,
+                category: item.category,
+                canonicalName: item.canonicalName
             )
         }
     }

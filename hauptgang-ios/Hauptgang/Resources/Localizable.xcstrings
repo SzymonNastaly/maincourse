@@ -387,6 +387,16 @@
         }
       }
     },
+    "Bakery" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bakery"
+          }
+        }
+      }
+    },
     "Bought" : {
       "localizations" : {
         "en" : {
@@ -849,6 +859,16 @@
         }
       }
     },
+    "Dairy & Eggs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dairy & Eggs"
+          }
+        }
+      }
+    },
     "Decline" : {
       "localizations" : {
         "en" : {
@@ -1009,6 +1029,16 @@
         }
       }
     },
+    "Drinks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drinks"
+          }
+        }
+      }
+    },
     "Edit Name" : {
       "localizations" : {
         "en" : {
@@ -1159,6 +1189,16 @@
         }
       }
     },
+    "Frozen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frozen"
+          }
+        }
+      }
+    },
     "Generate Invite Link" : {
       "localizations" : {
         "en" : {
@@ -1205,6 +1245,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Here’s a recipe from someone’s feed."
+          }
+        }
+      }
+    },
+    "Household" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Household"
           }
         }
       }
@@ -1589,6 +1639,16 @@
         }
       }
     },
+    "Meat & Seafood" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meat & Seafood"
+          }
+        }
+      }
+    },
     "Message" : {
       "localizations" : {
         "en" : {
@@ -1809,6 +1869,16 @@
         }
       }
     },
+    "Oils, Spices & Sauces" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oils, Spices & Sauces"
+          }
+        }
+      }
+    },
     "Only the cookbook owner can do this." : {
       "localizations" : {
         "en" : {
@@ -1845,6 +1915,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opens the example sharing options"
+          }
+        }
+      }
+    },
+    "Other" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
+    "Pantry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pantry"
           }
         }
       }
@@ -1985,6 +2075,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Processing recipe…"
+          }
+        }
+      }
+    },
+    "Produce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produce"
           }
         }
       }

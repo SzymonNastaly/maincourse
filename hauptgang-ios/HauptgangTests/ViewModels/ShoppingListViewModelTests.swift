@@ -244,6 +244,62 @@ struct ShoppingListViewModelTests {
         #expect(service.createCallCount == 1)
     }
 
+    @Test func addCustomItem_usesLocalCategoryHintAndSendsIt() async {
+        let repo = MockShoppingListRepository()
+        let service = MockShoppingListService()
+        repo.categoryHints["milch"] = ShoppingCategoryHint(category: "dairy_eggs", canonicalName: "milk")
+        service.createResult = [self.makeResponse(id: 10, clientId: "placeholder", name: "Milch")]
+
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+        vm.addCustomItem("Milch")
+
+        #expect(repo.items.first?.category == "dairy_eggs")
+        try? await Task.sleep(for: .milliseconds(100))
+        #expect(service.lastCreatedPayload.first?.category == "dairy_eggs")
+        #expect(service.lastCreatedPayload.first?.canonicalName == "milk")
+    }
+
+    @Test func addCustomItem_withoutHintStartsUncategorized() {
+        let (vm, repo, _) = self.makeVM()
+
+        vm.addCustomItem("Dragon fruit")
+
+        #expect(repo.items.first?.category == nil)
+    }
+
+    @Test func addIngredientsFromRecipe_carriesCategories() {
+        let (vm, repo, _) = self.makeVM()
+
+        vm.addIngredientsFromRecipe(
+            [ShoppingListDraftItem(name: "Butter", category: "dairy_eggs", canonicalName: "butter")],
+            sourceRecipeId: 3
+        )
+
+        #expect(repo.items.first?.category == "dairy_eggs")
+        #expect(repo.items.first?.canonicalName == "butter")
+    }
+
+    @Test func refresh_adoptsServerCategoryButKeepsLocalGuessWhenServerHasNone() async {
+        let repo = MockShoppingListRepository()
+        let service = MockShoppingListService()
+        let guessed = self.makePersisted(clientId: "a", name: "Milch", syncState: .synced)
+        guessed.category = "dairy_eggs"
+        let unknown = self.makePersisted(clientId: "b", name: "Mystery", syncState: .synced)
+        unknown.category = "pantry"
+        repo.items = [guessed, unknown]
+        var confirmed = self.makeResponse(id: 1, clientId: "a", name: "Milch")
+        confirmed.category = "beverages"
+        confirmed.canonicalName = "milk"
+        service.fetchResult = [confirmed, self.makeResponse(id: 2, clientId: "b", name: "Mystery")]
+
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+        await vm.refresh()
+
+        #expect(repo.items.first { $0.clientId == "a" }?.category == "beverages")
+        #expect(repo.items.first { $0.clientId == "a" }?.canonicalName == "milk")
+        #expect(repo.items.first { $0.clientId == "b" }?.category == "pantry")
+    }
+
     @Test func addCustomItem_ignoresEmptyString() {
         let (vm, repo, _) = self.makeVM()
 

@@ -27,6 +27,7 @@ protocol ShoppingListRepositoryProtocol {
     func getPendingUpdates() throws -> [PersistedShoppingListItem]
     func replaceAll(with items: [ShoppingListItemResponse]) throws
     func clearAll() throws
+    func categoryHint(forName name: String) throws -> ShoppingCategoryHint?
 }
 
 @MainActor
@@ -87,6 +88,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
                     if local.checkedAt == nil {
                         local.checkedAt = response.checkedAt
                     }
+                    local.applyCategory(from: response)
                     local.syncState = .synced
                 case .pendingUpdate:
                     local.serverId = response.id
@@ -95,6 +97,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
                     local.checkedAt = response.checkedAt
                     local.createdAt = response.createdAt
                     local.updatedAt = response.updatedAt
+                    local.applyCategory(from: response)
                     local.syncState = .synced
                 case .synced:
                     local.update(from: response)
@@ -121,6 +124,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
         local.checkedAt = response.checkedAt
         local.createdAt = response.createdAt
         local.updatedAt = response.updatedAt
+        local.applyCategory(from: response)
         local.syncState = .synced
 
         try modelContext.save()
@@ -138,6 +142,8 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
                 details: item.details,
                 checkedAt: item.checkedAt,
                 sourceRecipeId: item.sourceRecipeId,
+                category: item.category,
+                canonicalName: item.canonicalName,
                 syncState: .pendingCreate
             )
             modelContext.insert(local)
@@ -240,6 +246,20 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
             modelContext.delete(item)
         }
         try modelContext.save()
+    }
+
+    /// Guesses a manual item's aisle from the ingredients of cached recipes, so it
+    /// lands in the right section offline, before the server has seen it.
+    func categoryHint(forName name: String) throws -> ShoppingCategoryHint? {
+        guard let modelContext else {
+            throw ShoppingListRepositoryError.notConfigured
+        }
+
+        let descriptor = FetchDescriptor<PersistedRecipe>(
+            predicate: #Predicate { $0.structuredIngredientsJson != nil }
+        )
+        let ingredients = try modelContext.fetch(descriptor).flatMap(\.structuredIngredients)
+        return ShoppingCategoryHint.lookup(name: name, in: ingredients)
     }
 
     private func fetchItem(clientId: String) throws -> PersistedShoppingListItem? {

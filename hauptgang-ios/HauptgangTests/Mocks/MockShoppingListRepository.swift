@@ -13,6 +13,8 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     var clearAllCalled = false
     var replaceAllCalled = false
 
+    var categoryHints: [String: ShoppingCategoryHint] = [:]
+
     var shouldThrowOnSave = false
     var shouldThrowOnGet = false
 
@@ -48,6 +50,7 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
                 if local.syncState != .pendingUpdate {
                     local.checkedAt = response.checkedAt
                 }
+                local.applyCategory(from: response)
                 local.syncState = .synced
             } else {
                 let newItem = PersistedShoppingListItem(
@@ -56,6 +59,8 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
                     details: response.details,
                     checkedAt: response.checkedAt,
                     sourceRecipeId: response.sourceRecipeId,
+                    category: response.category,
+                    canonicalName: response.canonicalName,
                     createdAt: response.createdAt,
                     updatedAt: response.updatedAt,
                     serverId: response.id,
@@ -78,6 +83,8 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
                 details: item.details,
                 checkedAt: item.checkedAt,
                 sourceRecipeId: item.sourceRecipeId,
+                category: item.category,
+                canonicalName: item.canonicalName,
                 syncState: .pendingCreate
             )
             self.items.append(persisted)
@@ -139,6 +146,10 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
     func clearAll() throws {
         self.clearAllCalled = true
         self.items = []
+    }
+
+    func categoryHint(forName name: String) throws -> ShoppingCategoryHint? {
+        self.categoryHints[name.lowercased()]
     }
 }
 

@@ -4,12 +4,23 @@ struct ShoppingListDraftItem: Identifiable, Hashable {
     let id: UUID
     let name: String
     let details: String?
+    let category: String?
+    let canonicalName: String?
     var isChecked: Bool
 
-    init(id: UUID = UUID(), name: String, details: String? = nil, isChecked: Bool = false) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        details: String? = nil,
+        category: String? = nil,
+        canonicalName: String? = nil,
+        isChecked: Bool = false
+    ) {
         self.id = id
         self.name = name
         self.details = details
+        self.category = category
+        self.canonicalName = canonicalName
         self.isChecked = isChecked
     }
 
@@ -44,6 +55,8 @@ struct ShoppingListDraftItem: Identifiable, Hashable {
             id: id,
             name: name,
             details: details,
+            category: ingredient.category,
+            canonicalName: ingredient.canonicalName,
             isChecked: !ingredient.shoppingDefaultIncluded
         )
     }
