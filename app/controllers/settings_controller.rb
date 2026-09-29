@@ -16,6 +16,6 @@ class SettingsController < ApplicationController
   private
 
   def settings_params
-    params.expect(user: [ :name, :lifecycle_notifications_enabled ])
+    params.expect(user: [ :name, :lifecycle_notifications_enabled, :communication_language ])
   end
 end

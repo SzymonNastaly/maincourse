@@ -19,6 +19,7 @@ class User < ApplicationRecord
 
   validates :email_address, presence: true, uniqueness: true
   validates :name, length: { maximum: 50 }
+  validates :communication_language, inclusion: { in: ->(_) { I18n.available_locales.map(&:to_s) } }
   validates :password, confirmation: true, allow_nil: true
   validate :password_is_present_without_an_identity
   validate :password_is_within_bcrypt_limit
@@ -26,6 +27,12 @@ class User < ApplicationRecord
 
   after_create :create_personal_cookbook!
   before_destroy :handle_owned_cookbooks!, prepend: true
+
+  # Language for email and other account-level messages. Chosen explicitly in
+  # Settings; device registrations never change it.
+  def communication_locale
+    communication_language.to_sym
+  end
 
   def personal_cookbook
     cookbooks.personal.first

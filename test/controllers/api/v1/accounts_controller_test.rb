@@ -27,6 +27,24 @@ class Api::V1::AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_equal false, response.parsed_body["user"]["lifecycle_notifications_enabled"]
   end
 
+  test "update changes the communication language" do
+    patch api_v1_account_url, params: { user: { communication_language: "de" } },
+          headers: @auth_headers, as: :json
+
+    assert_response :success
+    assert_equal "de", @user.reload.communication_language
+    assert_equal "de", response.parsed_body.dig("user", "communication_language")
+  end
+
+  test "update rejects an unsupported communication language" do
+    patch api_v1_account_url, params: { user: { communication_language: "fr" } },
+          headers: @auth_headers, as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "invalid_request", response.parsed_body["error_code"]
+    assert_equal "en", @user.reload.communication_language
+  end
+
   test "update leaves the preference alone when not supplied" do
     @user.update_column(:lifecycle_notifications_enabled, false)
 

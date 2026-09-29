@@ -58,4 +58,14 @@ class WebLocalizationSystemTest < ApplicationSystemTestCase
       assert_selector "[data-portion-scaler-target=label]", text: "porcja"
     end
   end
+
+  test "the email language is separate from the interface language and saves on change" do
+    sign_in_through_the_form(users(:one))
+    visit edit_settings_path
+    wait_for_stimulus("[data-testid=email-language]")
+    select "Deutsch", from: "user[communication_language]"
+    assert_text "Settings updated."
+    assert_selector "html[lang=en]"
+    assert_equal "de", users(:one).reload.communication_language
+  end
 end

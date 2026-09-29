@@ -29,6 +29,8 @@ en:
       cancel_creation: Use existing account / Cancel
     language: Language
     browser_language: Browser language
+    email_language: Email language
+    email_language_hint: Used for emails such as password resets.
     save: Save
     settings: Settings
     recipes: Recipes
@@ -341,3 +343,10 @@ en:
         other: Added %{count} recipes and voted on %{votes} in the meal plan
       meal_plan_updated: Updated the meal plan
       activity: New activity
+  passwords_mailer:
+    reset:
+      subject: Reset your password
+      body_html: "You can reset your password on %{link}."
+      link: this password reset page
+      body_text: "You can reset your password on this page:"
+      expiry: "This link will expire in %{duration}."

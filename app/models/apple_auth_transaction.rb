@@ -163,7 +163,8 @@ class AppleAuthTransaction < ApplicationRecord
           id: user.id,
           name: user.name,
           email: user.email_address,
-          lifecycle_notifications_enabled: user.lifecycle_notifications_enabled
+          lifecycle_notifications_enabled: user.lifecycle_notifications_enabled,
+          communication_language: user.communication_language
         }
       }
     end

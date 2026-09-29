@@ -6,7 +6,8 @@ class RegistrationsController < ApplicationController
   end
 
   def create
-    @user = User.new(user_params)
+    # Start with the language the sign-up page was shown in; Settings changes it later.
+    @user = User.new(user_params.merge(communication_language: I18n.locale.to_s))
     if @user.save
         start_new_session_for @user
         redirect_to root_path

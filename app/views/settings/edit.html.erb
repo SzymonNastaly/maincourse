@@ -33,6 +33,15 @@
           <%= form.submit t("web.save"), class: "mc-btn mc-btn-outline" %>
         <% end %>
       </div>
+
+      <div class="border-t border-line px-[15px] py-3">
+        <%= form_with model: @user, url: settings_path, method: :patch, data: { controller: "auto-submit" } do |form| %>
+          <%= form.label :communication_language, t("web.email_language"), class: "mc-label" %>
+          <%= form.select :communication_language, [["English", "en"], ["Deutsch", "de"], ["Polski", "pl"]], {},
+                          class: "mc-field", data: { action: "auto-submit#submit", testid: "email-language" } %>
+          <p class="mt-1.5 text-[11.5px] font-light text-muted"><%= t("web.email_language_hint") %></p>
+        <% end %>
+      </div>
     </div>
 
     <%# ---- Notifications ------------------------------------------------- %>

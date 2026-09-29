@@ -43,12 +43,32 @@ class WebTranslationsTest < ActiveSupport::TestCase
     end
   end
 
-  test "browser language does not leak into English communication templates" do
+  test "password reset email uses the account language, not the ambient locale" do
     I18n.with_locale(:pl) do
       mail = PasswordsMailer.reset(users(:one)).message
+      assert_equal "Reset your password", mail.subject
       assert_includes mail.html_part.body.decoded, "15 minutes"
       assert_includes mail.text_part.body.decoded, "15 minutes"
       assert_equal :pl, I18n.locale
+    end
+  end
+
+  test "password reset email renders in each communication language" do
+    user = users(:one)
+    {
+      "de" => [ "Passwort zurücksetzen", "Dieser Link läuft in 15 Minuten ab." ],
+      "pl" => [ "Zresetuj hasło", "Link wygaśnie za 15 minut." ]
+    }.each do |language, (subject, expiry)|
+      user.update!(communication_language: language)
+      mail = PasswordsMailer.reset(user).message
+
+      assert_equal subject, mail.subject
+      assert_includes mail.html_part.body.decoded, expiry
+      assert_includes mail.html_part.body.decoded, %(lang="#{language}")
+      assert_match %r{/passwords/[^/"]+/edit}, mail.html_part.body.decoded
+      assert_includes mail.text_part.body.decoded, expiry
+      assert_match %r{/passwords/\S+/edit}, mail.text_part.body.decoded
+      assert_equal :en, I18n.locale
     end
   end
 

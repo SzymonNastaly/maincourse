@@ -29,6 +29,8 @@ pl:
       cancel_creation: Użyj istniejącego konta / Anuluj
     language: Język
     browser_language: Język przeglądarki
+    email_language: Język e-maili
+    email_language_hint: Używany w e-mailach, np. przy resetowaniu hasła.
     save: Zapisz
     settings: Ustawienia
     recipes: Przepisy
@@ -367,3 +369,10 @@ pl:
         other: Dodano %{count} przepisu do planu posiłków i oddano głosy na %{votes}
       meal_plan_updated: Zaktualizowano plan posiłków
       activity: Nowa aktywność
+  passwords_mailer:
+    reset:
+      subject: Zresetuj hasło
+      body_html: "Hasło możesz zresetować na %{link}."
+      link: tej stronie
+      body_text: "Hasło możesz zresetować na tej stronie:"
+      expiry: "Link wygaśnie za %{duration}."

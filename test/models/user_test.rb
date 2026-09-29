@@ -15,6 +15,19 @@ class UserTest < ActiveSupport::TestCase
     assert user.valid?
   end
 
+  test "communication language defaults to English and allows only supported languages" do
+    user = User.new(email_address: "language@example.com", password: "password")
+    assert_equal "en", user.communication_language
+    assert_equal :en, user.communication_locale
+
+    user.communication_language = "de"
+    assert user.valid?
+
+    user.communication_language = "fr"
+    assert_not user.valid?
+    assert user.errors.of_kind?(:communication_language, :inclusion)
+  end
+
   test "downcases and strips email_address" do
     user = User.new(email_address: " DOWNCASED@EXAMPLE.COM ")
     assert_equal("downcased@example.com", user.email_address)

@@ -133,10 +133,14 @@ features to work:
 
 - **Push:** per-installation language on `DeviceToken`, rendered at fanout with
   English fallback; implemented as described in `push-notifications.md`.
-- **Email:** use an explicit account-level communication language, English by
-  default. Device registration must not silently overwrite it. Password-reset mail
-  currently has only English templates; its language setting and translations belong
-  to the account/web rollout.
+- **Email:** explicit account-level `users.communication_language` (`en`, `de`,
+  `pl`; English by default). Web sign-up starts it from the page language; after
+  that only the user changes it, in web Settings or with
+  `PATCH /api/v1/account` `{user: {communication_language}}`. Device registration
+  never touches it. Session, sign-up and account responses include it. An
+  unsupported value returns `invalid_request` (422) rather than a field validation
+  code, so the error contract needs no new field. Mailers render inside
+  `I18n.with_locale(user.communication_locale)`; see `web-localization.md`.
 - **Default cookbook names:** retain stored names and never infer ownership of a
   name from equality with “My Recipes.” A translated default label needs a semantic
   default-name marker or an explicit presentation rule, while preserving renamed
