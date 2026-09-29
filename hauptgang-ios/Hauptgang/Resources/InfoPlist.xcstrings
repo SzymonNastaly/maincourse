@@ -35,6 +35,18 @@
             "state" : "translated",
             "value" : "MainCourse uses your camera to photograph recipes for import."
           }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse verwendet deine Kamera, um Rezepte für den Import zu fotografieren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse używa aparatu do fotografowania przepisów w celu ich importu."
+          }
         }
       }
     }
