@@ -370,4 +370,18 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
       assert_equal recipe.id, result.items.first.source_recipe_id
     end
   end
+
+  test "category hints apply to new items but never overwrite on replay" do
+    items = [ { client_id: "oat", name: "Hafermilch", category: "beverages", canonical_name: "oat milk" } ]
+    item = ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook, items: items).call.items.first
+    assert_equal "beverages", item.category
+    assert_equal "oat milk", item.canonical_name
+
+    item.update!(category: "dairy_eggs", enrichment_version: Llm::IngredientInstructions::VERSION)
+    ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook,
+      items: [ items.first.merge(category: "other", checked_at: Time.current) ]).call
+
+    assert_equal "dairy_eggs", item.reload.category
+    assert item.checked_at.present?
+  end
 end

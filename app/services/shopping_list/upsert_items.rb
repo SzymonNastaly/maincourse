@@ -35,7 +35,7 @@ module ShoppingList
             next
           end
 
-          item = upsert_item(client_id, name, source_recipe_id, item_params[:checked_at], item_params[:details])
+          item = upsert_item(client_id, name, source_recipe_id, item_params)
           if item.persisted? && item.errors.empty?
             created << item
             newly_added << item if item.previously_new_record?
@@ -66,33 +66,36 @@ module ShoppingList
 
     private
 
-    def upsert_item(client_id, name, source_recipe_id, checked_at, details)
+    def upsert_item(client_id, name, source_recipe_id, item_params)
       item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
-      item.user = @user
-      item.name = name
-      item.details = details.presence
-      item.source_recipe_id = source_recipe_id
-      item.checked_at = checked_at.presence
+      assign(item, name, source_recipe_id, item_params)
       item.save
       item
     rescue ActiveRecord::RecordNotUnique
       item = @cookbook.shopping_list_items.find_by!(client_id: client_id)
-      item.user = @user
-      item.name = name
-      item.details = details.presence
-      item.source_recipe_id = source_recipe_id
-      item.checked_at = checked_at.presence
+      assign(item, name, source_recipe_id, item_params)
       item.save
       item
     rescue ActiveRecord::InvalidForeignKey
       item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
-      item.user = @user
-      item.name = name
-      item.details = details.presence
-      item.source_recipe_id = nil
-      item.checked_at = checked_at.presence
+      assign(item, nil, nil, item_params.merge(name: name))
       item.errors.add(:base, "Recipe not found")
       item
+    end
+
+    def assign(item, name, source_recipe_id, item_params)
+      item.user = @user
+      item.name = name || item_params[:name]
+      item.details = item_params[:details].presence
+      item.source_recipe_id = source_recipe_id
+      item.checked_at = item_params[:checked_at].presence
+
+      # Category hints only describe new content. A replay must not overwrite
+      # a category the server has already worked out.
+      if item.new_record? || item.will_save_change_to_name? || item.will_save_change_to_details?
+        item.category = item_params[:category].presence
+        item.canonical_name = item_params[:canonical_name].presence
+      end
     end
 
     # True when this save transitioned checked_at from nil to present — including a
