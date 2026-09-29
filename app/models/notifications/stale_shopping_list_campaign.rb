@@ -20,8 +20,8 @@ module Notifications
           campaign: NAME,
           recipe: nil,
           cookbook: cookbook,
-          title: "Hauptgang",
-          body: "#{count} #{'item'.pluralize(count)} are still on your shopping list."
+          body_key: "push.lifecycle.stale_shopping_list",
+          body_params: { count: count }
         )
       end
 

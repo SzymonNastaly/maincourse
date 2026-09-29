@@ -14,6 +14,10 @@ class PushRegistrationStore(context: Context) {
         get() = preferences.getString(UPLOADED_TOKEN, null)
         set(value) = preferences.edit { putString(UPLOADED_TOKEN, value) }
 
+    var uploadedLanguage: String?
+        get() = preferences.getString(UPLOADED_LANGUAGE, null)
+        set(value) = preferences.edit { putString(UPLOADED_LANGUAGE, value) }
+
     var uploadedAtMillis: Long
         get() = preferences.getLong(UPLOADED_AT, 0L)
         set(value) = preferences.edit { putLong(UPLOADED_AT, value) }
@@ -26,6 +30,7 @@ class PushRegistrationStore(context: Context) {
         preferences.edit {
             remove(CURRENT_TOKEN)
             remove(UPLOADED_TOKEN)
+            remove(UPLOADED_LANGUAGE)
             remove(UPLOADED_AT)
         }
     }
@@ -34,6 +39,7 @@ class PushRegistrationStore(context: Context) {
         const val PREFERENCES_NAME = "push_registration"
         const val CURRENT_TOKEN = "current_token"
         const val UPLOADED_TOKEN = "uploaded_token"
+        const val UPLOADED_LANGUAGE = "uploaded_language"
         const val UPLOADED_AT = "uploaded_at"
         const val PERMISSION_ASKED = "permission_asked"
     }

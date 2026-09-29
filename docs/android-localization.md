@@ -60,9 +60,11 @@ translated prompt explicitly asks for that exact token.
 Stored cookbook names and imported/user-authored recipes remain content, not
 resource keys. The versioned English starter recipe stays aligned with the Rails
 saved-copy source; its surrounding demo UI is translated. Translating starter
-content requires coordinated preview/saved-copy versions. Per-device push bodies,
-account-language email, default-name semantics, and store/purchase copy have
-separate ownership and remain tracked in GitHub #126 / #125.
+content requires coordinated preview/saved-copy versions. Push registration sends
+the active resource set's `push_registration_language` so Rails renders
+notifications in the app language (`push-notifications.md`). Account-language
+email, default-name semantics, and store/purchase copy have separate ownership and
+remain tracked in GitHub #133.
 
 ## Verification
 

@@ -65,7 +65,6 @@ module Notifications
 
     # Returns true if at least one push actually went out.
     def push(delivery)
-      alert = { title: @candidate.title, body: @candidate.body }
       custom = {
         campaign: @candidate.campaign,
         delivery_id: delivery.id,
@@ -73,7 +72,7 @@ module Notifications
         cookbook_id: @candidate.cookbook&.id
       }.compact
 
-      Push::Fanout.call(device_tokens: @user.device_tokens.active, alert: alert, custom: custom)
+      Push::Fanout.call(device_tokens: @user.device_tokens.active, custom: custom) { @candidate.alert }
     end
   end
 end

@@ -120,6 +120,24 @@ final class PushNotificationServiceTests: XCTestCase {
         let register = try XCTUnwrap(recorded.first(where: { $0.endpoint == "device_tokens" }))
         XCTAssertEqual(register.bodyString("time_zone"), TimeZone.current.identifier)
         XCTAssertEqual(register.bodyString("token"), "abcd")
+        XCTAssertEqual(register.bodyString("language"), PushNotificationService.appLanguage)
+    }
+
+    func testAppLanguageChangeTriggersReRegistration() async throws {
+        let api = MockAPIClient()
+        await api.setResponse(#"{"id":1,"token":"abcd","environment":"sandbox"}"#)
+        nonisolated(unsafe) let defaults = try XCTUnwrap(self.defaults)
+        let service = PushNotificationService(api: api, defaults: defaults)
+
+        await service.setAuthenticated(true)
+        await service.handleDeviceToken(Data([0xAB, 0xCD]))
+
+        // Simulate the registration having been uploaded under another app language.
+        self.defaults.set("xx", forKey: "push.lastUploadedLanguage")
+        await service.handleDeviceToken(Data([0xAB, 0xCD]))
+
+        let uploads = await api.recorded.filter { $0.endpoint == "device_tokens" }.count
+        XCTAssertEqual(uploads, 2, "a changed app language must re-register even with the same token")
     }
 
     func testTimeZoneChangeTriggersReRegistration() async throws {

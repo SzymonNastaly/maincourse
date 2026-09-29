@@ -7,7 +7,7 @@ class Notifications::DeliverTest < ActiveSupport::TestCase
     @user.device_tokens.create!(token: "deliver-token", environment: "sandbox")
     @candidate = Notifications::Candidate.new(
       campaign: "resurface", recipe: @recipe, cookbook: @recipe.cookbook,
-      title: "Hauptgang", body: "Cook it this week?"
+      body_key: "push.lifecycle.resurface", body_params: { recipe: @recipe.name }
     )
   end
 
@@ -158,7 +158,7 @@ class Notifications::DeliverTest < ActiveSupport::TestCase
     other_cookbook = cookbooks(:two_personal)
     candidate = Notifications::Candidate.new(
       campaign: "stale_shopping_list", recipe: nil, cookbook: other_cookbook,
-      title: "Hauptgang", body: "Some items are still on your shopping list."
+      body_key: "push.lifecycle.stale_shopping_list", body_params: { count: 3 }
     )
 
     stub_push(ok_result) do |pushes|
@@ -169,5 +169,34 @@ class Notifications::DeliverTest < ActiveSupport::TestCase
     end
 
     assert_equal 0, NotificationDelivery.where(user: @user).count
+  end
+
+  test "renders one delivery in each installation's app language" do
+    @user.device_tokens.find_by!(token: "deliver-token").update!(language: "de")
+    @user.device_tokens.create!(token: "android-token", provider: "fcm", environment: "production", language: "pl")
+    @user.device_tokens.create!(token: "old-ipad", environment: "sandbox")
+    fcm_pushes = []
+    fcm_stub = lambda do |**kwargs|
+      fcm_pushes << kwargs
+      Fcm::Client::Result.new(ok?: true, status: 200, reason: nil)
+    end
+
+    stub_push(ok_result) do |apns_pushes|
+      Fcm::Client.stub(:push, fcm_stub) do
+        I18n.with_locale(:pl) do
+          assert_difference -> { NotificationDelivery.count }, 1 do
+            Notifications::Deliver.new(user: @user, candidate: @candidate).call
+          end
+          assert_equal :pl, I18n.locale
+        end
+      end
+
+      bodies = apns_pushes.to_h { |push| [ push[:token], push[:aps][:alert][:body] ] }
+      assert_equal "Du hast „#{@recipe.name}“ vor einer Weile gespeichert. Diese Woche kochen?", bodies["deliver-token"]
+      assert_equal %(You saved "#{@recipe.name}" a while back. Cook it this week?), bodies["old-ipad"]
+    end
+
+    assert_equal "Przepis „#{@recipe.name}” czeka już od dłuższego czasu. Ugotujesz go w tym tygodniu?",
+                 fcm_pushes.first[:alert][:body]
   end
 end

@@ -117,7 +117,8 @@ onboarding, login, recipe detail, shopping-list review, settings, alerts, and th
 share extension on iPhone/iPad, with accessibility text sizes. For real language
 rollouts, also verify switching through iOS Settings and any applicable RTL layout.
 
-Still English-only, by design: server-rendered push and email text, starter/default
+Push text is rendered by Rails in the language the app sends with its APNs
+registration (`push-notifications.md`). Still English-only, by design: email text, starter/default
 content (including the "My Recipes" cookbook name that the UI text refers to), and
 store/paywall copy. These are tracked in
 [#133](https://github.com/SzymonNastaly/maincourse/issues/133).

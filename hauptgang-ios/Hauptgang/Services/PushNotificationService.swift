@@ -13,7 +13,7 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "PushNotif
 ///    `registerIfAuthorized()` instead, which never prompts.
 /// 2. On grant, `UIApplication.shared.registerForRemoteNotifications()` is called.
 /// 3. The AppDelegate forwards the resulting `Data` token to `handleDeviceToken(_:)`.
-/// 4. We POST `{token, environment}` to `/api/v1/device_tokens`, but only when the user
+/// 4. We POST `{token, environment, time_zone, language}` to `/api/v1/device_tokens`, but only when the user
 ///    has an ApiToken. If the device token arrives before login, we cache it and upload
 ///    on the next `setAuthenticated(true)` call.
 /// 5. On sign-out, `unregister()` deletes the token server-side and clears local cache.
@@ -30,8 +30,17 @@ actor PushNotificationService {
     private static let lastUploadedTokenKey = "push.lastUploadedDeviceToken"
     private static let lastUploadedEnvironmentKey = "push.lastUploadedEnvironment"
     private static let lastUploadedTimeZoneKey = "push.lastUploadedTimeZone"
+    private static let lastUploadedLanguageKey = "push.lastUploadedLanguage"
     private static let lastUploadedAtKey = "push.lastUploadedAt"
     private static let registrationHeartbeat: TimeInterval = 30 * 24 * 60 * 60
+
+    /// The localization iOS picked for this app from the per-app language setting —
+    /// always one the bundle ships, never the device region. Changing it in Settings
+    /// relaunches the app, and the launch registration then re-uploads it.
+    static var appLanguage: String {
+        let localization = Bundle.main.preferredLocalizations.first ?? "en"
+        return Locale(identifier: localization).language.languageCode?.identifier ?? "en"
+    }
 
     private static var environment: String {
         #if DEBUG
@@ -127,6 +136,7 @@ actor PushNotificationService {
             self.defaults.removeObject(forKey: Self.lastUploadedTokenKey)
             self.defaults.removeObject(forKey: Self.lastUploadedEnvironmentKey)
             self.defaults.removeObject(forKey: Self.lastUploadedTimeZoneKey)
+            self.defaults.removeObject(forKey: Self.lastUploadedLanguageKey)
             self.defaults.removeObject(forKey: Self.lastUploadedAtKey)
         }
 
@@ -150,10 +160,12 @@ actor PushNotificationService {
     private func uploadIfNeeded(token: String) async {
         let environment = Self.environment
         let timeZone = TimeZone.current.identifier
+        let language = Self.appLanguage
 
         let cachedToken = self.defaults.string(forKey: Self.lastUploadedTokenKey)
         let cachedEnvironment = self.defaults.string(forKey: Self.lastUploadedEnvironmentKey)
         let cachedTimeZone = self.defaults.string(forKey: Self.lastUploadedTimeZoneKey)
+        let cachedLanguage = self.defaults.string(forKey: Self.lastUploadedLanguageKey)
         let lastUploadedAt = self.defaults.object(forKey: Self.lastUploadedAtKey) as? Date
         let registrationIsFresh = lastUploadedAt.map {
             Date().timeIntervalSince($0) < Self.registrationHeartbeat
@@ -161,11 +173,18 @@ actor PushNotificationService {
         if cachedToken == token,
            cachedEnvironment == environment,
            cachedTimeZone == timeZone,
+           cachedLanguage == language,
            registrationIsFresh {
             return
         }
 
-        let body = RegisterRequest(token: token, provider: "apns", environment: environment, timeZone: timeZone)
+        let body = RegisterRequest(
+            token: token,
+            provider: "apns",
+            environment: environment,
+            timeZone: timeZone,
+            language: language
+        )
 
         do {
             let _: RegisterResponse = try await self.api.request(
@@ -178,6 +197,7 @@ actor PushNotificationService {
             self.defaults.set(token, forKey: Self.lastUploadedTokenKey)
             self.defaults.set(environment, forKey: Self.lastUploadedEnvironmentKey)
             self.defaults.set(timeZone, forKey: Self.lastUploadedTimeZoneKey)
+            self.defaults.set(language, forKey: Self.lastUploadedLanguageKey)
             self.defaults.set(Date(), forKey: Self.lastUploadedAtKey)
             logger.info("Registered device token (environment: \(environment))")
         } catch {
@@ -193,6 +213,7 @@ private struct RegisterRequest: Encodable {
     let provider: String
     let environment: String
     let timeZone: String
+    let language: String
 }
 
 private struct RegisterResponse: Decodable {

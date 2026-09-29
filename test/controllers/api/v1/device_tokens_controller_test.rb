@@ -121,4 +121,27 @@ class Api::V1::DeviceTokensControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
     assert_equal "Europe/Zurich", @user.reload.time_zone
   end
+
+  test "create stores the app language per installation" do
+    post api_v1_device_tokens_url,
+         params: { token: "phone", provider: "fcm", language: "de" },
+         headers: @auth_headers, as: :json
+    post api_v1_device_tokens_url,
+         params: { token: "tablet", language: "pl" },
+         headers: @auth_headers, as: :json
+
+    assert_response :created
+    assert_equal "pl", response.parsed_body["language"]
+    assert_equal({ "phone" => "de", "tablet" => "pl" }, @user.device_tokens.pluck(:token, :language).to_h)
+  end
+
+  test "create accepts an unsupported language without failing registration" do
+    post api_v1_device_tokens_url,
+         params: { token: "phone", language: "fr" },
+         headers: @auth_headers, as: :json
+
+    assert_response :created
+    assert_nil response.parsed_body["language"]
+    assert_nil @user.device_tokens.find_by!(token: "phone").language
+  end
 end

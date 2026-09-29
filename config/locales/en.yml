@@ -316,3 +316,28 @@ en:
       items_added:
         one: Added %{count} item from %{name}.
         other: Added %{count} items from %{name}.
+  push:
+    lifecycle:
+      title: MainCourse
+      import_follow_up: 'You saved "%{recipe}" a couple of days ago — add the ingredients to your shopping list?'
+      resurface: 'You saved "%{recipe}" a while back. Cook it this week?'
+      stale_shopping_list:
+        one: "%{count} item is still on your shopping list."
+        other: "%{count} items are still on your shopping list."
+    shared_cookbook:
+      title: '"%{cookbook}"'
+      title_with_actor: '%{actor} in "%{cookbook}"'
+      shopping_list_added:
+        one: Added %{count} item to the shopping list
+        other: Added %{count} items to the shopping list
+      meal_plan_added:
+        one: Added %{count} recipe to the meal plan
+        other: Added %{count} recipes to the meal plan
+      meal_plan_voted:
+        one: Voted on %{count} recipe in the meal plan
+        other: Voted on %{count} recipes in the meal plan
+      meal_plan_added_and_voted:
+        one: Added %{count} recipe and voted on %{votes} in the meal plan
+        other: Added %{count} recipes and voted on %{votes} in the meal plan
+      meal_plan_updated: Updated the meal plan
+      activity: New activity
