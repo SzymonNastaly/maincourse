@@ -20,6 +20,23 @@ final class ShoppingListDraftItemTests: XCTestCase {
         XCTAssertFalse(draft.isChecked)
     }
 
+    func testDraftCarriesIngredientCategory() {
+        let ingredient = StructuredIngredient(
+            id: 1,
+            position: 0,
+            unit: "ml",
+            name: "Milch",
+            canonicalName: "milk",
+            category: "dairy_eggs",
+            raw: "200 ml Milch"
+        )
+
+        let draft = ShoppingListDraftItem(ingredient: ingredient, scale: 1)
+
+        XCTAssertEqual(draft.category, "dairy_eggs")
+        XCTAssertEqual(draft.canonicalName, "milk")
+    }
+
     func testLegacyIngredientStartsIncludedWithRawFallback() {
         let ingredient = StructuredIngredient(id: 1, position: 0, raw: "salt to taste")
 

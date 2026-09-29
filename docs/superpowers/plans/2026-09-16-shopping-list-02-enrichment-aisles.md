@@ -1,5 +1,8 @@
 # Shopping Enrichment and Aisles Implementation Plan
 
+> **Superseded (2026-09-29)** by the slimmer [aisles plan](2026-09-29-shopping-list-aisles.md).
+> Kept as reference for the quantity metadata that phase 3 aggregation needs.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Implementation requires leaving Plan mode.
 
 **Goal:** Enrich manually added shopping items, preserve recipe enrichment through shopping addition, and organize To Buy into consistent aisle sections on all three clients.

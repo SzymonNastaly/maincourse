@@ -370,4 +370,26 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
       assert_equal recipe.id, result.items.first.source_recipe_id
     end
   end
+
+  test "category hints apply to new items but never overwrite on replay" do
+    items = [ { client_id: "oat", name: "Hafermilch", category: "beverages", canonical_name: "oat milk" } ]
+    item = ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook, items: items).call.items.first
+    assert_equal "beverages", item.category
+    assert_equal "oat milk", item.canonical_name
+
+    item.update_columns(category: "dairy_eggs", enrichment_version: Llm::IngredientInstructions::VERSION)
+    ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook,
+      items: [ items.first.merge(category: "other", details: "1 l", checked_at: Time.current) ]).call
+
+    assert_equal "dairy_eggs", item.reload.category
+    assert item.checked_at.present?
+  end
+
+  test "a batch of new items queues a single enrichment job" do
+    items = %w[Yuzu Kumquat Rambutan].map { |name| { client_id: name, name: name } }
+
+    assert_enqueued_jobs 1, only: EnrichShoppingListItemsJob do
+      ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook, items: items).call
+    end
+  end
 end

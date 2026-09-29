@@ -13,17 +13,19 @@ module Recipes
         return redirect_to recipe, alert: t("web.flash.nothing_selected")
       end
 
-      ShoppingListItem.transaction do
-        current_cookbook.shopping_list_items.destroy_all if clear_existing?
+      ShoppingListItem.batching_enrichment do
+        ShoppingListItem.transaction do
+          current_cookbook.shopping_list_items.destroy_all if clear_existing?
 
-        entries.each do |entry|
-          current_cookbook.shopping_list_items.create!(
-            name: entry[:name],
-            details: entry[:details],
-            source_recipe: recipe,
-            user: Current.user,
-            client_id: SecureRandom.uuid
-          )
+          entries.each do |entry|
+            current_cookbook.shopping_list_items.create!(
+              name: entry[:name],
+              details: entry[:details],
+              source_recipe: recipe,
+              user: Current.user,
+              client_id: SecureRandom.uuid
+            )
+          end
         end
       end
 

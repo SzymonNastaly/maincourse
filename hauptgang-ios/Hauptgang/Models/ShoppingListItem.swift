@@ -9,6 +9,10 @@ struct ShoppingListItemResponse: Codable, Identifiable {
     let sourceRecipeId: Int?
     let createdAt: Date
     let updatedAt: Date
+    var category: String?
+    var canonicalName: String?
+    /// True while the server still wants to confirm `category` in the background.
+    var categoryPending: Bool?
 }
 
 struct ShoppingListItemCreate: Codable {
@@ -17,6 +21,9 @@ struct ShoppingListItemCreate: Codable {
     let details: String?
     let checkedAt: Date?
     let sourceRecipeId: Int?
+    /// Hints the server keeps when it has nothing better.
+    var category: String?
+    var canonicalName: String?
 }
 
 struct BulkCreateShoppingListItemsRequest: Codable {

@@ -19,6 +19,9 @@ final class PersistedShoppingListItem {
     var details: String?
     var checkedAt: Date?
     var sourceRecipeId: Int?
+    /// Server category value (see `ShoppingCategory`); nil until known.
+    var category: String?
+    var canonicalName: String?
     var createdAt: Date
     var updatedAt: Date
     var syncStateRaw: String
@@ -44,6 +47,8 @@ final class PersistedShoppingListItem {
         details: String? = nil,
         checkedAt: Date? = nil,
         sourceRecipeId: Int? = nil,
+        category: String? = nil,
+        canonicalName: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         serverId: Int? = nil,
@@ -56,6 +61,8 @@ final class PersistedShoppingListItem {
         self.details = details
         self.checkedAt = checkedAt
         self.sourceRecipeId = sourceRecipeId
+        self.category = category
+        self.canonicalName = canonicalName
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.serverId = serverId
@@ -70,6 +77,8 @@ final class PersistedShoppingListItem {
             details: response.details,
             checkedAt: response.checkedAt,
             sourceRecipeId: response.sourceRecipeId,
+            category: response.category,
+            canonicalName: response.canonicalName,
             createdAt: response.createdAt,
             updatedAt: response.updatedAt,
             serverId: response.id,
@@ -85,6 +94,15 @@ final class PersistedShoppingListItem {
         self.sourceRecipeId = response.sourceRecipeId
         self.createdAt = response.createdAt
         self.updatedAt = response.updatedAt
+        self.applyCategory(from: response)
         self.syncState = .synced
+    }
+
+    /// Adopts the server's category, keeping the local guess while the server has
+    /// none yet (an older server, or an item it could not place).
+    func applyCategory(from response: ShoppingListItemResponse) {
+        guard let category = response.category else { return }
+        self.category = category
+        self.canonicalName = response.canonicalName
     }
 }

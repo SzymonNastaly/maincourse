@@ -44,14 +44,17 @@ module Screenshots
 
         cookbook.shopping_list_items.destroy_all
         [
-          [ "Cherry tomatoes", "400 g" ], [ "Orzo", "300 g" ], [ "Fresh basil", "1 bunch" ],
-          [ "Parmesan", "50 g" ], [ "Blueberries", "150 g" ], [ "Ricotta", "200 g" ],
-          [ "Sourdough", "1 loaf" ], [ "Lemons", "3" ]
-        ].each_with_index do |(name, details), index|
-          cookbook.shopping_list_items.create!(
+          [ "Cherry tomatoes", "400 g", "produce", "cherry tomato" ], [ "Orzo", "300 g", "pantry", "orzo" ],
+          [ "Fresh basil", "1 bunch", "produce", "basil" ], [ "Parmesan", "50 g", "dairy_eggs", "parmesan" ],
+          [ "Blueberries", "150 g", "produce", "blueberry" ], [ "Ricotta", "200 g", "dairy_eggs", "ricotta" ],
+          [ "Sourdough", "1 loaf", "bakery", "sourdough bread" ], [ "Lemons", "3", "produce", "lemon" ]
+        ].each_with_index do |(name, details, category, canonical_name), index|
+          item = cookbook.shopping_list_items.create!(
             user: user, name: name, details: details, client_id: "showcase-#{index}",
             created_at: Time.current - index.seconds
           )
+          # Confirmed aisles, so captures are deterministic and queue no LLM work.
+          item.update_columns(category:, canonical_name:, enrichment_version: Llm::IngredientInstructions::VERSION)
         end
         # Each capture logs in again; keep the dedicated fixture account's token set bounded.
         user.api_tokens.destroy_all

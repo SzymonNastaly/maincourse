@@ -51,6 +51,9 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
     assert item.key?("source_recipe_id")
     assert item.key?("created_at")
     assert item.key?("updated_at")
+    assert item.key?("category")
+    assert item.key?("canonical_name")
+    assert_equal true, item["category_pending"]
   end
 
   test "index does not return other user's items" do
@@ -93,6 +96,19 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, json.size
     assert_equal "Cheese", json.first["name"]
     assert_equal "new-1", json.first["client_id"]
+  end
+
+  test "create accepts category hints and reports pending confirmation" do
+    post api_v1_shopping_list_items_url,
+      params: { items: [ { client_id: "hint-1", name: "Hafermilch", category: "beverages", canonical_name: "oat milk" } ] },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :created
+    item = response.parsed_body.first
+    assert_equal "beverages", item["category"]
+    assert_equal "oat milk", item["canonical_name"]
+    assert_equal true, item["category_pending"]
   end
 
   test "create with bulk items" do

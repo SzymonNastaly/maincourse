@@ -17,36 +17,38 @@ module ShoppingList
       newly_added = []
       newly_checked = []
 
-      ActiveRecord::Base.transaction do
-        @cookbook.shopping_list_items.destroy_all if @clear_existing
+      ShoppingListItem.batching_enrichment do
+        ActiveRecord::Base.transaction do
+          @cookbook.shopping_list_items.destroy_all if @clear_existing
 
-        @items.each do |item_params|
-          client_id = item_params[:client_id]
-          name = item_params[:name]
+          @items.each do |item_params|
+            client_id = item_params[:client_id]
+            name = item_params[:name]
 
-          if client_id.blank? || name.blank?
-            errors << { client_id: client_id, error: "client_id and name are required" }
-            next
+            if client_id.blank? || name.blank?
+              errors << { client_id: client_id, error: "client_id and name are required" }
+              next
+            end
+
+            source_recipe_id = resolve_source_recipe_id(item_params[:source_recipe_id])
+            if item_params[:source_recipe_id].present? && source_recipe_id.nil?
+              errors << { client_id: client_id, error: "Recipe not found" }
+              next
+            end
+
+            item = upsert_item(client_id, name, source_recipe_id, item_params)
+            if item.persisted? && item.errors.empty?
+              created << item
+              newly_added << item if item.previously_new_record?
+              newly_checked << item if newly_checked?(item)
+            else
+              errors << { client_id: client_id, error: item.errors.full_messages.to_sentence }
+            end
           end
 
-          source_recipe_id = resolve_source_recipe_id(item_params[:source_recipe_id])
-          if item_params[:source_recipe_id].present? && source_recipe_id.nil?
-            errors << { client_id: client_id, error: "Recipe not found" }
-            next
+          if errors.any?
+            raise ActiveRecord::Rollback
           end
-
-          item = upsert_item(client_id, name, source_recipe_id, item_params[:checked_at], item_params[:details])
-          if item.persisted? && item.errors.empty?
-            created << item
-            newly_added << item if item.previously_new_record?
-            newly_checked << item if newly_checked?(item)
-          else
-            errors << { client_id: client_id, error: item.errors.full_messages.to_sentence }
-          end
-        end
-
-        if errors.any?
-          raise ActiveRecord::Rollback
         end
       end
 
@@ -66,33 +68,33 @@ module ShoppingList
 
     private
 
-    def upsert_item(client_id, name, source_recipe_id, checked_at, details)
+    def upsert_item(client_id, name, source_recipe_id, item_params)
       item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
-      item.user = @user
-      item.name = name
-      item.details = details.presence
-      item.source_recipe_id = source_recipe_id
-      item.checked_at = checked_at.presence
+      assign(item, name, source_recipe_id, item_params)
       item.save
       item
     rescue ActiveRecord::RecordNotUnique
       item = @cookbook.shopping_list_items.find_by!(client_id: client_id)
-      item.user = @user
-      item.name = name
-      item.details = details.presence
-      item.source_recipe_id = source_recipe_id
-      item.checked_at = checked_at.presence
+      assign(item, name, source_recipe_id, item_params)
       item.save
       item
     rescue ActiveRecord::InvalidForeignKey
       item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
-      item.user = @user
-      item.name = name
-      item.details = details.presence
-      item.source_recipe_id = nil
-      item.checked_at = checked_at.presence
+      assign(item, nil, nil, item_params.merge(name: name))
       item.errors.add(:base, "Recipe not found")
       item
+    end
+
+    def assign(item, name, source_recipe_id, item_params)
+      item.user = @user
+      item.name = name || item_params[:name]
+      item.details = item_params[:details].presence
+      item.source_recipe_id = source_recipe_id
+      item.checked_at = item_params[:checked_at].presence
+      # Used only for a new or renamed item, so a replay never overwrites what
+      # the server has worked out.
+      item.category_hint = item_params[:category]
+      item.canonical_name_hint = item_params[:canonical_name]
     end
 
     # True when this save transitioned checked_at from nil to present — including a

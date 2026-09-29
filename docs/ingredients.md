@@ -58,6 +58,10 @@ for both recipe detail and batch responses:
 
 ## Adding ingredients to the shopping list
 
+Shopping list items copy the category of their source recipe ingredient when
+they are saved; see `docs/shopping-list.md` for aisle categorization.
+
+
 Web, iOS, and Android review the selected recipe ingredients before adding them.
 `ShoppingList::Policy` excludes only exact canonical identities for water, common
 salt varieties, black pepper, and ground black pepper by default. These rows stay

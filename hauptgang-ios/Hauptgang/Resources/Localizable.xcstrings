@@ -387,6 +387,17 @@
         }
       }
     },
+    "Bakery" : {
+      "comment" : "Shopping list aisle header. Bread and baked goods.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bakery"
+          }
+        }
+      }
+    },
     "Bought" : {
       "localizations" : {
         "en" : {
@@ -849,6 +860,17 @@
         }
       }
     },
+    "Dairy & Eggs" : {
+      "comment" : "Shopping list aisle header. Milk, cheese, yogurt and eggs.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dairy & Eggs"
+          }
+        }
+      }
+    },
     "Decline" : {
       "localizations" : {
         "en" : {
@@ -1009,6 +1031,17 @@
         }
       }
     },
+    "Drinks" : {
+      "comment" : "Shopping list aisle header. Drinks.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drinks"
+          }
+        }
+      }
+    },
     "Edit Name" : {
       "localizations" : {
         "en" : {
@@ -1159,6 +1192,17 @@
         }
       }
     },
+    "Frozen" : {
+      "comment" : "Shopping list aisle header. Frozen foods.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frozen"
+          }
+        }
+      }
+    },
     "Generate Invite Link" : {
       "localizations" : {
         "en" : {
@@ -1205,6 +1249,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Here’s a recipe from someone’s feed."
+          }
+        }
+      }
+    },
+    "Household" : {
+      "comment" : "Shopping list aisle header. Non-food items such as cleaning supplies and toiletries.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Household"
           }
         }
       }
@@ -1589,6 +1644,17 @@
         }
       }
     },
+    "Meat & Seafood" : {
+      "comment" : "Shopping list aisle header. Meat, poultry and fish.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meat & Seafood"
+          }
+        }
+      }
+    },
     "Message" : {
       "localizations" : {
         "en" : {
@@ -1809,6 +1875,17 @@
         }
       }
     },
+    "Oils, Spices & Sauces" : {
+      "comment" : "Shopping list aisle header. Oils, vinegars, spices and condiments.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oils, Spices & Sauces"
+          }
+        }
+      }
+    },
     "Only the cookbook owner can do this." : {
       "localizations" : {
         "en" : {
@@ -1845,6 +1922,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opens the example sharing options"
+          }
+        }
+      }
+    },
+    "Other" : {
+      "comment" : "Shopping list aisle header. Items that fit no other aisle.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
+    "Pantry" : {
+      "comment" : "Shopping list aisle header. Dry goods such as flour, pasta, rice, tins and baking supplies.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pantry"
           }
         }
       }
@@ -1985,6 +2084,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Processing recipe…"
+          }
+        }
+      }
+    },
+    "Produce" : {
+      "comment" : "Shopping list aisle header. Fresh fruit, vegetables and herbs.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produce"
           }
         }
       }
