@@ -147,9 +147,16 @@ features to work:
   translation when it is true. Web uses `Cookbook#display_name`. Nothing compares
   names with “My Recipes”; renaming clears the flag, and a shared cookbook a
   person names “My Recipes” is shown as typed.
-- **Starter content:** translate versioned sample content deliberately alongside
-  the client preview and Rails saved-copy source. Imported recipes, units, user
-  names, and notes remain their authors' content.
+- **Starter content:** each language has its own immutable starter file in
+  `config/starter_recipes` (`tomato-orzo-v1` is English, plus `tomato-orzo-de-v1`
+  and `tomato-orzo-pl-v1`), listed in `Recipes::SampleSource::ALLOWED_KEYS`. Apps
+  preview the file for their language and send that key when saving, so the saved
+  copy matches what was shown; older apps keep sending the English key. The
+  server-written attribution note follows the key's language. Amounts, timings,
+  servings and the photograph are shared and checked by
+  `test/services/recipes/sample_source_test.rb`. Once saved, a starter is ordinary
+  recipe content and never re-translated. Imported recipes, units, user names, and
+  notes remain their authors' content.
 - **Purchases:** RevenueCat paywall copy, StoreKit product/subscription metadata,
   and App Store listings have their own localization systems. Review those together
   with each supported-language release.

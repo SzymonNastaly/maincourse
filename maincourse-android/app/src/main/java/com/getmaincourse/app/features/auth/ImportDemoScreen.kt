@@ -82,7 +82,8 @@ private enum class DemoStage { POST, SHARING, DESTINATIONS, PROCESSING, RECIPE }
 @Composable
 internal fun rememberDemoRecipe(): DemoRecipe {
     val assets = LocalContext.current.assets
-    return remember(assets) { DemoRecipe.load(assets) }
+    val key = stringResource(R.string.starter_recipe_key)
+    return remember(assets, key) { DemoRecipe.load(assets, key) }
 }
 
 @Composable

@@ -1,7 +1,9 @@
 package com.getmaincourse.app
 
+import com.getmaincourse.app.features.auth.DemoRecipe
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -48,6 +50,21 @@ class LocalizationResourcesTest {
             val directory = File(root, if (language == "en") "values" else "values-$language")
             assertEquals(language, entries(directory).getValue("push_registration_language").textContent)
         }
+    }
+
+    @Test
+    fun starterRecipeKeyNamesAVersionBundledForEachLanguage() {
+        val root = resourceRoot()
+        // res -> main -> src -> app -> maincourse-android -> repository
+        val starters = File(root.canonicalFile.parentFile.parentFile.parentFile.parentFile.parentFile, "config/starter_recipes")
+        val keys = listOf("en", "pl", "de").map { language ->
+            val directory = File(root, if (language == "en") "values" else "values-$language")
+            val key = entries(directory).getValue("starter_recipe_key").textContent
+            val recipe = Json.decodeFromString<DemoRecipe>(File(starters, "$key.json").readText())
+            assertEquals(key, recipe.key)
+            key
+        }
+        assertEquals(listOf("tomato-orzo-v1", "tomato-orzo-pl-v1", "tomato-orzo-de-v1"), keys)
     }
 
     private fun placeholders(text: String) = Regex("%\\d+\\$[ds]").findAll(text).map { it.value }.sorted().toList()

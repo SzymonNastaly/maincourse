@@ -378,3 +378,5 @@ pl:
       expiry: "Link wygaśnie za %{duration}."
   cookbooks:
     default_name: Moje przepisy
+  starter_recipes:
+    attribution: "Oryginalny przykładowy przepis od MainCourse."

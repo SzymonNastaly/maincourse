@@ -57,6 +57,18 @@ class Api::V1::RecipeSavesControllerTest < ActionDispatch::IntegrationTest
     assert_equal sample.fetch("key"), receipt.source_key
   end
 
+  test "saves the language version the app previewed" do
+    post_save(@cookbook, source: { type: "sample", key: "tomato-orzo-de-v1" })
+    assert_response :success
+
+    recipe = Recipe.find(response.parsed_body.fetch("recipe_id"))
+    assert_equal "tomato-orzo-de-v1", recipe.starter_recipe_key
+    assert_equal "Orzo mit Tomaten und Kichererbsen aus einer Pfanne", recipe.name
+    assert_equal "Ein originales Beispielrezept von MainCourse.", recipe.notes
+    assert_equal "Olivenöl", recipe.ingredients.order(:position).first.name
+    assert recipe.cover_image.attached?
+  end
+
   test "returns the saved recipe through the normal detail endpoint" do
     post_save(@cookbook)
     recipe_id = response.parsed_body.fetch("recipe_id")

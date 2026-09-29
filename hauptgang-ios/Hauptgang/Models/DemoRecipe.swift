@@ -21,8 +21,22 @@ struct DemoRecipe: Decodable, Sendable {
     let ingredients: [Ingredient]
     let instructions: [String]
 
+    /// Each app language previews, and saves, its own immutable version. English is
+    /// the fallback and the only version older apps know.
+    static func key(forLanguage language: String?) -> String {
+        switch language {
+        case "de": "tomato-orzo-de-v1"
+        case "pl": "tomato-orzo-pl-v1"
+        default: "tomato-orzo-v1"
+        }
+    }
+
     static func load(bundle: Bundle = .main) throws -> DemoRecipe {
-        guard let url = bundle.url(forResource: "tomato-orzo-v1", withExtension: "json") else {
+        try self.load(key: self.key(forLanguage: Bundle.main.preferredLocalizations.first), bundle: bundle)
+    }
+
+    static func load(key: String, bundle: Bundle = .main) throws -> DemoRecipe {
+        guard let url = bundle.url(forResource: key, withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         let decoder = JSONDecoder()

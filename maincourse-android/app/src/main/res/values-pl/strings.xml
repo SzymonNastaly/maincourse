@@ -185,6 +185,7 @@
     <!-- The app language this resource set represents, sent with push registration so Rails renders
          notifications in it. Must equal the directory's language code; never translate it. -->
     <string name="push_registration_language">pl</string>
+    <string name="starter_recipe_key">tomato-orzo-pl-v1</string>
     <string name="delete_account">Usuń konto</string>
     <string name="delete_warning">Tej operacji nie można cofnąć</string>
     <string name="delete_account_details">Twoja osobista książka kucharska, przepisy, lista zakupów i plany posiłków zostaną trwale usunięte. Opłata za subskrypcję nie zostanie zwrócona.</string>

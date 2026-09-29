@@ -188,6 +188,8 @@
     <!-- The app language this resource set represents, sent with push registration so Rails renders
          notifications in it. Must equal the directory's language code; never translate it. -->
     <string name="push_registration_language">en</string>
+    <!-- Versioned starter recipe for this language: previewed and saved together. -->
+    <string name="starter_recipe_key">tomato-orzo-v1</string>
     <string name="delete_account">Delete Account</string>
     <string name="delete_warning">This cannot be undone</string>
     <string name="delete_account_details">Your personal cookbook, recipes, shopping list, and meal plans will be permanently removed. Your subscription will not be refunded.</string>
