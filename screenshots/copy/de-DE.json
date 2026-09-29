@@ -1,0 +1,7 @@
+{
+  "recipe-library": {"headline": "Alle deine Rezepte an einem Ort"},
+  "recipe-detail": {"headline": "Zutaten und Schritte auf einen Blick"},
+  "shopping-review": {"headline": "Wähle Zutaten für deine Einkaufsliste"},
+  "shopping-list": {"headline": "Hake deine Einkaufsliste ab"},
+  "recipe-import": {"headline": "Rezepte aus Links und Fotos speichern"}
+}

@@ -1,6 +1,6 @@
 require Rails.root.join("lib/screenshots/seed")
 
-result = Screenshots::Seed.call
+result = Screenshots::Seed.call(locale: ENV.fetch("SCREENSHOT_LOCALE", "en-US"))
 path = Rails.root.join("storage/screenshots/seed.json")
 path.dirname.mkpath
 path.write(JSON.pretty_generate(result) + "\n")

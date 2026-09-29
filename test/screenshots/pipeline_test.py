@@ -11,6 +11,7 @@ from screenshots.main import (
     navigate,
     resolve_plan,
     selection,
+    ui_strings,
     wait_for_images,
 )
 from screenshots.render import metadata_path, produce, render_artwork
@@ -38,6 +39,30 @@ class PipelineTest(unittest.TestCase):
         source = Path(__file__).resolve().parents[2] / "screenshots/plans/detail.json"
         with self.assertRaisesRegex(ValueError, "Unresolved"):
             resolve_plan(source, {}, "en-US")
+
+    def test_localized_plans_find_elements_by_their_translated_text(self):
+        source = Path(__file__).resolve().parents[2] / "screenshots/plans/shopping-list.json"
+        plan = resolve_plan(source, {"tomato-orzo": 1}, "de-DE", {"Shopping List": "Einkaufsliste",
+                                                  "Cherry tomatoes": "Kirschtomaten"})
+        self.assertEqual(plan["steps"][2]["label"], "Einkaufsliste")
+        self.assertEqual(plan["steps"][3]["contains"], "Kirschtomaten")
+        self.assertEqual(resolve_plan(source, {"tomato-orzo": 1}, "en-US")["steps"][2]["label"], "Shopping List")
+
+    def test_localized_plans_never_fall_back_to_english_text(self):
+        source = Path(__file__).resolve().parents[2] / "screenshots/plans/shopping-list.json"
+        with self.assertRaisesRegex(ValueError, "No pl-PL text for 'Shopping List'"):
+            resolve_plan(source, {"tomato-orzo": 1}, "pl-PL", {})
+
+    def test_every_plan_resolves_in_every_catalog_locale(self):
+        root = Path(__file__).resolve().parents[2] / "screenshots"
+        catalog = json.loads((root / "catalog.json").read_text())
+        recipes = {r["slug"]: 1 for r in json.loads((root / "recipes.json").read_text())["recipes"]}
+        for locale in catalog["locales"]:
+            strings = ui_strings(locale)
+            for plan in {screen["plan"] for screen in catalog["screens"].values()}:
+                with self.subTest(locale=locale, plan=plan):
+                    resolve_plan(root / "plans" / f"{plan}.json", recipes, locale, strings)
+            self.assertTrue((root / "copy" / f"{locale}.json").is_file())
 
     def test_unknown_or_duplicate_devices_are_rejected(self):
         for devices in ("iphone,unknown", "iphone,iphone", ""):

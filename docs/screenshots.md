@@ -34,6 +34,7 @@ bin/screenshots capture                              # Build, seed, iPhone + iPa
 bin/screenshots capture --screen recipe-detail       # Retake just one feature on both devices
 bin/screenshots capture --devices iphone --screen recipe-library,recipe-import
 bin/screenshots capture --app /absolute/path/Hauptgang.app # Reuse a Debug simulator build
+bin/screenshots capture --locale de-DE               # German app, recipes and shopping list
 
 bin/screenshots render --preset app-store
 bin/screenshots render --preset framed               # Transparent individual device PNGs
@@ -43,8 +44,9 @@ bin/screenshots render --preset story --screen recipe-detail
 bin/screenshots gallery
 ```
 
-The default locale is `en-US`. `--devices`, `--screen`, and `--locale` work for
-capture and render. Website compositions require both iPhone and iPad captures.
+The default locale is `en-US`; the catalog also lists `de-DE` and `pl-PL`.
+`--devices`, `--screen`, and `--locale` work for capture and render; capture and
+render one locale per run. Website compositions require both iPhone and iPad captures.
 App Store output is validated against ASC's accepted dimensions. Rendering uses
 existing raw PNGs and does not start the app or Rails backend.
 
@@ -57,12 +59,18 @@ XcodeBuildMCP from the same iOS working directory.
 Each capture invocation resets the showcase data and owns a temporary Rails
 server on `127.0.0.1:3100`. The port must be free; the server stops on completion
 or failure. Database and uploads are under `storage/screenshots/`, independently
-of ordinary development data. `bin/screenshots seed` can prepare that data alone.
+of ordinary development data. `bin/screenshots seed [--locale de-DE]` can prepare
+that data alone.
 
 ## Content and photos
 
 `screenshots/recipes.json` contains 14 complete recipes with structured
-ingredients, tags, timing, servings, instructions, and per-dish photo prompts.
+ingredients, tags, timing, servings, instructions, and per-dish photo prompts,
+plus the shopping list shown in the shopping screenshot. `recipes.de-DE.json`
+and `recipes.pl-PL.json` translate the same recipes and list for those locales
+(du form in German, infinitive instructions in Polish). They share the English
+slugs, photos, amounts and shopping aisles; the seed test checks that they stay
+in step with the English file.
 `screenshots/photo-style.txt` defines shared realism and crop constraints. Each
 dish prompt chooses its own lighting, camera angle, surface and tableware: the
 library mixes daylight plates, colorful overheads, dark restaurant scenes,
@@ -220,8 +228,13 @@ options when implementing them. The local Rails fixture dataset already works
 for all clients. Keep Android/emulator and web/browser launch setup in their adapters.
 
 Add a locale only once the interface and demo content support it; provide its
-copy file and localized fixture text, then add it to the catalog. Capture passes
-AppleLanguages and AppleLocale as app launch arguments. Marketing text and app
+copy file and `recipes.<locale>.json`, add it to `Screenshots::Seed::LOCALES`,
+then add it to the catalog. Capture passes AppleLanguages and AppleLocale as app
+launch arguments. Plans are written with English labels; for other locales the
+runner replaces each `label`/`contains` with the app's translation from
+`Localizable.xcstrings`, or with the matching item of the fixture's shopping
+list. A label without a translation stops the run rather than waiting for English
+text that never appears. Marketing text and app
 content are separate translations; the renderer intentionally does not fall back
 to English assets or copy for an unsupported locale.
 

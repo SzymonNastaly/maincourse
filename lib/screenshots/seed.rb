@@ -7,8 +7,22 @@ module Screenshots
     EMAIL = "screenshots@example.test"
     PASSWORD = "maincourse-screenshots"
 
-    def self.call
-      new.call
+    LOCALES = %w[en-US de-DE pl-PL].freeze
+
+    def self.call(locale: "en-US")
+      new(locale).call
+    end
+
+    # English is the source fixture; other locales translate the same slugs.
+    def self.fixture(locale)
+      raise ArgumentError, "Unsupported screenshot locale: #{locale}" unless LOCALES.include?(locale)
+
+      name = locale == "en-US" ? "recipes.json" : "recipes.#{locale}.json"
+      JSON.parse(Rails.root.join("screenshots", name).read)
+    end
+
+    def initialize(locale)
+      @fixture = self.class.fixture(locale)
     end
 
     def call
@@ -16,7 +30,7 @@ module Screenshots
         raise "Screenshot seeding requires the dedicated screenshot database. Use bin/screenshots seed."
       end
 
-      catalog = JSON.parse(Rails.root.join("screenshots/recipes.json").read).fetch("recipes")
+      catalog = @fixture.fetch("recipes")
       images = catalog.to_h do |entry|
         path = Rails.root.join("screenshots/photos", "#{entry.fetch('slug')}.png")
         raise "Missing #{path}. Run bin/screenshots photos first." unless path.file?
@@ -43,18 +57,14 @@ module Screenshots
         end
 
         cookbook.shopping_list_items.destroy_all
-        [
-          [ "Cherry tomatoes", "400 g", "produce", "cherry tomato" ], [ "Orzo", "300 g", "pantry", "orzo" ],
-          [ "Fresh basil", "1 bunch", "produce", "basil" ], [ "Parmesan", "50 g", "dairy_eggs", "parmesan" ],
-          [ "Blueberries", "150 g", "produce", "blueberry" ], [ "Ricotta", "200 g", "dairy_eggs", "ricotta" ],
-          [ "Sourdough", "1 loaf", "bakery", "sourdough bread" ], [ "Lemons", "3", "produce", "lemon" ]
-        ].each_with_index do |(name, details, category, canonical_name), index|
+        @fixture.fetch("shopping_list").each_with_index do |entry, index|
           item = cookbook.shopping_list_items.create!(
-            user: user, name: name, details: details, client_id: "showcase-#{index}",
+            user: user, name: entry.fetch("name"), details: entry.fetch("details"), client_id: "showcase-#{index}",
             created_at: Time.current - index.seconds
           )
           # Confirmed aisles, so captures are deterministic and queue no LLM work.
-          item.update_columns(category:, canonical_name:, enrichment_version: Llm::IngredientInstructions::VERSION)
+          item.update_columns(category: entry.fetch("category"), canonical_name: entry.fetch("canonical_name"),
+            enrichment_version: Llm::IngredientInstructions::VERSION)
         end
         # Each capture logs in again; keep the dedicated fixture account's token set bounded.
         user.api_tokens.destroy_all
