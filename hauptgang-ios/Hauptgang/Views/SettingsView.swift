@@ -43,7 +43,7 @@ struct SettingsView: View {
                     }
                     Button("Not Now", role: .cancel) {}
                 } message: {
-                    Text("Allow notifications for Hauptgang in the Settings app to receive reminders.")
+                    Text("Allow notifications for MainCourse in the Settings app to receive reminders.")
                 }
                 .alert("Error", isPresented: Binding(
                     get: { self.errorMessage != nil },

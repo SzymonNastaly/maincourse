@@ -504,7 +504,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zur Einkaufsliste hinzufügen"
+            "value" : "Zur Einkaufsliste"
           }
         },
         "pl" : {
@@ -647,24 +647,24 @@
         }
       }
     },
-    "Allow notifications for Hauptgang in the Settings app to receive reminders." : {
+    "Allow notifications for MainCourse in the Settings app to receive reminders." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow notifications for Hauptgang in the Settings app to receive reminders."
+            "value" : "Allow notifications for MainCourse in the Settings app to receive reminders."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlaube Mitteilungen für Hauptgang in den Einstellungen, um Erinnerungen zu erhalten."
+            "value" : "Erlaube Mitteilungen für MainCourse in den Einstellungen, um Erinnerungen zu erhalten."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zezwól na powiadomienia dla Hauptgang w aplikacji Ustawienia, aby otrzymywać przypomnienia."
+            "value" : "Zezwól na powiadomienia dla MainCourse w aplikacji Ustawienia, aby otrzymywać przypomnienia."
           }
         }
       }
