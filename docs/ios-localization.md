@@ -69,6 +69,17 @@ Machine-readable API dates and decimal serialization stay locale-independent.
 Shopping-list details are shared persisted plain text, so their numeric formatting
 explicitly uses POSIX locale rather than changing with the creating user's language.
 
+## Search
+
+`RecipeSearchQuery.searchableText` folds case and accents, ß to “ss” and ł to “l”.
+The FTS index stores text in that form and queries use it too, so “bulka” finds
+“bułka” and “weisskohl” finds “Weißkohl”. Bump `RecipeSearchIndex.schemaVersion`
+whenever the folding changes, which rebuilds existing indexes. Synonyms cover
+English, German/Austrian/Swiss and Polish regional names (Erdapfel/Kartoffel,
+Topfen/Quark, ziemniak/kartofel); a group lists names every member should find.
+Inflected forms up to three letters longer than a known name of five or more
+letters (“Tomaten”, “ziemniaków”) find its synonyms too.
+
 ## Refreshing catalogs
 
 Xcode can synchronize catalogs during development. The command-line build emits

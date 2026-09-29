@@ -67,18 +67,17 @@ enum RecipeSearchStore {
                 arguments: [recipe.id, recipe.name, self.iso8601String(from: recipe.updatedAt)]
             )
 
-            try db.execute(sql: "DELETE FROM recipes_fts WHERE rowid = ?", arguments: [recipe.id])
-            try db.execute(
-                sql: """
-                INSERT INTO recipes_fts (rowid, name, ingredients, instructions)
-                VALUES (
-                    ?,
-                    ?,
-                    COALESCE((SELECT ingredients FROM recipes WHERE id = ?), ''),
-                    COALESCE((SELECT instructions FROM recipes WHERE id = ?), '')
-                )
-                """,
-                arguments: [recipe.id, recipe.name, recipe.id, recipe.id]
+            let stored = try Row.fetchOne(
+                db,
+                sql: "SELECT ingredients, instructions FROM recipes WHERE id = ?",
+                arguments: [recipe.id]
+            )
+            try self.replaceIndexedText(
+                id: recipe.id,
+                name: recipe.name,
+                ingredients: stored?["ingredients"] ?? "",
+                instructions: stored?["instructions"] ?? "",
+                in: db
             )
         }
     }
@@ -107,19 +106,40 @@ enum RecipeSearchStore {
                 ]
             )
 
-            try db.execute(sql: "DELETE FROM recipes_fts WHERE rowid = ?", arguments: [recipe.id])
-            try db.execute(
-                sql: """
-                INSERT INTO recipes_fts (rowid, name, ingredients, instructions)
-                VALUES (?, ?, ?, ?)
-                """,
-                arguments: [recipe.id, recipe.name, ingredients, instructions]
+            try self.replaceIndexedText(
+                id: recipe.id,
+                name: recipe.name,
+                ingredients: ingredients,
+                instructions: instructions,
+                in: db
             )
         }
     }
 
     static func upsertDetails(_ details: [SearchIndexDetailInput], in db: Database) throws {
         try self.upsertPersisted(details, in: db)
+    }
+
+    /// The FTS table holds text in `RecipeSearchQuery.searchableText` form, so the
+    /// index and queries fold ß, ł and case the same way. Bump the index's
+    /// schema version when that folding changes.
+    private static func replaceIndexedText(
+        id: Int,
+        name: String,
+        ingredients: String,
+        instructions: String,
+        in db: Database
+    ) throws {
+        try db.execute(sql: "DELETE FROM recipes_fts WHERE rowid = ?", arguments: [id])
+        try db.execute(
+            sql: "INSERT INTO recipes_fts (rowid, name, ingredients, instructions) VALUES (?, ?, ?, ?)",
+            arguments: [
+                id,
+                RecipeSearchQuery.searchableText(name),
+                RecipeSearchQuery.searchableText(ingredients),
+                RecipeSearchQuery.searchableText(instructions)
+            ]
+        )
     }
 
     private static func iso8601String(from date: Date) -> String {

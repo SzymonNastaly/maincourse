@@ -23,6 +23,8 @@ class RecipeSearchQueryTest {
     @Test
     fun normalizesIndexedTextForThePlatformFtsTokenizer() {
         assertEquals("creme brulee!", RecipeSearchQuery.normalizeIndexedText("Crème BRÛLÉE!"))
+        assertEquals("losos weisskohl", RecipeSearchQuery.normalizeIndexedText("ŁOSOŚ Weißkohl"))
+        assertEquals("bulka*", RecipeSearchQuery.build("bułka"))
     }
 
     @Test

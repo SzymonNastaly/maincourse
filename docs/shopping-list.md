@@ -4,6 +4,13 @@ Shopping list items belong to a cookbook and are identified by
 `(cookbook_id, client_id)`. `name` and `details` are exactly what the user or
 recipe review submitted; they are never rewritten by enrichment.
 
+Quantities stay in `details` as text (“1.8 g”, with a POSIX decimal point), not
+as structured amounts rendered per viewer. Items are shared, users type their
+own details (“2 Packungen”, “for the cake”), and a cookbook's members usually
+share a language, so a German member of a Polish list sees “1.8 g” rather than
+“1,8 g”. Structured amounts would need new columns, merging and rendering on
+three clients; revisit only if mixed-language lists turn out to be common.
+
 ## Aisle categories
 
 Each item carries derived metadata used to group the list into aisles:
