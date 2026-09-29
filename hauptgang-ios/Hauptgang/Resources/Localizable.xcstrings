@@ -388,6 +388,7 @@
       }
     },
     "Bakery" : {
+      "comment" : "Shopping list aisle header. Bread and baked goods.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -860,6 +861,7 @@
       }
     },
     "Dairy & Eggs" : {
+      "comment" : "Shopping list aisle header. Milk, cheese, yogurt and eggs.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1030,6 +1032,7 @@
       }
     },
     "Drinks" : {
+      "comment" : "Shopping list aisle header. Drinks.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1190,6 +1193,7 @@
       }
     },
     "Frozen" : {
+      "comment" : "Shopping list aisle header. Frozen foods.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1250,6 +1254,7 @@
       }
     },
     "Household" : {
+      "comment" : "Shopping list aisle header. Non-food items such as cleaning supplies and toiletries.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1640,6 +1645,7 @@
       }
     },
     "Meat & Seafood" : {
+      "comment" : "Shopping list aisle header. Meat, poultry and fish.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1870,6 +1876,7 @@
       }
     },
     "Oils, Spices & Sauces" : {
+      "comment" : "Shopping list aisle header. Oils, vinegars, spices and condiments.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1920,6 +1927,7 @@
       }
     },
     "Other" : {
+      "comment" : "Shopping list aisle header. Items that fit no other aisle.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1930,6 +1938,7 @@
       }
     },
     "Pantry" : {
+      "comment" : "Shopping list aisle header. Dry goods such as flour, pasta, rice, tins and baking supplies.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2080,6 +2089,7 @@
       }
     },
     "Produce" : {
+      "comment" : "Shopping list aisle header. Fresh fruit, vegetables and herbs.",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -25,16 +25,35 @@ enum ShoppingCategory: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .produce: String(localized: "Produce")
-        case .bakery: String(localized: "Bakery")
-        case .meatSeafood: String(localized: "Meat & Seafood")
-        case .dairyEggs: String(localized: "Dairy & Eggs")
-        case .pantry: String(localized: "Pantry")
-        case .oilsSpicesCondiments: String(localized: "Oils, Spices & Sauces")
-        case .frozen: String(localized: "Frozen")
-        case .beverages: String(localized: "Drinks")
-        case .household: String(localized: "Household")
-        case .other: String(localized: "Other")
+        case .produce:
+            String(localized: "Produce", comment: "Shopping list aisle header. Fresh fruit, vegetables and herbs.")
+        case .bakery:
+            String(localized: "Bakery", comment: "Shopping list aisle header. Bread and baked goods.")
+        case .meatSeafood:
+            String(localized: "Meat & Seafood", comment: "Shopping list aisle header. Meat, poultry and fish.")
+        case .dairyEggs:
+            String(localized: "Dairy & Eggs", comment: "Shopping list aisle header. Milk, cheese, yogurt and eggs.")
+        case .pantry:
+            String(
+                localized: "Pantry",
+                comment: "Shopping list aisle header. Dry goods such as flour, pasta, rice, tins and baking supplies."
+            )
+        case .oilsSpicesCondiments:
+            String(
+                localized: "Oils, Spices & Sauces",
+                comment: "Shopping list aisle header. Oils, vinegars, spices and condiments."
+            )
+        case .frozen:
+            String(localized: "Frozen", comment: "Shopping list aisle header. Frozen foods.")
+        case .beverages:
+            String(localized: "Drinks", comment: "Shopping list aisle header. Drinks.")
+        case .household:
+            String(
+                localized: "Household",
+                comment: "Shopping list aisle header. Non-food items such as cleaning supplies and toiletries."
+            )
+        case .other:
+            String(localized: "Other", comment: "Shopping list aisle header. Items that fit no other aisle.")
         }
     }
 
