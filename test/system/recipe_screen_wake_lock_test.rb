@@ -124,6 +124,9 @@ class RecipeScreenWakeLockTest < ApplicationSystemTestCase
     def open_recipe
       page.execute_script "Turbo.visit(#{recipe_path(recipes(:one)).to_json})"
       assert_selector "h1", text: recipes(:one).name
+      # A revisit first renders Turbo's cached preview; clicking it is lost when
+      # the fresh page replaces it.
+      assert_no_selector "html[data-turbo-preview]", visible: :all
       wait_for_stimulus("[data-controller~=portion-scaler]")
     end
 
