@@ -23,6 +23,11 @@ for that scale — avoid architecture, abstraction, or infrastructure justified 
 large user counts. Prefer established, well-tested, production-proven libraries to
 hand-rolled solutions.
 
+## Git workflow
+
+Work and commit directly on `main`. Don't create feature branches or PRs unless
+asked; this is a solo project and branches are just overhead.
+
 ## Essential Commands
 
 ```bash
