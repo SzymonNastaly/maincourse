@@ -121,3 +121,21 @@ opencode run --agent plan --auto -f plan.md "Critique this plan: what is wrong, 
 - Its output is advice. Verify each finding before acting on it.
 - Run `git status` afterwards. The plan agent should not change anything, but
   `--auto` approves any shell command that is not explicitly denied.
+
+## Cloudflare (R2)
+
+Use the `cf` CLI for Cloudflare, not `wrangler`. `cf` is already logged in on
+this machine; `wrangler` is not. Find commands with `cf cli search "<task>"`
+rather than walking nested `--help` output.
+
+- Export `CLOUDFLARE_ACCOUNT_ID` first. Get the ID from `cf auth whoami`.
+- Both app buckets (`hauptgang-production` for Active Storage and
+  `hauptgang-backups` for Litestream) are in the **EU jurisdiction**. Requests
+  that don't specify it can't see them, so pass `--cf-r2-jurisdiction eu`, e.g.
+  `cf r2 buckets list --cf-r2-jurisdiction eu`.
+- `cf` has no GraphQL Analytics command. For per-bucket operation counts
+  (`r2OperationsAdaptiveGroups`), POST to
+  `https://api.cloudflare.com/client/v4/graphql` using the OAuth token `cf`
+  keeps in `~/Library/Preferences/cloudflare/config/default.json`. Run any
+  `cf` command first so the token gets refreshed. In the results, EU bucket
+  names have an `eu_` prefix.
