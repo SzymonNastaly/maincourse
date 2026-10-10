@@ -1,12 +1,12 @@
 # SQLite Backups with Litestream
 
-Litestream continuously replicates the production SQLite databases to **Cloudflare R2** (S3-compatible, EU jurisdiction). It runs as a Kamal accessory alongside the app container, sharing the same Docker volume.
+Litestream continuously replicates the primary production SQLite database to **Cloudflare R2** (S3-compatible, EU jurisdiction). It runs as a Kamal accessory alongside the app container, sharing the same Docker volume.
 
 ## Architecture
 
-- **Replication**: A `litestream/litestream:0.5.16` container runs as a Kamal accessory, watching `production.sqlite3` and `production_queue.sqlite3` and streaming changes to R2.
+- **Replication**: A `litestream/litestream:0.5.16` container runs as a Kamal accessory, watching `production.sqlite3` and streaming changes to R2.
 - **Restore**: The same Litestream version is installed in the app image (`Dockerfile:21`). On boot, `bin/docker-entrypoint` auto-restores from R2 **if the database file is missing** (`litestream restore -if-replica-exists`).
-- **Scope**: `production.sqlite3` and `production_queue.sqlite3` are replicated. Solid Queue holds in-flight and scheduled jobs, so it is not disposable. Cache and cable are excluded as genuinely disposable — the Solid suite recreates them.
+- **Scope**: only `production.sqlite3` is replicated. Solid Queue (`production_queue.sqlite3`) was replicated until October 2026 and was dropped for cost (see [R2 operation costs](#r2-operation-costs)). After a restore, `db:prepare` recreates it empty and the recurring jobs re-register. Only jobs that were in flight or scheduled for later at the moment of loss are gone. Cache and cable are excluded as genuinely disposable, because the Solid suite recreates them.
 - **UID alignment**: The accessory runs as `user: 1000:1000` (via `options:` in `config/deploy.yml`) to match the Rails app user. Without this, Litestream cannot read WAL files or create its metadata directory on the shared `hauptgang_storage` volume.
 
 ## Version pinning — keep these three in lockstep
@@ -27,7 +27,7 @@ Upgrading across the 0.3.x → 0.5.x boundary **resets the replica lineage** —
 
 | File | Role |
 |---|---|
-| `config/litestream.yml` | Replication config (DB paths, R2 bucket, retention) |
+| `config/litestream.yml` | Replication config (DB paths, R2 bucket, retention, compaction intervals) |
 | `config/deploy.yml` | Kamal accessory definition + `restore` alias |
 | `.kamal/secrets` | Extracts R2 credentials from Rails credentials |
 | `bin/docker-entrypoint` | Auto-restore logic on missing DB |
@@ -82,3 +82,15 @@ kamal app logs | grep -c 'No database found'   # must be 0 when a tarball was sh
 Configured in `config/litestream.yml`: 72h retention, 24h snapshot interval. Point-in-time recovery is possible within that window via `litestream restore -timestamp`.
 
 Note the consequence: **R2 holds no recovery point older than 72 hours.** It is a replica, not an archive. If you need a pre-migration or pre-upgrade snapshot to survive longer, take a volume tarball and store it off the server.
+
+## R2 operation costs
+
+R2 storage for this app costs almost nothing. **Operations** cost money: ListObjects and PutObject are Class A, with 1M free per month and $4.50 per million after that. Litestream 0.5.x's defaults assume a low-latency read replica. For an idle app they spend operations constantly:
+
+- The L0 retention monitor lists L0 **and every L1 file** every 15s, for each db.
+- L1 compaction runs every 30s. With 72h snapshot retention that keeps about 8,600 L1 files, so each listing needs about 9 pages of 1,000 keys.
+- Solid Queue's heartbeats change the queue db every minute even when idle, so all of the above ran around the clock for it too.
+
+The result was about 3.2M Class A ops a month (roughly $10), almost all of them ListObjects on `hauptgang-backups`. In October 2026 `config/litestream.yml` stopped replicating the queue db and slowed the background work: `levels` set to 5m/1h and `l0-retention-check-interval: 5m`. The estimate after that is under 100k Class A ops a month. This does **not** widen the data-loss window, because changed pages still upload as L0 files every second (`sync-interval` default 1s). Restores replay a few more small files, which is negligible at this size.
+
+Check operation counts per bucket with the GraphQL analytics query described in AGENTS.md ("Cloudflare (R2)"). Look at `r2OperationsAdaptiveGroups`, filtered to bucket `eu_hauptgang-backups`.

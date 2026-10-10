@@ -3,10 +3,27 @@
 #   - retention/snapshot settings moved from the replica to global `snapshot:`
 # 0.5.x auto-detects R2 from the endpoint and self-limits concurrency,
 # so force-path-style and concurrency do not need setting by hand.
+#
+# R2 bills ListObjects/PutObject as Class A ops (1M/month free). The 0.5.x
+# defaults are tuned for low-latency read replicas, not a backup of an idle
+# app: they compacted L1 every 30s and listed every L1 file every 15s per db,
+# which cost ~3.2M Class A ops/month (Sept–Oct 2026). Intervals below are
+# deliberately slow. They don't change how much data can be lost: changed
+# pages still upload as L0 files every second. They only change how often
+# Litestream merges and prunes those files. See docs/sqlite-backups-litestream.md.
 
 snapshot:
   retention: 72h
   interval: 24h
+
+# Replaces the default L1 30s / L2 5m / L3 1h ladder. Fewer, larger L1 files
+# also keep each L1 listing to a single 1000-key page.
+levels:
+  - interval: 5m
+  - interval: 1h
+
+# Default 15s. Each check lists L0 and L1 on the replica.
+l0-retention-check-interval: 5m
 
 dbs:
   - path: /rails/storage/production.sqlite3
@@ -19,15 +36,9 @@ dbs:
       access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
       secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
 
-  # Closes defect D2: Solid Queue state (in-flight and scheduled jobs) was
-  # previously not backed up at all. Cache and cable stay excluded as
-  # genuinely disposable.
-  - path: /rails/storage/production_queue.sqlite3
-    replica:
-      type: s3
-      bucket: ${LITESTREAM_REPLICA_BUCKET}
-      path: production_queue.sqlite3
-      endpoint: ${LITESTREAM_REPLICA_ENDPOINT}
-      region: auto
-      access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
-      secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+  # Solid Queue (production_queue.sqlite3) is deliberately NOT replicated.
+  # Its process heartbeats write every minute even when idle, so it was
+  # roughly half of the R2 bill while holding only transient job state. After
+  # a restore, db:prepare recreates it empty and the recurring jobs re-register;
+  # in-flight and delayed jobs at the time of the loss are dropped. Cache and
+  # cable are excluded too.
