@@ -22,9 +22,8 @@ Rails.application.configure do
   # config.asset_host = "http://assets.example.com"
 
   # Store uploaded files on Cloudflare R2 (S3-compatible, EU jurisdiction).
-  # See config/storage.yml for configuration. Test environments set
-  # ACTIVE_STORAGE_SERVICE=cloud so they can't touch the production bucket.
-  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "r2").to_sym
+  # See config/storage.yml for configuration.
+  config.active_storage.service = :r2
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
@@ -102,12 +101,11 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   # Both are served during the transition. cook.hauptgang.app is removed in
-  # December 2026, before the domain expires. Laravel Cloud sets APP_URL.
+  # December 2026, before the domain expires.
   config.hosts = [
     "app.getmaincourse.com",
-    "cook.hauptgang.app",
-    ENV["APP_URL"]&.then { |url| URI(url).host }
-  ].compact
+    "cook.hauptgang.app"
+  ]
 
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
