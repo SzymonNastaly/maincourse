@@ -76,7 +76,7 @@ class RecipeImporter
       conn.options.open_timeout = 5
       conn.headers["User-Agent"] = USER_AGENT
       conn.headers["Accept"] = "text/html"
-      conn.response :follow_redirects, limit: MAX_REDIRECTS
+      conn.response :follow_redirects, limit: MAX_REDIRECTS, callback: RecipeImporters::UrlValidator::REJECT_UNSAFE_REDIRECT
     end
   end
 

@@ -190,7 +190,7 @@ class RecipeContentImportJob < ApplicationJob
 
   def cover_image_client
     Faraday.new do |conn|
-      conn.response :follow_redirects, limit: 5
+      conn.response :follow_redirects, limit: 5, callback: RecipeImporters::UrlValidator::REJECT_UNSAFE_REDIRECT
       conn.options.timeout = 10
       conn.options.open_timeout = 5
       conn.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"

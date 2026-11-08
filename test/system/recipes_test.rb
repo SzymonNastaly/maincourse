@@ -21,7 +21,7 @@ class RecipesTest < ApplicationSystemTestCase
 
     # The SSRF check resolves the host; real DNS can take longer than
     # Capybara waits, so hand it a public address instead.
-    Resolv.stub(:getaddress, "93.184.215.14") do
+    Resolv.stub(:getaddresses, [ "93.184.215.14" ]) do
       click_button "Import recipe"
 
       assert_text "Importing your recipe"

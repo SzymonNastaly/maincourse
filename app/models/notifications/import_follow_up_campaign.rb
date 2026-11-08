@@ -7,7 +7,7 @@ module Notifications
     MAX_AGE = 7.days
     # A view within this window of the import is the import flow itself, not the user
     # coming back to the recipe later.
-    IMPORT_VIEW_GRACE = "+1 hour".freeze
+    IMPORT_VIEW_GRACE = 1.hour
 
     def self.eligible_for(user)
       recipe = candidates(user).first
@@ -49,12 +49,13 @@ module Notifications
                       .select(:recipe_id)
     end
 
-    # SQLite-specific date arithmetic; this app has no other adapter.
+    # Compared in Ruby because date arithmetic has no SQL form shared by SQLite and Postgres.
     def self.revisited_recipe_ids(user)
       RecipeEngagement.where(user_id: user.id)
-                      .joins(:recipe)
-                      .where("recipe_engagements.last_viewed_at > datetime(recipes.created_at, ?)", IMPORT_VIEW_GRACE)
-                      .select(:recipe_id)
+                      .where.not(last_viewed_at: nil)
+                      .includes(:recipe)
+                      .select { |engagement| engagement.last_viewed_at > engagement.recipe.created_at + IMPORT_VIEW_GRACE }
+                      .map(&:recipe_id)
     end
   end
 end

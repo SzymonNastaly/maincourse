@@ -104,6 +104,19 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert_equal "Redirected", result.recipe_attributes[:name]
   end
 
+  test "does not follow a redirect to a private address" do
+    stub_request(:get, "https://example.com/recipe")
+      .to_return(status: 302, headers: { "Location" => "http://169.254.169.254/latest/meta-data/" })
+    metadata = stub_request(:get, "http://169.254.169.254/latest/meta-data/")
+      .to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+
+    result = RecipeImporter.new("https://example.com/recipe").import
+
+    assert_not result.success?
+    assert_equal :fetch_failed, result.error_code
+    assert_not_requested metadata
+  end
+
   # ===================
   # EXTRACTION FLOW TESTS
   # ===================
@@ -330,6 +343,27 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert_not result.success?
     assert_equal :tiktok_fetch_failed, result.error_code
     assert_not_requested(:get, "https://www.tiktok.com/oembed", query: { "url" => redirected_url })
+  end
+
+  test "does not follow a tiktok short link to a private address" do
+    short_url = "https://vm.tiktok.com/ZNRu1v3Hq/"
+    internal_url = "http://169.254.169.254/latest/meta-data/"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => short_url })
+      .to_return(status: 404, body: "", headers: { "Content-Type" => "text/plain" })
+
+    stub_request(:get, short_url)
+      .to_return(status: 302, headers: { "Location" => internal_url })
+
+    internal = stub_request(:get, internal_url)
+      .to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+
+    result = RecipeImporter.new(short_url).import
+
+    assert_not result.success?
+    assert_equal :tiktok_fetch_failed, result.error_code
+    assert_not_requested internal
   end
 
   test "returns error when tiktok caption is missing" do

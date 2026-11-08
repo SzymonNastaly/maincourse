@@ -71,7 +71,8 @@ module ShoppingList
     def upsert_item(client_id, name, source_recipe_id, item_params)
       item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
       assign(item, name, source_recipe_id, item_params)
-      item.save
+      # Postgres aborts the whole transaction on a constraint error raised outside a savepoint.
+      ActiveRecord::Base.transaction(requires_new: true) { item.save }
       item
     rescue ActiveRecord::RecordNotUnique
       item = @cookbook.shopping_list_items.find_by!(client_id: client_id)

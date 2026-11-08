@@ -167,6 +167,39 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     ShoppingListItem.define_method(:save, original_save)
   end
 
+  test "recovers from a real unique violation inside the batch transaction" do
+    service = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "racing-client", name: "Eggs" } ]
+    )
+    original_save = ShoppingListItem.instance_method(:save)
+    raced = false
+
+    # Another request inserts the row after this one's lookup and uniqueness validation.
+    service.define_singleton_method(:assign) do |item, *args|
+      super(item, *args)
+      ShoppingListItem.insert!(item.attributes.except("id", "created_at", "updated_at")) unless raced
+    end
+
+    ShoppingListItem.define_method(:save) do |*args, **kwargs|
+      if !raced && new_record?
+        raced = true
+        original_save.bind(self).call(validate: false)
+      else
+        original_save.bind(self).call(*args, **kwargs)
+      end
+    end
+
+    result = service.call
+
+    assert result.success?
+    assert_equal "Eggs", result.items.first.name
+    assert_equal 1, @cookbook.shopping_list_items.where(client_id: "racing-client").count
+  ensure
+    ShoppingListItem.define_method(:save, original_save)
+  end
+
   test "returns error when recipe is deleted between validation and save" do
     recipe = @cookbook.recipes.create!(name: "Temp Recipe", user: @user)
 

@@ -13,23 +13,23 @@ class SearchesController < ApplicationController
   private
 
   def search
-    # search_fold (config/initializers/search_fold.rb) ignores case and accents.
-    term = "%#{ActiveRecord::Base.sanitize_sql_like(SearchFold.call(@query))}%"
+    searchable = Recipe.where(cookbook_id: @cookbooks.map(&:id)).where.not(import_status: :failed)
 
-    Recipe.where(cookbook_id: @cookbooks.map(&:id))
-          .where.not(import_status: :failed)
-          .where(<<~SQL.squish, term: term)
-            search_fold(recipes.name) LIKE :term
-            OR search_fold(COALESCE(recipes.instructions, '')) LIKE :term
-            OR EXISTS (
-              SELECT 1 FROM ingredients
-              WHERE ingredients.recipe_id = recipes.id
-                AND search_fold(ingredients.raw) LIKE :term
-            )
-          SQL
-          .with_attached_cover_image
-          .includes(:cookbook)
-          .order(updated_at: :desc)
-          .limit(RESULT_LIMIT)
+    searchable.where(id: matching_ids(searchable, SearchFold.call(@query)))
+              .with_attached_cover_image
+              .includes(:cookbook)
+              .order(updated_at: :desc)
+              .limit(RESULT_LIMIT)
+  end
+
+  # Matches in Ruby because SearchFold's case and accent folding has no SQL form
+  # shared by SQLite and Postgres, and one user's cookbooks are small enough to scan.
+  def matching_ids(recipes, term)
+    ingredients = Ingredient.where(recipe_id: recipes.select(:id)).pluck(:recipe_id, :raw).group_by(&:first)
+
+    recipes.pluck(:id, :name, :instructions).filter_map do |id, name, instructions|
+      texts = [ name, *Array(instructions), *ingredients.fetch(id, []).map(&:last) ]
+      id if texts.any? { |text| SearchFold.call(text.to_s).include?(term) }
+    end
   end
 end

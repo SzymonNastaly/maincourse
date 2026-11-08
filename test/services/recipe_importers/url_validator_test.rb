@@ -173,6 +173,27 @@ module RecipeImporters
       assert_match(/private or internal/i, result.error)
     end
 
+    test "rejects carrier-grade NAT address" do
+      result = validate_url("https://example.com/", resolve_to: "100.64.0.1")
+
+      assert_not result.success?
+      assert_match(/private or internal/i, result.error)
+    end
+
+    test "rejects unique local IPv6 address" do
+      result = validate_url("https://example.com/", resolve_to: "fd00:ec2::254")
+
+      assert_not result.success?
+      assert_match(/private or internal/i, result.error)
+    end
+
+    test "rejects IPv4-mapped form of a private address" do
+      result = validate_url("https://example.com/", resolve_to: "::ffff:169.254.169.254")
+
+      assert_not result.success?
+      assert_match(/private or internal/i, result.error)
+    end
+
     # ===================
     # BLOCKED HOSTNAMES
     # ===================
@@ -263,6 +284,13 @@ module RecipeImporters
       assert_match(/private or internal/i, result.error)
     end
 
+    test "rejects hostname when any resolved address is private" do
+      result = validate_url("https://example.com/", resolve_to: [ "93.184.216.34", "10.0.0.1" ])
+
+      assert_not result.success?
+      assert_match(/private or internal/i, result.error)
+    end
+
     test "rejects hostname that cannot be resolved" do
       result = validate_url("http://nonexistent.example.com/", resolve_to: nil)
 
@@ -288,14 +316,12 @@ module RecipeImporters
     end
 
     class StubResolver
-      def initialize(ip)
-        @ip = ip
+      def initialize(ips)
+        @ips = Array(ips)
       end
 
-      def getaddress(_host)
-        raise Resolv::ResolvError if @ip.nil?
-
-        @ip
+      def getaddresses(_host)
+        @ips
       end
     end
   end

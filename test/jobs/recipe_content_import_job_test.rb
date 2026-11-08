@@ -23,6 +23,25 @@ class RecipeContentImportJobTest < ActiveSupport::TestCase
     assert_not @recipe.cover_image.attached?
   end
 
+  test "skips cover image that redirects to a private host" do
+    redirecting_url = "https://example.com/cover.jpg"
+    internal_url = "http://169.254.169.254/latest/meta-data/"
+    result = success_result(cover_image_url: redirecting_url)
+    job = RecipeContentImportJob.new
+
+    stub_request(:get, redirecting_url)
+      .to_return(status: 302, headers: { "Location" => internal_url })
+    internal = stub_request(:get, internal_url)
+      .to_return(status: 200, body: "fake-image-bytes", headers: { "Content-Type" => "image/jpeg" })
+
+    job.stub(:extract_from_content, result) do
+      job.perform(@user.id, @recipe.id, "https://example.com/recipe", [ "{\"@type\":\"Recipe\"}" ], "<body>Recipe</body>", {})
+    end
+
+    assert_not_requested internal
+    assert_not @recipe.reload.cover_image.attached?
+  end
+
   test "downloads and attaches cover image for public URL" do
     public_image_url = "https://example.com/cover.jpg"
     result = success_result(cover_image_url: public_image_url)

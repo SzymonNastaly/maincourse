@@ -7,6 +7,14 @@ module RecipeImporters
   class UrlValidator
     Result = Data.define(:success?, :error)
 
+    class BlockedRedirect < Faraday::Error; end
+
+    # A follow_redirects callback, which Faraday runs before requesting each hop.
+    REJECT_UNSAFE_REDIRECT = lambda do |_response_env, redirect_env|
+      validation = new(redirect_env.url.to_s).validate
+      raise BlockedRedirect, validation.error unless validation.success?
+    end
+
     ALLOWED_SCHEMES = %w[http https].freeze
     ALLOWED_PORTS = [ 80, 443, 8080, 8443 ].freeze
 
@@ -23,6 +31,8 @@ module RecipeImporters
       IPAddr.new("10.0.0.0/8"),       # Private class A
       IPAddr.new("172.16.0.0/12"),    # Private class B
       IPAddr.new("192.168.0.0/16"),   # Private class C
+      IPAddr.new("100.64.0.0/10"),    # Carrier-grade NAT
+      IPAddr.new("fc00::/7"),         # Unique local IPv6
       IPAddr.new("169.254.0.0/16"),   # Link-local IPv4
       IPAddr.new("fe80::/10"),        # Link-local IPv6
       IPAddr.new("0.0.0.0/32"),       # Unspecified IPv4
@@ -47,9 +57,9 @@ module RecipeImporters
       return failure("Port #{uri.port} is not allowed") unless valid_port?(uri)
       return failure("This hostname is not allowed") if blocked_hostname?(host)
 
-      resolved_ip = resolve_host(host)
-      return failure("Could not resolve hostname") unless resolved_ip
-      return failure("URLs pointing to private or internal addresses are not allowed") if private_ip?(resolved_ip)
+      resolved_ips = @resolver.getaddresses(host)
+      return failure("Could not resolve hostname") if resolved_ips.empty?
+      return failure("URLs pointing to private or internal addresses are not allowed") if resolved_ips.any? { |ip| private_ip?(ip) }
 
       success
     end
@@ -81,14 +91,8 @@ module RecipeImporters
       BLOCKED_HOSTNAME_PATTERNS.any? { |pattern| pattern.match?(host) }
     end
 
-    def resolve_host(host)
-      @resolver.getaddress(host)
-    rescue Resolv::ResolvError
-      nil
-    end
-
     def private_ip?(ip_string)
-      ip = IPAddr.new(ip_string)
+      ip = IPAddr.new(ip_string).native
       PRIVATE_IP_RANGES.any? { |range| range.include?(ip) }
     rescue IPAddr::InvalidAddressError
       true

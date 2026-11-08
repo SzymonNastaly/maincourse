@@ -249,7 +249,7 @@ module RecipeImporters
         options.timeout = 10
         options.open_timeout = 5
         conn.headers["User-Agent"] = USER_AGENT
-        conn.response :follow_redirects, limit: REDIRECT_LIMIT
+        conn.response :follow_redirects, limit: REDIRECT_LIMIT, callback: UrlValidator::REJECT_UNSAFE_REDIRECT
       end
     end
 

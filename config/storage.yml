@@ -27,3 +27,15 @@ r2:
   bucket: <%= Rails.application.credentials.dig(:r2, :bucket) || "hauptgang-production" %>
   request_checksum_calculation: when_required
   response_checksum_validation: when_required
+
+# Bucket attached to a Laravel Cloud environment, which injects these variables.
+cloud:
+  service: S3
+  endpoint: <%= ENV["AWS_ENDPOINT_URL"] %>
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+  region: <%= ENV.fetch("AWS_REGION", "auto") %>
+  bucket: <%= ENV["AWS_BUCKET"] %>
+  force_path_style: false
+  request_checksum_calculation: when_required
+  response_checksum_validation: when_required
