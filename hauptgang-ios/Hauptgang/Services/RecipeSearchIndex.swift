@@ -246,8 +246,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
     }
 
     private func recoverFromCorruptionIfNeeded(error: Error, userId: Int?, cookbookId: Int?) async -> Bool {
-        guard let userId, let cookbookId else { return false }
-        guard let dbError = error as? DatabaseError else { return false }
+        guard let userId, let cookbookId, let dbError = error as? DatabaseError else { return false }
         let isCorrupt = dbError.resultCode == .SQLITE_CORRUPT || dbError.resultCode == .SQLITE_NOTADB
         guard isCorrupt else { return false }
 

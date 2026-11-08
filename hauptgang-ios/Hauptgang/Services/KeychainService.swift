@@ -21,12 +21,11 @@ actor KeychainService {
 
         // Check if token is expired
         if let expiryData = get(key: Constants.Keychain.tokenExpiryKey),
-           let expiresAt = try? JSONDecoder().decode(Date.self, from: expiryData) {
-            if Date() >= expiresAt {
-                // Token expired, clean up
-                self.deleteToken()
-                return nil
-            }
+           let expiresAt = try? JSONDecoder().decode(Date.self, from: expiryData),
+           Date() >= expiresAt {
+            // Token expired, clean up
+            self.deleteToken()
+            return nil
         }
 
         return String(data: data, encoding: .utf8)

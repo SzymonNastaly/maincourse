@@ -12,8 +12,8 @@ struct LifecycleNotificationPayload: Equatable, Sendable {
     let cookbookId: Int?
 
     static func parse(_ userInfo: [AnyHashable: Any]) -> LifecycleNotificationPayload? {
-        guard let campaign = userInfo["campaign"] as? String, !campaign.isEmpty else { return nil }
-        guard let deliveryId = Self.int(userInfo["delivery_id"]) else { return nil }
+        guard let campaign = userInfo["campaign"] as? String, !campaign.isEmpty,
+              let deliveryId = int(userInfo["delivery_id"]) else { return nil }
 
         return LifecycleNotificationPayload(
             campaign: campaign,

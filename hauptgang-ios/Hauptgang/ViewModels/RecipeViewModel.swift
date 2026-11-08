@@ -577,9 +577,7 @@ extension RecipeViewModel {
     // MARK: - Detail Sync
 
     private func startDetailSyncIfNeeded() {
-        guard self.detailSyncTask == nil else { return }
-        guard let userId = self.currentUserId else { return }
-        guard self.currentCookbookId != nil else { return }
+        guard self.detailSyncTask == nil, let userId = self.currentUserId, self.currentCookbookId != nil else { return }
 
         let recipeService = self.recipeService
         let repository = self.repository

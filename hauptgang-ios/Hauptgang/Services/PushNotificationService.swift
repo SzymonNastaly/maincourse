@@ -44,9 +44,9 @@ actor PushNotificationService {
 
     private static var environment: String {
         #if DEBUG
-        return "sandbox"
+        "sandbox"
         #else
-        return "production"
+        "production"
         #endif
     }
 

@@ -140,8 +140,7 @@ final class MealPlanViewModel {
     // MARK: - Vote
 
     func toggleVote(entry: PersistedMealPlanEntry, cookbookId: Int) {
-        guard !self.networkMonitor.isOffline else { return }
-        guard let serverId = entry.serverId else { return }
+        guard !self.networkMonitor.isOffline, let serverId = entry.serverId else { return }
 
         let wasVoted = entry.votedByCurrentUser
         entry.votedByCurrentUser = !wasVoted

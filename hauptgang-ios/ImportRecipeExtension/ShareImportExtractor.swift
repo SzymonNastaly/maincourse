@@ -337,10 +337,7 @@ private extension ShareImportExtractor {
         depth: Int,
         remainingNodes: inout Int
     ) -> (url: URL, path: String)? {
-        guard depth <= self.maxPropertyListTraversalDepth else {
-            return nil
-        }
-        guard remainingNodes > 0 else {
+        guard depth <= self.maxPropertyListTraversalDepth, remainingNodes > 0 else {
             return nil
         }
         remainingNodes -= 1
@@ -375,8 +372,7 @@ private extension ShareImportExtractor {
                 return match
             }
             for key in dictionary.allKeys {
-                guard let keyString = key as? String else { continue }
-                guard let nestedValue = dictionary[key] else { continue }
+                guard let keyString = key as? String, let nestedValue = dictionary[key] else { continue }
                 if let match = urlFromPropertyListValue(
                     nestedValue,
                     path: "\(path).\(keyString)",

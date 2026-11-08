@@ -12,7 +12,7 @@ final class StructuredIngredientTests: XCTestCase {
     }
 
     func testDecode_decimalsAsStrings() throws {
-        let json = """
+        let json = try XCTUnwrap("""
         {
           "id": 7,
           "position": 0,
@@ -27,7 +27,7 @@ final class StructuredIngredientTests: XCTestCase {
           "enrichment_version": 1,
           "raw": "0.5–200 g flour"
         }
-        """.data(using: .utf8)!
+        """.data(using: .utf8))
 
         let ingredient = try makeDecoder().decode(StructuredIngredient.self, from: json)
 
@@ -45,7 +45,7 @@ final class StructuredIngredientTests: XCTestCase {
     }
 
     func testDecode_nullDecimalsBecomeNil() throws {
-        let json = """
+        let json = try XCTUnwrap("""
         {
           "id": 1,
           "position": 0,
@@ -56,7 +56,7 @@ final class StructuredIngredientTests: XCTestCase {
           "note": null,
           "raw": "salt to taste"
         }
-        """.data(using: .utf8)!
+        """.data(using: .utf8))
 
         let ingredient = try makeDecoder().decode(StructuredIngredient.self, from: json)
 
@@ -67,7 +67,7 @@ final class StructuredIngredientTests: XCTestCase {
     }
 
     func testDecode_unitOnlyIsConsideredStructured() throws {
-        let json = """
+        let json = try XCTUnwrap("""
         {
           "id": 1,
           "position": 0,
@@ -78,14 +78,14 @@ final class StructuredIngredientTests: XCTestCase {
           "note": null,
           "raw": "pinch of salt"
         }
-        """.data(using: .utf8)!
+        """.data(using: .utf8))
 
         let ingredient = try makeDecoder().decode(StructuredIngredient.self, from: json)
         XCTAssertTrue(ingredient.hasStructuredFields)
     }
 
     func testDecode_falseShoppingDefaultFromAPI() throws {
-        let json = """
+        let json = try XCTUnwrap("""
         {
           "id": 1,
           "position": 0,
@@ -93,7 +93,7 @@ final class StructuredIngredientTests: XCTestCase {
           "shopping_default_included": false,
           "raw": "Salz nach Geschmack"
         }
-        """.data(using: .utf8)!
+        """.data(using: .utf8))
 
         let ingredient = try self.makeDecoder().decode(StructuredIngredient.self, from: json)
 
@@ -101,12 +101,12 @@ final class StructuredIngredientTests: XCTestCase {
     }
 
     func testDecode_missingOrNullShoppingDefaultIsIncluded() throws {
-        let missing = """
+        let missing = try XCTUnwrap("""
         { "id": 1, "position": 0, "raw": "salt" }
-        """.data(using: .utf8)!
-        let null = """
+        """.data(using: .utf8))
+        let null = try XCTUnwrap("""
         { "id": 2, "position": 1, "shopping_default_included": null, "raw": "water" }
-        """.data(using: .utf8)!
+        """.data(using: .utf8))
 
         XCTAssertTrue(try self.makeDecoder().decode(StructuredIngredient.self, from: missing).shoppingDefaultIncluded)
         XCTAssertTrue(try self.makeDecoder().decode(StructuredIngredient.self, from: null).shoppingDefaultIncluded)

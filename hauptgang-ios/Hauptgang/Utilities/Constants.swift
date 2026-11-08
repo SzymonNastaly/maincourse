@@ -102,9 +102,9 @@ enum Constants {
         #endif
         static let environment: String = {
             #if DEBUG
-            return "development"
+            "development"
             #else
-            return "production"
+            "production"
             #endif
         }()
     }

@@ -82,8 +82,8 @@ struct MainTabView: View {
     }
 
     private func openSavedRecipe(userInitiated: Bool = false) async {
-        guard userInitiated || !self.onboarding.externalNavigationHasPriority else { return }
-        guard let saved = self.onboarding.savedRecipe else { return }
+        guard userInitiated || !self.onboarding.externalNavigationHasPriority,
+              let saved = self.onboarding.savedRecipe else { return }
         let userId = self.session.currentUser?.id
         guard let cookbook = self.session.cookbookViewModel.cookbooks.first(where: { $0.id == saved.cookbookId }) else {
             self.onboarding.externalNavigationHasPriority = true
