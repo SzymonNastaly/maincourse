@@ -42,7 +42,7 @@ MainCourse turns your meal plan into a single, consolidated shopping list
 
 MainCourse has a shared Rails backend and three client surfaces:
 
-- **Rails 8.1 backend and web app** (`app/`, `config/`, `db/`) — Ruby 3.4.7, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web UI. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
+- **Rails 8.1 backend and web app** (`app/`, `config/`, `db/`) — Ruby 3.4.12, SQLite multi-database (primary + Solid Cache / Queue / Cable), Hotwire for the web UI. Handles recipe extraction (URL, social, photo), user accounts, sharing, and sync.
 - **SwiftUI iOS app** (`hauptgang-ios/`) — Offline-first iPhone and iPad client. Generated with XcodeGen, uses RevenueCat for subscriptions.
 - **Kotlin/Jetpack Compose Android app** (`maincourse-android/`) — Android 10+
   native client. Development guidance is in
@@ -55,7 +55,7 @@ See [`architecture.md`](architecture.md) for a deeper look at how the pieces fit
 
 ## Development
 
-Requires Ruby 3.4.7 and SQLite.
+Requires Ruby 3.4.12 and SQLite.
 
 ```bash
 bin/setup                  # install deps, prepare DB, start server

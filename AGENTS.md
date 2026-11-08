@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Hauptgang is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventions and uses modern Rails 8+ features including:
+Hauptgang is a Rails 8.1 application using Ruby 3.4.12. It follows Rails conventions and uses modern Rails 8+ features including:
 
 - **Hotwire** (Turbo and Stimulus) for SPA-like interactions
 - **SQLite multi-database setup** - Rails 8+ approach using separate SQLite databases for:
