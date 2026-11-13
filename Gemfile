@@ -34,7 +34,7 @@ gem "bcrypt", "~> 3.1.22"
 
 # Sign in with Apple and Google for the web and native iOS app
 gem "jwt", "~> 3.3"
-gem "omniauth", "~> 2.1"
+gem "omniauth", "~> 2.2"
 gem "omniauth-apple", "~> 1.4"
 gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-rails_csrf_protection", "~> 2.0"
