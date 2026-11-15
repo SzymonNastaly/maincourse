@@ -2,6 +2,9 @@
 set -e
 set -o pipefail
 
+# Linux has no Xcode, so the dev box runs this on the Mac.
+[[ "$(uname)" == Darwin ]] || exec "$(dirname "$0")/mac" "bin/$(basename "$0")" "$@"
+
 cd "$(dirname "$0")/../hauptgang-ios"
 
 echo "==> Finding available iPhone simulator..."

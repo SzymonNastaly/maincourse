@@ -62,6 +62,25 @@ gap is expected, not a regression.
 
 **Recipe Import Corpus:** A regression test suite for recipe extractors using cached HTML snapshots. See `docs/recipe-import-corpus.md` for usage and `recipe_corpus:*` rake tasks.
 
+## On the dev box
+
+I develop on a Linux server and my Mac only builds the iOS app. `uname` tells you which one you are on.
+On Linux:
+
+- `bin/ios-build` and `bin/ios-test` copy the working tree to a build account on the Mac and run
+  there, so use them as usual. They need the Mac awake. `bin/ci` does not.
+- SwiftLint here skips the four rules that need SourceKit. `bin/mac bin/ios-lint` checks all of them.
+- Run anything else that needs macOS through the same wrapper, e.g.
+  `bin/mac xcrun simctl list devices booted`. It brings back files the command changed under
+  `hauptgang-ios/`. The Mac's copy is a mirror that the next run overwrites, so never edit there.
+- The iOS debug build finds this server's `bin/dev` at `127.0.0.1:3000` on the Mac.
+- When I want to watch or click in the simulator, run the `ios-simulator-browser` skill's `serve-sim`
+  commands through `bin/mac` as a background command and give me the URL. I open it in a browser on
+  the Mac.
+- The server holds no production access: no `config/master.key`, no `cf` login, no App Store Connect.
+  Deploys, `bin/logs`, `bin/ios-release`, `bin/screenshots` and the Cloudflare section below are for
+  the Mac.
+
 ## Web UI
 
 The app has its own design system — grey canvas, deep green accent, IBM Plex —

@@ -1,0 +1,29 @@
+#!/bin/bash
+# Runs a command in the Mac's copy of this repository, for what needs macOS: Xcode and the simulator.
+# On a Mac, run the command directly instead. `Host mac` comes from the devbox repository.
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: bin/mac COMMAND [ARGS...]   e.g. bin/mac xcrun simctl list devices booted" >&2
+  exit 1
+fi
+
+cd "$(dirname "$0")/.."
+
+# macOS ships an old rsync that deletes ignored files on its side, so both steps use Homebrew's.
+sync=(rsync -a --rsync-path=/opt/homebrew/bin/rsync)
+
+# Copies what git would track, so keys and .env files stay here and the Mac keeps its logs and build output.
+if ! "${sync[@]}" --delete --exclude .git --exclude /maincourse-android --filter=':- .gitignore' ./ mac:maincourse/; then
+  echo "Error: could not copy to the Mac. It must be awake, logged in to my account, and on Tailscale." >&2
+  exit 1
+fi
+
+status=0
+ssh mac "cd maincourse && PATH=/opt/homebrew/bin:\$PATH $(printf '%q ' "$@")" || status=$?
+
+# Brings back files the command changed, such as Swift files that bin/ios-format rewrote. Files that
+# exist only on the Mac, such as the generated Xcode project, stay there.
+"${sync[@]}" --update --existing mac:maincourse/hauptgang-ios/ hauptgang-ios/
+
+exit "$status"
