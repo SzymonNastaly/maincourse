@@ -107,6 +107,7 @@ targets:
       - path: Hauptgang/Utilities/Constants.swift
       - path: Hauptgang/Models/ImportRecipeResponse.swift
       - path: Hauptgang/Services/RecipeImportService.swift
+      - path: Hauptgang/Services/InstagramPageFetcher.swift
       - path: Hauptgang/Services/ImageCompressor.swift
       - path: Hauptgang/Services/CookbookContext.swift
       - path: Hauptgang/Services/NetworkMonitor.swift

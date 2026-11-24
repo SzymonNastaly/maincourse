@@ -7,6 +7,14 @@ struct PageContent {
     let coverImageCandidates: [String]
     let html: String
 
+    init(url: URL, jsonLd: [String], metaTags: [String: String], coverImageCandidates: [String], html: String) {
+        self.url = url
+        self.jsonLd = jsonLd
+        self.metaTags = metaTags
+        self.coverImageCandidates = coverImageCandidates
+        self.html = html
+    }
+
     init?(from javaScriptValues: [String: Any]) {
         guard let urlString = javaScriptValues["url"] as? String,
               let url = URL(string: urlString) else {

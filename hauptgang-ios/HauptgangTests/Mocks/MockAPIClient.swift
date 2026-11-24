@@ -14,6 +14,11 @@ actor MockAPIClient: APIClientProtocol {
             self.bodyObject()?[key] as? String
         }
 
+        /// Look up a top-level string-to-string object, e.g. `{"meta_tags": {"og:title": "..."}}`.
+        func bodyStringMap(_ key: String) -> [String: String]? {
+            self.bodyObject()?[key] as? [String: String]
+        }
+
         /// Look up a top-level array of objects in the recorded JSON body, e.g.
         /// `{"views": [{"recipe_id": 1, ...}]}` via `bodyArray("views")`.
         func bodyArray(_ key: String) -> [[String: Any]]? {

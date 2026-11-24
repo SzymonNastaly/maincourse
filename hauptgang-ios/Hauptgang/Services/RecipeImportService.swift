@@ -5,16 +5,26 @@ actor RecipeImportService {
     static let shared = RecipeImportService()
 
     private let apiClient: APIClientProtocol
+    private let instagramPageFetcher: InstagramPageFetcher
 
-    init(apiClient: APIClientProtocol = APIClient.shared) {
+    init(
+        apiClient: APIClientProtocol = APIClient.shared,
+        instagramPageFetcher: InstagramPageFetcher = InstagramPageFetcher()
+    ) {
         self.apiClient = apiClient
+        self.instagramPageFetcher = instagramPageFetcher
     }
 
     /// Import a recipe from a URL (fire-and-forget)
-    /// The server creates a pending recipe and processes it asynchronously
+    /// The server creates a pending recipe and processes it asynchronously.
+    /// For Instagram posts, the caption is read on the device first so the server can skip its paid scraper.
     func importRecipe(from url: URL) async throws -> ImportRecipeResponse {
         struct ImportRequest: Encodable {
             let url: String
+        }
+
+        if let pageContent = await self.instagramPageFetcher.pageContent(for: url) {
+            return try await self.importRecipe(from: url, pageContent: pageContent)
         }
 
         return try await self.apiClient.request(
