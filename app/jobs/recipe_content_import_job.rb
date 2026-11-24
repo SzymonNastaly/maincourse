@@ -12,7 +12,7 @@ class RecipeContentImportJob < ApplicationJob
     return unless recipe
     return if recipe.completed?
 
-    result = extract_from_content(source_url, json_ld_strings, html)
+    result = extract_from_content(source_url, json_ld_strings, html, meta_tags)
     domain = extract_domain(source_url)
 
     if result.success?
@@ -43,9 +43,13 @@ class RecipeContentImportJob < ApplicationJob
 
   private
 
-  def extract_from_content(source_url, json_ld_strings, html)
+  def extract_from_content(source_url, json_ld_strings, html, meta_tags)
     if RecipeImporters::TiktokVideoExtractor.supports_url?(source_url)
       return RecipeImporters::TiktokVideoExtractor.new(source_url).extract
+    end
+
+    if RecipeImporters::InstagramReelExtractor.supports_url?(source_url)
+      return RecipeImporters::InstagramReelExtractor.new(source_url, page_description: meta_tags["og:description"]).extract
     end
 
     json_ld_error = nil

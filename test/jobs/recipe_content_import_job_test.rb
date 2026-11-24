@@ -1,6 +1,8 @@
 require "test_helper"
 
 class RecipeContentImportJobTest < ActiveSupport::TestCase
+  APIFY_ENDPOINT = RecipeImporters::InstagramReelExtractor::APIFY_ENDPOINT
+
   setup do
     @user = users(:one)
     @recipe = recipes(:one)
@@ -185,13 +187,58 @@ class RecipeContentImportJobTest < ActiveSupport::TestCase
 
     RecipeImporters::TiktokVideoExtractor.stub(:supports_url?, false) do
       RecipeImporters::JsonLdExtractor.stub(:new, json_ld_extractor) do
-        extracted = job.send(:extract_from_content, source_url, json_ld_strings, "<body>Recipe</body>")
+        extracted = job.send(:extract_from_content, source_url, json_ld_strings, "<body>Recipe</body>", {})
 
         assert_equal result, extracted
       end
     end
 
     json_ld_extractor.verify
+  end
+
+  test "instagram import uses the page og:description as the caption without calling Apify" do
+    url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
+    og_image_url = "https://scontent.cdninstagram.com/cover.jpg"
+    description = "26K likes, 272 comments - chef on November 21, 2025: \"Garlic pasta. 200g spaghetti, 2 cloves garlic\""
+    apify = stub_request(:post, APIFY_ENDPOINT)
+    stub_llm_response(name: "Garlic Pasta", ingredients: [ "200g spaghetti", "2 cloves garlic" ], instructions: [ "Boil" ])
+    stub_request(:get, og_image_url)
+      .to_return(status: 200, body: "fake-image-bytes", headers: { "Content-Type" => "image/jpeg" })
+
+    RecipeContentImportJob.new.perform(
+      @user.id, @recipe.id, url, [], "", { "og:description" => description, "og:image" => og_image_url }
+    )
+
+    assert_not_requested apify
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) { |request| request.body.include?("Garlic pasta. 200g spaghetti, 2 cloves garlic") }
+    @recipe.reload
+    assert_equal :completed, @recipe.import_status.to_sym
+    assert_equal "Garlic Pasta", @recipe.name
+    assert @recipe.cover_image.attached?
+  end
+
+  test "instagram import falls back to Apify when no og:description is sent" do
+    url = "https://www.instagram.com/p/DRUf_pBiPdh/"
+    previous_key = ENV["APIFY_API_KEY"]
+    ENV["APIFY_API_KEY"] = "test-apify-key"
+    apify = stub_request(:post, APIFY_ENDPOINT)
+      .with(query: { "token" => "test-apify-key" })
+      .to_return(
+        status: 200,
+        body: [ { "caption" => "Apify caption: lentil soup", "displayUrl" => nil } ].to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+    stub_llm_response(name: "Lentil Soup", ingredients: [ "1 cup lentils" ], instructions: [ "Simmer" ])
+
+    RecipeContentImportJob.new.perform(@user.id, @recipe.id, url, [], "", {})
+
+    assert_requested apify, times: 1
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) { |request| request.body.include?("Apify caption: lentil soup") }
+    @recipe.reload
+    assert_equal :completed, @recipe.import_status.to_sym
+    assert_equal "Lentil Soup", @recipe.name
+  ensure
+    ENV["APIFY_API_KEY"] = previous_key
   end
 
   test "marks recipe as failed when extraction fails" do

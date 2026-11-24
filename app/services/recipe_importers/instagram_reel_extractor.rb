@@ -2,12 +2,22 @@ require "json"
 require "faraday"
 
 module RecipeImporters
-  # Extracts recipe data from Instagram reels using Apify.
+  # Extracts recipe data from Instagram reels. Uses the caption the client read from
+  # the page's og:description when given, and falls back to Apify otherwise.
   class InstagramReelExtractor
     Result = RecipeImporter::Result
 
     APIFY_ENDPOINT = "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items"
     USER_AGENT = "Mozilla/5.0 (compatible; Hauptgang Instagram Importer)"
+
+    class ApifyError < StandardError
+      attr_reader :code
+
+      def initialize(message, code)
+        super(message)
+        @code = code
+      end
+    end
 
     def self.supports_url?(url)
       uri = URI.parse(url.to_s)
@@ -15,42 +25,26 @@ module RecipeImporters
       return false unless host == "instagram.com" || host.end_with?(".instagram.com")
 
       path = uri.path.to_s
-      path.include?("/reel/") || path.include?("/p/")
+      path.include?("/reel/") || path.include?("/reels/") || path.include?("/p/")
     rescue URI::InvalidURIError
       false
     end
 
-    def initialize(url, http_client: nil)
+    def initialize(url, page_description: nil, http_client: nil)
       @url = url
+      @page_description = page_description.to_s.strip.presence
       @http_client = http_client || build_http_client
     end
 
     def extract
       return failure("Please enter a URL", :blank_url) if @url.blank?
 
-      token = apify_token
-      return failure("Instagram import is not configured", :apify_missing_token) if token.blank?
-
-      response = @http_client.post(APIFY_ENDPOINT) do |req|
-        req.params["token"] = token
-        req.headers["Content-Type"] = "application/json"
-        req.body = build_payload.to_json
+      if @page_description
+        caption = @page_description
+        image_url = nil
+      else
+        caption, image_url = fetch_from_apify
       end
-
-      unless response.success?
-        Rails.logger.info "[InstagramReelExtractor] HTTP #{response.status} for #{sanitized_url}"
-        return failure("Could not fetch Instagram data", :apify_failed)
-      end
-
-      items = JSON.parse(response.body)
-      unless items.is_a?(Array) && items.any?
-        return failure("No Instagram data returned", :instagram_empty_result)
-      end
-
-      item = items.first
-      caption = item["caption"].to_s.strip
-      image_url = item["displayUrl"].to_s.strip.presence
-
       return failure("Instagram caption missing", :instagram_no_caption) if caption.blank?
 
       service_result = RecipeLlmService.new(caption, prompt_type: :raw_text, source_url: @url).extract
@@ -69,6 +63,8 @@ module RecipeImporters
         error: nil,
         error_code: nil
       )
+    rescue ApifyError => error
+      failure(error.message, error.code)
     rescue JSON::ParserError
       failure("Invalid Instagram response", :apify_invalid_response)
     rescue Faraday::TimeoutError
@@ -81,6 +77,28 @@ module RecipeImporters
     end
 
     private
+
+    def fetch_from_apify
+      token = apify_token
+      raise ApifyError.new("Instagram import is not configured", :apify_missing_token) if token.blank?
+
+      response = @http_client.post(APIFY_ENDPOINT) do |req|
+        req.params["token"] = token
+        req.headers["Content-Type"] = "application/json"
+        req.body = build_payload.to_json
+      end
+
+      unless response.success?
+        Rails.logger.info "[InstagramReelExtractor] HTTP #{response.status} for #{sanitized_url}"
+        raise ApifyError.new("Could not fetch Instagram data", :apify_failed)
+      end
+
+      items = JSON.parse(response.body)
+      raise ApifyError.new("No Instagram data returned", :instagram_empty_result) unless items.is_a?(Array) && items.any?
+
+      item = items.first
+      [ item["caption"].to_s.strip, item["displayUrl"].to_s.strip.presence ]
+    end
 
     def build_payload
       {
