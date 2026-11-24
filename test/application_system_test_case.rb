@@ -1,5 +1,21 @@
 require "test_helper"
 
+# Capybara 3.40 clears cookies between tests with Storage.clearDataForOrigin and the origin "*",
+# which Chrome 158 rejects. The reset then fails, and a cookie such as the interface language
+# leaks into every later test. Clear the cookies and the app server's storage explicitly instead.
+module ClearChromeStorageWithoutWildcard
+  private
+    def execute_cdp(cmd, params = {})
+      return super unless cmd == "Storage.clearDataForOrigin" && params[:origin] == "*"
+
+      super("Network.clearBrowserCookies")
+      return unless params[:storageTypes].include?("local_storage")
+
+      super("Storage.clearDataForOrigin", origin: Capybara.current_session.server.base_url, storageTypes: "local_storage")
+    end
+end
+Capybara::Selenium::Driver::ChromeDriver.prepend(ClearChromeStorageWithoutWildcard)
+
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   DESKTOP_SIZE = [ 1400, 1400 ].freeze
   MOBILE_SIZE = [ 390, 844 ].freeze
