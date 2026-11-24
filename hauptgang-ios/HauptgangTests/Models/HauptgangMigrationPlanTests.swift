@@ -4,13 +4,13 @@ import XCTest
 
 @MainActor
 final class HauptgangMigrationPlanTests: XCTestCase {
-    func testV7ToV9PreservesStarterRecipeAndStoresNewErrorCode() throws {
+    func testV7ToV10PreservesStarterRecipeAndStoresNewErrorCode() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = directory.appendingPathComponent("migration.store")
         try self.seedV7Store(at: url)
-        let schema = Schema(versionedSchema: HauptgangSchemaV9.self)
+        let schema = Schema(versionedSchema: HauptgangSchemaV10.self)
         let config = ModelConfiguration("MigrationTest", schema: schema, url: url, cloudKitDatabase: .none)
         let container = try ModelContainer(
             for: schema,
@@ -45,8 +45,48 @@ final class HauptgangMigrationPlanTests: XCTestCase {
         try context.save()
     }
 
-    /// V8 is the shipped schema, so this is the upgrade most users take.
-    func testV8ToV9KeepsShoppingItemsWithoutCategory() throws {
+    /// V9 is the shipped schema, so this is the upgrade most users take.
+    func testV9ToV10KeepsRecipeDetailsAndCachesInstructionTimers() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("migration.store")
+
+        let v9Schema = Schema(versionedSchema: HauptgangSchemaV9.self)
+        let v9Config = ModelConfiguration("MigrationTest", schema: v9Schema, url: url, cloudKitDatabase: .none)
+        do {
+            let v9Context = try ModelContext(ModelContainer(for: v9Schema, configurations: [v9Config]))
+            let recipe = HauptgangSchemaV9.PersistedRecipe()
+            recipe.id = 9
+            recipe.name = "Cached orzo"
+            recipe.instructionsJson = "[\"Simmer for 10 minutes.\"]"
+            recipe.detailLastFetchedAt = Date(timeIntervalSince1970: 1_700_000_000)
+            v9Context.insert(recipe)
+            try v9Context.save()
+        }
+
+        let schema = Schema(versionedSchema: HauptgangSchemaV10.self)
+        let config = ModelConfiguration("MigrationTest", schema: schema, url: url, cloudKitDatabase: .none)
+        let container = try ModelContainer(
+            for: schema,
+            migrationPlan: HauptgangMigrationPlan.self,
+            configurations: [config]
+        )
+        let context = ModelContext(container)
+        let recipe = try XCTUnwrap(context.fetch(FetchDescriptor<PersistedRecipe>()).first)
+        XCTAssertEqual(recipe.instructions, ["Simmer for 10 minutes."])
+        XCTAssertTrue(recipe.hasDetailsCached)
+        XCTAssertNil(recipe.instructionTimersJson)
+        XCTAssertEqual(recipe.toRecipeDetail().timers(forStep: 0), [])
+
+        let simmer = InstructionTimer(text: "10 minutes", minSeconds: 600, maxSeconds: 600, label: "Simmer")
+        recipe.instructionTimers = [[simmer]]
+        try context.save()
+        let cached = try XCTUnwrap(ModelContext(container).fetch(FetchDescriptor<PersistedRecipe>()).first)
+        XCTAssertEqual(cached.toRecipeDetail().timers(forStep: 0), [simmer])
+    }
+
+    func testV8ToV10KeepsShoppingItemsWithoutCategory() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -67,7 +107,7 @@ final class HauptgangMigrationPlanTests: XCTestCase {
             try v8Context.save()
         }
 
-        let schema = Schema(versionedSchema: HauptgangSchemaV9.self)
+        let schema = Schema(versionedSchema: HauptgangSchemaV10.self)
         let config = ModelConfiguration("MigrationTest", schema: schema, url: url, cloudKitDatabase: .none)
         let container = try ModelContainer(
             for: schema,
@@ -90,7 +130,7 @@ final class HauptgangMigrationPlanTests: XCTestCase {
         )
     }
 
-    func testV6ToV9RetainsRecipeDetailsAndPendingShoppingEdit() throws {
+    func testV6ToV10RetainsRecipeDetailsAndPendingShoppingEdit() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("hauptgang-v6-v7-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -99,7 +139,7 @@ final class HauptgangMigrationPlanTests: XCTestCase {
 
         try self.seedV6Store(at: storeURL)
 
-        let schema = Schema(versionedSchema: HauptgangSchemaV9.self)
+        let schema = Schema(versionedSchema: HauptgangSchemaV10.self)
         let configuration = ModelConfiguration(
             "MigrationTest",
             schema: schema,

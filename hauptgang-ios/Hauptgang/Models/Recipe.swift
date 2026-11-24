@@ -81,6 +81,10 @@ struct RecipeDetail: Codable, Identifiable {
     /// Use `resolvedIngredients` to get a non-empty list with raw-string fallback.
     let structuredIngredients: [StructuredIngredient]?
     let instructions: [String]
+    /// Durations found in each step, aligned with `instructions`. Nil from servers
+    /// that predate timers and for recipes cached before them; a step's array is
+    /// empty until the server has parsed it. Read through `timers(forStep:)`.
+    let instructionTimers: [[InstructionTimer]]?
     let notes: String?
     let sourceUrl: String?
     let starterRecipeKey: String?
@@ -100,6 +104,7 @@ struct RecipeDetail: Codable, Identifiable {
         ingredients: [String],
         structuredIngredients: [StructuredIngredient]? = nil,
         instructions: [String],
+        instructionTimers: [[InstructionTimer]]? = nil,
         notes: String? = nil,
         sourceUrl: String? = nil,
         starterRecipeKey: String? = nil,
@@ -118,6 +123,7 @@ struct RecipeDetail: Codable, Identifiable {
         self.ingredients = ingredients
         self.structuredIngredients = structuredIngredients
         self.instructions = instructions
+        self.instructionTimers = instructionTimers
         self.notes = notes
         self.sourceUrl = sourceUrl
         self.starterRecipeKey = starterRecipeKey
@@ -136,6 +142,12 @@ struct RecipeDetail: Codable, Identifiable {
 
     var heroCoverImageUrl: String? {
         self.coverImages?.heroURL(fallback: self.coverImageUrl)
+    }
+
+    /// The timers of the step at `index` (0-based), or none.
+    func timers(forStep index: Int) -> [InstructionTimer] {
+        guard let instructionTimers, instructionTimers.indices.contains(index) else { return [] }
+        return instructionTimers[index]
     }
 
     /// Returns structured ingredients when the server provided them, falling

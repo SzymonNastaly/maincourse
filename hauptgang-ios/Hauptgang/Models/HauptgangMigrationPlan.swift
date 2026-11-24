@@ -12,7 +12,8 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
             HauptgangSchemaV6.self,
             HauptgangSchemaV7.self,
             HauptgangSchemaV8.self,
-            HauptgangSchemaV9.self
+            HauptgangSchemaV9.self,
+            HauptgangSchemaV10.self
         ]
     }
 
@@ -25,7 +26,8 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
             migrateV5toV6,
             migrateV6toV7,
             migrateV7toV8,
-            migrateV8toV9
+            migrateV8toV9,
+            migrateV9toV10
         ]
     }
 
@@ -89,5 +91,12 @@ enum HauptgangMigrationPlan: SchemaMigrationPlan {
     static let migrateV8toV9 = MigrationStage.lightweight(
         fromVersion: HauptgangSchemaV8.self,
         toVersion: HauptgangSchemaV9.self
+    )
+
+    /// V9 → V10: Lightweight — adds optional `instructionTimersJson` to recipes.
+    /// Cached recipes show no timers until the next detail sync fills it in.
+    static let migrateV9toV10 = MigrationStage.lightweight(
+        fromVersion: HauptgangSchemaV9.self,
+        toVersion: HauptgangSchemaV10.self
     )
 }

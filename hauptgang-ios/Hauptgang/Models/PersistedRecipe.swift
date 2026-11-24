@@ -48,6 +48,9 @@ final class PersistedRecipe {
     /// Optional cached structured ingredients (V5+). Older rows leave this nil
     /// until the next detail sync populates it.
     var structuredIngredientsJson: String?
+    /// Cached `instruction_timers` (V10+). Nil for rows cached before timers and
+    /// for servers that do not send them; the next detail sync fills it in.
+    var instructionTimersJson: String?
 
     // MARK: - Computed Properties for JSON Arrays
 
@@ -95,6 +98,19 @@ final class PersistedRecipe {
                 data: JSONEncoder().encode(newValue),
                 encoding: .utf8
             )
+        }
+    }
+
+    var instructionTimers: [[InstructionTimer]]? {
+        get {
+            guard let json = instructionTimersJson,
+                  let data = json.data(using: .utf8) else { return nil }
+            return try? JSONDecoder().decode([[InstructionTimer]].self, from: data)
+        }
+        set {
+            self.instructionTimersJson = newValue.flatMap {
+                try? String(data: JSONEncoder().encode($0), encoding: .utf8)
+            }
         }
     }
 
@@ -248,6 +264,7 @@ final class PersistedRecipe {
             self.structuredIngredientsJson = nil
         }
         self.instructions = detail.instructions
+        self.instructionTimers = detail.instructionTimers
         self.tags = detail.tags
         self.detailLastFetchedAt = Date()
     }
@@ -273,6 +290,7 @@ final class PersistedRecipe {
             ingredients: self.ingredients,
             structuredIngredients: self.structuredIngredientsJson != nil ? self.structuredIngredients : nil,
             instructions: self.instructions,
+            instructionTimers: self.instructionTimers,
             notes: self.notes,
             sourceUrl: self.sourceUrl,
             starterRecipeKey: self.starterRecipeKey,
