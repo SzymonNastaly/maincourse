@@ -9,8 +9,6 @@ struct RecipeSearchView: View {
     @State private var recipeToDelete: DeleteCandidate?
     @State private var recipeToMove: MoveCandidate?
 
-    private let readableWidth: CGFloat = 700
-
     var body: some View {
         NavigationStack(path: self.$navigationPath) {
             ScrollView {
@@ -42,9 +40,8 @@ struct RecipeSearchView: View {
                     }
                 }
                 .padding(.vertical, Theme.Spacing.sm)
-                .frame(maxWidth: self.readableWidth)
-                .frame(maxWidth: .infinity)
             }
+            .readableContentWidth()
             .scrollDismissesKeyboard(.immediately)
             .background(Color.mcCanvas.ignoresSafeArea())
             .navigationTitle("Search")

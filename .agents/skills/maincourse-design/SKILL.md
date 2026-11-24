@@ -93,11 +93,16 @@ only tinted by the green `AccentColor` asset.
 | `rounded-control` / `-card` / `-panel` | `Theme.Radius.control` 8 / `.card` 10 / `.panel` 12 |
 | `mc-btn-primary` / `mc-btn-outline` | `.primaryButton()` / `.outlineButton()` |
 | `mc-field` | `.themeTextField()` |
-| `mc-section-label` | `.caption2.weight(.medium)` + `.textCase(.uppercase)` + `.tracking(1.1)` + `Color.mcMuted` |
+| `mc-section-label` | `.caption2.weight(.medium)` + `.textCase(.uppercase)` + `.tracking(1.1)` + `Color.mcBody` |
 | `font-mono` | `Font.mcMono(_ style:, weight:)` — bundled IBM Plex Mono 400/500 |
 
 - Text is **San Francisco** via semantic styles (`.headline`, `.body`, …), never
   Plex Sans and never `design: .serif`. Plex Mono is for numerics only.
+- `Color.mcMuted` is for graphics only (icons, bullets, rules). It measures
+  2.2–2.6:1 against the canvas and white, below the 4.5:1 text needs, so
+  secondary text uses `Color.mcBody`.
+- On iPad, lists and forms cap their content with `.readableContentWidth()`
+  (700pt, centred, background full-bleed).
 - Always write `Color.mcAccent`, not `.mcAccent` — bare member syntax fails in
   `ShapeStyle` contexts.
 - Flat surfaces get a 1px `Color.mcHairline` stroke, no shadow. Shadows only on
