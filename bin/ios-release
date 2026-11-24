@@ -35,6 +35,8 @@ xcodebuild archive \
   -quiet
 
 echo "==> Exporting IPA..."
+# Homebrew rsync on PATH breaks Xcode's IPA packaging ("Copy failed")
+export PATH="/usr/bin:$PATH"
 xcodebuild -exportArchive \
   -archivePath build/Hauptgang.xcarchive \
   -exportOptionsPlist ExportOptions.plist \
@@ -42,11 +44,13 @@ xcodebuild -exportArchive \
   -allowProvisioningUpdates \
   -quiet
 
+IPA=$(ls build/export/*.ipa | head -1)
+
 if [ "$EXTERNAL" = true ]; then
   echo "==> Uploading to TestFlight (external)..."
   asc publish testflight \
     --app "$APP_ID" \
-    --ipa build/export/Hauptgang.ipa \
+    --ipa "$IPA" \
     --group "$EXTERNAL_GROUP_ID" \
     --wait
 
@@ -61,7 +65,7 @@ else
   echo "==> Uploading to TestFlight (internal)..."
   asc publish testflight \
     --app "$APP_ID" \
-    --ipa build/export/Hauptgang.ipa \
+    --ipa "$IPA" \
     --group "$INTERNAL_GROUP_ID" \
     --wait
 
