@@ -1,7 +1,31 @@
 import SwiftUI
 
+/// One column on iPhone and narrow iPad windows. On a regular-width iPad the
+/// facts and ingredients sit beside the steps so neither scrolls the other
+/// away. Accessibility text sizes keep one column, because a 360-point column
+/// holds only a few words per line at those sizes.
+enum RecipePageLayout {
+    case singleColumn
+    case twoColumns
+
+    init(horizontalSizeClass: UserInterfaceSizeClass?, dynamicTypeSize: DynamicTypeSize) {
+        self = horizontalSizeClass == .regular && !dynamicTypeSize.isAccessibilitySize
+            ? .twoColumns
+            : .singleColumn
+    }
+
+    var maxContentWidth: CGFloat {
+        switch self {
+        case .singleColumn: 700
+        case .twoColumns: 1100
+        }
+    }
+}
+
 struct RecipeDetailContentView: View {
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let recipe: RecipeDetail
     let heroImageHeight: CGFloat
@@ -12,8 +36,23 @@ struct RecipeDetailContentView: View {
     @Binding var currentServings: Int?
     var localHero: AnyView?
 
+    @State private var checkedIngredients: Set<StructuredIngredient.ID> = []
+    @State private var doneSteps: Set<Int> = []
+
+    private var layout: RecipePageLayout {
+        RecipePageLayout(horizontalSizeClass: self.horizontalSizeClass, dynamicTypeSize: self.dynamicTypeSize)
+    }
+
+    private var heroHeight: CGFloat {
+        self.layout == .twoColumns ? 340 : self.heroImageHeight
+    }
+
     private var hasHeroImage: Bool {
         self.localHero != nil || self.recipe.heroCoverImageUrl != nil
+    }
+
+    private var hasFacts: Bool {
+        (self.recipe.prepTime ?? 0) > 0 || (self.recipe.cookTime ?? 0) > 0 || self.baseServings != nil
     }
 
     private var baseServings: Int? {
@@ -32,6 +71,15 @@ struct RecipeDetailContentView: View {
         return Decimal(self.effectiveServings) / Decimal(base)
     }
 
+    private var source: (url: URL, host: String)? {
+        guard let string = self.recipe.sourceUrl,
+              let url = URL(string: string),
+              let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              let host = url.host(), !host.isEmpty
+        else { return nil }
+        return (url, host.hasPrefix("www.") ? String(host.dropFirst(4)) : host)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -40,31 +88,38 @@ struct RecipeDetailContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    Text(self.recipe.name)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.mcInk)
+                    self.titleBlock
 
-                    if (self.recipe.prepTime ?? 0) > 0
-                        || (self.recipe.cookTime ?? 0) > 0
-                        || (self.recipe.servings ?? 0) > 0 {
-                        self.durationCard
+                    switch self.layout {
+                    case .singleColumn:
+                        self.factsAndIngredients
+                        self.stepsAndNotes
+                    case .twoColumns:
+                        HStack(alignment: .top, spacing: Theme.Spacing.xl) {
+                            VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                                self.factsAndIngredients
+                            }
+                            .frame(width: 360)
+
+                            VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                                self.stepsAndNotes
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
 
-                    if !self.recipe.resolvedIngredients.isEmpty {
-                        self.ingredientsSection
-                    }
-
-                    if !self.recipe.instructions.isEmpty {
-                        self.instructionsSection
-                    }
-
-                    if let notes = self.recipe.notes, !notes.isEmpty {
-                        self.notesSection(notes)
+                    if let source = self.source {
+                        Link(destination: source.url) {
+                            Text("View original at \(source.host)")
+                                .font(.subheadline)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .tint(Color.mcAccent)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: self.layout.maxContentWidth, alignment: .leading)
                 .padding(Theme.Spacing.lg)
+                .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity)
         }
@@ -79,7 +134,7 @@ struct RecipeDetailContentView: View {
             localHero
         } else if let url = Constants.API.resolveURL(self.recipe.heroCoverImageUrl) {
             Color.clear
-                .frame(height: self.heroImageHeight)
+                .frame(height: self.heroHeight)
                 .frame(maxWidth: .infinity)
                 .background {
                     GeometryReader { proxy in
@@ -115,61 +170,65 @@ struct RecipeDetailContentView: View {
         }
     }
 
-    private var durationCard: some View {
-        let hasPrep = (self.recipe.prepTime ?? 0) > 0
-        let hasCook = (self.recipe.cookTime ?? 0) > 0
-        let hasDuration = hasPrep || hasCook
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            Text(self.recipe.name)
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundColor(.mcInk)
 
-        return HStack(spacing: 0) {
-            if hasDuration {
-                HStack(spacing: 0) {
-                    if let prepTime = self.recipe.prepTime, prepTime > 0 {
-                        self.durationItem(icon: "clock", label: "Prep", value: RecipeDisplayFormatter.minutes(prepTime))
-                    }
-
-                    if let cookTime = self.recipe.cookTime, cookTime > 0 {
-                        if hasPrep {
-                            Divider()
-                                .frame(height: 32)
-                        }
-                        self.durationItem(icon: "flame", label: "Cook", value: RecipeDisplayFormatter.minutes(cookTime))
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            }
-
-            if let baseServings = self.baseServings {
-                if hasDuration {
-                    Divider()
-                        .frame(height: 32)
-                }
-                PortionScalerView(
-                    servings: Binding(
-                        get: { self.effectiveServings },
-                        set: { self.currentServings = $0 }
-                    ),
-                    baseServings: baseServings
-                )
-                .frame(maxWidth: .infinity)
+            if !self.recipe.tags.isEmpty {
+                Text(verbatim: self.recipe.tags.map(\.name).joined(separator: " · "))
+                    .font(.subheadline)
+                    .foregroundColor(.mcBody)
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Theme.Spacing.md)
-        .background(Color.mcSunken)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.panel)
-                .stroke(Color.mcHairline, lineWidth: 1)
-        )
+    }
+
+    @ViewBuilder
+    private var factsAndIngredients: some View {
+        if self.hasFacts {
+            RecipeFactsCard(
+                prepTime: self.recipe.prepTime,
+                cookTime: self.recipe.cookTime,
+                baseServings: self.baseServings,
+                servings: Binding(
+                    get: { self.effectiveServings },
+                    set: { self.currentServings = $0 }
+                )
+            )
+        }
+
+        if !self.recipe.resolvedIngredients.isEmpty {
+            self.ingredientsSection
+        }
+    }
+
+    @ViewBuilder
+    private var stepsAndNotes: some View {
+        if !self.recipe.instructions.isEmpty {
+            self.instructionsSection
+        }
+
+        if let notes = self.recipe.notes, !notes.isEmpty {
+            self.notesSection(notes)
+        }
     }
 
     private var ingredientsSection: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             self.sectionHeader("Ingredients")
 
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(self.recipe.resolvedIngredients) { ingredient in
-                    IngredientRow(ingredient: ingredient, scale: self.scale)
+                    IngredientRow(
+                        ingredient: ingredient,
+                        scale: self.scale,
+                        isChecked: self.checkedIngredients.contains(ingredient.id)
+                    ) {
+                        HapticManager.shared.selection()
+                        self.checkedIngredients.formSymmetricDifference([ingredient.id])
+                    }
                 }
             }
         }
@@ -179,47 +238,19 @@ struct RecipeDetailContentView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             self.sectionHeader("Steps")
 
-            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 ForEach(Array(self.recipe.instructions.enumerated()), id: \.offset) { index, instruction in
-                    HStack(alignment: .top, spacing: Theme.Spacing.md) {
-                        Text(index + 1, format: .number.grouping(.never))
-                            .font(.mcMono(.caption, weight: .medium))
-                            .foregroundColor(Color.mcAccent)
-                            .frame(width: 22, height: 22)
-                            .background(Color.mcAccentTint, in: RoundedRectangle(cornerRadius: 6))
-                            .padding(.top, 1)
-
-                        Text(instruction)
-                            .font(.body)
-                            .foregroundColor(.mcInk)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
+                    StepRow(
+                        number: index + 1,
+                        instruction: instruction,
+                        isDone: self.doneSteps.contains(index)
+                    ) {
+                        HapticManager.shared.selection()
+                        self.doneSteps.formSymmetricDifference([index])
                     }
                 }
             }
         }
-    }
-
-    private func durationItem(icon: String, label: LocalizedStringKey, value: String) -> some View {
-        VStack(spacing: Theme.Spacing.xs) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundColor(.mcMuted)
-                .frame(height: 24)
-
-            Text(value)
-                .font(.mcMono(.subheadline, weight: .medium))
-                .foregroundColor(.mcInk)
-                .frame(height: 28)
-
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.mcMuted)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(minHeight: 18)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     private func notesSection(_ notes: String) -> some View {
@@ -237,57 +268,30 @@ struct RecipeDetailContentView: View {
         Text(title)
             .font(.headline)
             .foregroundColor(.mcInk)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
-/// Renders a single ingredient row with differential styling for parsed
-/// rows (quantity in tabular figures + accent unit) and a plain `raw`
-/// fallback for unparsed rows. Honors the `scale` multiplier from the
-/// portion scaler.
-private struct IngredientRow: View {
-    let ingredient: StructuredIngredient
-    let scale: Decimal
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-            Circle()
-                .fill(Color.mcMuted)
-                .frame(width: 6, height: 6)
-                .padding(.top, 8)
-
-            if self.ingredient.hasStructuredFields {
-                self.structuredText
-            } else {
-                Text(self.ingredient.raw)
-                    .font(.body)
-                    .foregroundColor(.mcInk)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var structuredText: some View {
-        let quantityText = IngredientFormatter.formatQuantity(
-            amount: self.ingredient.amount,
-            amountMax: self.ingredient.amountMax,
-            unit: self.ingredient.unit,
-            scale: self.scale
-        )
-
-        (
-            Text(verbatim: quantityText.isEmpty ? "" : "\(quantityText) ")
-                .font(.mcMono(.body, weight: .medium))
-                .foregroundColor(.mcInk)
-                + Text(self.ingredient.name ?? self.ingredient.raw)
-                .font(.body)
-                .foregroundColor(.mcInk)
-                + Text(verbatim: self.ingredient.note.map { ", \($0)" } ?? "")
-                .font(.body)
-                .foregroundColor(.mcBody)
-        )
-        .multilineTextAlignment(.leading)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
+#Preview("Source link and tags") {
+    @Previewable @State var servings: Int?
+    RecipeDetailContentView(
+        recipe: RecipeDetail(
+            id: 1,
+            name: "Creamy Tomato & Basil Orzo",
+            prepTime: 10,
+            cookTime: 20,
+            favorite: false,
+            servings: 4,
+            ingredients: ["2 tbsp olive oil", "3 cloves garlic, sliced", "250 g orzo"],
+            instructions: ["Warm the olive oil in a deep pan.", "Add the garlic and cook until fragrant."],
+            notes: "A one-pan lunch.",
+            sourceUrl: "https://www.example.com/orzo",
+            tags: [RecipeTag(id: 1, name: "Dinner"), RecipeTag(id: 2, name: "Vegetarian")],
+            createdAt: .now,
+            updatedAt: .now
+        ),
+        heroImageHeight: 280,
+        isIOS26: false,
+        currentServings: $servings
+    )
 }
