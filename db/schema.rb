@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_183949) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_202944) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -284,6 +284,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_183949) do
     t.string "starter_recipe_key"
     t.datetime "updated_at", null: false
     t.integer "user_id"
+    t.json "instruction_timers", default: [], null: false
+    t.integer "timers_version"
     t.index ["cookbook_id", "updated_at", "id"], name: "index_recipes_on_cookbook_id_and_updated_at_and_id"
     t.index ["cookbook_id"], name: "index_recipes_on_cookbook_id"
     t.index ["user_id", "created_at"], name: "index_recipes_on_user_id_and_created_at"

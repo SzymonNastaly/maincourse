@@ -33,6 +33,14 @@ class RecipeTextExtractJobTest < ActiveSupport::TestCase
     assert_equal "A delicious family recipe", @recipe.notes
   end
 
+  test "queues a timer parse for the extracted steps" do
+    stub_llm_response(name: "Soup", ingredients: [ "water" ], instructions: [ "Simmer 20 minutes" ])
+
+    assert_enqueued_with(job: ParseInstructionTimersJob, args: [ @recipe.id ]) do
+      RecipeTextExtractJob.perform_now(@user.id, @recipe.id, "Soup: simmer water 20 minutes")
+    end
+  end
+
   test "does not set source_url since extraction is from raw text" do
     text = "Simple Recipe\n\nIngredients:\n- 1 item\n\nDo the thing."
     @recipe.update!(source_url: nil)

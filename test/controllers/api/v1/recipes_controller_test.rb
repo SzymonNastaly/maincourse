@@ -655,6 +655,54 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "step 1", "step 2" ], recipe.reload.instructions
   end
 
+  test "show and batch return instruction timers aligned to the steps" do
+    timer = { "text" => "10 minutes", "min_seconds" => 600, "max_seconds" => 600, "label" => "Boil", "per_side" => false }
+    recipe = recipes(:one)
+    recipe.update_columns(
+      instructions: [ "Boil for 10 minutes.", "Drain." ],
+      instruction_timers: [ [ timer ], [] ],
+      timers_version: Llm::TimerInstructions::VERSION
+    )
+    unparsed = recipes(:three)
+    unparsed.update_columns(instruction_timers: [], timers_version: nil)
+
+    get api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
+    assert_equal [ [ timer ], [] ], response.parsed_body["instruction_timers"]
+
+    get batch_api_v1_recipes_url, headers: @auth_headers, as: :json
+    by_id = response.parsed_body["recipes"].index_by { |entry| entry["id"] }
+    assert_equal [ [ timer ], [] ], by_id[recipe.id]["instruction_timers"]
+    assert_equal Array.new(unparsed.instructions.size) { [] }, by_id[unparsed.id]["instruction_timers"]
+  end
+
+  test "update with new instructions clears their timers and queues a parse" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test", instructions: [ "Boil 10 minutes." ])
+    recipe.update_columns(
+      instruction_timers: [ [ { "text" => "10 minutes", "min_seconds" => 600, "max_seconds" => 600, "label" => "Boil", "per_side" => false } ] ],
+      timers_version: Llm::TimerInstructions::VERSION
+    )
+
+    assert_enqueued_with(job: ParseInstructionTimersJob, args: [ recipe.id ]) do
+      patch api_v1_recipe_url(recipe), params: { instructions: [ "Boil 12 minutes.", "Drain." ] }, headers: @auth_headers, as: :json
+    end
+
+    assert_response :success
+    assert_equal [ [], [] ], response.parsed_body["instruction_timers"]
+  end
+
+  test "update without instruction changes keeps timers and queues no parse" do
+    timers = [ [ { "text" => "10 minutes", "min_seconds" => 600, "max_seconds" => 600, "label" => "Boil", "per_side" => false } ] ]
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test", instructions: [ "Boil 10 minutes." ])
+    recipe.update_columns(instruction_timers: timers, timers_version: Llm::TimerInstructions::VERSION)
+
+    assert_no_enqueued_jobs(only: ParseInstructionTimersJob) do
+      patch api_v1_recipe_url(recipe), params: { name: "Renamed", instructions: [ "Boil 10 minutes." ] }, headers: @auth_headers, as: :json
+    end
+
+    assert_response :success
+    assert_equal timers, response.parsed_body["instruction_timers"]
+  end
+
   test "update strips blank entries from ingredients and instructions" do
     recipe = @cookbook.recipes.create!(user: @user, name: "Test")
 

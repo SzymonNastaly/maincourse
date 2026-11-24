@@ -253,6 +253,7 @@ module Api
             }
           },
           instructions: recipe.instructions,
+          instruction_timers: recipe.timers_by_step,
           notes: recipe.notes,
           source_url: recipe.source_url,
           starter_recipe_key: recipe.starter_recipe_key,

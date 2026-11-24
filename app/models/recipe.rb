@@ -23,6 +23,18 @@ class Recipe < ApplicationRecord
   # and an import that finishes in the background replaces its own spinner card.
   broadcasts_refreshes_to :cookbook
 
+  # Timers point at text inside the steps, so edited steps lose their timers at
+  # once and get reparsed after commit. The condition is the recipe's state,
+  # not "instructions just changed", so a recipe saved twice in one
+  # transaction, or one a failed parse left behind, is still picked up.
+  before_save :clear_instruction_timers, if: :will_save_change_to_instructions?
+  after_commit :enqueue_timer_parse, on: %i[create update], if: :needs_timers?
+
+  scope :needing_timers, -> {
+    where("json_array_length(instructions) > 0")
+      .where("timers_version IS NULL OR timers_version != ?", Llm::TimerInstructions::VERSION)
+  }
+
   # Replace the ingredient rows from an array of raw strings.
   # Existing rows are wiped. `name` is left nil until ParseRecipeIngredientsJob
   # fills structured fields; consumers should fall back to `raw` for display.
@@ -111,6 +123,16 @@ class Recipe < ApplicationRecord
 
   before_validation :ensure_array_fields
 
+  def needs_timers?
+    instructions.present? && timers_version != Llm::TimerInstructions::VERSION
+  end
+
+  # One array of timers per step, empty until the steps have been parsed.
+  def timers_by_step
+    stored = Array(instruction_timers)
+    Array(instructions).each_index.map { |index| Array(stored[index]) }
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[id name source_url]
   end
@@ -136,6 +158,18 @@ class Recipe < ApplicationRecord
 
   def ensure_array_fields
     self.instructions ||= []
+  end
+
+  def clear_instruction_timers
+    self.instruction_timers = []
+    self.timers_version = nil
+  end
+
+  # Timers are best effort: a failed enqueue must never fail a saved recipe.
+  def enqueue_timer_parse
+    ParseInstructionTimersJob.perform_later(id)
+  rescue StandardError => error
+    Rails.logger.error("[Recipe] could not enqueue timer parsing for #{id}: #{error.message}")
   end
 
   def acceptable_cover_image
