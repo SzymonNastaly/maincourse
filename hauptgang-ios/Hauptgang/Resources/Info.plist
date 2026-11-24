@@ -82,6 +82,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>MainCourse uses alarms so your cooking timers ring even when your screen is locked.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>MainCourse uses your camera to photograph recipes for import.</string>
 	<key>UIRequiredDeviceCapabilities</key>

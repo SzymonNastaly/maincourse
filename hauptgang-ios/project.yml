@@ -58,6 +58,8 @@ targets:
         GOOGLE_IOS_CLIENT_ID: 1048887933015-7defnrd0upbah2pdhru5i7m57ngouugp.apps.googleusercontent.com
         GOOGLE_SERVER_CLIENT_ID: 1048887933015-tga3ld77ufb2jfgugh5b5ddgo854uoto.apps.googleusercontent.com
         GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.1048887933015-7defnrd0upbah2pdhru5i7m57ngouugp
+        # AlarmKit only exists from iOS 26; weak-link it so iOS 18 still launches.
+        OTHER_LDFLAGS: "$(inherited) -weak_framework AlarmKit"
       configs:
         Debug:
           CODE_SIGN_ENTITLEMENTS: Hauptgang/Hauptgang.entitlements
@@ -65,6 +67,12 @@ targets:
           CODE_SIGN_ENTITLEMENTS: Hauptgang/Hauptgang.Release.entitlements
     dependencies:
       - target: ImportRecipeExtension
+        embed: true
+        codeSign: true
+        copyPhase:
+          destination: plugins
+          subpath: ""
+      - target: CookingTimersWidget
         embed: true
         codeSign: true
         copyPhase:
@@ -123,6 +131,31 @@ targets:
     dependencies:
       - package: Sentry
         product: Sentry
+
+  # Live Activity for AlarmKit cooking timers. iOS 26.1+ only: the app falls back
+  # to a notification below that, so the extension is never loaded there.
+  CookingTimersWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.1"
+    sources:
+      - path: CookingTimersWidget
+        excludes:
+          - "**/.DS_Store"
+      # Shared with the app: alarm metadata, Live Activity intents, tokens
+      - path: Hauptgang/Services/CookingTimers/CookingTimerAlarm.swift
+      - path: Hauptgang/Utilities/MainCourseTheme.swift
+      - path: Hauptgang/Resources/Fonts/IBMPlexMono-Medium.ttf
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios.timers
+      INFOPLIST_FILE: CookingTimersWidget/Info.plist
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: R69J54A3P5
+      SKIP_INSTALL: YES
+      GENERATE_INFOPLIST_FILE: NO
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
 
   HauptgangTests:
     type: bundle.unit-test
