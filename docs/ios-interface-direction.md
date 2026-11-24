@@ -222,7 +222,10 @@ No sound.
 | A separate cook mode screen | The checkable page is the cook mode, without a mode switch |
 | Persisting checked ingredients | Leaving the recipe ends the cooking session. Persisting would need a reset button |
 | Tag filters in the library | The tags show on the page first. A filter needs the owner's call on where it lives |
-| A timer on steps with durations | It needs parsing of free text. Revisit if cooks ask |
+
+Timers on steps with durations were cut here because they needed parsing of
+free text. They are no longer cut: the server now parses the durations, and
+the app shows them as chips in the step text. See `ios-cooking-timers.md`.
 
 ---
 
