@@ -31,7 +31,10 @@ module Oauth
       return env["omniauth.params"]["android_transaction"] if env["omniauth.params"]
       return unless apple_request_phase
 
-      env.fetch("rack.session", {}).fetch("omniauth.params", {})["android_transaction"]
+      # OmniAuth 2.2 and later store the request's params in the session only after the request
+      # validation passed, so a failed validation leaves them in the request alone.
+      params = env.fetch("rack.session", {})["omniauth.params"] || Rack::Request.new(env).params
+      params["android_transaction"]
     end
     private_class_method :captured_handle
 
