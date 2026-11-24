@@ -15,6 +15,15 @@ done
 
 cd "$(dirname "$0")/../hauptgang-ios"
 
+# The Mac's build account has no Apple ID in Xcode, so xcodebuild signs in with the App Store Connect
+# key that its environment names. On my own Mac the variables are unset and Xcode's account is used.
+auth=()
+export_options=ExportOptions.plist
+if [ -n "$ASC_PRIVATE_KEY_PATH" ]; then
+  auth=(-authenticationKeyPath "$ASC_PRIVATE_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+  export_options=ExportOptionsBuildAccount.plist
+fi
+
 # Get current build number and increment
 CURRENT=$(grep 'CURRENT_PROJECT_VERSION' project.yml | head -1 | grep -oE '[0-9]+')
 LATEST_REMOTE=$(asc builds info --app "$APP_ID" --latest 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['attributes']['version'])" 2>/dev/null || echo "0")
@@ -32,18 +41,27 @@ xcodebuild archive \
   -scheme Hauptgang \
   -destination 'generic/platform=iOS' \
   -archivePath build/Hauptgang.xcarchive \
+  -allowProvisioningUpdates \
+  "${auth[@]}" \
   -quiet
 
 echo "==> Exporting IPA..."
-# Homebrew rsync on PATH breaks Xcode's IPA packaging ("Copy failed")
-export PATH="/usr/bin:$PATH"
-xcodebuild -exportArchive \
+if [ "$export_options" = ExportOptionsBuildAccount.plist ]; then
+  asc profiles download --all --profile-type IOS_APP_STORE \
+    --name "Hauptgang App Store (devbox),Hauptgang share extension App Store (devbox)" \
+    --output-dir "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" --overwrite >/dev/null
+fi
+rm -rf build/export
+# The export packages the app with whichever rsync comes first, and fails with Homebrew's.
+PATH="/usr/bin:$PATH" xcodebuild -exportArchive \
   -archivePath build/Hauptgang.xcarchive \
-  -exportOptionsPlist ExportOptions.plist \
+  -exportOptionsPlist "$export_options" \
   -exportPath build/export \
   -allowProvisioningUpdates \
+  "${auth[@]}" \
   -quiet
 
+# The IPA takes the product name, which is MainCourse, not the scheme's.
 IPA=$(ls build/export/*.ipa | head -1)
 
 if [ "$EXTERNAL" = true ]; then

@@ -15,6 +15,7 @@ bin/ios-build --simulator-id UUID  # Same, but force a concrete simulator UDID
 bin/ios-test         # Run all iOS tests (auto-finds simulator)
 bin/ios-release      # Build, export, upload to TestFlight (internal testers)
 bin/ios-release --external  # Same + distribute to external testers & submit for beta review
+# On the dev box, prefix both with bin/mac and run them only when asked (see ../AGENTS.md)
 
 # From hauptgang-ios directory:
 xcodegen generate    # Regenerate Xcode project after adding/removing files

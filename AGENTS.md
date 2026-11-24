@@ -77,9 +77,25 @@ On Linux:
 - When I want to watch or click in the simulator, run the `ios-simulator-browser` skill's `serve-sim`
   commands through `bin/mac` as a background command and give me the URL. I open it in a browser on
   the Mac.
-- The server holds no production access: no `config/master.key`, no `cf` login, no App Store Connect.
-  Deploys, `bin/logs`, `bin/ios-release`, `bin/screenshots` and the Cloudflare section below are for
-  the Mac.
+- The server holds no production access: no `config/master.key`, no `cf` login. Deploys, `bin/logs`,
+  `bin/screenshots` and the Cloudflare section below are for the Mac.
+- iOS releases run through `bin/mac`, because the Mac's build account holds the App Store Connect key
+  (App Manager role) and the signing identities. Every step below that uploads, submits or releases is
+  a deploy, so run it only when I ask for it:
+  - `bin/mac bin/ios-release` archives, exports and uploads to TestFlight for internal testers.
+    `--external` also submits the build for beta review. It bumps `CURRENT_PROJECT_VERSION` in
+    `hauptgang-ios/project.yml` and brings the change back here, so commit it.
+  - `bin/mac asc ...` runs the asc CLI with that key, e.g. `bin/mac asc status --app 6758990872`.
+  - An App Store release: upload with `bin/ios-release`, then `asc release stage --app 6758990872
+    --version X.Y.Z --build-id ID --copy-metadata-from PREVIOUS --dry-run` and again with `--confirm`,
+    `asc validate --app 6758990872 --version X.Y.Z`, and `asc review submit --app 6758990872
+    --version X.Y.Z --build-id ID --confirm`. `asc versions release` releases a version that Apple
+    approved under a manual release.
+  - The build account signs the export by hand (`ExportOptionsBuildAccount.plist`), because the key's
+    role gets no cloud-managed certificate. Its two App Store profiles expire with the Apple
+    Distribution certificate on 11 February 2027 and must be made again then.
+  - Nothing that holds the key or a certificate comes to this server. The setup is in the devbox
+    repository's README.
 
 ## Web UI
 
