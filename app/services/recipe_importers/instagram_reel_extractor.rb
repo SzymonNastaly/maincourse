@@ -1,10 +1,12 @@
 require "json"
 require "faraday"
+require "nokogiri"
 
 module RecipeImporters
-  # Extracts recipe data from Instagram reels. Uses the caption the client read from
-  # the page's og:description when given, and falls back to Apify when that is missing
-  # or yields no recipe (e.g. Instagram served the device a login page).
+  # Extracts recipe data from Instagram reels via the caption in the public page's
+  # og:description: the one the client read on the device when given, otherwise one we
+  # fetch ourselves. Falls back to Apify when that is missing or yields no recipe
+  # (e.g. Instagram served a login page instead of the post).
   class InstagramReelExtractor
     Result = RecipeImporter::Result
 
@@ -40,11 +42,12 @@ module RecipeImporters
     def extract
       return failure("Please enter a URL", :blank_url) if @url.blank?
 
-      if @page_description
-        result = extract_from_caption(@page_description, nil)
+      caption, image_url = @page_description ? [ @page_description, nil ] : fetch_page_caption
+      if caption.present?
+        result = extract_from_caption(caption, image_url)
         return result if result.success?
 
-        Rails.logger.info "[InstagramReelExtractor] Page description gave no recipe for #{sanitized_url} (#{result.error_code}), falling back to Apify"
+        Rails.logger.info "[InstagramReelExtractor] Page caption gave no recipe for #{sanitized_url} (#{result.error_code}), falling back to Apify"
       end
 
       extract_from_caption(*fetch_from_apify)
@@ -74,6 +77,28 @@ module RecipeImporters
         error: service_result.error,
         error_code: service_result.error_code
       )
+    end
+
+    def fetch_page_caption
+      response = page_client.get(sanitized_url)
+      unless response.status == 200
+        Rails.logger.info "[InstagramReelExtractor] Page fetch HTTP #{response.status} for #{sanitized_url}"
+        return [ nil, nil ]
+      end
+
+      doc = Nokogiri::HTML(response.body)
+      [ "og:description", "og:image" ].map { |property| doc.at_css(%(meta[property="#{property}"]))&.[]("content").to_s.strip.presence }
+    rescue Faraday::Error => error
+      Rails.logger.info "[InstagramReelExtractor] Page fetch failed for #{sanitized_url}: #{error.class}"
+      [ nil, nil ]
+    end
+
+    def page_client
+      Faraday.new do |conn|
+        conn.options.timeout = 10
+        conn.options.open_timeout = 5
+        conn.headers["User-Agent"] = USER_AGENT
+      end
     end
 
     def fetch_from_apify

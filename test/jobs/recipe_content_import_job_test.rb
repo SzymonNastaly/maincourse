@@ -218,6 +218,7 @@ class RecipeContentImportJobTest < ActiveSupport::TestCase
   end
 
   test "instagram import falls back to Apify when no og:description is sent" do
+    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
     url = "https://www.instagram.com/p/DRUf_pBiPdh/"
     previous_key = ENV["APIFY_API_KEY"]
     ENV["APIFY_API_KEY"] = "test-apify-key"

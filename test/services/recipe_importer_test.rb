@@ -150,7 +150,29 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert_equal "https://example.com/recipe", result.recipe_attributes[:source_url]
   end
 
+  test "imports instagram reel from the public page caption without calling apify" do
+    url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
+    page = <<~HTML
+      <html><head>
+        <meta property="og:description" content="26K likes, 272 comments - chef on November 21, 2025: &quot;Garlic pasta &#x1f35d;&#10;- 200g spaghetti&#10;1. Boil&quot;. " />
+        <meta property="og:image" content="https://scontent.cdninstagram.com/cover.jpg?a=1&amp;b=2" />
+      </head><body></body></html>
+    HTML
+    stub_request(:get, url).to_return(status: 200, body: page, headers: { "Content-Type" => "text/html" })
+    apify = stub_request(:post, "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items")
+    stub_llm_response(name: "Garlic Pasta", ingredients: [ "200g spaghetti" ], instructions: [ "Boil" ])
+
+    result = RecipeImporter.new(url).import
+
+    assert result.success?
+    assert_equal "Garlic Pasta", result.recipe_attributes[:name]
+    assert_equal "https://scontent.cdninstagram.com/cover.jpg?a=1&b=2", result.cover_image_url
+    assert_not_requested apify
+    assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) { |request| request.body.include?("Garlic pasta 🍝") }
+  end
+
   test "imports instagram reel via apify" do
+    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
     url = "https://www.instagram.com/p/DRUf_pBiPdh/"
     previous_key = ENV["APIFY_API_KEY"]
     ENV["APIFY_API_KEY"] = "test-apify-key"
@@ -182,6 +204,7 @@ class RecipeImporterTest < ActiveSupport::TestCase
   end
 
   test "returns error when instagram caption is missing" do
+    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
     url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
     previous_key = ENV["APIFY_API_KEY"]
     ENV["APIFY_API_KEY"] = "test-apify-key"
@@ -569,6 +592,7 @@ class RecipeImporterTest < ActiveSupport::TestCase
   end
 
   test "returns error when apify key is missing for instagram" do
+    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
     url = "https://www.instagram.com/p/DRUf_pBiPdh/"
     previous_key = ENV["APIFY_API_KEY"]
     ENV.delete("APIFY_API_KEY")
