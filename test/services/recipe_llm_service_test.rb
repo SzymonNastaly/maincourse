@@ -162,7 +162,7 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
   end
 
   test "does not include source_url when not provided" do
-    stub_llm_response(name: "Test Recipe", ingredients: [], instructions: [])
+    stub_llm_response(name: "Test Recipe", ingredients: [], instructions: [ "Mix" ])
 
     result = RecipeLlmService.new("Some text").extract
 
@@ -188,6 +188,25 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
     assert_not result.success?
     assert_equal :not_a_recipe, result.error_code
     assert_equal "Could not identify recipe name", result.error
+  end
+
+  test "returns not_a_recipe when the LLM finds a dish name but no ingredients or steps" do
+    stub_llm_response(name: "Ragù alla Bolognese", ingredients: [], instructions: [])
+
+    result = RecipeLlmService.new("Ragù alla Bolognese. Recipe in the comments below", prompt_type: :raw_text).extract
+
+    assert_not result.success?
+    assert_equal :not_a_recipe, result.error_code
+    assert_equal "Found no ingredients or instructions", result.error
+  end
+
+  test "keeps a recipe that has steps but no listed ingredients" do
+    stub_llm_response(name: "Bolognese Sauce", ingredients: [], instructions: [ "Sauté the onion" ])
+
+    result = RecipeLlmService.new("HOW TO MAKE BOLOGNESE SAUCE 1. Sauté the onion", prompt_type: :raw_text).extract
+
+    assert result.success?
+    assert_equal [ "Sauté the onion" ], result.recipe_attributes[:instructions]
   end
 
   test "returns failure when text is blank" do
@@ -324,7 +343,7 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
     stub_llm_response(
       name: "Notes Recipe",
       ingredients: [],
-      instructions: [],
+      instructions: [ "Mix" ],
       notes: "  Some notes with whitespace  "
     )
 
@@ -338,7 +357,7 @@ class RecipeLlmServiceTest < ActiveSupport::TestCase
     stub_llm_response(
       name: "Empty Notes Recipe",
       ingredients: [],
-      instructions: [],
+      instructions: [ "Mix" ],
       notes: "   "
     )
 

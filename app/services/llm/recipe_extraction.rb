@@ -5,6 +5,7 @@ module Llm
     # The image prompt asks the model to return an empty name when the photo
     # has no recipe text. That is a user outcome, not an extraction bug.
     NOT_A_RECIPE_ERROR = "Could not identify recipe name"
+    EMPTY_RECIPE_ERROR = "Found no ingredients or instructions"
 
     INGREDIENT_KEYS = %w[
       name amount amount_max unit note raw
@@ -19,10 +20,15 @@ module Llm
       name = content["name"].to_s.strip
       return error_result(NOT_A_RECIPE_ERROR, :not_a_recipe) if name.blank?
 
+      ingredients = normalize_ingredients(content["ingredients"])
+      instructions = normalize_array(content["instructions"])
+      # A dish name alone (e.g. a caption saying "recipe in the comments") is not a recipe.
+      return error_result(EMPTY_RECIPE_ERROR, :not_a_recipe) if ingredients.empty? && instructions.empty?
+
       attributes = {
         name: name,
-        ingredients: normalize_ingredients(content["ingredients"]),
-        instructions: normalize_array(content["instructions"]),
+        ingredients: ingredients,
+        instructions: instructions,
         prep_time: content["prep_time"],
         cook_time: content["cook_time"],
         servings: content["servings"],

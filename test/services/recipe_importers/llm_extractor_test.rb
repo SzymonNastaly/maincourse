@@ -307,7 +307,7 @@ module RecipeImporters
       stub_llm_response(
         name: "Notes Recipe",
         ingredients: [],
-        instructions: [],
+        instructions: [ "Mix" ],
         notes: "  Some notes with whitespace  "
       )
 
@@ -322,7 +322,7 @@ module RecipeImporters
       stub_llm_response(
         name: "Empty Notes Recipe",
         ingredients: [],
-        instructions: [],
+        instructions: [ "Mix" ],
         notes: "   "
       )
 
