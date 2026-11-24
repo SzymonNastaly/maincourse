@@ -8,6 +8,7 @@ struct SearchInputBar: View {
     var onSubmit: (() -> Void)?
     var onCancel: (() -> Void)?
     var keepFocusOnSubmit: Bool = false
+    var correctsText: Bool = true
     @State private var isFocused: Bool = false
 
     var body: some View {
@@ -23,6 +24,7 @@ struct SearchInputBar: View {
                     prompt: String(localized: self.prompt),
                     returnKeyType: self.resolvedReturnKey,
                     dismissOnReturn: !self.keepFocusOnSubmit,
+                    correctsText: self.correctsText,
                     onSubmit: { self.onSubmit?() }
                 )
                 .frame(height: 22)
@@ -68,6 +70,7 @@ private struct NonDismissingTextField: UIViewRepresentable {
     let prompt: String
     let returnKeyType: UIReturnKeyType
     let dismissOnReturn: Bool
+    let correctsText: Bool
     let onSubmit: () -> Void
 
     func makeUIView(context: Context) -> UITextField {
@@ -76,8 +79,9 @@ private struct NonDismissingTextField: UIViewRepresentable {
         tf.font = .systemFont(ofSize: 17)
         tf.delegate = context.coordinator
         tf.returnKeyType = self.returnKeyType
-        tf.autocorrectionType = .default
-        tf.spellCheckingType = .default
+        tf.autocorrectionType = self.correctsText ? .default : .no
+        tf.spellCheckingType = self.correctsText ? .default : .no
+        tf.autocapitalizationType = self.correctsText ? .sentences : .none
         tf.addTarget(
             context.coordinator,
             action: #selector(Coordinator.textChanged(_:)),

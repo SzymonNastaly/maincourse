@@ -9,6 +9,8 @@ struct RecipeSearchView: View {
     @State private var recipeToDelete: DeleteCandidate?
     @State private var recipeToMove: MoveCandidate?
 
+    private let readableWidth: CGFloat = 700
+
     var body: some View {
         NavigationStack(path: self.$navigationPath) {
             ScrollView {
@@ -16,24 +18,32 @@ struct RecipeSearchView: View {
                     if #unavailable(iOS 26) {
                         SearchInputBar(
                             text: self.$searchQuery,
-                            prompt: "Search recipes"
+                            prompt: "Search recipes",
+                            correctsText: false
                         )
                     }
 
                     if self.searchQuery.isEmpty {
-                        self.promptView
+                        if self.recentlyAdded.isEmpty {
+                            self.promptView
+                        } else {
+                            self.section(
+                                title: Text("Recently Added"),
+                                recipes: self.recentlyAdded
+                            )
+                        }
                     } else if self.recipeViewModel.searchResults.isEmpty {
                         self.emptyResultsView
                     } else {
-                        LazyVStack(spacing: Theme.Spacing.md) {
-                            ForEach(self.recipeViewModel.searchResults) { recipe in
-                                self.recipeRow(recipe)
-                            }
-                        }
-                        .padding(.horizontal, Theme.Spacing.lg)
+                        self.section(
+                            title: Text(RecipeDisplayFormatter.recipeCount(self.recipeViewModel.searchResults.count)),
+                            recipes: self.recipeViewModel.searchResults
+                        )
                     }
                 }
                 .padding(.vertical, Theme.Spacing.sm)
+                .frame(maxWidth: self.readableWidth)
+                .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.immediately)
             .background(Color.mcCanvas.ignoresSafeArea())
@@ -44,6 +54,44 @@ struct RecipeSearchView: View {
             }
             .modifier(SearchableModifier(searchQuery: self.$searchQuery))
         }
+    }
+
+    private var recentlyAdded: [PersistedRecipe] {
+        Array(
+            self.recipeViewModel.successfulRecipes
+                .sorted { ($0.createdAt ?? $0.updatedAt) > ($1.createdAt ?? $1.updatedAt) }
+                .prefix(8)
+        )
+    }
+
+    private func section(title: Text, recipes: [PersistedRecipe]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            title
+                .font(.caption.weight(.medium))
+                .textCase(.uppercase)
+                .tracking(1.1)
+                .foregroundStyle(Color.mcBody)
+                .padding(.horizontal, Theme.Spacing.md)
+
+            LazyVStack(spacing: 0) {
+                ForEach(recipes) { recipe in
+                    if recipe.id != recipes.first?.id {
+                        Rectangle()
+                            .fill(Color.mcLine)
+                            .frame(height: 1)
+                            .padding(.leading, Theme.Spacing.md * 2 + RecipeRowView.photoSize)
+                    }
+                    self.recipeRow(recipe)
+                }
+            }
+            .background(Color.mcSurface)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.panel)
+                    .stroke(Color.mcHairline, lineWidth: 1)
+            )
+        }
+        .padding(.horizontal, Theme.Spacing.md)
     }
 
     private var promptView: some View {
@@ -77,9 +125,10 @@ struct RecipeSearchView: View {
         Button {
             self.navigationPath.append(recipe.id)
         } label: {
-            RecipeCardView(recipe: recipe)
+            RecipeRowView(recipe: recipe)
         }
         .buttonStyle(.plain)
+        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: Theme.Radius.panel))
         .contextMenu {
             if let targetCookbook = self.cookbookViewModel.cookbooks.first(where: {
                 $0.id != self.cookbookViewModel.activeCookbook?.id
@@ -152,7 +201,10 @@ private struct SearchableModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
-            content.searchable(text: self.$searchQuery, prompt: "Search recipes")
+            content
+                .searchable(text: self.$searchQuery, prompt: "Search recipes")
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
         } else {
             content
         }
