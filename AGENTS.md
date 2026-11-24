@@ -77,8 +77,13 @@ On Linux:
 - When I want to watch or click in the simulator, run the `ios-simulator-browser` skill's `serve-sim`
   commands through `bin/mac` as a background command and give me the URL. I open it in a browser on
   the Mac.
-- The server holds no production access: no `config/master.key`, no `cf` login. Deploys, `bin/logs`,
+- The server holds no production access: no `config/master.key`, no `cf` login. `bin/logs`,
   `bin/screenshots` and the Cloudflare section below are for the Mac.
+- Deploy from here with `gh workflow run deploy.yml --ref main`, only when I ask for it, after pushing
+  `main` with a green `bin/ci`. GitHub runs `bin/kamal deploy` with the master key and an SSH key that
+  only its `production` environment holds. `gh run watch` follows it.
+- `bin/android-test` and `bin/android-build` work here. There is no emulator: the server has no KVM,
+  so `bin/android-test --device` needs the Mac or CI.
 - iOS releases run through `bin/mac`, because the Mac's build account holds the App Store Connect key
   (App Manager role) and the signing identities. Every step below that uploads, submits or releases is
   a deploy, so run it only when I ask for it:

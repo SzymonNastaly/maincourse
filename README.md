@@ -94,7 +94,8 @@ A regression test suite for recipe extractors using cached HTML snapshots is doc
 Deployed with Kamal to a Hetzner VPS. SQLite databases and uploads persist in a Docker volume; backups go to S3 via Litestream (see [`docs/sqlite-backups-litestream.md`](docs/sqlite-backups-litestream.md)).
 
 ```bash
-kamal deploy       # full deploy
+gh workflow run deploy.yml --ref main   # deploy main from GitHub Actions (no local keys needed)
+kamal deploy       # full deploy from a machine with config/master.key
 kamal app logs     # tail logs
 bin/logs           # attach lazyjournal to production
 ```
