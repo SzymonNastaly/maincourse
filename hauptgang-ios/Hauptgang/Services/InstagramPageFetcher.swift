@@ -1,8 +1,8 @@
 import Foundation
 
 /// Reads an Instagram post's caption from its public page on the device. Instagram serves the
-/// full caption in `og:description` to logged-out visitors on residential and mobile IPs, but
-/// not to the server's datacenter IP, so fetching here lets the server skip its paid scraper.
+/// full caption in `og:description` to logged-out visitors, so sending it lets the server skip
+/// its paid scraper.
 struct InstagramPageFetcher: Sendable {
     typealias HTMLLoader = @Sendable (URL) async throws -> String
 

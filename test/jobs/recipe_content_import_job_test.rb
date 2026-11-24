@@ -241,6 +241,35 @@ class RecipeContentImportJobTest < ActiveSupport::TestCase
     ENV["APIFY_API_KEY"] = previous_key
   end
 
+  test "instagram import falls back to Apify when the page og:description yields no recipe" do
+    url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
+    previous_key = ENV["APIFY_API_KEY"]
+    ENV["APIFY_API_KEY"] = "test-apify-key"
+    apify = stub_request(:post, APIFY_ENDPOINT)
+      .with(query: { "token" => "test-apify-key" })
+      .to_return(
+        status: 200,
+        body: [ { "caption" => "Apify caption: lentil soup", "displayUrl" => nil } ].to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+    no_recipe = build_openrouter_response({ "name" => "", "ingredients" => [], "instructions" => [] }).to_json
+    recipe = build_openrouter_response({ "name" => "Lentil Soup", "ingredients" => [ { "raw" => "1 cup lentils", "name" => "lentils" } ], "instructions" => [ "Simmer" ] }).to_json
+    stub_request(:post, LlmStubHelper::OPENROUTER_ENDPOINT)
+      .to_return({ status: 200, body: no_recipe, headers: { "Content-Type" => "application/json" } })
+      .then.to_return({ status: 200, body: recipe, headers: { "Content-Type" => "application/json" } })
+
+    RecipeContentImportJob.new.perform(
+      @user.id, @recipe.id, url, [], "", { "og:description" => "Log into Instagram to see photos and videos from your friends." }
+    )
+
+    assert_requested apify, times: 1
+    @recipe.reload
+    assert_equal :completed, @recipe.import_status.to_sym
+    assert_equal "Lentil Soup", @recipe.name
+  ensure
+    ENV["APIFY_API_KEY"] = previous_key
+  end
+
   test "marks recipe as failed when extraction fails" do
     result = RecipeImporter::Result.new(
       success?: false,

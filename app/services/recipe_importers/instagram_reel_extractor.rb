@@ -3,7 +3,8 @@ require "faraday"
 
 module RecipeImporters
   # Extracts recipe data from Instagram reels. Uses the caption the client read from
-  # the page's og:description when given, and falls back to Apify otherwise.
+  # the page's og:description when given, and falls back to Apify when that is missing
+  # or yields no recipe (e.g. Instagram served the device a login page).
   class InstagramReelExtractor
     Result = RecipeImporter::Result
 
@@ -40,29 +41,13 @@ module RecipeImporters
       return failure("Please enter a URL", :blank_url) if @url.blank?
 
       if @page_description
-        caption = @page_description
-        image_url = nil
-      else
-        caption, image_url = fetch_from_apify
+        result = extract_from_caption(@page_description, nil)
+        return result if result.success?
+
+        Rails.logger.info "[InstagramReelExtractor] Page description gave no recipe for #{sanitized_url} (#{result.error_code}), falling back to Apify"
       end
-      return failure("Instagram caption missing", :instagram_no_caption) if caption.blank?
 
-      service_result = RecipeLlmService.new(caption, prompt_type: :raw_text, source_url: @url).extract
-      return Result.new(
-        success?: false,
-        recipe_attributes: {},
-        cover_image_url: image_url,
-        error: service_result.error,
-        error_code: service_result.error_code
-      ) unless service_result.success?
-
-      Result.new(
-        success?: true,
-        recipe_attributes: service_result.recipe_attributes,
-        cover_image_url: image_url,
-        error: nil,
-        error_code: nil
-      )
+      extract_from_caption(*fetch_from_apify)
     rescue ApifyError => error
       failure(error.message, error.code)
     rescue JSON::ParserError
@@ -77,6 +62,19 @@ module RecipeImporters
     end
 
     private
+
+    def extract_from_caption(caption, image_url)
+      return failure("Instagram caption missing", :instagram_no_caption) if caption.blank?
+
+      service_result = RecipeLlmService.new(caption, prompt_type: :raw_text, source_url: @url).extract
+      Result.new(
+        success?: service_result.success?,
+        recipe_attributes: service_result.success? ? service_result.recipe_attributes : {},
+        cover_image_url: image_url,
+        error: service_result.error,
+        error_code: service_result.error_code
+      )
+    end
 
     def fetch_from_apify
       token = apify_token
