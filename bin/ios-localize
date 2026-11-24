@@ -18,9 +18,10 @@ def main():
     catalogs = {
         "Hauptgang": ios / "Hauptgang/Resources/Localizable.xcstrings",
         "ImportRecipeExtension": ios / "ImportRecipeExtension/Localizable.xcstrings",
+        "CookingTimersWidget": ios / "CookingTimersWidget/Localizable.xcstrings",
     }
 
-    # Resolve both targets before writing either catalog. Use the compiler's file
+    # Resolve every target before writing any catalog. Use the compiler's file
     # list so output left behind by deleted source files cannot reintroduce keys.
     jobs = []
     for target, catalog in catalogs.items():

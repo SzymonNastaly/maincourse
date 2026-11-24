@@ -35,6 +35,27 @@ final class LocalizationTests: XCTestCase {
         ), "Invalid email or password", "Shared API errors must also be in the extension bundle")
     }
 
+    func testCookingTimerStringsAreBundledInAppAndWidget() throws {
+        let plugins = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        let widget = try XCTUnwrap(Bundle(url: plugins.appendingPathComponent("CookingTimersWidget.appex")))
+        let expected = [
+            (Bundle.main, "Localizable", "%@ is done", ["de": "%@ ist fertig", "pl": "%@: gotowe"]),
+            (Bundle.main, "InfoPlist", "NSAlarmKitUsageDescription", [
+                "de": "MainCourse nutzt Alarme, damit deine Koch-Timer auch bei gesperrtem Bildschirm klingeln.",
+                "pl": "MainCourse używa alarmów, aby minutniki dzwoniły nawet przy zablokowanym ekranie."
+            ]),
+            (widget, "Localizable", "Paused", ["de": "Pausiert", "pl": "Wstrzymano"]),
+            (widget, "Localizable", "Stop timer", ["de": "Timer stoppen", "pl": "Zatrzymaj minutnik"])
+        ]
+        for (bundle, table, key, translations) in expected {
+            for (language, value) in translations {
+                let path = try XCTUnwrap(bundle.path(forResource: language, ofType: "lproj"), "\(language) \(key)")
+                let localized = try XCTUnwrap(Bundle(path: path))
+                XCTAssertEqual(localized.localizedString(forKey: key, value: "missing", table: table), value)
+            }
+        }
+    }
+
     func testRecipeCountUsesGermanAndPolishPlurals() {
         func count(_ n: Int, _ id: String) -> String {
             String(localized: LocalizedStringResource("\(n) recipes", locale: Locale(identifier: id)))

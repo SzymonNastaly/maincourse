@@ -124,7 +124,7 @@ private struct TimerHeading: View {
             Image(systemName: self.timer.isPaused ? "pause.circle.fill" : "timer")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(self.onDark ? Color.mcLime : Color.mcAccent)
-            Text(self.timer.isAlerting ? "\(self.timer.label) is done" : self.timer.label)
+            (self.timer.isAlerting ? Text("\(self.timer.label) is done") : Text(verbatim: self.timer.label))
                 .font(.headline)
                 .foregroundStyle(self.onDark ? Color.white : Color.mcInk)
             if self.timer.isPaused {
@@ -228,7 +228,7 @@ private struct CountdownText: View {
         case let .paused(paused):
             Text(CookingTimerClock.string(paused.totalCountdownDuration - paused.previouslyElapsedDuration))
         case .alert:
-            Text("0:00")
+            Text(verbatim: "0:00")
         @unknown default:
             Text(verbatim: "")
         }

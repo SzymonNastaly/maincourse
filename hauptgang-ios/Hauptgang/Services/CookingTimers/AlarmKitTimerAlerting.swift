@@ -161,7 +161,8 @@ final class AlarmKitTimerAlerting: TimerAlerting {
                 secondaryButtonBehavior: .countdown
             ),
             countdown: .init(
-                title: "\(label)",
+                // The label is recipe data, already in the recipe's language.
+                title: LocalizedStringResource(stringLiteral: label),
                 pauseButton: AlarmButton(text: "Pause", textColor: Color.mcAccentDark, systemImageName: "pause.fill")
             ),
             paused: .init(

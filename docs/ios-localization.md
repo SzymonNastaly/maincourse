@@ -4,7 +4,7 @@ The iOS app uses Apple's String Catalogs with English (`en`) as the development
 language. Language selection belongs to iOS: follow the system preference and
 the built-in per-app language setting. There is no in-app language override.
 The app ships English (source and fallback), German (`de`) and Polish (`pl`),
-matching Android and web. Both languages are in all four catalogs.
+matching Android and web. Both languages are in all five catalogs.
 
 Terminology and tone (informal, direct) follow the glossary in
 `android-localization.md`; reuse Android/web wording for strings that overlap.
@@ -16,12 +16,15 @@ and `other`. Prefer colon constructions over declining interpolated names.
 - `hauptgang-ios/Hauptgang/Resources/Localizable.xcstrings`: app UI and app-owned errors.
 - `hauptgang-ios/ImportRecipeExtension/Localizable.xcstrings`: share extension UI
   and its app-owned errors, including shared Swift sources such as `APIError`.
-- `InfoPlist.xcstrings` in each of those directories: camera permission text and
-  bundle display names. MainCourse stays untranslated as a brand name.
+- `hauptgang-ios/CookingTimersWidget/Localizable.xcstrings`: the cooking-timer
+  Live Activity and its buttons, including the shared `CookingTimerAlarm.swift`.
+- `InfoPlist.xcstrings` in the app and share extension directories: camera and
+  alarm permission text and bundle display names. MainCourse stays
+  untranslated as a brand name.
 
-The extension is a separate bundle. Its default string lookup cannot use the
-main app's catalog, so add every supported language to both targets together.
-Shared source strings appear in both catalogs; keep their translations consistent.
+Each extension is a separate bundle. Its default string lookup cannot use the
+main app's catalog, so add every supported language to every target together.
+Shared source strings appear in every catalog that compiles them; keep their translations consistent.
 `project.yml` owns the development language and compiler extraction setting.
 XcodeGen discovers the catalog resources automatically.
 
@@ -93,7 +96,7 @@ bin/ios-localize --derived-data /path/to/the/builds/DerivedData/Hauptgang-...
 
 Use the `-derivedDataPath` printed in the underlying Xcode build log linked by
 `bin/ios-build`. XcodeBuildMCP uses its own DerivedData directory, which can differ
-from Xcode's default. The sync command reads the two targets' compiler file lists,
+from Xcode's default. The sync command reads each target's compiler file list,
 checks that extraction output exists, and invokes Apple's `xcstringstool sync`. Always
 build after source changes before syncing; Xcode preserves timestamps for unchanged
 extraction output, so timestamps cannot reliably prove freshness. Compiler

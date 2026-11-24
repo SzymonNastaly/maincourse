@@ -18,6 +18,7 @@ final class InstructionTimerTests: XCTestCase {
         XCTAssertTrue(range.isRange)
         XCTAssertEqual(range.choices, [360, 420, 480])
         XCTAssertTrue(recipe.timers(forStep: 2)[0].perSide)
+        XCTAssertEqual(recipe.timers(forStep: 2)[0].timerLabel, "Fry per side")
         XCTAssertEqual(recipe.timers(forStep: 3), [], "a step past the array has no timers")
     }
 

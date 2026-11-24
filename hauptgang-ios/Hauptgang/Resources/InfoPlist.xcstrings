@@ -26,6 +26,30 @@
         }
       }
     },
+    "NSAlarmKitUsageDescription" : {
+      "comment" : "System alarm permission prompt shown when a cooking timer starts for the first time.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse uses alarms so your cooking timers ring even when your screen is locked."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse nutzt Alarme, damit deine Koch-Timer auch bei gesperrtem Bildschirm klingeln."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MainCourse używa alarmów, aby minutniki dzwoniły nawet przy zablokowanym ekranie."
+          }
+        }
+      }
+    },
     "NSCameraUsageDescription" : {
       "comment" : "System camera permission prompt shown when photographing a recipe for import.",
       "extractionState" : "manual",
