@@ -20,7 +20,7 @@ struct DemoSocialPostView<Photo: View>: View {
                         .font(.subheadline.weight(.semibold))
                     Text("A little dinner inspiration")
                         .font(.caption)
-                        .foregroundStyle(Color.mcMuted)
+                        .foregroundStyle(Color.mcBody)
                 }
                 Spacer()
             }

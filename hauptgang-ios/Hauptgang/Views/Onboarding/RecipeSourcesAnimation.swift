@@ -133,7 +133,7 @@ struct RecipeSourcesAnimation: View {
                 }
                 Text(verbatim: "best-recipes.blog")
                     .font(.system(size: 7))
-                    .foregroundStyle(Color.mcMuted)
+                    .foregroundStyle(Color.mcBody)
                     .padding(.leading, 3)
             }
             .padding(6)
@@ -145,7 +145,7 @@ struct RecipeSourcesAnimation: View {
                 PlaceholderLine(width: 104)
                 Text("Ad")
                     .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(Color.mcMuted)
+                    .foregroundStyle(Color.mcBody)
                     .frame(maxWidth: .infinity, minHeight: 34)
                     .background(Color.mcSunken, in: .rect(cornerRadius: 4))
                 PlaceholderLine(width: 112)

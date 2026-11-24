@@ -120,7 +120,7 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
                 .font(.caption2.weight(.medium))
                 .textCase(.uppercase)
                 .tracking(1.1)
-                .foregroundStyle(Color.mcMuted)
+                .foregroundStyle(Color.mcBody)
             Spacer()
             self.uncheckedHeaderTrailing
         }
@@ -145,7 +145,7 @@ struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
                     .font(.caption2.weight(.medium))
                     .textCase(.uppercase)
                     .tracking(1.1)
-                    .foregroundStyle(Color.mcMuted)
+                    .foregroundStyle(Color.mcBody)
 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
@@ -169,12 +169,12 @@ private struct ShoppingListItemRow: View {
     private var label: Text {
         let name = Text(self.item.name)
             .font(.body)
-            .foregroundStyle(self.item.isChecked ? Color.mcMuted : Color.mcInk)
-            .strikethrough(self.item.isChecked, color: Color.mcMuted)
+            .foregroundStyle(self.item.isChecked ? Color.mcBody : Color.mcInk)
+            .strikethrough(self.item.isChecked, color: Color.mcBody)
         guard let details = self.trimmedDetails else { return name }
         let detailsText = Text(verbatim: "  \(details)")
             .font(.subheadline)
-            .foregroundStyle(Color.mcMuted)
+            .foregroundStyle(Color.mcBody)
         return name + detailsText
     }
 

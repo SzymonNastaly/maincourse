@@ -160,7 +160,7 @@ private struct MealPlanFragment: View {
                 HStack(spacing: 6) {
                     Text(DateFormatter().shortWeekdaySymbols[day])
                         .font(.caption2.weight(.medium))
-                        .foregroundStyle(Color.mcMuted)
+                        .foregroundStyle(Color.mcBody)
                         .frame(width: 24, alignment: .leading)
                     if day == 2 {
                         HStack(spacing: 4) {
@@ -200,7 +200,7 @@ private struct ShoppingFragment: View {
                         .foregroundStyle(index == 0 ? Color.mcAccent : Color.mcMuted)
                     Text(item.name)
                         .font(.caption2)
-                        .foregroundStyle(index == 0 ? Color.mcMuted : Color.mcInk)
+                        .foregroundStyle(index == 0 ? Color.mcBody : Color.mcInk)
                         .strikethrough(index == 0)
                         .lineLimit(1)
                 }

@@ -176,7 +176,7 @@ struct LoginView: View {
                 .frame(height: 1)
             Text("or")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(Color.mcMuted)
+                .foregroundStyle(Color.mcBody)
                 .textCase(.uppercase)
             Rectangle()
                 .fill(Color.mcLine)

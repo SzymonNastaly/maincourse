@@ -147,6 +147,7 @@ struct ShoppingListView: View {
             }
         }
         .scrollDismissesKeyboard(.immediately)
+        .readableContentWidth()
     }
 
     @ViewBuilder
@@ -249,6 +250,7 @@ struct ShoppingListView: View {
             }
         }
         .scrollDismissesKeyboard(.immediately)
+        .readableContentWidth()
     }
 }
 

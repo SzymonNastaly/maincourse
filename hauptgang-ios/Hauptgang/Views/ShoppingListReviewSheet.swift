@@ -88,6 +88,7 @@ struct ShoppingListReviewSheet: View {
                 .padding(.horizontal, Theme.Spacing.lg)
                 .padding(.vertical, Theme.Spacing.lg)
             }
+            .readableContentWidth()
             .background(Color.mcCanvas.ignoresSafeArea())
             .navigationTitle("Add to Shopping List")
             .navigationBarTitleDisplayMode(.inline)
@@ -183,6 +184,7 @@ struct ShoppingListReviewSheet: View {
     private func finishAddition() {
         let listIsWorthReminding =
             self.shoppingListViewModel.uncheckedItems.count >= ShoppingListView.notificationPromptThreshold
+        HapticManager.shared.notification(.success)
         self.dismiss()
 
         // Unlike the typed path, this is one deliberate button press with no keyboard in

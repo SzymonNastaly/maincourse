@@ -22,7 +22,7 @@ struct MealPlanDayRow: View {
     }
 
     private var pastForegroundColor: Color {
-        Color.mcMuted.opacity(0.7)
+        Color.mcBody
     }
 
     var body: some View {
@@ -71,7 +71,7 @@ struct MealPlanDayRow: View {
                     .foregroundStyle(
                         self.components.isPast
                             ? self.pastForegroundColor
-                            : Color.mcMuted
+                            : Color.mcBody
                     )
             }
 
@@ -150,7 +150,7 @@ struct MealPlanDayRow: View {
                             .foregroundStyle(
                                 self.components.isPast
                                     ? self.pastForegroundColor
-                                    : Color.mcMuted
+                                    : Color.mcBody
                             )
                     }
                 }

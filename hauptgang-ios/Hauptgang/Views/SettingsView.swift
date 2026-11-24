@@ -71,6 +71,7 @@ struct SettingsView: View {
             self.accountActionsSection
         }
         .scrollContentBackground(.hidden)
+        .readableContentWidth()
         .background(Color.mcCanvas)
     }
 

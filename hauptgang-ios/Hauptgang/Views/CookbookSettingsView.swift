@@ -35,6 +35,7 @@ struct CookbookSettingsView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .readableContentWidth()
         .background(Color.mcCanvas)
         .navigationTitle("Cookbooks")
         .navigationBarTitleDisplayMode(.large)

@@ -90,7 +90,7 @@ struct ImportDemoView: View {
                 }, onShare: { self.changeStage(.sharing) })
                 Text("Works with Instagram, websites, and more.")
                     .font(.footnote)
-                    .foregroundStyle(Color.mcMuted)
+                    .foregroundStyle(Color.mcBody)
                     .frame(maxWidth: .infinity)
             }
             .padding(20)

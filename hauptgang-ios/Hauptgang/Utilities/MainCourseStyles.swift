@@ -80,6 +80,33 @@ struct OutlineButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - Readable width
+
+/// Caps a scrolling list at a readable column in regular width. It insets the scroll
+/// content rather than framing the view, so the list's background still reaches the
+/// window's edges and the scroll indicator stays at the edge.
+struct ReadableContentWidthModifier: ViewModifier {
+    static let maxWidth: CGFloat = 700
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var containerWidth: CGFloat = 0
+
+    private var horizontalMargin: CGFloat? {
+        guard self.horizontalSizeClass == .regular, self.containerWidth > Self.maxWidth else { return nil }
+        return (self.containerWidth - Self.maxWidth) / 2
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .contentMargins(.horizontal, self.horizontalMargin, for: .scrollContent)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.width
+            } action: { width in
+                self.containerWidth = width
+            }
+    }
+}
+
 // MARK: - View helpers
 
 extension View {
@@ -93,5 +120,9 @@ extension View {
 
     func outlineButton() -> some View {
         self.buttonStyle(OutlineButtonStyle())
+    }
+
+    func readableContentWidth() -> some View {
+        self.modifier(ReadableContentWidthModifier())
     }
 }
