@@ -18,6 +18,7 @@ struct MainTabView: View {
     @State private var searchQuery = ""
     @State private var notificationRouter = NotificationRouter.shared
     @State private var pendingRecipeId: Int?
+    @State private var showsTimers = false
 
     enum Tab: Hashable {
         case recipes
@@ -35,14 +36,17 @@ struct MainTabView: View {
                         .showsContinuation || self.onboarding.isDemoPresented,
                     pendingRecipeId: self.$pendingRecipeId
                 )
+                .cookingTimersFallbackDock(showsTimers: self.$showsTimers)
             }
 
             SwiftUI.Tab("Shopping List", systemImage: "cart", value: Tab.shoppingList) {
                 ShoppingListView(viewModel: self.session.shoppingListViewModel)
+                    .cookingTimersFallbackDock(showsTimers: self.$showsTimers)
             }
 
             SwiftUI.Tab("Settings", systemImage: "gearshape", value: Tab.settings) {
                 SettingsView()
+                    .cookingTimersFallbackDock(showsTimers: self.$showsTimers)
             }
 
             SwiftUI.Tab(value: Tab.search, role: .search) {
@@ -50,6 +54,7 @@ struct MainTabView: View {
                     recipeViewModel: self.session.recipeViewModel,
                     searchQuery: self.$searchQuery
                 )
+                .cookingTimersFallbackDock(showsTimers: self.$showsTimers)
             }
         }
         .safeAreaInset(edge: .top) {
@@ -67,6 +72,7 @@ struct MainTabView: View {
             guard saved != nil, !self.onboarding.externalNavigationHasPriority else { return }
             Task { await self.openSavedRecipe() }
         }
+        .cookingTimersDock(showsTimers: self.$showsTimers)
         .tint(Color.mcAccent)
         .modifier(TabBarBackgroundModifier())
         .modifier(TabBarMinimizeModifier())
@@ -187,6 +193,7 @@ private struct TabSearchActivationModifier: ViewModifier {
         .environmentObject(authManager)
         .environment(session)
         .environment(session.cookbookViewModel)
+        .environment(CookingTimerStore.shared)
         .modelContainer(
             for: [
                 PersistedRecipe.self,

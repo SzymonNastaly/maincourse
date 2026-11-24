@@ -100,6 +100,8 @@ struct RecipeDetailContentView: View {
                                 self.factsAndIngredients
                             }
                             .frame(width: 360)
+                            // Otherwise the facts card's dividers stretch to the steps column's height.
+                            .fixedSize(horizontal: false, vertical: true)
 
                             VStack(alignment: .leading, spacing: Theme.Spacing.md + Theme.Spacing.xs) {
                                 self.stepsAndNotes
@@ -243,7 +245,10 @@ struct RecipeDetailContentView: View {
                     StepRow(
                         number: index + 1,
                         instruction: instruction,
-                        isDone: self.doneSteps.contains(index)
+                        isDone: self.doneSteps.contains(index),
+                        timers: StepTimerLocator.locate(self.recipe.timers(forStep: index), in: instruction),
+                        recipeId: self.recipe.id,
+                        recipeName: self.recipe.name
                     ) {
                         HapticManager.shared.selection()
                         self.doneSteps.formSymmetricDifference([index])

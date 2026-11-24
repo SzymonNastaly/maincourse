@@ -78,6 +78,7 @@ struct HauptgangApp: App {
                 .environmentObject(self.subscriptionManager)
                 .environment(self.deepLinkRouter)
                 .environment(NetworkMonitor.shared)
+                .environment(CookingTimerStore.shared)
                 .preferredColorScheme(.light)
                 .task {
                     self.subscriptionManager.startListening()
