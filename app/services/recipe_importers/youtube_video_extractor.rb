@@ -8,7 +8,6 @@ module RecipeImporters
 
     VIDEOS_ENDPOINT = "https://www.googleapis.com/youtube/v3/videos"
     COMMENT_THREADS_ENDPOINT = "https://www.googleapis.com/youtube/v3/commentThreads"
-    APIFY_ENDPOINT = "https://api.apify.com/v2/acts/streamers~youtube-scraper/run-sync-get-dataset-items"
     USER_AGENT = "Mozilla/5.0 (compatible; Hauptgang YouTube Importer)"
     MAX_COMMENT_RESULTS = 5
 
@@ -38,10 +37,9 @@ module RecipeImporters
       nil
     end
 
-    def initialize(url, http_client: nil, apify_client: nil)
+    def initialize(url, http_client: nil)
       @url = url
       @http_client = http_client || build_http_client
-      @apify_client = apify_client || build_apify_client
     end
 
     def extract
@@ -77,8 +75,7 @@ module RecipeImporters
       thumbnail_url = best_thumbnail(snippet["thumbnails"])
 
       author_comment = fetch_author_comment(video_id, channel_id, api_key)
-      transcript = fetch_transcript(video_id)
-      combined_text = build_combined_text(description, author_comment, transcript)
+      combined_text = build_combined_text(description, author_comment)
 
       return failure("YouTube description is empty", :youtube_no_description) if combined_text.blank?
 
@@ -142,44 +139,10 @@ module RecipeImporters
       nil
     end
 
-    def fetch_transcript(video_id)
-      token = apify_token
-      return nil if token.blank?
-
-      canonical_url = "https://www.youtube.com/watch?v=#{video_id}"
-      response = @apify_client.post(APIFY_ENDPOINT) do |req|
-        req.params["token"] = token
-        req.headers["Content-Type"] = "application/json"
-        req.body = {
-          startUrls: [ { url: canonical_url } ],
-          maxResults: 1,
-          maxResultsShorts: 0,
-          maxResultStreams: 0,
-          downloadSubtitles: true,
-          subtitlesFormat: "plaintext",
-          subtitlesLanguage: "any"
-        }.to_json
-      end
-
-      unless response.success?
-        Rails.logger.info "[YoutubeVideoExtractor] Apify HTTP #{response.status} for #{sanitized_url}"
-        return nil
-      end
-
-      items = JSON.parse(response.body)
-      return nil unless items.is_a?(Array) && items.any?
-
-      items.first.dig("subtitles", 0, "plaintext").to_s.strip.presence
-    rescue Faraday::Error, JSON::ParserError => error
-      Rails.logger.info "[YoutubeVideoExtractor] Could not fetch transcript for #{sanitized_url}: #{error.class}"
-      nil
-    end
-
-    def build_combined_text(description, author_comment, transcript)
+    def build_combined_text(description, author_comment)
       sections = []
       sections << description if description.present?
       sections << "Comment by the video author:\n#{author_comment}" if author_comment.present?
-      sections << "Transcript of the video:\n#{transcript}" if transcript.present?
       sections.join("\n\n---\n").presence
     end
 
@@ -200,19 +163,6 @@ module RecipeImporters
         conn.options.open_timeout = 5
         conn.headers["User-Agent"] = USER_AGENT
       end
-    end
-
-    def build_apify_client
-      Faraday.new do |conn|
-        # Apify run-sync endpoints can take a long time to start and complete
-        conn.options.timeout = 90
-        conn.options.open_timeout = 10
-        conn.headers["User-Agent"] = USER_AGENT
-      end
-    end
-
-    def apify_token
-      ENV["APIFY_API_KEY"] || Rails.application.credentials.dig(:apify, :api_key)
     end
 
     def youtube_api_key

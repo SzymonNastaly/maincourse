@@ -150,7 +150,7 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert_equal "https://example.com/recipe", result.recipe_attributes[:source_url]
   end
 
-  test "imports instagram reel from the public page caption without calling apify" do
+  test "imports instagram reel from the public page caption" do
     url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
     page = <<~HTML
       <html><head>
@@ -159,7 +159,6 @@ class RecipeImporterTest < ActiveSupport::TestCase
       </head><body></body></html>
     HTML
     stub_request(:get, url).to_return(status: 200, body: page, headers: { "Content-Type" => "text/html" })
-    apify = stub_request(:post, "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items")
     stub_llm_response(name: "Garlic Pasta", ingredients: [ "200g spaghetti" ], instructions: [ "Boil" ])
 
     result = RecipeImporter.new(url).import
@@ -167,69 +166,29 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert result.success?
     assert_equal "Garlic Pasta", result.recipe_attributes[:name]
     assert_equal "https://scontent.cdninstagram.com/cover.jpg?a=1&b=2", result.cover_image_url
-    assert_not_requested apify
     assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) { |request| request.body.include?("Garlic pasta 🍝") }
   end
 
-  test "imports instagram reel via apify" do
-    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
+  test "fails an instagram import when instagram serves its login page" do
     url = "https://www.instagram.com/p/DRUf_pBiPdh/"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV["APIFY_API_KEY"] = "test-apify-key"
-
-    response_body = [
-      {
-        "caption" => "Test Recipe\n\nIngredients:\n- 1 cup flour\n\nInstructions:\n- Mix",
-        "displayUrl" => "https://cdn.example.com/cover.jpg"
-      }
-    ]
-
-    stub_request(:post, "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items")
-      .with(
-        query: { "token" => "test-apify-key" },
-        headers: { "Content-Type" => "application/json" },
-        body: { username: [ url ], resultsLimit: 1 }.to_json
-      )
-      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
-
-    stub_llm_response(name: "Test Recipe", ingredients: [ "1 cup flour" ], instructions: [ "Mix" ])
-
-    result = RecipeImporter.new(url).import
-
-    assert result.success?
-    assert_equal "Test Recipe", result.recipe_attributes[:name]
-    assert_equal "https://cdn.example.com/cover.jpg", result.cover_image_url
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
-  end
-
-  test "returns error when instagram caption is missing" do
-    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
-    url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV["APIFY_API_KEY"] = "test-apify-key"
-
-    response_body = [
-      {
-        "caption" => " ",
-        "displayUrl" => "https://cdn.example.com/cover.jpg"
-      }
-    ]
-
-    stub_request(:post, "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items")
-      .with(
-        query: { "token" => "test-apify-key" },
-        headers: { "Content-Type" => "application/json" },
-        body: { username: [ url ], resultsLimit: 1 }.to_json
-      )
-      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
+    stub_request(:get, url).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
 
     result = RecipeImporter.new(url).import
 
     assert_not result.success?
     assert_equal :instagram_no_caption, result.error_code
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
+    assert_not_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT)
+  end
+
+  test "returns error when instagram caption is missing" do
+    url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
+    page = %(<html><head><meta property="og:description" content=" " /></head><body></body></html>)
+    stub_request(:get, url).to_return(status: 200, body: page, headers: { "Content-Type" => "text/html" })
+
+    result = RecipeImporter.new(url).import
+
+    assert_not result.success?
+    assert_equal :instagram_no_caption, result.error_code
   end
 
   test "imports tiktok video via oembed" do
@@ -422,35 +381,19 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert_equal :tiktok_invalid_response, result.error_code
   end
 
-  test "imports tiktok photo post via apify" do
+  test "imports tiktok photo post via oembed" do
     url = "https://www.tiktok.com/@creator/photo/1234567890"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV["APIFY_API_KEY"] = "test-apify-key"
 
-    response_body = [
-      {
-        "aweme_detail" => {
-          "desc" => "Photo Recipe\n\nIngredients:\n- 1 cup flour\n\nInstructions:\n- Mix",
-          "image_post_info" => {
-            "images" => [
-              {
-                "thumbnail" => {
-                  "url_list" => [ "https://p16-sign-va.tiktokcdn.com/photo-cover.jpeg" ]
-                }
-              }
-            ]
-          }
-        }
-      }
-    ]
-
-    stub_request(:post, "https://api.apify.com/v2/acts/scraptik~tiktok-api/run-sync-get-dataset-items")
-      .with(
-        query: { "token" => "test-apify-key" },
-        headers: { "Content-Type" => "application/json" },
-        body: { post_awemeId: "1234567890" }.to_json
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => url })
+      .to_return(
+        status: 200,
+        body: {
+          title: "Photo Recipe\n\nIngredients:\n- 1 cup flour\n\nInstructions:\n- Mix",
+          thumbnail_url: "https://p16-sign-va.tiktokcdn.com/photo-cover.jpeg"
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
       )
-      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
 
     stub_llm_response(name: "Photo Recipe", ingredients: [ "1 cup flour" ], instructions: [ "Mix" ])
 
@@ -459,33 +402,11 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert result.success?
     assert_equal "Photo Recipe", result.recipe_attributes[:name]
     assert_equal "https://p16-sign-va.tiktokcdn.com/photo-cover.jpeg", result.cover_image_url
-    assert_not_requested(:get, "https://www.tiktok.com/oembed", query: { "url" => url })
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
   end
 
-  test "imports tiktok short link by resolving to canonical photo url and using apify" do
+  test "imports tiktok short link by resolving to canonical photo url" do
     short_url = "https://vm.tiktok.com/ZNRuPhoto/"
     canonical_url = "https://www.tiktok.com/@creator/photo/1234567890"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV["APIFY_API_KEY"] = "test-apify-key"
-
-    response_body = [
-      {
-        "aweme_detail" => {
-          "desc" => "Photo Redirect Recipe\n\nIngredients:\n- 2 eggs\n\nInstructions:\n- Whisk",
-          "image_post_info" => {
-            "images" => [
-              {
-                "thumbnail" => {
-                  "url_list" => [ "https://p16-sign-va.tiktokcdn.com/redirected-photo.jpeg" ]
-                }
-              }
-            ]
-          }
-        }
-      }
-    ]
 
     stub_request(:get, "https://www.tiktok.com/oembed")
       .with(query: { "url" => short_url })
@@ -497,13 +418,16 @@ class RecipeImporterTest < ActiveSupport::TestCase
     stub_request(:get, canonical_url)
       .to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
 
-    stub_request(:post, "https://api.apify.com/v2/acts/scraptik~tiktok-api/run-sync-get-dataset-items")
-      .with(
-        query: { "token" => "test-apify-key" },
-        headers: { "Content-Type" => "application/json" },
-        body: { post_awemeId: "1234567890" }.to_json
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => canonical_url })
+      .to_return(
+        status: 200,
+        body: {
+          title: "Photo Redirect Recipe\n\nIngredients:\n- 2 eggs\n\nInstructions:\n- Whisk",
+          thumbnail_url: "https://p16-sign-va.tiktokcdn.com/redirected-photo.jpeg"
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
       )
-      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
 
     stub_llm_response(name: "Photo Redirect Recipe", ingredients: [ "2 eggs" ], instructions: [ "Whisk" ])
 
@@ -512,99 +436,20 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert result.success?
     assert_equal "Photo Redirect Recipe", result.recipe_attributes[:name]
     assert_equal "https://p16-sign-va.tiktokcdn.com/redirected-photo.jpeg", result.cover_image_url
-    assert_not_requested(:get, "https://www.tiktok.com/oembed", query: { "url" => canonical_url })
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
   end
 
-  test "does not fall back to generic extraction for tiktok photo posts without caption metadata" do
+  test "does not fall back to generic extraction for tiktok photo posts without a caption" do
     url = "https://www.tiktok.com/@creator/photo/1234567890"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV["APIFY_API_KEY"] = "test-apify-key"
 
-    response_body = [
-      {
-        "aweme_detail" => {
-          "desc" => " ",
-          "image_post_info" => {
-            "images" => [
-              {
-                "thumbnail" => {
-                  "url_list" => [ "https://p16-sign-va.tiktokcdn.com/photo-cover.jpeg" ]
-                }
-              }
-            ]
-          }
-        }
-      }
-    ]
-
-    stub_request(:post, "https://api.apify.com/v2/acts/scraptik~tiktok-api/run-sync-get-dataset-items")
-      .with(
-        query: { "token" => "test-apify-key" },
-        headers: { "Content-Type" => "application/json" },
-        body: { post_awemeId: "1234567890" }.to_json
-      )
-      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => url })
+      .to_return(status: 200, body: { title: " " }.to_json, headers: { "Content-Type" => "application/json" })
 
     result = RecipeImporter.new(url).import
 
     assert_not result.success?
     assert_equal :tiktok_no_caption, result.error_code
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
-  end
-
-  test "returns error when tiktok photo apify response is invalid" do
-    url = "https://www.tiktok.com/@creator/photo/1234567890"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV["APIFY_API_KEY"] = "test-apify-key"
-
-    stub_request(:post, "https://api.apify.com/v2/acts/scraptik~tiktok-api/run-sync-get-dataset-items")
-      .with(
-        query: { "token" => "test-apify-key" },
-        headers: { "Content-Type" => "application/json" },
-        body: { post_awemeId: "1234567890" }.to_json
-      )
-      .to_return(status: 200, body: "[]", headers: { "Content-Type" => "application/json" })
-
-    result = RecipeImporter.new(url).import
-
-    assert_not result.success?
-    assert_equal :tiktok_invalid_response, result.error_code
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
-  end
-
-  test "returns error when apify key is missing for tiktok photo import" do
-    url = "https://www.tiktok.com/@creator/photo/1234567890"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV.delete("APIFY_API_KEY")
-
-    Rails.application.credentials.stub(:dig, nil) do
-      result = RecipeImporter.new(url).import
-
-      assert_not result.success?
-      assert_equal :apify_missing_token, result.error_code
-    end
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
-  end
-
-  test "returns error when apify key is missing for instagram" do
-    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
-    url = "https://www.instagram.com/p/DRUf_pBiPdh/"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV.delete("APIFY_API_KEY")
-
-    Rails.application.credentials.stub(:dig, nil) do
-      result = RecipeImporter.new(url).import
-
-      assert_not result.success?
-      assert_equal :apify_missing_token, result.error_code
-    end
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
+    assert_not_requested(:get, url)
   end
 
   test "returns error when no extraction method succeeds" do

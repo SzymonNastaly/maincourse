@@ -160,75 +160,6 @@ module RecipeImporters
     end
 
     # ===================
-    # TRANSCRIPT VIA APIFY
-    # ===================
-
-    test "includes transcript in extraction when Apify key is present" do
-      stub_youtube_video_api("abc123", description: "Quick pasta recipe")
-      stub_youtube_comments_api("abc123")
-      stub_apify_transcript("abc123", plaintext: "first boil the pasta then add garlic and olive oil")
-      stub_llm_response(name: "Pasta", ingredients: [ "pasta", "garlic" ], instructions: [ "Boil pasta", "Add garlic" ])
-
-      result = build_extractor("https://www.youtube.com/watch?v=abc123", apify_key: APIFY_KEY).extract
-
-      assert result.success?
-    end
-
-    test "succeeds without transcript when Apify key is missing" do
-      stub_youtube_video_api("abc123", description: "Recipe in description")
-      stub_youtube_comments_api("abc123")
-      stub_llm_response(name: "Recipe", ingredients: [ "1 thing" ], instructions: [ "Do it" ])
-
-      result = build_extractor("https://www.youtube.com/watch?v=abc123").extract
-
-      assert result.success?
-    end
-
-    test "succeeds when Apify returns no subtitles" do
-      stub_youtube_video_api("abc123", description: "Recipe in description")
-      stub_youtube_comments_api("abc123")
-      stub_apify_transcript_raw("abc123", body: [ { "subtitles" => [] } ])
-      stub_llm_response(name: "Recipe", ingredients: [ "1 thing" ], instructions: [ "Do it" ])
-
-      result = build_extractor("https://www.youtube.com/watch?v=abc123", apify_key: APIFY_KEY).extract
-
-      assert result.success?
-    end
-
-    test "succeeds when Apify returns HTTP error" do
-      stub_youtube_video_api("abc123", description: "Recipe in description")
-      stub_youtube_comments_api("abc123")
-      stub_apify_transcript_raw("abc123", status: 500)
-      stub_llm_response(name: "Recipe", ingredients: [ "1 thing" ], instructions: [ "Do it" ])
-
-      result = build_extractor("https://www.youtube.com/watch?v=abc123", apify_key: APIFY_KEY).extract
-
-      assert result.success?
-    end
-
-    test "succeeds when Apify times out" do
-      stub_youtube_video_api("abc123", description: "Recipe in description")
-      stub_youtube_comments_api("abc123")
-      stub_apify_transcript_timeout
-      stub_llm_response(name: "Recipe", ingredients: [ "1 thing" ], instructions: [ "Do it" ])
-
-      result = build_extractor("https://www.youtube.com/watch?v=abc123", apify_key: APIFY_KEY).extract
-
-      assert result.success?
-    end
-
-    test "extracts from transcript alone when description and comment are empty" do
-      stub_youtube_video_api("abc123", description: "", channel_id: "UC_chef")
-      stub_youtube_comments_api("abc123", comments: [])
-      stub_apify_transcript("abc123", plaintext: "today we make rice with garlic and butter")
-      stub_llm_response(name: "Rice", ingredients: [ "rice", "garlic", "butter" ], instructions: [ "Cook rice" ])
-
-      result = build_extractor("https://www.youtube.com/watch?v=abc123", apify_key: APIFY_KEY).extract
-
-      assert result.success?
-    end
-
-    # ===================
     # ERROR HANDLING
     # ===================
 
@@ -279,14 +210,11 @@ module RecipeImporters
     private
 
     API_KEY = "test-youtube-api-key"
-    APIFY_KEY = "test-apify-key"
     DEFAULT_CHANNEL_ID = "UC_default_channel"
-    APIFY_ENDPOINT = "https://api.apify.com/v2/acts/streamers~youtube-scraper/run-sync-get-dataset-items"
 
-    def build_extractor(url, api_key: API_KEY, apify_key: nil)
+    def build_extractor(url, api_key: API_KEY)
       extractor = YoutubeVideoExtractor.new(url)
       extractor.define_singleton_method(:youtube_api_key) { api_key }
-      extractor.define_singleton_method(:apify_token) { apify_key }
       extractor
     end
 
@@ -324,23 +252,6 @@ module RecipeImporters
       stub_request(:get, "https://www.googleapis.com/youtube/v3/commentThreads")
         .with(query: { "part" => "snippet", "videoId" => video_id, "order" => "relevance", "textFormat" => "plainText", "maxResults" => "5", "key" => API_KEY })
         .to_return(status: status, body: body.to_json, headers: { "Content-Type" => "application/json" })
-    end
-
-    def stub_apify_transcript(video_id, plaintext:)
-      body = [ { "subtitles" => [ { "plaintext" => plaintext, "language" => "en", "type" => "auto_generated" } ] } ]
-      stub_apify_transcript_raw(video_id, body: body)
-    end
-
-    def stub_apify_transcript_raw(video_id = nil, body: [], status: 200)
-      stub_request(:post, APIFY_ENDPOINT)
-        .with(query: { "token" => APIFY_KEY })
-        .to_return(status: status, body: body.to_json, headers: { "Content-Type" => "application/json" })
-    end
-
-    def stub_apify_transcript_timeout
-      stub_request(:post, APIFY_ENDPOINT)
-        .with(query: { "token" => APIFY_KEY })
-        .to_timeout
     end
 
     def build_comment(author_channel_id:, text:)

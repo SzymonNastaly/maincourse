@@ -55,25 +55,14 @@ class RecipeImportJobTest < ActiveSupport::TestCase
   end
 
   test "attaches cover image from instagram import" do
-    stub_request(:get, %r{\Ahttps://www\.instagram\.com/}).to_return(status: 302, headers: { "Location" => "https://www.instagram.com/accounts/login/" })
     url = "https://www.instagram.com/p/DRUf_pBiPdh/"
-    previous_key = ENV["APIFY_API_KEY"]
-    ENV["APIFY_API_KEY"] = "test-apify-key"
-
-    response_body = [
-      {
-        "caption" => "Test Recipe\n\nIngredients:\n- 1 cup flour\n\nInstructions:\n- Mix",
-        "displayUrl" => "https://example.com/cover.jpg"
-      }
-    ]
-
-    stub_request(:post, "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items")
-      .with(
-        query: { "token" => "test-apify-key" },
-        headers: { "Content-Type" => "application/json" },
-        body: { username: [ url ], resultsLimit: 1 }.to_json
-      )
-      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
+    page = <<~HTML
+      <html><head>
+        <meta property="og:description" content="Test Recipe. Ingredients: 1 cup flour. Instructions: Mix" />
+        <meta property="og:image" content="https://example.com/cover.jpg" />
+      </head><body></body></html>
+    HTML
+    stub_request(:get, url).to_return(status: 200, body: page, headers: { "Content-Type" => "text/html" })
 
     stub_request(:get, "https://example.com/cover.jpg")
       .to_return(status: 200, body: "fake-image-bytes", headers: { "Content-Type" => "image/jpeg" })
@@ -86,8 +75,6 @@ class RecipeImportJobTest < ActiveSupport::TestCase
     assert_equal :completed, @recipe.import_status.to_sym
     assert_equal "Test Recipe", @recipe.name
     assert @recipe.cover_image.attached?
-  ensure
-    ENV["APIFY_API_KEY"] = previous_key
   end
 
   test "marks recipe as failed when no recipe data found" do
