@@ -4,9 +4,6 @@ require "schematist"
 class RecipeImageLlmService
   include Llm::RecipeExtraction
 
-  MODEL = "google/gemini-3.5-flash-lite"
-  OPENROUTER_PROVIDER = "google-vertex/eu"
-
   def initialize(image_path)
     @image_path = image_path
   end
@@ -27,9 +24,7 @@ class RecipeImageLlmService
   private
 
   def call_llm
-    chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
-    chat.with_provider_options(provider: { only: [ OPENROUTER_PROVIDER ] })
-    chat.with_schema(Llm::RecipeSchema).ask(prompt, with: @image_path)
+    Llm::Chat.build.with_schema(Llm::RecipeSchema).ask(prompt, with: @image_path)
   end
 
   def prompt

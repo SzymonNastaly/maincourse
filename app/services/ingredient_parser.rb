@@ -3,9 +3,6 @@ require "schematist"
 # Parses an array of free-form ingredient strings into structured hashes.
 # Single batched LLM call; aligns output to inputs by the echoed `raw` field.
 class IngredientParser
-  MODEL = "google/gemini-3.5-flash-lite"
-  OPENROUTER_PROVIDER = "google-vertex/eu"
-
   class IngredientListSchema < Schematist::Schema
     array :ingredients, of: Llm::IngredientSchema, description: "Parsed ingredient list. Echo each input line verbatim into 'raw'."
   end
@@ -38,9 +35,7 @@ class IngredientParser
   private
 
   def call_llm
-    chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
-    chat.with_provider_options(provider: { only: [ OPENROUTER_PROVIDER ] })
-    chat.with_schema(IngredientListSchema).ask(prompt)
+    Llm::Chat.build.with_schema(IngredientListSchema).ask(prompt)
   end
 
   def prompt

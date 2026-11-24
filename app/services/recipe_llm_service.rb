@@ -6,8 +6,6 @@ class RecipeLlmService
   include Llm::RecipeExtraction
 
   MAX_TEXT_LENGTH = 15_000
-  MODEL = "anthropic/claude-haiku-5.5"
-  OPENROUTER_PROVIDERS = %w[anthropic google-vertex/global azure/global].freeze
   PROMPT_TYPES = %i[webpage raw_text].freeze
 
   def initialize(text, prompt_type: :webpage, source_url: nil)
@@ -41,9 +39,7 @@ class RecipeLlmService
   private
 
   def call_llm(text)
-    chat = RubyLLM.chat(model: MODEL, provider: :openrouter, assume_model_exists: true)
-    chat.with_provider_options(provider: { only: OPENROUTER_PROVIDERS })
-    chat.with_schema(Llm::RecipeSchema).ask(prompt_for(text))
+    Llm::Chat.build.with_schema(Llm::RecipeSchema).ask(prompt_for(text))
   end
 
   def prompt_for(text)

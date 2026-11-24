@@ -28,15 +28,15 @@ class RecipeImageLlmServiceTest < ActiveSupport::TestCase
     assert_equal "Looks good", result.recipe_attributes[:notes]
   end
 
-  test "routes the configured model exclusively through EU Vertex" do
+  test "routes Claude Haiku through providers that support structured output" do
     stub_llm_response(name: "Photo Recipe", ingredients: [], instructions: [])
 
     RecipeImageLlmService.new(@image_path).extract
 
     assert_requested(:post, LlmStubHelper::OPENROUTER_ENDPOINT) do |req|
       body = JSON.parse(req.body)
-      body["model"] == "google/gemini-3.5-flash-lite" &&
-        body.dig("provider", "only") == [ "google-vertex/eu" ]
+      body["model"] == "anthropic/claude-haiku-5.5" &&
+        body.dig("provider", "only") == [ "anthropic", "google-vertex/global", "azure/global" ]
     end
   end
 
