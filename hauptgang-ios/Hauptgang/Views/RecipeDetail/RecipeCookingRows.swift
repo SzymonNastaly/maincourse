@@ -38,8 +38,7 @@ struct IngredientRow: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, Theme.Spacing.xs)
-            .frame(minHeight: 44)
+            .padding(.vertical, 3)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -115,7 +114,6 @@ struct StepRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.vertical, Theme.Spacing.xs)
-            .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -103,6 +103,12 @@ only tinted by the green `AccentColor` asset.
   secondary text uses `Color.mcBody`.
 - On iPad, lists and forms cap their content with `.readableContentWidth()`
   (700pt, centred, background full-bleed).
+- Dense over airy. The owner wants a recipe's ingredients and facts at a
+  glance, not each line floating in space. Stacked full-width tap rows (such
+  as ingredients) take a few points of vertical padding, not a 44pt minimum
+  height: the rows touch, so the whole column is still a tap target. A small
+  control that needs 44pt keeps its visual size and extends its hit area with
+  `.contentShape(Rectangle().inset(by: -6))`, as the servings stepper does.
 - Always write `Color.mcAccent`, not `.mcAccent` — bare member syntax fails in
   `ShapeStyle` contexts.
 - Flat surfaces get a 1px `Color.mcHairline` stroke, no shadow. Shadows only on

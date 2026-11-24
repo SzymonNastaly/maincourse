@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Prep, cook and servings. A row of columns at standard text sizes, a
-/// vertical list of label/value rows at the accessibility sizes.
+/// Prep, cook and servings. One compact row of label-over-value columns at
+/// standard text sizes, a vertical list of label/value rows at the
+/// accessibility sizes.
 struct RecipeFactsCard: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -30,7 +31,7 @@ struct RecipeFactsCard: View {
 
         layout {
             if let prepTime, prepTime > 0 {
-                FactItem(form: self.form, icon: "clock", label: Text("Prep")) {
+                FactItem(form: self.form, label: Text("Prep")) {
                     Text(RecipeDisplayFormatter.minutes(prepTime))
                         .font(.mcMono(.subheadline, weight: .medium))
                         .foregroundColor(.mcInk)
@@ -41,7 +42,7 @@ struct RecipeFactsCard: View {
                 if (self.prepTime ?? 0) > 0 {
                     self.divider
                 }
-                FactItem(form: self.form, icon: "flame", label: Text("Cook")) {
+                FactItem(form: self.form, label: Text("Cook")) {
                     Text(RecipeDisplayFormatter.minutes(cookTime))
                         .font(.mcMono(.subheadline, weight: .medium))
                         .foregroundColor(.mcInk)
@@ -52,13 +53,13 @@ struct RecipeFactsCard: View {
                 if (self.prepTime ?? 0) > 0 || (self.cookTime ?? 0) > 0 {
                     self.divider
                 }
-                FactItem(form: self.form, icon: "person.2", label: Text(self.servingsLabel)) {
+                FactItem(form: self.form, label: Text(self.servingsLabel)) {
                     PortionScalerView(servings: self.$servings)
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, self.form == .column ? Theme.Spacing.md : Theme.Spacing.xs)
+        .padding(.vertical, Theme.Spacing.xs)
         .background(Color.mcSunken)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.panel))
         .overlay(
@@ -71,7 +72,7 @@ struct RecipeFactsCard: View {
     private var divider: some View {
         switch self.form {
         case .column:
-            Divider().frame(maxHeight: 80).padding(.top, Theme.Spacing.sm)
+            Divider().padding(.vertical, Theme.Spacing.xs)
         case .row:
             Divider()
         }
@@ -84,31 +85,22 @@ private enum FactForm {
 }
 
 private struct FactItem<Value: View>: View {
-    @ScaledMetric(relativeTo: .body) private var iconHeight: CGFloat = 24
-
     let form: FactForm
-    let icon: String
     let label: Text
     @ViewBuilder let value: Value
 
     var body: some View {
         switch self.form {
         case .column:
-            VStack(spacing: Theme.Spacing.xs) {
-                Image(systemName: self.icon)
-                    .font(.body)
-                    .foregroundStyle(Color.mcMuted)
-                    .frame(height: self.iconHeight)
-                    .accessibilityHidden(true)
-
-                self.value
-                    .frame(minHeight: 44)
-
+            VStack(spacing: 0) {
                 self.label
                     .font(.caption)
                     .foregroundColor(.mcBody)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+
+                self.value
+                    .frame(minHeight: 32)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, Theme.Spacing.xs)
@@ -129,7 +121,7 @@ private struct FactItem<Value: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, Theme.Spacing.md)
-            .frame(minHeight: 44)
+            .padding(.vertical, Theme.Spacing.xs)
         }
     }
 }

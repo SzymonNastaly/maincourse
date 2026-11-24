@@ -167,8 +167,10 @@ iPad in regular width:
 
 ### The facts card
 
-- Labels in `mcBody`. Icons scale with their text style.
-- The − and + buttons have a 44-point tap area.
+- One compact row: a caption label above each value, no icons. Labels in
+  `mcBody`.
+- The − and + buttons have a 44-point tap area that extends past their
+  32-point frame, so they do not make the card taller.
 - At an accessibility size the card becomes a vertical list: one row each for
   Prep, Cook and Servings, label leading and value trailing.
 
@@ -264,11 +266,18 @@ iPhone 17 Pro Max and iPad Pro 13-inch simulators against the seeded backend.
   scroll content with `contentMargins`, so backgrounds stay full-bleed. After the
   sweep, `mcMuted` has 14 uses in the iOS sources and none draws text. The
   `maincourse-design` skill records the rule.
+- **Density pass.** The first build gave every ingredient and step a 44-point
+  minimum height and the facts card a separate icon line, so only part of the
+  ingredient list fitted on an iPhone and the steps started below the tab bar.
+  The owner found it too airy, so ingredient rows now take 3 points of padding,
+  section gaps shrink from 24 to 20 points, and the facts card is one row of
+  label over value. An iPhone now shows the facts, all eight ingredients of
+  the seeded orzo, and the first two steps.
 - **Not changed.** The large title of Settings stays at the leading edge on
   iPad, because it belongs to the navigation bar.
 
 ## 9. What only a real device shows
 
 - The haptics. The simulator plays none.
-- Whether a tap on an ingredient with a wet finger checks it reliably, or
-  whether rows need more height.
+- Whether a tap on an ingredient with a wet finger checks it reliably at the
+  denser row height.

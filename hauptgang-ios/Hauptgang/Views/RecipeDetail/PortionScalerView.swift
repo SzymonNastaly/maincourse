@@ -32,8 +32,9 @@ struct PortionScalerView: View {
         } label: {
             Image(systemName: systemImage)
                 .font(.body.weight(.semibold))
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
+                .frame(minWidth: 44, minHeight: 32)
+                // Keeps a 44-point tall hit area without making the facts card taller.
+                .contentShape(Rectangle().inset(by: -6))
         }
         .buttonStyle(.borderless)
         .tint(Color.mcAccent)

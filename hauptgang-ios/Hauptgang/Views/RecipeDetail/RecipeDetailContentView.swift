@@ -87,7 +87,7 @@ struct RecipeDetailContentView: View {
                     self.heroImage
                 }
 
-                VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.md + Theme.Spacing.xs) {
                     self.titleBlock
 
                     switch self.layout {
@@ -96,12 +96,12 @@ struct RecipeDetailContentView: View {
                         self.stepsAndNotes
                     case .twoColumns:
                         HStack(alignment: .top, spacing: Theme.Spacing.xl) {
-                            VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                            VStack(alignment: .leading, spacing: Theme.Spacing.md + Theme.Spacing.xs) {
                                 self.factsAndIngredients
                             }
                             .frame(width: 360)
 
-                            VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                            VStack(alignment: .leading, spacing: Theme.Spacing.md + Theme.Spacing.xs) {
                                 self.stepsAndNotes
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,10 +235,10 @@ struct RecipeDetailContentView: View {
     }
 
     private var instructionsSection: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             self.sectionHeader("Steps")
 
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 ForEach(Array(self.recipe.instructions.enumerated()), id: \.offset) { index, instruction in
                     StepRow(
                         number: index + 1,
@@ -254,7 +254,7 @@ struct RecipeDetailContentView: View {
     }
 
     private func notesSection(_ notes: String) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             self.sectionHeader("Notes")
 
             Text(notes)
