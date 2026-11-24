@@ -78,7 +78,12 @@ lands after it.
   `InfoPlist.xcstrings` explains the permission prompt, which appears on the
   first timer.
 - AlarmKit cannot change a countdown's length, so `+1 min` cancels the alarm and
-  schedules a new one under the same id.
+  schedules a new one under the same id. If that fails, the timer moves to the
+  notification fallback rather than going silent.
+- Pause, resume and "+1 min" made outside the app reach the store through
+  `alarmUpdates`. The change carries the Live Activity's timing when it already
+  shows the new state, so a late wake-up does not shift the countdown; otherwise
+  the store applies the change as of now.
 - The alert offers "+1 min" as a second countdown (`postAlert`). Stop on the
   alert removes the alarm; the app sees it vanish from `alarmUpdates` and
   removes the timer.
@@ -126,7 +131,8 @@ app is killed.
   `WordFlowLayout`, so each chip is a real button. The layout wraps at word
   boundaries, aligns each line on its first baseline, and takes the space width
   and line spacing from the body font, so the step reads like a plain `Text`.
-  A chip and the punctuation touching it never split across lines.
+  A chip and the punctuation touching it never split across lines; a line break
+  in the step's text still starts a new line.
 - The chip's hit area reaches 11 points past the drawn chip, and chips sit
   above their neighbours, so a tap near a chip starts it rather than marking
   the step done.

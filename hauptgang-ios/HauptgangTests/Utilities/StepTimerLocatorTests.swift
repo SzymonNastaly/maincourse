@@ -69,6 +69,15 @@ final class StepTimerLocatorTests: XCTestCase {
         ])
     }
 
+    func testLineBreaksInTheStepStartANewLine() {
+        let step = "Simmer for 10 minutes.\nThen serve."
+        let located = StepTimerLocator.locate([self.timer("10 minutes")], in: step)
+        let words = StepTimerLocator.words(in: step, located: located)
+
+        XCTAssertEqual(words.map(\.startsLine), [false, false, false, true, false])
+        XCTAssertEqual(words[3], StepWord(pieces: [.text("Then")], startsLine: true))
+    }
+
     private func timer(_ text: String) -> InstructionTimer {
         InstructionTimer(text: text, minSeconds: 60, maxSeconds: 60, label: "Cook")
     }

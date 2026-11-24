@@ -2,11 +2,13 @@ import Foundation
 
 /// A change the system made to a timer outside the app: a Live Activity button, or
 /// the alarm alert's Stop and "+1 min".
+/// Timings come from the system when it has them; nil means "as of now".
 enum SystemTimerChange: Equatable {
     case stopped(UUID)
-    case paused(UUID)
-    case resumed(UUID)
-    case restarted(UUID, seconds: TimeInterval)
+    case paused(UUID, remaining: TimeInterval?)
+    case resumed(UUID, endDate: Date?)
+    /// The alert's "+1 min": the timer runs again until `endDate`.
+    case restarted(UUID, endDate: Date, addedSeconds: TimeInterval)
 }
 
 /// Mirrors `CookingTimerStore` timers as system timers, so a timer still rings when

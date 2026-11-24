@@ -36,6 +36,7 @@ struct StepTimerText: View {
         ) {
             ForEach(Array(self.words.enumerated()), id: \.offset) { _, word in
                 self.wordView(word)
+                    .layoutValue(key: StartsLine.self, value: word.startsLine)
             }
         }
         .font(.body)

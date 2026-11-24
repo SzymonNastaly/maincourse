@@ -51,6 +51,7 @@ final class AlarmKitTimerAlerting: TimerAlerting {
             do {
                 try await self.schedule(timer)
                 self.alarmIDs.insert(timer.id)
+                self.recordCurrentState(of: timer.id)
             } catch {
                 logger.error("AlarmKit schedule failed: \(error.localizedDescription)")
                 self.fallback.start(timer)
@@ -87,8 +88,12 @@ final class AlarmKitTimerAlerting: TimerAlerting {
                 if timer.isPaused {
                     try AlarmManager.shared.pause(id: timer.id)
                 }
+                self.recordCurrentState(of: timer.id)
             } catch {
+                // The old alarm is gone; ring through a notification instead.
                 logger.error("AlarmKit reschedule failed: \(error.localizedDescription)")
+                self.alarmIDs.remove(timer.id)
+                self.fallback.reschedule(timer)
             }
         }
     }
@@ -107,6 +112,9 @@ final class AlarmKitTimerAlerting: TimerAlerting {
     /// is not shown in the app.
     func restore() async -> [CookingTimer] {
         await self.tasks.drain()
+        // Read the notifications first: nothing may suspend between reading the
+        // alarms and returning them, or a Stop in between would come back.
+        let notifications = await self.fallback.restore()
         let alarms: [Alarm]
         do {
             alarms = try AlarmManager.shared.alarms
@@ -124,7 +132,7 @@ final class AlarmKitTimerAlerting: TimerAlerting {
             self.alarmIDs.insert(alarm.id)
             self.seen[alarm.id] = alarm.state
         }
-        return await restored + self.fallback.restore()
+        return restored + notifications
     }
 
     // MARK: - Private
@@ -202,6 +210,46 @@ final class AlarmKitTimerAlerting: TimerAlerting {
         return timer
     }
 
+    /// Seeds `seen` from the system right after scheduling, in case the update
+    /// carrying the new alarm arrived before it was tracked.
+    private func recordCurrentState(of id: UUID) {
+        if let alarm = try? AlarmManager.shared.alarms.first(where: { $0.id == id }) {
+            self.seen[id] = alarm.state
+        }
+    }
+
+    /// The Live Activity's view of the alarm, which carries its exact timing.
+    private func presentationMode(of id: UUID) -> AlarmPresentationState.Mode? {
+        Activity<AlarmAttributes<CookingTimerMetadata>>.activities
+            .first { $0.content.state.alarmID == id }?
+            .content.state.mode
+    }
+
+    /// Turns a state change into a store change, timed by the Live Activity when
+    /// it already shows the new state, so a late wake-up does not shift the timer.
+    private func change(_ id: UUID, from old: Alarm.State?, to new: Alarm.State) -> SystemTimerChange? {
+        let mode = self.presentationMode(of: id)
+        switch (old, new) {
+        case (.countdown?, .paused), (nil, .paused):
+            guard case let .paused(paused)? = mode else { return .paused(id, remaining: nil) }
+            return .paused(id, remaining: max(0, paused.totalCountdownDuration - paused.previouslyElapsedDuration))
+        case (.paused?, .countdown):
+            guard case let .countdown(countdown)? = mode else { return .resumed(id, endDate: nil) }
+            return .resumed(id, endDate: countdown.fireDate)
+        case (.alerting?, .countdown):
+            guard case let .countdown(countdown)? = mode else {
+                return .restarted(
+                    id,
+                    endDate: Date().addingTimeInterval(Self.restartSeconds),
+                    addedSeconds: Self.restartSeconds
+                )
+            }
+            return .restarted(id, endDate: countdown.fireDate, addedSeconds: Self.restartSeconds)
+        default:
+            return nil
+        }
+    }
+
     private func reconcile(_ alarms: [Alarm]) {
         let current = Dictionary(
             alarms.filter { self.alarmIDs.contains($0.id) }.map { ($0.id, $0.state) },
@@ -213,11 +261,8 @@ final class AlarmKitTimerAlerting: TimerAlerting {
             changes.append(.stopped(id))
         }
         for (id, state) in current {
-            switch (self.seen[id], state) {
-            case (.countdown?, .paused): changes.append(.paused(id))
-            case (.paused?, .countdown): changes.append(.resumed(id))
-            case (.alerting?, .countdown): changes.append(.restarted(id, seconds: Self.restartSeconds))
-            default: break
+            if let change = self.change(id, from: self.seen[id], to: state) {
+                changes.append(change)
             }
         }
         self.seen = current

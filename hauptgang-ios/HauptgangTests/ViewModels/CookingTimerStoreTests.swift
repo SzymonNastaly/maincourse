@@ -158,19 +158,36 @@ final class CookingTimerStoreTests: XCTestCase {
         let timer = self.startSimmer(seconds: 600)
         self.advance(100)
 
-        self.alerting.systemChanged(.paused(timer.id))
+        self.alerting.systemChanged(.paused(timer.id, remaining: nil))
         XCTAssertEqual(self.current(timer).remaining(at: self.now), 500)
         self.advance(50)
-        self.alerting.systemChanged(.resumed(timer.id))
+        self.alerting.systemChanged(.resumed(timer.id, endDate: nil))
         self.advance(500)
         XCTAssertTrue(self.current(timer).isFinished(at: self.now))
 
-        self.alerting.systemChanged(.restarted(timer.id, seconds: 60))
+        self.alerting.systemChanged(.restarted(
+            timer.id, endDate: self.now.addingTimeInterval(60), addedSeconds: 60
+        ))
         XCTAssertEqual(self.current(timer).remaining(at: self.now), 60)
+        XCTAssertEqual(self.current(timer).duration, 660)
 
         self.alerting.systemChanged(.stopped(timer.id))
         XCTAssertTrue(self.store.timers.isEmpty)
         XCTAssertEqual(self.alerting.calls, [.start(timer.id)])
+    }
+
+    func testSystemTimingsWinOverWhenTheAppHeardOfTheChange() {
+        let timer = self.startSimmer(seconds: 600)
+        self.advance(300)
+
+        // Paused from the lock screen at 400 seconds left; the app woke later.
+        self.alerting.systemChanged(.paused(timer.id, remaining: 400))
+        XCTAssertEqual(self.current(timer).remaining(at: self.now), 400)
+
+        let resumedEnd = self.now.addingTimeInterval(380)
+        self.alerting.systemChanged(.resumed(timer.id, endDate: resumedEnd))
+        XCTAssertEqual(self.current(timer).endDate, resumedEnd)
+        XCTAssertFalse(self.current(timer).isPaused)
     }
 
     // MARK: - Rebuild after the app was killed

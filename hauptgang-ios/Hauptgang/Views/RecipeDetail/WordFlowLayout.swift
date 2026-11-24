@@ -86,7 +86,7 @@ struct WordFlowLayout: Layout {
             let baseline = subview.dimensions(in: proposal)[VerticalAlignment.firstTextBaseline]
 
             let neededWidth = line.items.isEmpty ? size.width : line.width + self.wordSpacing + size.width
-            if !line.items.isEmpty, neededWidth > maxWidth {
+            if !line.items.isEmpty, neededWidth > maxWidth || subview[StartsLine.self] {
                 lines.append(line)
                 line = Line()
             }
@@ -101,4 +101,9 @@ struct WordFlowLayout: Layout {
         cache = Cache(width: maxWidth, lines: lines)
         return lines
     }
+}
+
+/// Marks a word that begins a new line, where the step's text has a line break.
+struct StartsLine: LayoutValueKey {
+    static let defaultValue = false
 }

@@ -58,8 +58,7 @@ final class NotificationTimerAlerting: TimerAlerting {
     }
 
     private func schedule(_ timer: CookingTimer) {
-        let seconds = timer.remaining(at: Date())
-        guard seconds > 0 else { return }
+        guard timer.remaining(at: Date()) > 0 else { return }
         let content = UNMutableNotificationContent()
         content.title = String(localized: "\(timer.label) is done")
         content.body = String(localized: "\(timer.recipeName) · Step \(timer.stepNumber)")
@@ -69,18 +68,21 @@ final class NotificationTimerAlerting: TimerAlerting {
         if let data = try? JSONEncoder().encode(timer), let json = String(bytes: data, encoding: .utf8) {
             content.userInfo = [Self.timerKey: json]
         }
-        let request = UNNotificationRequest(
-            identifier: Self.identifier(timer.id),
-            content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
-        )
+        let identifier = Self.identifier(timer.id)
         self.tasks.enqueue {
             let center = UNUserNotificationCenter.current()
             do {
                 if await center.notificationSettings().authorizationStatus == .notDetermined {
                     _ = try await center.requestAuthorization(options: [.alert, .sound])
                 }
-                try await center.add(request)
+                // Measured after the permission prompt, which can take a while.
+                let seconds = timer.remaining(at: Date())
+                guard seconds > 0 else { return }
+                try await center.add(UNNotificationRequest(
+                    identifier: identifier,
+                    content: content,
+                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
+                ))
             } catch {
                 logger.error("Timer notification failed: \(error.localizedDescription)")
             }

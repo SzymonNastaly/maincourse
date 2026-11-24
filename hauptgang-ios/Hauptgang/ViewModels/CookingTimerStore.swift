@@ -158,16 +158,23 @@ final class CookingTimerStore {
         case let .stopped(id):
             self.timers.removeAll { $0.id == id }
             self.announcedFinished.remove(id)
-        case let .paused(id):
-            self.update(id) { self.markPaused(&$0) }
-        case let .resumed(id):
-            self.update(id) { self.markRunning(&$0) }
-        case let .restarted(id, seconds):
-            let now = self.now()
+        case let .paused(id, remaining):
+            self.update(id) { timer in
+                guard let remaining else { return self.markPaused(&timer) }
+                timer.pausedRemaining = remaining
+                timer.endDate = nil
+            }
+        case let .resumed(id, endDate):
+            self.update(id) { timer in
+                guard let endDate else { return self.markRunning(&timer) }
+                timer.endDate = endDate
+                timer.pausedRemaining = nil
+            }
+        case let .restarted(id, endDate, addedSeconds):
             self.update(id) { timer in
                 timer.pausedRemaining = nil
-                timer.endDate = now.addingTimeInterval(seconds)
-                timer.duration += seconds
+                timer.endDate = endDate
+                timer.duration += addedSeconds
             }
             self.announcedFinished.remove(id)
         }

@@ -16,6 +16,8 @@ struct StepWord: Hashable {
     }
 
     let pieces: [Piece]
+    /// The step's text has a line break before this word.
+    var startsLine = false
 }
 
 /// Finds each server timer's `text` in its step: the first occurrence after the
@@ -37,6 +39,15 @@ enum StepTimerLocator {
     static func words(in step: String, located: [LocatedTimer]) -> [StepWord] {
         var words: [StepWord] = []
         var pieces: [StepWord.Piece] = []
+        var lineBreak = false
+
+        func endWord() {
+            if !pieces.isEmpty {
+                words.append(StepWord(pieces: pieces, startsLine: lineBreak))
+                lineBreak = false
+            }
+            pieces = []
+        }
 
         func addText(_ text: Substring) {
             var buffer = ""
@@ -46,10 +57,10 @@ enum StepTimerLocator {
                         pieces.append(.text(buffer))
                     }
                     buffer = ""
-                    if !pieces.isEmpty {
-                        words.append(StepWord(pieces: pieces))
+                    endWord()
+                    if character.isNewline, !words.isEmpty {
+                        lineBreak = true
                     }
-                    pieces = []
                 } else {
                     buffer.append(character)
                 }
@@ -66,9 +77,7 @@ enum StepTimerLocator {
             cursor = timer.range.upperBound
         }
         addText(step[cursor...])
-        if !pieces.isEmpty {
-            words.append(StepWord(pieces: pieces))
-        }
+        endWord()
         return words
     }
 
