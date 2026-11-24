@@ -1,29 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ cook" : {
-      "comment" : "Recipe cooking duration.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ cook"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ Kochzeit"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gotowanie: %@"
-          }
-        }
-      }
-    },
     "%@ is already in use." : {
       "localizations" : {
         "en" : {
@@ -130,52 +107,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wartość pola „%@” jest zbyt krótka."
-          }
-        }
-      }
-    },
-    "%@ prep" : {
-      "comment" : "Recipe preparation duration.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ prep"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ Vorbereitung"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przygotowanie: %@"
-          }
-        }
-      }
-    },
-    "%@ prep + %@ cook" : {
-      "comment" : "Recipe preparation and cooking durations.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ prep + %2$@ cook"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ Vorbereitung + %2$@ Kochzeit"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przygotowanie: %1$@ + gotowanie: %2$@"
           }
         }
       }
@@ -996,6 +927,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sprawdź połączenie Wi-Fi lub komórkowe i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Checked" : {
+      "comment" : "Accessibility value of an ingredient the cook has checked off.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checked"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abgehakt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odhaczone"
           }
         }
       }
@@ -4664,6 +4618,29 @@
         }
       }
     },
+    "Recently Added" : {
+      "comment" : "Search section listing the newest recipes.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Added"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuletzt hinzugefügt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostatnio dodane"
+          }
+        }
+      }
+    },
     "Recipe URL" : {
       "localizations" : {
         "en" : {
@@ -5852,6 +5829,29 @@
         }
       }
     },
+    "Step %lld: %@" : {
+      "comment" : "Accessibility label of a recipe step: its number and its text.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %lld: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schritt %lld: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krok %lld: %@"
+          }
+        }
+      }
+    },
     "Steps" : {
       "localizations" : {
         "en" : {
@@ -6970,6 +6970,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jeśli nie pamiętasz hasła, skorzystaj z linku do resetowania hasła na stronie internetowej."
+          }
+        }
+      }
+    },
+    "View original at %@" : {
+      "comment" : "Link to the recipe's source website; the placeholder is its host name.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View original at %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original auf %@ ansehen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz oryginał na %@"
           }
         }
       }

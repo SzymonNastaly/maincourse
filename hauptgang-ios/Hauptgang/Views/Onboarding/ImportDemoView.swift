@@ -106,6 +106,7 @@ struct ImportDemoView: View {
                 currentServings: self.$currentServings,
                 localHero: AnyView(self.photo(height: 210))
             )
+            .environment(\.horizontalSizeClass, .compact)
             .accessibilityFocused(self.$recipeFocused)
             if self.showsKeepButton {
                 Button {
