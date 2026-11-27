@@ -57,7 +57,7 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 2.1"
+gem "image_processing", "~> 2.2"
 # image_processing 2.0 made the backends soft dependencies; Rails defaults to the
 # vips processor, so declare ruby-vips here. require: false because loading it
 # binds libvips through FFI at boot, which is only present where images are
